@@ -1,0 +1,45 @@
+{
+    "name": "eslint-plugin-code-style",
+    "version": "1.0.2",
+    "description": "A custom ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects",
+    "main": "index.js",
+    "type": "module",
+    "exports": {
+        ".": {
+            "import": "./index.js",
+            "default": "./index.js"
+        }
+    },
+    "files": [
+        "index.js",
+        "README.md",
+        "LICENSE"
+    ],
+    "keywords": [
+        "eslint",
+        "eslintplugin",
+        "eslint-plugin",
+        "code-style",
+        "formatting",
+        "react",
+        "jsx",
+        "linting",
+        "code-quality"
+    ],
+    "author": "Mohamed Elhawary",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": ""
+    },
+    "bugs": {
+        "url": ""
+    },
+    "homepage": "",
+    "peerDependencies": {
+        "eslint": ">=9.0.0"
+    },
+    "engines": {
+        "node": ">=24.0.0"
+    }
+}
