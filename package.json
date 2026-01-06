@@ -30,12 +30,12 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": ""
+        "url": "git+https://github.com/Mohamed-Elhawary/eslint-plugin-code-style.git"
     },
     "bugs": {
-        "url": ""
+        "url": "https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/issues"
     },
-    "homepage": "",
+    "homepage": "https://github.com/Mohamed-Elhawary/eslint-plugin-code-style#readme",
     "peerDependencies": {
         "eslint": ">=9.0.0"
     },

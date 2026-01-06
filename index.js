@@ -1,0 +1,6869 @@
+import fs from "fs";
+import nodePath from "path";
+
+const openingBracketsSameLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkCallExpression = (node) => {
+            const { callee } = node;
+
+            // Case 0: Function call with opening paren on different line - fn\n( should be fn(
+            const calleeLastToken = sourceCode.getLastToken(callee);
+            const openParenToken = sourceCode.getTokenAfter(callee);
+
+            if (openParenToken && openParenToken.value === "(" && calleeLastToken.loc.end.line !== openParenToken.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [calleeLastToken.range[1], openParenToken.range[1]],
+                        "(",
+                    ),
+                    message: "Opening parenthesis should be on the same line as function name",
+                    node: openParenToken,
+                });
+
+                return;
+            }
+
+            const args = node.arguments;
+
+            if (args.length === 0) return;
+
+            const firstArg = args[0];
+            const openParen = sourceCode.getTokenBefore(firstArg);
+
+            // Case 1: Object expression as first argument - .fn({ should be together
+            // Only apply when: single argument AND call is single-line
+            if (firstArg.type === "ObjectExpression" && firstArg.properties.length >= 1) {
+                const callIsMultiLine = node.loc.start.line !== node.loc.end.line;
+                const hasMultipleArgs = args.length > 1;
+
+                // Skip if call spans multiple lines with multiple arguments - that format is intentional
+                // e.g., fn(\n    { prop: val },\n    other\n)
+                if (callIsMultiLine && hasMultipleArgs) return;
+
+                const openBrace = sourceCode.getFirstToken(firstArg);
+
+                if (openParen.loc.end.line !== openBrace.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openParen.range[1], openBrace.range[1]],
+                            "{",
+                        ),
+                        message: "Opening parenthesis and brace should be on the same line",
+                        node: openBrace,
+                    });
+                }
+
+                const closeBrace = sourceCode.getLastToken(firstArg);
+                let closeParen = sourceCode.getTokenAfter(firstArg);
+
+                // Skip trailing comma if present: },)
+                if (closeParen && closeParen.value === ",") {
+                    closeParen = sourceCode.getTokenAfter(closeParen);
+                }
+
+                if (closeParen && closeParen.value === ")") {
+                    if (closeBrace.loc.end.line !== closeParen.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [closeBrace.range[1], closeParen.range[0]],
+                                "",
+                            ),
+                            message: "Closing brace and parenthesis should be on the same line",
+                            node: closeParen,
+                        });
+                    }
+                }
+
+                return;
+            }
+
+            // Case 1b: Array expression as first argument - fn([ should be together
+            // Only apply when single argument; multiple args should each be on their own line
+            if (firstArg.type === "ArrayExpression" && args.length === 1) {
+                const isMultiLine = firstArg.loc.start.line !== firstArg.loc.end.line;
+                const openBracket = sourceCode.getFirstToken(firstArg);
+
+                // fn([ - opening paren and bracket should be on same line
+                if (openParen.loc.end.line !== openBracket.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openParen.range[1], openBracket.range[0]],
+                            "",
+                        ),
+                        message: "Opening parenthesis and bracket should be on the same line: fn([",
+                        node: openBracket,
+                    });
+
+                    return;
+                }
+
+                // For multiline arrays of objects, do NOT enforce [{ on same line
+                // The arrayObjectsOnNewLines rule handles putting each object on its own line
+                // Only enforce [{ for single-line arrays
+                if (!isMultiLine && firstArg.elements.length > 0 && firstArg.elements[0] && firstArg.elements[0].type === "ObjectExpression") {
+                    const firstElement = firstArg.elements[0];
+                    const openBrace = sourceCode.getFirstToken(firstElement);
+
+                    if (openBracket.loc.end.line !== openBrace.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBracket.range[1], openBrace.range[1]],
+                                "{",
+                            ),
+                            message: "Opening bracket and brace should be on the same line",
+                            node: openBrace,
+                        });
+                    }
+                }
+
+                // Check closing ]); should be together
+                const closeBracket = sourceCode.getLastToken(firstArg);
+                let closeParen = sourceCode.getTokenAfter(firstArg);
+
+                // Skip trailing comma if present: ],)
+                if (closeParen && closeParen.value === ",") {
+                    closeParen = sourceCode.getTokenAfter(closeParen);
+                }
+
+                if (closeParen && closeParen.value === ")") {
+                    if (closeBracket.loc.end.line !== closeParen.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [closeBracket.range[1], closeParen.range[0]],
+                                "",
+                            ),
+                            message: "Closing bracket and parenthesis should be on the same line: ])",
+                            node: closeParen,
+                        });
+                    }
+                }
+
+                return;
+            }
+
+            // Case 1c: CallExpression as first argument with multiple args - should start on new line
+            // e.g., useCallback(debounce(...), []) - debounce should be on new line
+            if (firstArg.type === "CallExpression" && args.length > 1) {
+                // Check if the call expression is on the same line as the opening paren
+                if (openParen.loc.end.line === firstArg.loc.start.line) {
+                    const indent = " ".repeat(openParen.loc.start.column + 4);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openParen.range[1], firstArg.range[0]],
+                            "\n" + indent,
+                        ),
+                        message: "Function call argument should start on a new line when there are multiple arguments",
+                        node: firstArg,
+                    });
+                }
+
+                return;
+            }
+
+            // Case 2: Arrow function callback
+            if (firstArg.type === "ArrowFunctionExpression") {
+                const arrowParams = firstArg.params;
+
+                if (arrowParams.length === 0) return;
+
+                const firstParam = arrowParams[0];
+                const lastParam = arrowParams[arrowParams.length - 1];
+
+                // Case 2a: Single destructured param - .map(({ x, y }) => ...)
+                if (arrowParams.length === 1 && firstParam.type === "ObjectPattern") {
+                    const arrowOpenParen = sourceCode.getTokenBefore(firstParam);
+
+                    if (!arrowOpenParen || arrowOpenParen.value !== "(") return;
+
+                    // First, ensure .map( and (( are on same line
+                    if (openParen.loc.end.line !== arrowOpenParen.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openParen.range[1], arrowOpenParen.range[1]],
+                                "(",
+                            ),
+                            message: "Callback opening parenthesis should be on the same line as function call",
+                            node: arrowOpenParen,
+                        });
+
+                        return;
+                    }
+
+                    // Then, ensure (( and { are on same line
+                    const openBrace = sourceCode.getFirstToken(firstParam);
+
+                    if (arrowOpenParen.loc.end.line !== openBrace.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [arrowOpenParen.range[1], openBrace.range[1]],
+                                "{",
+                            ),
+                            message: "Opening parenthesis and brace should be on the same line for callback destructured param",
+                            node: openBrace,
+                        });
+                    }
+
+                    return;
+                }
+
+                // Case 2b: Single simple param - collapse to single line .map((sd) => ...)
+                if (arrowParams.length === 1 && firstParam.type === "Identifier") {
+                    const arrowOpenParen = sourceCode.getTokenBefore(firstParam);
+
+                    if (!arrowOpenParen || arrowOpenParen.value !== "(") return;
+
+                    if (arrowOpenParen.loc.end.line !== firstParam.loc.start.line) {
+                        const paramText = sourceCode.getText(firstParam);
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [arrowOpenParen.range[1], firstParam.range[0]],
+                                "",
+                            ),
+                            message: "Single callback param should be on the same line as opening parenthesis",
+                            node: firstParam,
+                        });
+                    }
+
+                    return;
+                }
+
+                // Case 2c: Multiple params (2+)
+                if (arrowParams.length >= 2) {
+                    const arrowOpenParen = sourceCode.getTokenBefore(firstParam);
+
+                    if (!arrowOpenParen || arrowOpenParen.value !== "(") return;
+
+                    // Check if params span multiple lines (first param on different line than open paren)
+                    const paramsAreMultiLine = arrowOpenParen.loc.end.line !== firstParam.loc.start.line;
+
+                    // Check if arrow function body is multiline
+                    const arrowBody = firstArg.body;
+                    const bodyIsMultiLine = arrowBody && arrowBody.loc.start.line !== arrowBody.loc.end.line;
+
+                    // If params or body are multi-line, don't require (( on same line
+                    // This allows the proper format:
+                    // debounce(
+                    //     (value, requestName) => {
+                    //         ...
+                    //     },
+                    //     500,
+                    // )
+                    if (paramsAreMultiLine || bodyIsMultiLine) return;
+
+                    // For single-line params with single-line body, keep (( on same line
+                    if (openParen.loc.end.line !== arrowOpenParen.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openParen.range[1], arrowOpenParen.range[1]],
+                                "(",
+                            ),
+                            message: "Opening parentheses should be on the same line for callback params",
+                            node: arrowOpenParen,
+                        });
+                    }
+                }
+            }
+        };
+
+        const checkJSXExpressionContainer = (node) => {
+            const expression = node.expression;
+
+            // Skip empty expressions
+            if (expression.type === "JSXEmptyExpression") return;
+
+            const openBrace = sourceCode.getFirstToken(node);
+            const closeBrace = sourceCode.getLastToken(node);
+
+            // Case 1: ObjectExpression - opening {{ should be together (for JSX attributes)
+            if (expression.type === "ObjectExpression" && expression.properties.length >= 1) {
+                const objectOpenBrace = sourceCode.getFirstToken(expression);
+
+                if (openBrace.loc.end.line !== objectOpenBrace.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[1], objectOpenBrace.range[1]],
+                            "{",
+                        ),
+                        message: "Opening braces should be on the same line for JSX object expression",
+                        node: objectOpenBrace,
+                    });
+                }
+
+                // Also check closing }} should be together
+                const objectCloseBrace = sourceCode.getLastToken(expression);
+
+                if (closeBrace.loc.start.line !== objectCloseBrace.loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [objectCloseBrace.range[1], closeBrace.range[0]],
+                            "",
+                        ),
+                        message: "Closing braces should be on the same line for JSX object expression",
+                        node: closeBrace,
+                    });
+                }
+
+                return;
+            }
+
+            // Case 2: CallExpression (like {items.map(...)}) - opening { and call should be on same line
+            if (expression.type === "CallExpression") {
+                if (openBrace.loc.end.line !== expression.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[1], expression.range[0]],
+                            "",
+                        ),
+                        message: "Opening brace and expression should be on the same line",
+                        node: expression,
+                    });
+                }
+
+                return;
+            }
+
+            // Case 3: Simple expressions - collapse to single line
+            const simpleTypes = ["Identifier", "MemberExpression", "Literal"];
+
+            // Also include ConditionalExpression if it's single-line
+            const isSingleLineConditional = expression.type === "ConditionalExpression"
+                && expression.loc.start.line === expression.loc.end.line;
+
+            if (simpleTypes.includes(expression.type) || isSingleLineConditional) {
+                const isMultiLine = openBrace.loc.end.line !== closeBrace.loc.start.line;
+
+                if (isMultiLine) {
+                    const expressionText = sourceCode.getText(expression);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[1], closeBrace.range[0]],
+                            expressionText,
+                        ),
+                        message: "Simple expression should be on single line in JSX attribute",
+                        node: expression,
+                    });
+                }
+
+                return;
+            }
+
+            // Case 3: ArrowFunctionExpression in JSX attribute
+            if (expression.type === "ArrowFunctionExpression") {
+                // First, ensure { and arrow function start are on same line
+                if (openBrace.loc.end.line !== expression.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[1], expression.range[0]],
+                            "",
+                        ),
+                        message: "Opening brace and arrow function should be on the same line in JSX attribute",
+                        node: expression,
+                    });
+
+                    return;
+                }
+
+                // Case 3a: Block body - closing }} should be together
+                if (expression.body.type === "BlockStatement") {
+                    // Only fix if parent is JSXAttribute
+                    if (node.parent && node.parent.type === "JSXAttribute") {
+                        const blockCloseBrace = sourceCode.getLastToken(expression.body);
+
+                        if (blockCloseBrace && closeBrace.loc.start.line !== blockCloseBrace.loc.end.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [blockCloseBrace.range[1], closeBrace.range[0]],
+                                    "",
+                                ),
+                                message: "Closing braces should be together for arrow function in JSX attribute",
+                                node: closeBrace,
+                            });
+                        }
+                    }
+
+                    return;
+                }
+
+                // Case 3b: Simple expression body - collapse entire arrow function to single line if simple
+                if (node.parent && node.parent.type === "JSXAttribute") {
+                    // Check if the entire arrow function is single-line worthy
+                    const arrowFunctionIsSingleLine = expression.loc.start.line === expression.loc.end.line;
+
+                    // Check if { and expression are on different lines, or expression and } are on different lines
+                    const openBraceNotWithExpression = openBrace.loc.end.line !== expression.loc.start.line;
+                    const closeBraceNotWithExpression = expression.loc.end.line !== closeBrace.loc.start.line;
+                    const needsCollapse = openBraceNotWithExpression || closeBraceNotWithExpression;
+
+                    // If arrow function fits on one line, collapse everything
+                    if (needsCollapse && arrowFunctionIsSingleLine) {
+                        const arrowText = sourceCode.getText(expression);
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBrace.range[1], closeBrace.range[0]],
+                                arrowText,
+                            ),
+                            message: "Simple arrow function should be on single line in JSX attribute",
+                            node: expression,
+                        });
+
+                        return;
+                    }
+
+                    // If body is single-line but arrow function spans multiple lines, collapse from arrow to end
+                    // Only do this for truly simple single-line bodies
+                    const bodyIsSingleLine = expression.body.loc.start.line === expression.body.loc.end.line;
+
+                    if (bodyIsSingleLine) {
+                        const arrowToken = sourceCode.getTokenBefore(
+                            expression.body,
+                            (t) => t.value === "=>",
+                        );
+
+                        if (arrowToken && arrowToken.loc.end.line !== expression.body.loc.start.line) {
+                            const bodyText = sourceCode.getText(expression.body);
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [arrowToken.range[1], closeBrace.range[0]],
+                                    " " + bodyText,
+                                ),
+                                message: "Simple arrow function expression should be on single line",
+                                node: expression.body,
+                            });
+                        }
+                    }
+                }
+
+                return;
+            }
+
+            // Case 4: JSX element wrapped in parentheses - {( should be together and )} should be together
+            if (expression.type === "JSXElement" || expression.type === "JSXFragment") {
+                // Check if JSX is wrapped in parentheses
+                const tokenBeforeJsx = sourceCode.getTokenBefore(expression);
+
+                if (tokenBeforeJsx && tokenBeforeJsx.value === "(") {
+                    // Check if { and ( are on different lines
+                    if (openBrace.loc.end.line !== tokenBeforeJsx.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBrace.range[1], tokenBeforeJsx.range[1]],
+                                "(",
+                            ),
+                            message: "Opening brace and parenthesis should be together for JSX expression",
+                            node: tokenBeforeJsx,
+                        });
+                    }
+
+                    // Check closing )}
+                    const tokenAfterJsx = sourceCode.getTokenAfter(expression);
+
+                    if (tokenAfterJsx && tokenAfterJsx.value === ")") {
+                        if (closeBrace.loc.start.line !== tokenAfterJsx.loc.end.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [tokenAfterJsx.range[1], closeBrace.range[0]],
+                                    "",
+                                ),
+                                message: "Closing parenthesis and brace should be together for JSX expression",
+                                node: closeBrace,
+                            });
+                        }
+                    }
+                }
+
+                return;
+            }
+
+            // Case 5: LogicalExpression - ensure { and expression start are on same line
+            if (expression.type === "LogicalExpression") {
+                // First, ensure { and expression start are on same line
+                if (openBrace.loc.end.line !== expression.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[1], expression.range[0]],
+                            "",
+                        ),
+                        message: "Opening brace and logical expression should be on the same line",
+                        node: expression,
+                    });
+
+                    return;
+                }
+
+                const operatorToken = sourceCode.getTokenAfter(
+                    expression.left,
+                    (t) => t.value === "&&" || t.value === "||",
+                );
+
+                if (operatorToken) {
+                    // Check if left operand and operator are on different lines
+                    // Only apply this rule for simple patterns like {condition && (<JSX/>)}
+                    // Skip complex multiline logical expressions (e.g., disabled={a || b || c})
+                    const isSimplePattern = expression.right.type === "JSXElement"
+                        || expression.right.type === "JSXFragment"
+                        || (expression.right.type === "ConditionalExpression")
+                        || (sourceCode.getTokenBefore(expression.right)?.value === "(");
+
+                    if (isSimplePattern && expression.left.loc.end.line !== operatorToken.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [expression.left.range[1], operatorToken.range[1]],
+                                " " + operatorToken.value,
+                            ),
+                            message: "Logical operator should be on the same line as the left operand",
+                            node: operatorToken,
+                        });
+
+                        return;
+                    }
+
+                    const tokenAfterOperator = sourceCode.getTokenAfter(operatorToken);
+
+                    // Check if operator and ( are on different lines
+                    if (tokenAfterOperator && tokenAfterOperator.value === "(") {
+                        if (operatorToken.loc.end.line !== tokenAfterOperator.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [operatorToken.range[1], tokenAfterOperator.range[1]],
+                                    " (",
+                                ),
+                                message: "Opening parenthesis should be on same line as logical operator",
+                                node: tokenAfterOperator,
+                            });
+                        }
+                    }
+
+                    // Find the closing ) for the right side
+                    const closingParen = sourceCode.getTokenAfter(expression.right);
+
+                    if (closingParen && closingParen.value === ")") {
+                        // Check if ) and } are on different lines
+                        if (closeBrace.loc.start.line !== closingParen.loc.end.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [closingParen.range[1], closeBrace.range[0]],
+                                    "",
+                                ),
+                                message: "Closing parenthesis and brace should be together for logical expression",
+                                node: closeBrace,
+                            });
+                        }
+                    }
+                }
+            }
+        };
+
+        const checkArrowFunction = (node) => {
+            // Check 1: Arrow function with block body - ensure => { are on same line
+            if (node.body.type === "BlockStatement") {
+                const arrowToken = sourceCode.getTokenBefore(
+                    node.body,
+                    (t) => t.value === "=>",
+                );
+
+                const blockOpenBrace = sourceCode.getFirstToken(node.body);
+
+                if (arrowToken && blockOpenBrace) {
+                    if (arrowToken.loc.end.line !== blockOpenBrace.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [arrowToken.range[1], blockOpenBrace.range[0]],
+                                " ",
+                            ),
+                            message: "Opening brace should be on the same line as arrow",
+                            node: blockOpenBrace,
+                        });
+                    }
+                }
+            }
+
+            // Check 1b: Arrow function with expression body (CallExpression) - ensure => and call on same line
+            // e.g., (id) => useQuery({...}) not (id) =>\n    useQuery({...})
+            // BUT allow parentheses for multiline implicit return: => (\n    call()\n)
+            if (node.body.type === "CallExpression") {
+                const arrowToken = sourceCode.getTokenBefore(
+                    node.body,
+                    (t) => t.value === "=>",
+                );
+
+                if (arrowToken) {
+                    const tokenAfterArrow = sourceCode.getTokenAfter(arrowToken);
+
+                    // If wrapped in parentheses, ensure => ( is on same line
+                    // e.g., => (\n    call()\n) is OK, but =>\n    (\n    call()\n) is NOT
+                    if (tokenAfterArrow && tokenAfterArrow.value === "(") {
+                        if (arrowToken.loc.end.line !== tokenAfterArrow.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [arrowToken.range[1], tokenAfterArrow.range[1]],
+                                    " (",
+                                ),
+                                message: "Opening parenthesis should be on the same line as arrow: => (",
+                                node: tokenAfterArrow,
+                            });
+                        }
+
+                        return;
+                    }
+
+                    // Check spacing: should be exactly one space after =>
+                    const textAfterArrow = sourceCode.text.slice(arrowToken.range[1], node.body.range[0]);
+
+                    if (textAfterArrow !== " ") {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [arrowToken.range[1], node.body.range[0]],
+                                " ",
+                            ),
+                            message: "Expression body should be on the same line as arrow with single space",
+                            node: node.body,
+                        });
+                    }
+                }
+            }
+
+            // Check 1c: Arrow function with parenthesized object body - ensure => ({ on same line
+            // e.g., () => ({ prop: val }) not () =>\n    ({ prop: val })
+            if (node.body.type === "ObjectExpression") {
+                const arrowToken = sourceCode.getTokenBefore(
+                    node.body,
+                    (t) => t.value === "=>",
+                );
+
+                if (arrowToken) {
+                    // Check for parenthesis before the object
+                    const tokenAfterArrow = sourceCode.getTokenAfter(arrowToken);
+
+                    if (tokenAfterArrow && tokenAfterArrow.value === "(") {
+                        // It's a parenthesized object: () => ({...})
+                        if (arrowToken.loc.end.line !== tokenAfterArrow.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [arrowToken.range[1], tokenAfterArrow.range[1]],
+                                    " (",
+                                ),
+                                message: "Parenthesized object should be on the same line as arrow: => (",
+                                node: tokenAfterArrow,
+                            });
+
+                            return;
+                        }
+
+                        // Also check if ( and { are on same line
+                        const openBrace = sourceCode.getFirstToken(node.body);
+
+                        if (tokenAfterArrow.loc.end.line !== openBrace.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [tokenAfterArrow.range[1], openBrace.range[1]],
+                                    "{",
+                                ),
+                                message: "Opening brace should be on the same line as opening paren: ({",
+                                node: openBrace,
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Check 1d: Ensure space before => in arrow functions
+            const arrowToken = sourceCode.getFirstToken(
+                node,
+                (t) => t.value === "=>",
+            );
+
+            if (arrowToken) {
+                const tokenBeforeArrow = sourceCode.getTokenBefore(arrowToken);
+
+                if (tokenBeforeArrow) {
+                    const textBetween = sourceCode.text.slice(tokenBeforeArrow.range[1], arrowToken.range[0]);
+
+                    if (textBetween !== " ") {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [tokenBeforeArrow.range[1], arrowToken.range[0]],
+                                " ",
+                            ),
+                            message: "Arrow function should have space before =>",
+                            node: arrowToken,
+                        });
+                    }
+                }
+            }
+
+            // Check 2: Single destructured param with 2+ properties - ensure ({ and }) together
+            const params = node.params;
+
+            if (params.length !== 1) return;
+
+            const param = params[0];
+
+            if (param.type !== "ObjectPattern" || param.properties.length < 2) return;
+
+            // Find opening ( before the param
+            const openParen = sourceCode.getTokenBefore(param);
+
+            if (!openParen || openParen.value !== "(") return;
+
+            const openBrace = sourceCode.getFirstToken(param);
+
+            // Check if ( and { are on different lines
+            if (openParen.loc.end.line !== openBrace.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openParen.range[1], openBrace.range[1]],
+                        "{",
+                    ),
+                    message: "Opening parenthesis and brace should be on the same line for destructured param",
+                    node: openBrace,
+                });
+            }
+
+            const closeBrace = sourceCode.getLastToken(param);
+            let closeParen = sourceCode.getTokenAfter(param);
+
+            // Skip trailing comma if present
+            if (closeParen && closeParen.value === ",") {
+                closeParen = sourceCode.getTokenAfter(closeParen);
+            }
+
+            if (closeParen && closeParen.value === ")") {
+                if (closeBrace.loc.end.line !== closeParen.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [closeBrace.range[1], closeParen.range[0]],
+                            "",
+                        ),
+                        message: "Closing brace and parenthesis should be on the same line for destructured param",
+                        node: closeParen,
+                    });
+                }
+            }
+        };
+
+        const checkJSXSpreadAttribute = (node) => {
+            // Handle simple spread attributes: {...formMethods} should be on single line
+            const { argument } = node;
+
+            // Only collapse simple spreads (single identifier or member expression)
+            const isSimpleSpread = argument.type === "Identifier"
+                || argument.type === "MemberExpression";
+
+            if (!isSimpleSpread) return;
+
+            const openBrace = sourceCode.getFirstToken(node);
+            const closeBrace = sourceCode.getLastToken(node);
+
+            // Check if spread spans multiple lines
+            if (openBrace.loc.start.line !== closeBrace.loc.end.line) {
+                const argumentText = sourceCode.getText(argument);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openBrace.range[0], closeBrace.range[1]],
+                        `{...${argumentText}}`,
+                    ),
+                    message: "Simple JSX spread attribute should be on a single line",
+                    node,
+                });
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkArrowFunction,
+            CallExpression: checkCallExpression,
+            JSXExpressionContainer: checkJSXExpressionContainer,
+            JSXSpreadAttribute: checkJSXSpreadAttribute,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce opening brackets on same line for function calls and arrow function params" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const jsxParenthesesPosition = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkArrowFunction = (node) => {
+            // Only check arrow functions that return JSX wrapped in parentheses
+            if (node.body.type !== "JSXElement" && node.body.type !== "JSXFragment") return;
+
+            const jsxElement = node.body;
+            const arrowToken = sourceCode.getTokenBefore(node.body, (t) => t.value === "=>");
+            const tokenAfterArrow = sourceCode.getTokenAfter(arrowToken);
+
+            // Check if there's a parenthesis after arrow
+            if (!tokenAfterArrow || tokenAfterArrow.value !== "(") return;
+
+            const openParen = tokenAfterArrow;
+
+            // Check if arrow and ( are on same line
+            if (arrowToken.loc.end.line !== openParen.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [arrowToken.range[1], openParen.range[1]],
+                        " (",
+                    ),
+                    message: "Opening parenthesis should be on the same line as arrow",
+                    node: openParen,
+                });
+            }
+
+            // Check if JSX starts on same line as ( (should be on new line)
+            if (openParen.loc.end.line === jsxElement.loc.start.line) {
+                const jsxIndent = " ".repeat(openParen.loc.start.column + 4);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openParen.range[1], jsxElement.range[0]],
+                        "\n" + jsxIndent,
+                    ),
+                    message: "JSX should start on a new line after opening parenthesis",
+                    node: jsxElement,
+                });
+            } else if (jsxElement.loc.start.line - openParen.loc.end.line > 1) {
+                // No empty lines after (
+                const jsxIndent = " ".repeat(jsxElement.loc.start.column);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openParen.range[1], jsxElement.range[0]],
+                        "\n" + jsxIndent,
+                    ),
+                    message: "No empty line after opening parenthesis",
+                    node: jsxElement,
+                });
+            }
+
+            const closeParen = sourceCode.getTokenAfter(jsxElement);
+
+            if (closeParen && closeParen.value === ")") {
+                // No empty lines before )
+                if (closeParen.loc.start.line - jsxElement.loc.end.line > 1) {
+                    const closeIndent = " ".repeat(closeParen.loc.start.column);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [jsxElement.range[1], closeParen.range[0]],
+                            "\n" + closeIndent,
+                        ),
+                        message: "No empty line before closing parenthesis",
+                        node: closeParen,
+                    });
+                }
+
+                // Check if )} are together
+                const closeBrace = sourceCode.getTokenAfter(closeParen);
+
+                if (closeBrace && closeBrace.value === "}") {
+                    const textBetween = sourceCode.text.slice(
+                        closeParen.range[1],
+                        closeBrace.range[0],
+                    );
+
+                    if (textBetween.includes("\n") || textBetween.includes(" ")) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [closeParen.range[1], closeBrace.range[0]],
+                                "",
+                            ),
+                            message: "Closing parenthesis and brace should be together",
+                            node: closeBrace,
+                        });
+                    }
+                }
+            }
+        };
+
+        const checkProperty = (node) => {
+            if (!node.value) return;
+            if (node.value.type !== "JSXElement" && node.value.type !== "JSXFragment") return;
+
+            // Check if value is wrapped in parentheses
+            const colonToken = sourceCode.getTokenAfter(node.key, (t) => t.value === ":");
+            const tokenAfterColon = sourceCode.getTokenAfter(colonToken);
+
+            if (!tokenAfterColon || tokenAfterColon.value !== "(") return;
+
+            const openParen = tokenAfterColon;
+            const jsxElement = node.value;
+
+            // Check if colon and ( are on same line
+            if (colonToken.loc.end.line !== openParen.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [colonToken.range[1], openParen.range[1]],
+                        " (",
+                    ),
+                    message: "Opening parenthesis should be on the same line as colon with a space",
+                    node: openParen,
+                });
+            }
+
+            // Check if JSX starts on same line as (
+            if (openParen.loc.end.line === jsxElement.loc.start.line) {
+                const jsxIndent = " ".repeat(node.key.loc.start.column + 4);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openParen.range[1], jsxElement.range[0]],
+                        "\n" + jsxIndent,
+                    ),
+                    message: "JSX should start on a new line after opening parenthesis",
+                    node: jsxElement,
+                });
+            } else if (jsxElement.loc.start.line - openParen.loc.end.line > 1) {
+                const jsxIndent = " ".repeat(jsxElement.loc.start.column);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openParen.range[1], jsxElement.range[0]],
+                        "\n" + jsxIndent,
+                    ),
+                    message: "No empty line after opening parenthesis",
+                    node: jsxElement,
+                });
+            }
+
+            const closeParen = sourceCode.getTokenAfter(jsxElement);
+
+            if (closeParen && closeParen.value === ")") {
+                if (closeParen.loc.start.line - jsxElement.loc.end.line > 1) {
+                    const closeIndent = " ".repeat(closeParen.loc.start.column);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [jsxElement.range[1], closeParen.range[0]],
+                            "\n" + closeIndent,
+                        ),
+                        message: "No empty line before closing parenthesis",
+                        node: closeParen,
+                    });
+                }
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkArrowFunction,
+            Property: checkProperty,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce opening parenthesis position for JSX in arrow functions and object properties" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const jsxLogicalExpressionSimplify = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkLogicalExpression = (node) => {
+            if (node.operator !== "&&" && node.operator !== "||") return;
+
+            const {
+                left,
+                right,
+            } = node;
+
+            if (right.type !== "JSXElement" && right.type !== "JSXFragment") return;
+
+            const leftText = sourceCode.getText(left);
+            const rightText = sourceCode.getText(right);
+
+            // Check if right side is single-line
+            if (right.loc.start.line !== right.loc.end.line) return;
+
+            // Check if currently multiline
+            if (node.loc.start.line === node.loc.end.line) return;
+
+            context.report({
+                fix: (fixer) => fixer.replaceText(
+                    node,
+                    `${leftText} ${node.operator} ${rightText}`,
+                ),
+                message: "Simple logical expression with single-line JSX should be on one line",
+                node,
+            });
+        };
+
+        return { LogicalExpression: checkLogicalExpression };
+    },
+    meta: {
+        docs: { description: "Simplify logical expressions in JSX when right side is single-line" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const arrowFunctionSimplify = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const isJsxAttributeArrow = (node) => {
+            let parent = node.parent;
+
+            if (parent && parent.type === "JSXExpressionContainer") {
+                parent = parent.parent;
+
+                if (parent && parent.type === "JSXAttribute") return true;
+            }
+
+            return false;
+        };
+
+        // Check if a call expression can be simplified to a single line
+        // e.g., dispatch(downloadEventPhoto(overlayImage)) or handler(value)
+        const canSimplifyToOneLine = (expr) => {
+            if (expr.type !== "CallExpression") return false;
+
+            const { arguments: args, callee } = expr;
+
+            // Callee must be simple identifier or member expression
+            if (callee.type !== "Identifier" && callee.type !== "MemberExpression") return false;
+
+            // No arguments - can simplify: fn()
+            if (args.length === 0) return true;
+
+            // Single argument
+            if (args.length === 1) {
+                const arg = args[0];
+
+                // Simple identifier: dispatch(action)
+                if (arg.type === "Identifier") return true;
+
+                // Simple literal: handler("value") or handler(123)
+                if (arg.type === "Literal") return true;
+
+                // Nested call with simple args: dispatch(downloadPhoto(id))
+                if (arg.type === "CallExpression") return canSimplifyToOneLine(arg);
+
+                // Member expression: dispatch(actions.doSomething)
+                if (arg.type === "MemberExpression") return true;
+            }
+
+            return false;
+        };
+
+        // Build simplified text for a call expression
+        const buildSimplifiedText = (expr) => {
+            if (expr.type !== "CallExpression") return sourceCode.getText(expr);
+
+            const calleeName = sourceCode.getText(expr.callee);
+            const argsText = expr.arguments.map((arg) => {
+                if (arg.type === "CallExpression") return buildSimplifiedText(arg);
+
+                return sourceCode.getText(arg);
+            }).join(", ");
+
+            return `${calleeName}(${argsText})`;
+        };
+
+        const checkArrowFunction = (node) => {
+            if (!isJsxAttributeArrow(node)) return;
+
+            if (node.body.type !== "BlockStatement") return;
+
+            const { body } = node.body;
+
+            if (body.length !== 1) return;
+
+            const statement = body[0];
+
+            if (statement.type !== "ExpressionStatement") return;
+
+            const expression = statement.expression;
+
+            // Check if already on single line
+            if (expression.loc.start.line === expression.loc.end.line) {
+                const expressionText = sourceCode.getText(expression);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(
+                        node.body,
+                        expressionText,
+                    ),
+                    message: "Arrow function with single simple statement should use expression body",
+                    node: node.body,
+                });
+
+                return;
+            }
+
+            // Check if multi-line expression can be simplified
+            if (canSimplifyToOneLine(expression)) {
+                const simplifiedText = buildSimplifiedText(expression);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(
+                        node.body,
+                        simplifiedText,
+                    ),
+                    message: "Arrow function with simple nested call should be simplified to one line",
+                    node: node.body,
+                });
+            }
+        };
+
+        return { ArrowFunctionExpression: checkArrowFunction };
+    },
+    meta: {
+        docs: { description: "Simplify arrow functions in JSX props with single statement block body" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const arrowFunctionBlockBody = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const isJsxAttributeArrow = (node) => {
+            let parent = node.parent;
+
+            if (parent && parent.type === "JSXExpressionContainer") {
+                parent = parent.parent;
+
+                if (parent && parent.type === "JSXAttribute") return true;
+            }
+
+            return false;
+        };
+
+        const checkArrowFunction = (node) => {
+            if (!isJsxAttributeArrow(node)) return;
+
+            // Only check expression bodies (not block bodies)
+            if (node.body.type === "BlockStatement") return;
+
+            const body = node.body;
+
+            // Skip JSX elements wrapped in parentheses - they're fine
+            if (body.type === "JSXElement" || body.type === "JSXFragment") return;
+
+            // Skip ConditionalExpression (ternary) that contains JSX - common pattern
+            if (body.type === "ConditionalExpression") return;
+
+            // Skip ObjectExpression - common pattern for sx prop: (theme) => ({...})
+            if (body.type === "ObjectExpression") return;
+
+            // Skip single-line CallExpression - common for event handlers: (e) => handler(e, "value")
+            // But wrap multiline CallExpression in parentheses: () => (\n    fn({ multiline })\n)
+            if (body.type === "CallExpression") {
+                const callIsOnSingleLine = body.loc.start.line === body.loc.end.line;
+
+                if (callIsOnSingleLine) return;
+
+                // Check if already wrapped in parentheses - skip if so
+                const arrowToken = sourceCode.getTokenBefore(body, (t) => t.value === "=>");
+
+                if (arrowToken) {
+                    const tokenAfterArrow = sourceCode.getTokenAfter(arrowToken);
+
+                    if (tokenAfterArrow && tokenAfterArrow.value === "(") {
+                        // Already wrapped in parentheses, skip
+                        return;
+                    }
+                }
+
+                // Multiline call expression in JSX prop should use parentheses for implicit return
+                const arrowLine = sourceCode.lines[node.loc.start.line - 1];
+                const arrowIndent = arrowLine.match(/^\s*/)[0];
+                const innerIndent = arrowIndent + "    ";
+                const bodyText = sourceCode.getText(body);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(
+                        node.body,
+                        `(\n${innerIndent}${bodyText}\n${arrowIndent})`,
+                    ),
+                    message: "Arrow function with multiline call should use parentheses for implicit return",
+                    node: node.body,
+                });
+
+                return;
+            }
+
+            // If expression spans multiple lines, wrap in parentheses for implicit return
+            if (body.loc.start.line !== body.loc.end.line) {
+                // Get the indentation of the arrow function
+                const arrowLine = sourceCode.lines[node.loc.start.line - 1];
+                const arrowIndent = arrowLine.match(/^\s*/)[0];
+                const innerIndent = arrowIndent + "    ";
+
+                // Get the body text and re-indent it
+                const bodyText = sourceCode.getText(body);
+
+                // Use parentheses for implicit return instead of block body with explicit return
+                const newBody = `(\n${innerIndent}${bodyText}\n${arrowIndent})`;
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(
+                        body,
+                        newBody,
+                    ),
+                    message: "Arrow function in JSX prop with multiline body should use parentheses",
+                    node: body,
+                });
+            }
+        };
+
+        return { ArrowFunctionExpression: checkArrowFunction };
+    },
+    meta: {
+        docs: { description: "Enforce parentheses for arrow functions in JSX props with multiline expressions (preserves implicit return)" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: Simplify arrow functions returning simple JSX to single line
+// export const X = ({ children }) => (
+//     <Sidebar>{children}</Sidebar>
+// );
+// becomes:
+// export const X = ({ children }) => <Sidebar>{children}</Sidebar>;
+const arrowFunctionSimpleJsx = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Check if JSX is simple enough to be on one line
+        const isSimpleJsx = (jsxNode) => {
+            if (jsxNode.type !== "JSXElement" && jsxNode.type !== "JSXFragment") return false;
+
+            // Check if JSX has no attributes or only simple attributes
+            if (jsxNode.type === "JSXElement" && jsxNode.openingElement.attributes.length > 1) {
+                return false;
+            }
+
+            // Check attributes are simple (no multiline expressions)
+            if (jsxNode.type === "JSXElement") {
+                for (const attr of jsxNode.openingElement.attributes) {
+                    if (attr.type === "JSXSpreadAttribute") return false;
+
+                    if (attr.value && attr.value.type === "JSXExpressionContainer") {
+                        const expr = attr.value.expression;
+
+                        // Skip complex expressions
+                        if (expr.type === "ObjectExpression" || expr.type === "ArrayExpression") {
+                            return false;
+                        }
+
+                        if (expr.type === "ArrowFunctionExpression" || expr.type === "FunctionExpression") {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            // Check children
+            const children = jsxNode.children.filter((child) => {
+                if (child.type === "JSXText") {
+                    return child.value.trim().length > 0;
+                }
+
+                return true;
+            });
+
+            // No children (self-closing) is simple
+            if (children.length === 0) return true;
+
+            if (children.length === 1) {
+                const child = children[0];
+
+                // Simple text like <Sidebar>text</Sidebar>
+                if (child.type === "JSXText") return true;
+
+                // Simple expression like {children} or {value}
+                if (child.type === "JSXExpressionContainer") {
+                    const expr = child.expression;
+
+                    if (expr.type === "Identifier") return true;
+
+                    if (expr.type === "MemberExpression") return true;
+
+                    if (expr.type === "Literal") return true;
+                }
+
+                // Nested JSX elements are NOT simple
+                // e.g., <DashboardLayout><Outlet /></DashboardLayout> is NOT simple
+            }
+
+            return false;
+        };
+
+        // Get simplified JSX text (without extra whitespace)
+        const getSimplifiedJsxText = (jsxNode) => {
+            const text = sourceCode.getText(jsxNode);
+
+            // Remove extra whitespace between tags
+            return text
+                .replace(/>\s+</g, "><")
+                .replace(/>\s+\{/g, ">{")
+                .replace(/\}\s+</g, "}<")
+                .replace(/\s+$/g, "")
+                .replace(/^\s+/g, "");
+        };
+
+        return {
+            ArrowFunctionExpression(node) {
+                const { body } = node;
+
+                // Only handle JSX bodies
+                if (body.type !== "JSXElement" && body.type !== "JSXFragment") return;
+
+                // Skip if already on one line
+                if (node.loc.start.line === node.loc.end.line) return;
+
+                // Check if JSX is simple
+                if (!isSimpleJsx(body)) return;
+
+                // Get the simplified JSX text
+                const jsxText = getSimplifiedJsxText(body);
+
+                // Check if result would be reasonably short (< 120 chars)
+                const arrowStart = sourceCode.getText(node).split("=>")[0] + "=> ";
+                const totalLength = arrowStart.length + jsxText.length + 1;
+
+                if (totalLength > 120) return;
+
+                // Check if there are parentheses around the body
+                const tokenBeforeBody = sourceCode.getTokenBefore(body);
+                const tokenAfterBody = sourceCode.getTokenAfter(body);
+                const hasParens = tokenBeforeBody
+                    && tokenBeforeBody.value === "("
+                    && tokenAfterBody
+                    && tokenAfterBody.value === ")";
+
+                if (hasParens) {
+                    // Replace from ( to ) with just the JSX
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [tokenBeforeBody.range[0], tokenAfterBody.range[1]],
+                            jsxText,
+                        ),
+                        message: "Simple JSX should be on same line as arrow function without parentheses",
+                        node: body,
+                    });
+                } else {
+                    // Just collapse the multiline JSX
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(
+                            body,
+                            jsxText,
+                        ),
+                        message: "Simple JSX should be on same line as arrow function",
+                        node: body,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Simplify arrow functions returning simple JSX to single line" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: JSX prop names should be camelCase
+// Exceptions:
+// - Component reference props (Icon, Component, FormComponent, etc.) can be PascalCase
+// - data-* and aria-* attributes use kebab-case by convention
+// - Spread attributes {...props} are allowed
+const jsxPropNamingConvention = {
+    create(context) {
+        const camelCaseRegex = /^[a-z][a-zA-Z0-9]*$/;
+
+        // Props that can be PascalCase because they reference components
+        const componentPropNames = [
+            "Icon",
+            "Component",
+            "FormComponent",
+            "Layout",
+            "Wrapper",
+            "Container",
+            "Provider",
+            "Element",
+            "Trigger",
+            "Content",
+            "Header",
+            "Footer",
+            "Body",
+            "Title",
+            "Overlay",
+            "Portal",
+            "Root",
+            "Item",
+            "Label",
+            "Input",
+            "Button",
+            "Action",
+            "Slot",
+        ];
+
+        return {
+            JSXAttribute(node) {
+                // Skip spread attributes (handled as JSXSpreadAttribute, not JSXAttribute)
+                if (!node.name) return;
+
+                const propName = node.name.type === "JSXIdentifier"
+                    ? node.name.name
+                    : node.name.name?.name;
+
+                if (!propName) return;
+
+                // Allow data-* and aria-* attributes (kebab-case by HTML convention)
+                if (propName.startsWith("data-") || propName.startsWith("aria-")) return;
+
+                // Allow component reference props (PascalCase)
+                if (componentPropNames.includes(propName)) return;
+
+                // Allow props ending with common component suffixes
+                const componentSuffixes = ["Icon", "Component", "Element", "Wrapper", "Container", "Layout", "Provider"];
+
+                if (componentSuffixes.some((suffix) => propName.endsWith(suffix) && propName !== suffix)) {
+                    return;
+                }
+
+                // Check if prop name is camelCase
+                if (!camelCaseRegex.test(propName)) {
+                    context.report({
+                        message: `JSX prop "${propName}" should be camelCase`,
+                        node: node.name,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce camelCase naming for JSX props, with exceptions for component references" },
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+const jsxStringValueTrim = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkJSXAttribute = (node) => {
+            if (!node.value || node.value.type !== "Literal" || typeof node.value.value !== "string") return;
+
+            const value = node.value.value;
+            const trimmed = value.trim();
+
+            if (value !== trimmed) {
+                const raw = sourceCode.getText(node.value);
+                const quote = raw[0];
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(
+                        node.value,
+                        `${quote}${trimmed}${quote}`,
+                    ),
+                    message: "JSX string value should not have leading or trailing whitespace",
+                    node: node.value,
+                });
+            }
+        };
+
+        return { JSXAttribute: checkJSXAttribute };
+    },
+    meta: {
+        docs: { description: "Disallow leading/trailing whitespace in JSX string values" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const noEmptyLinesInObjects = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkObject = (node) => {
+            const { properties } = node;
+
+            if (properties.length === 0) return;
+
+            const openBrace = sourceCode.getFirstToken(node);
+            const closeBrace = sourceCode.getLastToken(node);
+            const firstProp = properties[0];
+            const lastProp = properties[properties.length - 1];
+
+            // Check for empty line after opening brace
+            if (firstProp.loc.start.line - openBrace.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openBrace.range[1], firstProp.range[0]],
+                        "\n" + " ".repeat(firstProp.loc.start.column),
+                    ),
+                    message: "No empty line after opening brace",
+                    node: firstProp,
+                });
+            }
+
+            // Check for empty line before closing brace
+            if (closeBrace.loc.start.line - lastProp.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastProp.range[1], closeBrace.range[0]],
+                        "\n" + " ".repeat(closeBrace.loc.start.column),
+                    ),
+                    message: "No empty line before closing brace",
+                    node: lastProp,
+                });
+            }
+
+            // Check for empty lines between properties
+            for (let i = 0; i < properties.length - 1; i += 1) {
+                const current = properties[i];
+                const next = properties[i + 1];
+
+                if (next.loc.start.line - current.loc.end.line > 1) {
+                    let commaToken = sourceCode.getTokenAfter(current);
+
+                    while (commaToken && commaToken.value !== "," && commaToken.range[0] < next.range[0]) {
+                        commaToken = sourceCode.getTokenAfter(commaToken);
+                    }
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [commaToken && commaToken.value === "," ? commaToken.range[1] : current.range[1], next.range[0]],
+                            "\n" + " ".repeat(next.loc.start.column),
+                        ),
+                        message: "No empty line between object properties",
+                        node: next,
+                    });
+                }
+            }
+        };
+
+        return {
+            ObjectExpression: checkObject,
+            ObjectPattern: checkObject,
+        };
+    },
+    meta: {
+        docs: { description: "Disallow empty lines in objects" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const noEmptyLinesInJsx = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkJSXElement = (node) => {
+            const {
+                children,
+                closingElement,
+                openingElement,
+            } = node;
+
+            // Skip self-closing elements
+            if (!closingElement) return;
+
+            const filteredChildren = children.filter((c) => c.type !== "JSXText" || c.value.trim() !== "");
+
+            if (filteredChildren.length === 0) return;
+
+            const firstChild = filteredChildren[0];
+            const lastChild = filteredChildren[filteredChildren.length - 1];
+
+            // Check for empty line after opening tag
+            if (firstChild.loc.start.line - openingElement.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openingElement.range[1], firstChild.range[0]],
+                        "\n" + " ".repeat(firstChild.loc.start.column),
+                    ),
+                    message: "No empty line after opening JSX tag",
+                    node: firstChild,
+                });
+            }
+
+            // Check for empty line before closing tag
+            if (closingElement.loc.start.line - lastChild.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastChild.range[1], closingElement.range[0]],
+                        "\n" + " ".repeat(closingElement.loc.start.column),
+                    ),
+                    message: "No empty line before closing JSX tag",
+                    node: closingElement,
+                });
+            }
+        };
+
+        const isSingleLineAttr = (attr) => attr.loc.start.line === attr.loc.end.line;
+
+        const checkJSXOpeningElement = (node) => {
+            const {
+                attributes,
+                name,
+            } = node;
+
+            const elementName = sourceCode.getFirstToken(name);
+            const closingBracket = sourceCode.getLastToken(node);
+
+            if (attributes.length === 0) return;
+
+            const firstAttr = attributes[0];
+            const lastAttr = attributes[attributes.length - 1];
+            const isSingleLineElement = elementName.loc.start.line === closingBracket.loc.end.line;
+            const hasSimpleProps = attributes.length === 1 && isSingleLineAttr(firstAttr);
+
+            // Check for no space before closing bracket in non-self-closing element
+            if (!node.selfClosing && hasSimpleProps && isSingleLineElement) {
+                const tokenBeforeClosing = sourceCode.getTokenBefore(closingBracket);
+
+                if (tokenBeforeClosing) {
+                    const textBetween = sourceCode.text.slice(
+                        tokenBeforeClosing.range[1],
+                        closingBracket.range[0],
+                    );
+
+                    if (textBetween.includes(" ") || textBetween.includes("\n")) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [tokenBeforeClosing.range[1], closingBracket.range[0]],
+                                "",
+                            ),
+                            message: "No space before closing bracket in non-self-closing JSX element",
+                            node: closingBracket,
+                        });
+                    }
+                }
+            }
+
+            // Single simple prop on different line should be collapsed
+            if (attributes.length === 1 && isSingleLineAttr(firstAttr)) {
+                if (firstAttr.loc.start.line !== elementName.loc.end.line) {
+                    const attrText = sourceCode.getText(firstAttr);
+                    const isSelfClosing = node.selfClosing;
+                    let endRange = closingBracket.range[0];
+                    let closingText = "";
+
+                    if (isSelfClosing) {
+                        const slashToken = sourceCode.getTokenBefore(closingBracket);
+
+                        if (slashToken && slashToken.value === "/") {
+                            endRange = slashToken.range[0];
+                            closingText = " /";
+                        }
+                    }
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [elementName.range[1], endRange],
+                            ` ${attrText}${closingText}`,
+                        ),
+                        message: "Single simple JSX prop should be on the same line as element",
+                        node: firstAttr,
+                    });
+
+                    return;
+                }
+            }
+
+            if (firstAttr.loc.start.line - elementName.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [elementName.range[1], firstAttr.range[0]],
+                        "\n" + " ".repeat(firstAttr.loc.start.column),
+                    ),
+                    message: "No empty line after JSX element name",
+                    node: firstAttr,
+                });
+            }
+
+            let closingTokenStart = closingBracket.range[0];
+
+            let closingIndent = closingBracket.loc.start.column;
+
+            if (node.selfClosing) {
+                const slashToken = sourceCode.getTokenBefore(closingBracket);
+
+                if (slashToken && slashToken.value === "/") {
+                    closingTokenStart = slashToken.range[0];
+
+                    closingIndent = slashToken.loc.start.column;
+                }
+            }
+
+            if (closingBracket.loc.start.line - lastAttr.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastAttr.range[1], closingTokenStart],
+                        "\n" + " ".repeat(closingIndent),
+                    ),
+                    message: "No empty line before closing bracket",
+                    node: lastAttr,
+                });
+            }
+
+            for (let i = 0; i < attributes.length - 1; i += 1) {
+                const current = attributes[i];
+
+                const next = attributes[i + 1];
+
+                if (next.loc.start.line - current.loc.end.line > 1) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [current.range[1], next.range[0]],
+                            "\n" + " ".repeat(next.loc.start.column),
+                        ),
+                        message: "No empty line between JSX props",
+                        node: next,
+                    });
+                }
+            }
+        };
+
+        const checkReturnStatement = (node) => {
+            const arg = node.argument;
+
+            if (!arg) return;
+
+            const sourceText = sourceCode.getText();
+
+            // Check for empty line after opening parenthesis
+            const textBefore = sourceText.slice(
+                node.range[0],
+                arg.range[0],
+            );
+
+            const openParenPos = textBefore.indexOf("(");
+
+            if (openParenPos !== -1) {
+                const afterParen = textBefore.slice(openParenPos + 1);
+
+                if (afterParen.split("\n").length > 2) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [node.range[0] + openParenPos + 1, arg.range[0]],
+                            "\n" + " ".repeat(arg.loc.start.column),
+                        ),
+                        message: "No empty line allowed after opening parenthesis in return",
+                        node: arg,
+                    });
+                }
+            }
+
+            // Check for empty line before closing parenthesis
+            const textAfter = sourceText.slice(
+                arg.range[1],
+                node.range[1],
+            );
+
+            const closeParenPos = textAfter.lastIndexOf(")");
+
+            if (closeParenPos !== -1) {
+                const beforeParen = textAfter.slice(0, closeParenPos);
+
+                if (beforeParen.split("\n").length > 2) {
+                    const closeParenIndex = arg.range[1] + closeParenPos;
+
+                    const indent = sourceText.slice(
+                        0,
+                        closeParenIndex,
+                    ).split("\n").pop().match(/^\s*/)[0];
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [arg.range[1], closeParenIndex],
+                            "\n" + indent,
+                        ),
+                        message: "No empty line allowed before closing parenthesis in return",
+                        node,
+                    });
+                }
+            }
+        };
+
+        const checkArrowFunction = (node) => {
+            if (!node.body || node.body.type === "BlockStatement") return;
+
+            const body = node.body;
+            const arrowToken = sourceCode.getTokenBefore(body, (t) => t.value === "=>");
+
+            if (!arrowToken) return;
+
+            const tokenAfterArrow = sourceCode.getTokenAfter(arrowToken);
+
+            // Check for opening parenthesis after arrow
+            if (tokenAfterArrow && tokenAfterArrow.value === "(") {
+                // Check for empty line after (
+                if (body.loc.start.line - tokenAfterArrow.loc.end.line > 1) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [tokenAfterArrow.range[1], body.range[0]],
+                            "\n" + " ".repeat(body.loc.start.column),
+                        ),
+                        message: "No empty line allowed after opening parenthesis in arrow function",
+                        node: body,
+                    });
+                }
+            }
+
+            const tokenAfter = sourceCode.getTokenAfter(body);
+
+            if (tokenAfter && tokenAfter.value === ")" && tokenAfter.loc.start.line - body.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [body.range[1], tokenAfter.range[0]],
+                        "\n" + " ".repeat(tokenAfter.loc.start.column),
+                    ),
+                    message: "No empty line allowed before closing parenthesis in arrow function",
+                    node: body,
+                });
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkArrowFunction,
+            JSXElement: checkJSXElement,
+            JSXOpeningElement: checkJSXOpeningElement,
+            ReturnStatement: checkReturnStatement,
+        };
+    },
+    meta: {
+        docs: { description: "Disallow empty lines in JSX" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const noEmptyLinesInFunctionCalls = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const isSimpleArg = (arg) => [
+            "Literal",
+            "Identifier",
+            "MemberExpression",
+            "TemplateLiteral",
+        ].includes(arg.type);
+
+        const isSingleLineArg = (arg) => arg.loc.start.line === arg.loc.end.line;
+
+        const isSinglePropertyObject = (arg) => arg.type === "ObjectExpression" && arg.properties.length === 1;
+
+        const getCleanObjectText = (arg) => {
+            const prop = arg.properties[0];
+
+            if (prop.type === "SpreadElement") return sourceCode.getText(arg);
+
+            const keyText = sourceCode.getText(prop.key);
+            const valueText = sourceCode.getText(prop.value);
+
+            return `{ ${keyText}: ${valueText} }`;
+        };
+
+        const checkCallExpression = (node) => {
+            const args = node.arguments;
+
+            if (args.length === 0) return;
+
+            const openParen = sourceCode.getTokenAfter(
+                node.callee,
+                (token) => token.value === "(",
+            );
+            const closeParen = sourceCode.getLastToken(node);
+
+            if (!openParen || !closeParen || closeParen.value !== ")") return;
+
+            const firstArg = args[0];
+            const lastArg = args[args.length - 1];
+
+            // Single simple argument on different line should be collapsed
+            if (args.length === 1 && (isSimpleArg(firstArg) || isSinglePropertyObject(firstArg)) && isSingleLineArg(firstArg)) {
+                if (firstArg.loc.start.line !== openParen.loc.end.line) {
+                    const argText = isSinglePropertyObject(firstArg)
+                        ? getCleanObjectText(firstArg)
+                        : sourceCode.getText(firstArg);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openParen.range[1], closeParen.range[0]],
+                            argText,
+                        ),
+                        message: "Single simple argument should be on the same line as function call",
+                        node: firstArg,
+                    });
+
+                    return;
+                }
+            }
+
+            if (firstArg.loc.start.line - openParen.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openParen.range[1], firstArg.range[0]],
+                        "\n" + " ".repeat(firstArg.loc.start.column),
+                    ),
+                    message: "No empty line after opening parenthesis in function call",
+                    node: firstArg,
+                });
+            }
+
+            if (closeParen.loc.start.line - lastArg.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastArg.range[1], closeParen.range[0]],
+                        "\n" + " ".repeat(closeParen.loc.start.column),
+                    ),
+                    message: "No empty line before closing parenthesis in function call",
+                    node: lastArg,
+                });
+            }
+
+            for (let i = 0; i < args.length - 1; i += 1) {
+                const current = args[i];
+                const next = args[i + 1];
+
+                if (next.loc.start.line - current.loc.end.line > 1) {
+                    const commaToken = sourceCode.getTokenAfter(
+                        current,
+                        (token) => token.value === ",",
+                    );
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [commaToken.range[1], next.range[0]],
+                            "\n" + " ".repeat(next.loc.start.column),
+                        ),
+                        message: "No empty line between function arguments",
+                        node: next,
+                    });
+                }
+            }
+        };
+
+        return { CallExpression: checkCallExpression };
+    },
+    meta: {
+        docs: { description: "Disallow empty lines in function calls and enforce single simple argument on same line" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const multilineArgumentNewline = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const reactHooks = [
+            "useEffect",
+            "useCallback",
+            "useMemo",
+            "useLayoutEffect",
+            "useImperativeHandle",
+            "useReducer",
+            "useRef",
+            "useState",
+            "useContext",
+            "useDebugValue",
+            "useDeferredValue",
+            "useTransition",
+            "useId",
+            "useSyncExternalStore",
+            "useInsertionEffect",
+        ];
+
+        const isReactHook = (node) => {
+            if (node.callee.type === "Identifier") {
+                return reactHooks.includes(node.callee.name);
+            }
+
+            return false;
+        };
+
+        const hasMultilineArg = (args) => args.some((arg) => arg.loc.start.line !== arg.loc.end.line);
+
+        const checkCallExpression = (node) => {
+            // Skip React hooks
+            if (isReactHook(node)) return;
+
+            const args = node.arguments;
+
+            if (args.length === 0) return;
+
+            // Skip if only argument is an object expression (let object-curly-newline handle it)
+            if (args.length === 1 && args[0].type === "ObjectExpression") return;
+
+            // Skip if only argument is an array expression (fn([{...}]) format)
+            if (args.length === 1 && args[0].type === "ArrayExpression") return;
+
+            // Skip if only argument is an arrow function (callback)
+            if (args.length === 1 && args[0].type === "ArrowFunctionExpression") return;
+
+            // Skip styled component pattern: styled(X)(({ theme }) => ({...}))
+            // The arrow function returning an object should stay on same line
+            if (args.length === 1
+                && args[0].type === "ArrowFunctionExpression"
+                && args[0].body.type === "ObjectExpression") return;
+
+            // Check if any argument is multiline
+            if (!hasMultilineArg(args)) return;
+
+            const openParen = sourceCode.getTokenAfter(
+                node.callee,
+                (token) => token.value === "(",
+            );
+            const closeParen = sourceCode.getLastToken(node);
+
+            if (!openParen || !closeParen || closeParen.value !== ")") return;
+
+            const firstArg = args[0];
+            const lastArg = args[args.length - 1];
+
+            // Calculate indent based on the opening paren position, not the arg position
+            const baseIndent = openParen.loc.start.column;
+            const argIndent = " ".repeat(baseIndent + 4);
+            const parenIndent = " ".repeat(baseIndent);
+
+            // First arg should be on new line
+            if (openParen.loc.end.line === firstArg.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openParen.range[1], firstArg.range[0]],
+                        "\n" + argIndent,
+                    ),
+                    message: "Multiline argument should start on its own line",
+                    node: firstArg,
+                });
+            }
+
+            // Closing paren should be on its own line
+            if (closeParen.loc.start.line === lastArg.loc.end.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastArg.range[1], closeParen.range[0]],
+                        "\n" + parenIndent,
+                    ),
+                    message: "Closing parenthesis should be on its own line when argument is multiline",
+                    node: closeParen,
+                });
+            }
+
+            // Each arg should be on its own line
+            for (let i = 0; i < args.length - 1; i += 1) {
+                const current = args[i];
+                const next = args[i + 1];
+
+                if (current.loc.end.line === next.loc.start.line) {
+                    const commaToken = sourceCode.getTokenAfter(
+                        current,
+                        (token) => token.value === ",",
+                    );
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [commaToken.range[1], next.range[0]],
+                            "\n" + argIndent,
+                        ),
+                        message: "Each argument should be on its own line when any argument is multiline",
+                        node: next,
+                    });
+                }
+            }
+        };
+
+        return { CallExpression: checkCallExpression };
+    },
+    meta: {
+        docs: { description: "Enforce newlines for function calls with multiline arguments" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const noEmptyLinesInFunctionParams = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkFunction = (node) => {
+            const params = node.params;
+
+            if (params.length === 0) return;
+
+            const firstParam = params[0];
+            const lastParam = params[params.length - 1];
+
+            // Find opening paren (could be after async keyword for async functions)
+            let openParen = sourceCode.getFirstToken(node);
+
+            while (openParen && openParen.value !== "(") {
+                openParen = sourceCode.getTokenAfter(openParen);
+            }
+
+            if (!openParen) return;
+
+            const closeParen = sourceCode.getTokenAfter(lastParam, (t) => t.value === ")");
+
+            if (!closeParen) return;
+
+            if (firstParam.loc.start.line - openParen.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openParen.range[1], firstParam.range[0]],
+                        "\n" + " ".repeat(firstParam.loc.start.column),
+                    ),
+                    message: "No empty line after opening parenthesis in function parameters",
+                    node: firstParam,
+                });
+            }
+
+            if (closeParen.loc.start.line - lastParam.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastParam.range[1], closeParen.range[0]],
+                        "\n" + " ".repeat(closeParen.loc.start.column),
+                    ),
+                    message: "No empty line before closing parenthesis in function parameters",
+                    node: lastParam,
+                });
+            }
+
+            for (let i = 0; i < params.length - 1; i += 1) {
+                const current = params[i];
+                const next = params[i + 1];
+
+                if (next.loc.start.line - current.loc.end.line > 1) {
+                    const commaToken = sourceCode.getTokenAfter(
+                        current,
+                        (token) => token.value === ",",
+                    );
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [commaToken.range[1], next.range[0]],
+                            "\n" + " ".repeat(next.loc.start.column),
+                        ),
+                        message: "No empty line between function parameters",
+                        node: next,
+                    });
+                }
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkFunction,
+            FunctionDeclaration: checkFunction,
+            FunctionExpression: checkFunction,
+        };
+    },
+    meta: {
+        docs: { description: "Disallow empty lines in function parameters" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const noEmptyLinesInSwitchCases = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkSwitchCaseHandler = (node) => {
+            const {
+                consequent,
+                test,
+            } = node;
+
+            const colon = sourceCode.getTokenAfter(
+                test || sourceCode.getFirstToken(node),
+                (t) => t.value === ":",
+            );
+
+            if (consequent.length > 0) {
+                const firstStatement = consequent[0];
+
+                const tokensBetween = sourceCode.getTokensBetween(
+                    colon,
+                    firstStatement,
+                    { includeComments: true },
+                );
+
+                if (tokensBetween.length === 0 && firstStatement.loc.start.line - colon.loc.end.line > 1) {
+                    context.report({
+                        fix(fixer) {
+                            return fixer.replaceTextRange(
+                                [colon.range[1], firstStatement.range[0]],
+                                `\n${" ".repeat(firstStatement.loc.start.column)}`,
+                            );
+                        },
+                        message: "Empty line not allowed at the beginning of case logic",
+                        node: firstStatement,
+                    });
+                }
+            }
+        };
+
+        const checkSwitchStatementHandler = (node) => {
+            const { cases } = node;
+
+            for (let i = 0; i < cases.length - 1; i += 1) {
+                const currentCase = cases[i];
+
+                const nextCase = cases[i + 1];
+
+                if (currentCase.consequent.length === 0) {
+                    const colon = sourceCode.getTokenAfter(
+                        currentCase.test || sourceCode.getFirstToken(currentCase),
+                        (t) => t.value === ":",
+                    );
+
+                    const tokensBetween = sourceCode.getTokensBetween(
+                        colon,
+                        nextCase,
+                        { includeComments: true },
+                    );
+
+                    if (tokensBetween.length === 0 && nextCase.loc.start.line - colon.loc.end.line > 1) {
+                        context.report({
+                            fix(fixer) {
+                                return fixer.replaceTextRange(
+                                    [colon.range[1], nextCase.range[0]],
+                                    `\n${" ".repeat(nextCase.loc.start.column)}`,
+                                );
+                            },
+                            message: "Empty line not allowed between cases",
+                            node: nextCase,
+                        });
+                    }
+                }
+            }
+        };
+
+        return {
+            SwitchCase: checkSwitchCaseHandler,
+            SwitchStatement: checkSwitchStatementHandler,
+        };
+    },
+    meta: {
+        docs: { description: "Prevent empty lines at the beginning of switch case logic or between cases" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const objectPropertyPerLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkObject = (node) => {
+            const { properties } = node;
+
+            if (properties.length < 2) return;
+
+            for (let i = 0; i < properties.length - 1; i += 1) {
+                const current = properties[i];
+                const next = properties[i + 1];
+
+                if (current.loc.end.line === next.loc.start.line) {
+                    const commaToken = sourceCode.getTokenAfter(current);
+
+                    context.report({
+                        fix: (fixer) => {
+                            const indent = " ".repeat(current.loc.start.column);
+
+                            return fixer.replaceTextRange(
+                                [commaToken.range[1], next.range[0]],
+                                "\n" + indent,
+                            );
+                        },
+                        message: "Each property should be on its own line",
+                        node: next,
+                    });
+                }
+            }
+        };
+
+        return {
+            ObjectExpression: checkObject,
+            ObjectPattern: checkObject,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce each property on its own line when object has 2+ properties" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const objectPropertyValueFormat = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkProperty = (node) => {
+            // Skip shorthand properties (no colon)
+            if (node.shorthand) return;
+
+            // Skip computed properties (e.g., [key]: value)
+            if (node.computed) return;
+
+            const colonToken = sourceCode.getTokenAfter(node.key, (t) => t.value === ":");
+
+            if (!colonToken) return;
+
+            const valueNode = node.value;
+
+            // Check for missing space after colon
+            const textAfterColon = sourceCode.text.slice(colonToken.range[1], colonToken.range[1] + 1);
+
+            if (textAfterColon !== " " && textAfterColon !== "\n") {
+                context.report({
+                    fix: (fixer) => fixer.insertTextAfter(colonToken, " "),
+                    message: "Missing space after colon in object property",
+                    node: colonToken,
+                });
+
+                return;
+            }
+
+            // Handle arrow functions and function expressions - ensure they start on same line
+            if (valueNode.type === "ArrowFunctionExpression" || valueNode.type === "FunctionExpression") {
+                if (valueNode.loc.start.line > colonToken.loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [colonToken.range[1], valueNode.range[0]],
+                            " ",
+                        ),
+                        message: "Arrow function should start on the same line as the colon",
+                        node: valueNode,
+                    });
+                }
+
+                return;
+            }
+
+            // Handle JSX elements - check for simple vs complex
+            if (valueNode.type === "JSXElement" || valueNode.type === "JSXFragment") {
+                const tokenAfterColon = sourceCode.getTokenAfter(colonToken);
+                const isWrappedInParens = tokenAfterColon && tokenAfterColon.value === "(";
+
+                // Check if JSX is simple (single element with only text/whitespace children, no attributes)
+                const isSimpleJsx = (jsxNode) => {
+                    if (jsxNode.type === "JSXFragment") return false;
+
+                    // Has attributes - not simple
+                    if (jsxNode.openingElement.attributes.length > 0) return false;
+
+                    const children = jsxNode.children || [];
+
+                    // Filter out whitespace-only text nodes
+                    const meaningfulChildren = children.filter((child) => {
+                        if (child.type === "JSXText") {
+                            return child.value.trim().length > 0;
+                        }
+
+                        return true;
+                    });
+
+                    // No meaningful children or only text - simple
+                    if (meaningfulChildren.length === 0) return true;
+
+                    if (meaningfulChildren.length === 1 && meaningfulChildren[0].type === "JSXText") {
+                        return true;
+                    }
+
+                    return false;
+                };
+
+                // Build collapsed JSX string for simple elements
+                const getCollapsedJsx = (jsxNode) => {
+                    const tagName = jsxNode.openingElement.name.name;
+                    const children = jsxNode.children || [];
+                    const textContent = children
+                        .filter((child) => child.type === "JSXText")
+                        .map((child) => child.value.trim())
+                        .join("")
+                        .trim();
+
+                    if (textContent) {
+                        return `<${tagName}>${textContent}</${tagName}>`;
+                    }
+
+                    return `<${tagName} />`;
+                };
+
+                const jsxIsSimple = isSimpleJsx(valueNode);
+
+                if (jsxIsSimple) {
+                    const collapsedJsx = getCollapsedJsx(valueNode);
+                    const currentText = sourceCode.getText(valueNode);
+
+                    // Check if already correctly formatted (inline, no parens, collapsed)
+                    const isAlreadyCorrect = currentText === collapsedJsx
+                        && !isWrappedInParens
+                        && colonToken.loc.end.line === valueNode.loc.start.line;
+
+                    if (!isAlreadyCorrect) {
+                        // Check if there's a comma after
+                        let tokenAfterValue = sourceCode.getTokenAfter(valueNode);
+
+                        if (isWrappedInParens) {
+                            const closeParen = sourceCode.getTokenAfter(valueNode);
+
+                            tokenAfterValue = sourceCode.getTokenAfter(closeParen);
+                        }
+
+                        const hasCommaAfter = tokenAfterValue && tokenAfterValue.value === ",";
+                        const closeParen = isWrappedInParens ? sourceCode.getTokenAfter(valueNode) : null;
+                        const endRange = hasCommaAfter
+                            ? tokenAfterValue.range[1]
+                            : closeParen ? closeParen.range[1] : valueNode.range[1];
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [colonToken.range[1], endRange],
+                                ` ${collapsedJsx}${hasCommaAfter ? "," : ""}`,
+                            ),
+                            message: "Simple JSX should be inline with property",
+                            node: valueNode,
+                        });
+                    }
+
+                    return;
+                }
+
+                // Complex JSX - must be wrapped in parentheses if multi-line
+                const jsxSpansMultipleLines = valueNode.loc.start.line !== valueNode.loc.end.line;
+
+                if (jsxSpansMultipleLines && !isWrappedInParens) {
+                    const jsxText = sourceCode.getText(valueNode);
+                    const indent = " ".repeat(colonToken.loc.start.column);
+
+                    // Check if there's a comma after the JSX
+                    const tokenAfterValue = sourceCode.getTokenAfter(valueNode);
+                    const hasCommaAfter = tokenAfterValue && tokenAfterValue.value === ",";
+                    const endRange = hasCommaAfter ? tokenAfterValue.range[1] : valueNode.range[1];
+                    const commaStr = hasCommaAfter ? "," : "";
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [colonToken.range[1], endRange],
+                            ` (\n${indent}    ${jsxText.split("\n").join("\n" + indent + "    ")}\n${indent})${commaStr}`,
+                        ),
+                        message: "Multi-line JSX in object property must be wrapped in parentheses",
+                        node: valueNode,
+                    });
+                }
+
+                return;
+            }
+
+            // Check if value is on the same line as the colon (skip multiline objects/arrays)
+            if (valueNode.loc.start.line > colonToken.loc.end.line) {
+                // Skip if value is a multiline object or array
+                if (valueNode.type === "ObjectExpression" || valueNode.type === "ArrayExpression") {
+                    if (valueNode.loc.start.line !== valueNode.loc.end.line) return;
+                }
+
+                // Skip parenthesized expressions
+                const tokenAfterColon = sourceCode.getTokenAfter(colonToken);
+
+                if (tokenAfterColon && tokenAfterColon.value === "(") return;
+
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [colonToken.range[1], valueNode.range[0]],
+                        " ",
+                    ),
+                    message: "Property value should be on the same line as the colon",
+                    node: valueNode,
+                });
+            }
+        };
+
+        return { Property: checkProperty };
+    },
+    meta: {
+        docs: { description: "Enforce property value on same line as colon with proper spacing" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const hookDepsPerLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const hookNames = [
+            "useEffect",
+            "useCallback",
+            "useMemo",
+            "useLayoutEffect",
+            "useImperativeHandle",
+        ];
+
+        const checkHookCall = (node) => {
+            // Skip non-hook calls
+            if (node.callee.type !== "Identifier" || !hookNames.includes(node.callee.name)) {
+                return;
+            }
+
+            // Get the dependencies array (last argument for hooks)
+            const depsArg = node.arguments[node.arguments.length - 1];
+
+            // Skip if no deps array or not an array
+            if (!depsArg || depsArg.type !== "ArrayExpression") {
+                return;
+            }
+
+            const elements = depsArg.elements.filter(Boolean);
+
+            if (elements.length === 0) return;
+
+            const openBracket = sourceCode.getFirstToken(depsArg);
+            const closeBracket = sourceCode.getLastToken(depsArg);
+            const firstElement = elements[0];
+            const lastElement = elements[elements.length - 1];
+
+            // If 2 or fewer dependencies, they should be on the same line
+            if (elements.length <= 2) {
+                const isMultiLine = openBracket.loc.end.line !== closeBracket.loc.start.line;
+
+                if (isMultiLine) {
+                    const elementsText = elements.map((el) => sourceCode.getText(el)).join(", ");
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBracket.range[1], closeBracket.range[0]],
+                            elementsText,
+                        ),
+                        message: "Dependencies should be on same line when 2 or fewer",
+                        node: depsArg,
+                    });
+                }
+
+                return;
+            }
+
+            // More than 2 dependencies - each on its own line
+            const elementIndent = " ".repeat(openBracket.loc.start.column + 4);
+            const bracketIndent = " ".repeat(openBracket.loc.start.column);
+
+            if (openBracket.loc.end.line === firstElement.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openBracket.range[1], firstElement.range[0]],
+                        "\n" + elementIndent,
+                    ),
+                    message: "First dependency should be on its own line when more than 2",
+                    node: firstElement,
+                });
+            }
+
+            if (closeBracket.loc.start.line === lastElement.loc.end.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastElement.range[1], closeBracket.range[0]],
+                        ",\n" + bracketIndent,
+                    ),
+                    message: "Closing bracket should be on its own line when more than 2 dependencies",
+                    node: closeBracket,
+                });
+            }
+
+            for (let i = 0; i < elements.length - 1; i += 1) {
+                const current = elements[i];
+                const next = elements[i + 1];
+
+                if (current.loc.end.line === next.loc.start.line) {
+                    const commaToken = sourceCode.getTokenAfter(current);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [commaToken.range[1], next.range[0]],
+                            "\n" + elementIndent,
+                        ),
+                        message: "Each dependency should be on its own line when more than 2",
+                        node: next,
+                    });
+                }
+            }
+        };
+
+        return { CallExpression: checkHookCall };
+    },
+    meta: {
+        docs: { description: "Enforce each hook dependency on its own line when more than 2 dependencies" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const functionParamsPerLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const getCleanParamText = (param) => {
+            if (param.type === "ObjectPattern") {
+                const props = param.properties.map((prop) => {
+                    if (prop.type === "RestElement") {
+                        return `...${prop.argument.name}`;
+                    }
+
+                    const key = sourceCode.getText(prop.key);
+                    const value = prop.value ? sourceCode.getText(prop.value) : key;
+
+                    return prop.shorthand ? key : `${key}: ${value}`;
+                });
+
+                return `{ ${props.join(", ")} }`;
+            }
+
+            if (param.type === "ArrayPattern") {
+                const elems = param.elements.map((el) => {
+                    if (el === null) return "";
+
+                    return getCleanParamText(el);
+                });
+
+                return `[${elems.join(", ")}]`;
+            }
+
+            if (param.type === "AssignmentPattern") {
+                const leftText = getCleanParamText(param.left);
+                const rightText = sourceCode.getText(param.right);
+
+                return `${leftText} = ${rightText}`;
+            }
+
+            if (param.type === "RestElement") {
+                return `...${param.argument.name}`;
+            }
+
+            return sourceCode.getText(param);
+        };
+
+        // Returns true only if any param has 2+ destructured properties
+        const hasComplexDestructuredParam = (params) => params.some((param) => {
+            let pattern = param;
+
+            if (param.type === "AssignmentPattern") {
+                pattern = param.left;
+            }
+
+            if (pattern.type === "ObjectPattern") {
+                return pattern.properties.length >= 2;
+            }
+
+            if (pattern.type === "ArrayPattern") {
+                const elements = pattern.elements.filter((el) => el !== null);
+
+                return elements.length >= 2;
+            }
+
+            return false;
+        });
+
+        const checkDestructuredParam = (param, baseIndent) => {
+            let pattern = param;
+
+            if (param.type === "AssignmentPattern") {
+                pattern = param.left;
+            }
+
+            // Only enforce multi-line for 2+ destructured properties
+            if (pattern.type === "ObjectPattern") {
+                const properties = pattern.properties;
+
+                if (properties.length < 2) return;
+
+                const openBrace = sourceCode.getFirstToken(pattern);
+                const closeBrace = sourceCode.getLastToken(pattern);
+                const propIndent = " ".repeat(baseIndent + 4);
+                const braceIndent = " ".repeat(baseIndent);
+
+                if (openBrace.loc.end.line === properties[0].loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[1], properties[0].range[0]],
+                            "\n" + propIndent,
+                        ),
+                        message: "First destructured property should be on its own line when 2+ properties",
+                        node: properties[0],
+                    });
+                }
+
+                if (closeBrace.loc.start.line === properties[properties.length - 1].loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [properties[properties.length - 1].range[1], closeBrace.range[0]],
+                            ",\n" + braceIndent,
+                        ),
+                        message: "Closing brace should be on its own line when 2+ properties",
+                        node: closeBrace,
+                    });
+                }
+
+                for (let i = 0; i < properties.length - 1; i += 1) {
+                    const current = properties[i];
+
+                    const next = properties[i + 1];
+
+                    if (current.loc.end.line === next.loc.start.line) {
+                        const commaToken = sourceCode.getTokenAfter(
+                            current,
+                            (token) => token.value === ",",
+                        );
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [commaToken.range[1], next.range[0]],
+                                "\n" + propIndent,
+                            ),
+                            message: "Each destructured property should be on its own line when 2+ properties",
+                            node: next,
+                        });
+                    }
+                }
+            }
+
+            // Only enforce multi-line for 2+ destructured array elements
+            if (pattern.type === "ArrayPattern") {
+                const elements = pattern.elements.filter((el) => el !== null);
+
+                if (elements.length < 2) return;
+
+                const openBracket = sourceCode.getFirstToken(pattern);
+                const closeBracket = sourceCode.getLastToken(pattern);
+                const elemIndent = " ".repeat(baseIndent + 4);
+                const bracketIndent = " ".repeat(baseIndent);
+
+                if (openBracket.loc.end.line === elements[0].loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBracket.range[1], elements[0].range[0]],
+                            "\n" + elemIndent,
+                        ),
+                        message: "First destructured element should be on its own line when 2+ elements",
+                        node: elements[0],
+                    });
+                }
+
+                if (closeBracket.loc.start.line === elements[elements.length - 1].loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [elements[elements.length - 1].range[1], closeBracket.range[0]],
+                            ",\n" + bracketIndent,
+                        ),
+                        message: "Closing bracket should be on its own line when 2+ elements",
+                        node: closeBracket,
+                    });
+                }
+
+                for (let i = 0; i < elements.length - 1; i += 1) {
+                    const current = elements[i];
+                    const next = elements[i + 1];
+
+                    if (current.loc.end.line === next.loc.start.line) {
+                        const commaToken = sourceCode.getTokenAfter(
+                            current,
+                            (token) => token.value === ",",
+                        );
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [commaToken.range[1], next.range[0]],
+                                "\n" + elemIndent,
+                            ),
+                            message: "Each destructured element should be on its own line when 2+ elements",
+                            node: next,
+                        });
+                    }
+                }
+            }
+        };
+
+        // Check if arrow function is a callback argument
+        const isCallbackArrow = (node) => {
+            if (node.type !== "ArrowFunctionExpression") return false;
+
+            const { parent } = node;
+
+            return parent && parent.type === "CallExpression" && parent.arguments.includes(node);
+        };
+
+        const checkFunction = (node) => {
+            const params = node.params;
+
+            if (params.length === 0) return;
+
+            const isCallback = isCallbackArrow(node);
+
+            // Find opening paren
+            let openParen = sourceCode.getFirstToken(node);
+
+            while (openParen && openParen.value !== "(") {
+                openParen = sourceCode.getTokenAfter(openParen);
+            }
+
+            if (!openParen) return;
+
+            const lastParam = params[params.length - 1];
+            const closeParen = sourceCode.getTokenAfter(lastParam, (t) => t.value === ")");
+
+            if (!closeParen) return;
+
+            const firstParam = params[0];
+            const isMultiLine = openParen.loc.end.line !== closeParen.loc.start.line;
+            const paramsText = params.map((p) => getCleanParamText(p)).join(", ");
+            const currentText = sourceCode.text.slice(
+                openParen.range[1],
+                closeParen.range[0],
+            );
+
+            // Callback arrow functions with 2+ simple params: each param on its own line
+            if (isCallback && params.length >= 2 && !hasComplexDestructuredParam(params)) {
+                // Check if all params are simple identifiers (not destructuring)
+                const allSimpleParams = params.every((p) => p.type === "Identifier");
+
+                if (allSimpleParams) {
+                    // Calculate proper indent based on opening paren position
+                    const paramIndent = " ".repeat(openParen.loc.start.column + 4);
+                    const parenIndent = " ".repeat(openParen.loc.start.column);
+
+                    // Check if first param is on same line as opening paren
+                    if (openParen.loc.end.line === firstParam.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openParen.range[1], firstParam.range[0]],
+                                "\n" + paramIndent,
+                            ),
+                            message: "Callback arrow with 2+ params: first param should be on its own line",
+                            node: firstParam,
+                        });
+                    }
+
+                    // Check if closing paren is on same line as last param
+                    if (closeParen.loc.start.line === lastParam.loc.end.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [lastParam.range[1], closeParen.range[0]],
+                                ",\n" + parenIndent,
+                            ),
+                            message: "Callback arrow with 2+ params: closing paren should be on its own line",
+                            node: closeParen,
+                        });
+                    }
+
+                    // Check each param is on its own line
+                    for (let i = 0; i < params.length - 1; i += 1) {
+                        const current = params[i];
+                        const next = params[i + 1];
+
+                        if (current.loc.end.line === next.loc.start.line) {
+                            const commaToken = sourceCode.getTokenAfter(
+                                current,
+                                (token) => token.value === ",",
+                            );
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [commaToken.range[1], next.range[0]],
+                                    "\n" + paramIndent,
+                                ),
+                                message: "Callback arrow with 2+ params: each param should be on its own line",
+                                node: next,
+                            });
+                        }
+                    }
+
+                    return;
+                }
+            }
+
+            // Skip other callback arrow functions (single param handled by opening-brackets-same-line)
+            if (isCallback) return;
+
+            // 1-2 simple params without complex destructuring: keep on same line
+            if (params.length <= 2 && !hasComplexDestructuredParam(params)) {
+                const needsSpacingFix = !isMultiLine && params.length > 1 && currentText !== paramsText;
+
+                if (isMultiLine || needsSpacingFix) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openParen.range[1], closeParen.range[0]],
+                            paramsText,
+                        ),
+                        message: isMultiLine
+                            ? "Function parameters should be on same line when 2 or fewer without complex destructuring"
+                            : "Missing space after comma between parameters",
+                        node,
+                    });
+                }
+
+                return;
+            }
+
+            // 3+ params OR has destructuring: each param on its own line
+            const paramIndent = " ".repeat(firstParam.loc.start.column);
+            const parenIndent = " ".repeat(openParen.loc.start.column);
+
+            // Skip opening brace check for single ObjectPattern param (handled by opening-brackets-same-line)
+            const isSingleObjectPattern = params.length === 1 && (firstParam.type === "ObjectPattern" || (firstParam.type === "AssignmentPattern" && firstParam.left.type === "ObjectPattern"));
+
+            if (!isSingleObjectPattern && openParen.loc.end.line === firstParam.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openParen.range[1], firstParam.range[0]],
+                        "\n" + paramIndent,
+                    ),
+                    message: "First parameter should be on its own line when more than 2 parameters or has destructuring",
+                    node: firstParam,
+                });
+            }
+
+            // Skip closing paren check for single ObjectPattern param (opening-brackets-same-line keeps }) together)
+            if (!isSingleObjectPattern && closeParen.loc.start.line === lastParam.loc.end.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastParam.range[1], closeParen.range[0]],
+                        ",\n" + parenIndent,
+                    ),
+                    message: "Closing parenthesis should be on its own line when more than 2 parameters or has destructuring",
+                    node: closeParen,
+                });
+            }
+
+            for (let i = 0; i < params.length - 1; i += 1) {
+                const current = params[i];
+                const next = params[i + 1];
+
+                if (current.loc.end.line === next.loc.start.line) {
+                    const commaToken = sourceCode.getTokenAfter(
+                        current,
+                        (token) => token.value === ",",
+                    );
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [commaToken.range[1], next.range[0]],
+                            "\n" + paramIndent,
+                        ),
+                        message: "Each parameter should be on its own line when more than 2 parameters or has destructuring",
+                        node: next,
+                    });
+                }
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkFunction,
+            FunctionDeclaration: checkFunction,
+            FunctionExpression: checkFunction,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce function parameters on separate lines when more than 2" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: No space before > or /> in JSX tags
+// <Button > should be <Button>
+// <Button class={} > should be <Button class={}>
+const jsxClosingBracketSpacing = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkOpeningElement = (node) => {
+            const lastToken = sourceCode.getLastToken(node);
+
+            if (!lastToken) return;
+
+            // Check for > or />
+            if (lastToken.value !== ">" && lastToken.value !== "/>") return;
+
+            const tokenBefore = sourceCode.getTokenBefore(lastToken);
+
+            if (!tokenBefore) return;
+
+            // Check if there's whitespace between the last attribute/name and >
+            if (tokenBefore.loc.end.line === lastToken.loc.start.line) {
+                // Same line - check for space
+                if (lastToken.range[0] - tokenBefore.range[1] > 0) {
+                    const textBetween = sourceCode.text.slice(
+                        tokenBefore.range[1],
+                        lastToken.range[0],
+                    );
+
+                    if (/^\s+$/.test(textBetween)) {
+                        context.report({
+                            fix: (fixer) => fixer.removeRange([tokenBefore.range[1], lastToken.range[0]]),
+                            message: `No space allowed before '${lastToken.value}' in JSX tag`,
+                            node: lastToken,
+                        });
+                    }
+                }
+            }
+        };
+
+        return {
+            JSXOpeningElement: checkOpeningElement,
+            JSXClosingElement: checkOpeningElement,
+        };
+    },
+    meta: {
+        docs: { description: "No space before > or /> in JSX tags" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: Simple JSX elements with only text/expression children should be on one line
+// <Button>
+//     {buttonLinkText}
+// </Button>
+// should become: <Button>{buttonLinkText}</Button>
+const jsxSimpleElementOneLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Check if an expression is simple (just an identifier or literal)
+        const isSimpleExpression = (node) => {
+            if (!node) return false;
+
+            if (node.type === "Identifier") return true;
+            if (node.type === "Literal") return true;
+            if (node.type === "MemberExpression") {
+                // Allow simple member expressions like obj.prop
+                return node.object.type === "Identifier" && node.property.type === "Identifier";
+            }
+
+            return false;
+        };
+
+        // Check if child is simple (text or simple expression)
+        const isSimpleChild = (child) => {
+            if (child.type === "JSXText") {
+                return child.value.trim().length > 0;
+            }
+
+            if (child.type === "JSXExpressionContainer") {
+                return isSimpleExpression(child.expression);
+            }
+
+            return false;
+        };
+
+        return {
+            JSXElement(node) {
+                const openingTag = node.openingElement;
+                const closingTag = node.closingElement;
+
+                // Skip self-closing elements
+                if (!closingTag) return;
+
+                // Check if element is multiline
+                if (openingTag.loc.end.line === closingTag.loc.start.line) return;
+
+                const { children } = node;
+
+                // Filter out whitespace-only text children
+                const significantChildren = children.filter((child) => {
+                    if (child.type === "JSXText") {
+                        return child.value.trim() !== "";
+                    }
+
+                    return true;
+                });
+
+                // Must have exactly one simple child
+                if (significantChildren.length !== 1) return;
+
+                const child = significantChildren[0];
+
+                if (!isSimpleChild(child)) return;
+
+                // Check if opening tag itself is simple (single line, not too many attributes)
+                if (openingTag.loc.start.line !== openingTag.loc.end.line) return;
+
+                // Get the text content
+                const openingText = sourceCode.getText(openingTag);
+                const childText = child.type === "JSXText" ? child.value.trim() : sourceCode.getText(child);
+                const closingText = sourceCode.getText(closingTag);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(
+                        node,
+                        `${openingText}${childText}${closingText}`,
+                    ),
+                    message: "Simple JSX element with single text/expression child should be on one line",
+                    node,
+                });
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Simple JSX elements with only text/expression children should be on one line" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: JSX children that are JSX elements must be on new lines
+// <Button>text</Button> is OK
+// <Button>{variableName}</Button> is OK - simple expression treated as text
+// <Button><span>text</span></Button> is NOT OK - span should be on new line
+// <Button>
+//     <Box>box</Box>
+// </Button> is OK
+const jsxElementChildNewLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Check if expression is simple (identifier, literal, or simple member expression)
+        const isSimpleExpression = (expr) => {
+            if (!expr) return true;
+
+            if (expr.type === "Identifier") return true;
+            if (expr.type === "Literal") return true;
+            if (expr.type === "MemberExpression") {
+                return expr.object.type === "Identifier" && expr.property.type === "Identifier";
+            }
+
+            return false;
+        };
+
+        // Check if child is a complex JSX child (not simple text or expression)
+        const isComplexJsxChild = (child) => {
+            if (child.type === "JSXElement" || child.type === "JSXFragment") {
+                return true;
+            }
+
+            // JSXExpressionContainer with complex expression (not simple variable)
+            if (child.type === "JSXExpressionContainer") {
+                return !isSimpleExpression(child.expression);
+            }
+
+            return false;
+        };
+
+        return {
+            JSXElement(node) {
+                const openingTag = node.openingElement;
+                const closingTag = node.closingElement;
+
+                // Skip self-closing elements
+                if (!closingTag) return;
+
+                const { children } = node;
+
+                // Find complex JSX element children (not text, not simple expressions)
+                const jsxChildren = children.filter(isComplexJsxChild);
+
+                if (jsxChildren.length === 0) return;
+
+                // Get the indent for children
+                const childIndent = " ".repeat(openingTag.loc.start.column + 4);
+                const closingIndent = " ".repeat(openingTag.loc.start.column);
+
+                jsxChildren.forEach((child) => {
+                    // Check if JSX child is on same line as opening tag
+                    if (openingTag.loc.end.line === child.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openingTag.range[1], child.range[0]],
+                                "\n" + childIndent,
+                            ),
+                            message: "JSX element child should be on its own line",
+                            node: child,
+                        });
+                    }
+                });
+
+                // Check if closing tag is on same line as last JSX child
+                const lastJsxChild = jsxChildren[jsxChildren.length - 1];
+
+                if (lastJsxChild && closingTag.loc.start.line === lastJsxChild.loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [lastJsxChild.range[1], closingTag.range[0]],
+                            "\n" + closingIndent,
+                        ),
+                        message: "Closing tag should be on its own line after JSX children",
+                        node: closingTag,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "JSX children that are JSX elements must be on new lines" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const jsxChildrenOnNewLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Check if expression is simple (identifier, literal, or simple member expression)
+        const isSimpleExpression = (expr) => {
+            if (!expr) return true;
+
+            if (expr.type === "Identifier") return true;
+            if (expr.type === "Literal") return true;
+            if (expr.type === "MemberExpression") {
+                return expr.object.type === "Identifier" && expr.property.type === "Identifier";
+            }
+
+            return false;
+        };
+
+        // Check if child is simple (text or simple expression like {variable})
+        const isSimpleChild = (child) => {
+            if (child.type === "JSXText") return true;
+            if (child.type === "JSXExpressionContainer") {
+                return isSimpleExpression(child.expression);
+            }
+
+            return false;
+        };
+
+        const checkJSXChildren = (node, openingTag, closingTag) => {
+            const { children } = node;
+
+            // Skip self-closing elements
+            if (!closingTag) return;
+
+            // Filter out whitespace-only text children
+            const significantChildren = children.filter((child) => {
+                if (child.type === "JSXText") {
+                    return child.value.trim() !== "";
+                }
+
+                return true;
+            });
+
+            if (significantChildren.length === 0) return;
+
+            // Allow elements that are entirely on a single line with only simple children (text or {variable})
+            const elementIsOnSingleLine = openingTag.loc.start.line === closingTag.loc.end.line;
+            const hasOnlySimpleChildren = significantChildren.every(isSimpleChild);
+
+            if (elementIsOnSingleLine && hasOnlySimpleChildren) {
+                // Entire element on one line with only simple children - OK
+                return;
+            }
+
+            // Allow simple inline elements with single simple child
+            const hasSingleSimpleChild = significantChildren.length === 1 && isSimpleChild(significantChildren[0]);
+
+            if (hasSingleSimpleChild) {
+                // This is a simple inline element - don't require new lines
+                return;
+            }
+
+            const firstChild = significantChildren[0];
+            const lastChild = significantChildren[significantChildren.length - 1];
+            const childIndent = " ".repeat(openingTag.loc.start.column + 4);
+            const closingIndent = " ".repeat(openingTag.loc.start.column);
+
+            // Check if first child is on same line as opening tag
+            if (openingTag.loc.end.line === firstChild.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openingTag.range[1], firstChild.range[0]],
+                        "\n" + childIndent,
+                    ),
+                    message: "JSX child should be on its own line",
+                    node: firstChild,
+                });
+            } else if (openingTag.loc.end.line < firstChild.loc.start.line - 1) {
+                // Check for extra blank lines after opening tag (more than 1 newline)
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openingTag.range[1], firstChild.range[0]],
+                        "\n" + childIndent,
+                    ),
+                    message: "Remove blank lines after opening tag",
+                    node: firstChild,
+                });
+            }
+
+            // Check if closing tag is on same line as last child
+            // For JSXText, check if the actual content (trimmed) ends on same line
+            if (closingTag.loc.start.line === lastChild.loc.end.line) {
+                // If last child is text with only whitespace at the end, check the content line
+                if (lastChild.type === "JSXText") {
+                    const textContent = lastChild.value;
+                    const trimmedEnd = textContent.trimEnd();
+
+                    // If there's a newline in the trimmed-off part, closing tag is already on own line
+                    if (textContent.slice(trimmedEnd.length).includes("\n")) {
+                        return;
+                    }
+                }
+
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastChild.range[1], closingTag.range[0]],
+                        "\n" + closingIndent,
+                    ),
+                    message: "Closing tag should be on its own line",
+                    node: closingTag,
+                });
+            }
+        };
+
+        const checkJSXElement = (node) => {
+            checkJSXChildren(node, node.openingElement, node.closingElement);
+        };
+
+        const checkJSXFragment = (node) => {
+            checkJSXChildren(node, node.openingFragment, node.closingFragment);
+        };
+
+        return {
+            JSXElement: checkJSXElement,
+            JSXFragment: checkJSXFragment,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce JSX children on separate lines from parent tags" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const blockStatementNewlines = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkBlockStatement = (node) => {
+            const { body } = node;
+
+            if (body.length === 0) return;
+
+            const openBrace = sourceCode.getFirstToken(node);
+            const closeBrace = sourceCode.getLastToken(node);
+            const firstStatement = body[0];
+            const lastStatement = body[body.length - 1];
+            const contentIndent = " ".repeat(firstStatement.loc.start.column);
+            const braceIndent = " ".repeat(openBrace.loc.start.column);
+
+            // Check if first statement is on same line as opening brace
+            if (openBrace.loc.end.line === firstStatement.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openBrace.range[1], firstStatement.range[0]],
+                        "\n" + contentIndent,
+                    ),
+                    message: "Statement should be on its own line after opening brace",
+                    node: firstStatement,
+                });
+            }
+
+            // Check if closing brace is on same line as last statement
+            if (closeBrace.loc.start.line === lastStatement.loc.end.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastStatement.range[1], closeBrace.range[0]],
+                        "\n" + braceIndent,
+                    ),
+                    message: "Closing brace should be on its own line",
+                    node: closeBrace,
+                });
+            }
+        };
+
+        return { BlockStatement: checkBlockStatement };
+    },
+    meta: {
+        docs: { description: "Enforce newlines after opening brace and before closing brace in blocks" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const assignmentValueSameLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkVariableDeclaration = (node) => {
+            const kindToken = sourceCode.getFirstToken(node); // const, let, var
+
+            if (!kindToken) return;
+
+            node.declarations.forEach((declarator) => {
+                const { id, init } = declarator;
+
+                // Check 1: const/let/var and variable name/pattern should be on same line
+                // For first declarator, check against the kind token
+                const isFirstDeclarator = node.declarations[0] === declarator;
+
+                if (isFirstDeclarator) {
+                    // For simple identifiers: const dispatch = ...
+                    if (id.type === "Identifier") {
+                        if (kindToken.loc.end.line !== id.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [kindToken.range[1], id.range[0]],
+                                    " ",
+                                ),
+                                message: "Variable name should be on the same line as declaration keyword",
+                                node: id,
+                            });
+
+                            return;
+                        }
+                    }
+
+                    // For destructuring: const { x } = ... or const [ x ] = ...
+                    if (id.type === "ObjectPattern" || id.type === "ArrayPattern") {
+                        const openBracket = sourceCode.getFirstToken(id);
+
+                        if (kindToken.loc.end.line !== openBracket.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [kindToken.range[1], openBracket.range[0]],
+                                    " ",
+                                ),
+                                message: "Destructuring pattern should be on the same line as declaration keyword",
+                                node: openBracket,
+                            });
+
+                            return;
+                        }
+                    }
+                }
+
+                if (!init) return;
+
+                const equalToken = sourceCode.getTokenBefore(
+                    init,
+                    (t) => t.value === "=",
+                );
+
+                if (!equalToken) return;
+
+                // Check 2: Variable/pattern and = should be on same line
+                if (id.loc.end.line !== equalToken.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [id.range[1], equalToken.range[0]],
+                            " ",
+                        ),
+                        message: "Assignment operator should be on the same line as variable",
+                        node: equalToken,
+                    });
+
+                    return;
+                }
+
+                // Check 3: = and init value should be on same line
+                if (init.loc.start.line > equalToken.loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [equalToken.range[1], init.range[0]],
+                            " ",
+                        ),
+                        message: "Value should be on the same line as the assignment operator",
+                        node: init,
+                    });
+                }
+            });
+        };
+
+        return { VariableDeclaration: checkVariableDeclaration };
+    },
+    meta: {
+        docs: { description: "Enforce assignment value on same line as equals sign" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const functionNamingConvention = {
+    create(context) {
+        const componentNameRegex = /^[A-Z][a-zA-Z0-9]*$/;
+
+        const handlerRegex = /Handler$/;
+
+        const hookRegex = /^use[A-Z]/;
+
+        const verbPrefixes = [
+            "get", "set", "fetch", "load", "save", "create", "update", "delete", "remove", "add",
+            "is", "has", "can", "should", "will", "did", "was", "were",
+            "check", "validate", "verify", "confirm", "ensure",
+            "find", "search", "filter", "sort", "map", "reduce", "merge", "split", "join",
+            "parse", "format", "convert", "transform", "normalize", "serialize", "deserialize",
+            "encode", "decode", "encrypt", "decrypt", "hash", "sign",
+            "render", "display", "show", "hide", "toggle", "enable", "disable",
+            "open", "close", "start", "stop", "init", "setup", "reset", "clear",
+            "connect", "disconnect", "subscribe", "unsubscribe", "listen", "emit",
+            "send", "receive", "request", "respond", "submit", "cancel", "abort",
+            "read", "write", "copy", "move", "clone", "extract", "insert", "append", "prepend",
+            "build", "make", "generate", "compute", "calculate", "process", "execute", "run",
+            "apply", "call", "invoke", "trigger", "fire", "dispatch",
+            "mount", "unmount", "attach", "detach", "bind", "unbind",
+            "register", "unregister", "activate", "deactivate",
+            "login", "logout", "authenticate", "authorize",
+            "navigate", "redirect", "route", "scroll", "focus", "blur",
+            "select", "deselect", "expand", "collapse", "resize", "refresh", "reload",
+            "download", "upload", "import", "export", "sync", "async",
+            "log", "warn", "error", "debug", "trace", "print",
+            "wrap", "unwrap", "sanitize", "escape", "unescape", "trim", "pad",
+            "count", "sum", "avg", "min", "max", "clamp", "round", "floor", "ceil",
+            "throw", "catch", "resolve", "reject", "retry", "await",
+            "debounce", "throttle", "memoize", "cache", "batch", "queue", "defer", "delay",
+            "handle", "on", "click", "change", "input", "submit", "press", "drag", "drop",
+        ];
+
+        const startsWithVerb = (name) => verbPrefixes.some((verb) => name.startsWith(verb));
+
+        const endsWithHandler = (name) => handlerRegex.test(name);
+
+        const checkFunction = (node) => {
+            let name = null;
+
+            if (node.type === "FunctionDeclaration" && node.id) {
+                name = node.id.name;
+            } else if (node.type === "FunctionExpression" || node.type === "ArrowFunctionExpression") {
+                if (node.parent && node.parent.type === "VariableDeclarator" && node.parent.id) {
+                    name = node.parent.id.name;
+                }
+            }
+
+            if (!name) return;
+
+            // Skip React components (PascalCase)
+            if (/^[A-Z]/.test(name)) return;
+
+            // Skip hooks
+            if (/^use[A-Z]/.test(name)) return;
+
+            const hasVerbPrefix = startsWithVerb(name);
+            const hasHandlerSuffix = endsWithHandler(name);
+
+            if (!hasVerbPrefix && !hasHandlerSuffix) {
+                context.report({
+                    message: `Function "${name}" should start with a verb (get, set, fetch, handle, etc.) AND end with "Handler" (e.g., getDataHandler, handleClickHandler)`,
+                    node: node.id || node.parent.id,
+                });
+            } else if (!hasVerbPrefix) {
+                context.report({
+                    message: `Function "${name}" should start with a verb (get, set, fetch, handle, click, submit, etc.)`,
+                    node: node.id || node.parent.id,
+                });
+            } else if (!hasHandlerSuffix) {
+                context.report({
+                    message: `Function "${name}" should end with "Handler" suffix (e.g., ${name}Handler)`,
+                    node: node.id || node.parent.id,
+                });
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkFunction,
+            FunctionDeclaration: checkFunction,
+            FunctionExpression: checkFunction,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce function names to start with a verb AND end with Handler" },
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+const variableNamingConvention = {
+    create(context) {
+        const camelCaseRegex = /^[a-z][a-zA-Z0-9]*$/;
+
+        const pascalCaseRegex = /^[A-Z][a-zA-Z0-9]*$/;
+
+        const hookRegex = /^use[A-Z][a-zA-Z0-9]*$/;
+
+        const constantRegex = /^[A-Z][A-Z0-9_]*$/;
+
+        const allowedIdentifiers = [
+            "ArrowFunctionExpression", "CallExpression", "FunctionDeclaration", "FunctionExpression",
+            "Property", "VariableDeclarator", "JSXElement", "JSXOpeningElement", "ReturnStatement",
+            "SwitchCase", "SwitchStatement", "ObjectExpression", "ObjectPattern", "BlockStatement",
+            "IfStatement", "Identifier", "RestElement", "AssignmentPattern", "ArrayPattern",
+            "MemberExpression", "JSXText", "JSXAttribute", "JSXExpressionContainer",
+            // Built-in JavaScript globals
+            "Function", "Object", "Array", "String", "Number", "Boolean", "Symbol", "BigInt",
+            "Date", "RegExp", "Error", "Map", "Set", "WeakMap", "WeakSet", "Promise",
+        ];
+
+        // Check if this is a MUI styled component: styled(Component)(...)
+        const isStyledComponent = (init) => {
+            if (!init || init.type !== "CallExpression") return false;
+
+            const { callee } = init;
+
+            // Pattern: styled(Component)(...) - callee is CallExpression styled(Component)
+            if (callee.type === "CallExpression") {
+                const innerCallee = callee.callee;
+
+                // Check if inner callee is "styled" identifier
+                if (innerCallee.type === "Identifier" && innerCallee.name === "styled") {
+                    return true;
+                }
+
+                // Check if inner callee is member expression like emotion's styled.div
+                if (innerCallee.type === "MemberExpression" && innerCallee.object.name === "styled") {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        // Check if this CallExpression is a styled() call
+        const isStyledCall = (node) => {
+            if (node.type !== "CallExpression") return false;
+
+            const { callee } = node;
+
+            // Direct styled(Component) call
+            if (callee.type === "Identifier" && callee.name === "styled") {
+                return true;
+            }
+
+            return false;
+        };
+
+        const isFunctionType = (init) => {
+            if (!init) return false;
+
+            if (init.type === "ArrowFunctionExpression" || init.type === "FunctionExpression") {
+                return true;
+            }
+
+            if (init.type === "CallExpression" && init.callee) {
+                const calleeName = init.callee.name || (init.callee.property && init.callee.property.name);
+                const wrapperFunctions = ["memo", "forwardRef", "lazy", "createContext"];
+
+                return wrapperFunctions.includes(calleeName);
+            }
+
+            return false;
+        };
+
+        const isComponentByNaming = (node) => {
+            if (!node.init) return false;
+
+            const name = node.id.name;
+
+            // PascalCase naming indicates a component
+            if (/^[A-Z]/.test(name) && isFunctionType(node.init)) {
+                return true;
+            }
+
+            return false;
+        };
+
+        const isHookFunction = (node) => {
+            if (!node.init) return false;
+
+            const name = node.id.name;
+
+            return name.startsWith("use") && /^use[A-Z]/.test(name) && isFunctionType(node.init);
+        };
+
+        // Common component property names that should allow PascalCase
+        const componentPropertyNames = [
+            "Icon",
+            "Component",
+            "FormComponent",
+            "Layout",
+            "Wrapper",
+            "Container",
+            "Provider",
+        ];
+
+        const checkPattern = (node, typeLabel) => {
+            if (node.type === "Identifier") {
+                const name = node.name;
+
+                if (name.startsWith("_") || constantRegex.test(name) || allowedIdentifiers.includes(name)) return;
+
+                // Allow component property names when destructuring (e.g., { Icon } from map callback)
+                if (componentPropertyNames.includes(name)) return;
+
+                if (!camelCaseRegex.test(name)) {
+                    context.report({
+                        message: `${typeLabel} "${name}" should be camelCase`,
+                        node,
+                    });
+                }
+            } else if (node.type === "ObjectPattern") {
+                node.properties.forEach((prop) => {
+                    if (prop.type === "Property") {
+                        checkPattern(
+                            prop.value,
+                            typeLabel,
+                        );
+                    }
+                    else if (prop.type === "RestElement") {
+                        checkPattern(
+                            prop.argument,
+                            typeLabel,
+                        );
+                    }
+                });
+            } else if (node.type === "ArrayPattern") {
+                node.elements.forEach((elem) => {
+                    if (elem) {
+                        checkPattern(
+                            elem,
+                            typeLabel,
+                        );
+                    }
+                });
+            } else if (node.type === "AssignmentPattern") {
+                checkPattern(
+                    node.left,
+                    typeLabel,
+                );
+            }
+            else if (node.type === "RestElement") {
+                checkPattern(
+                    node.argument,
+                    typeLabel,
+                );
+            }
+        };
+
+        const checkVariableDeclarator = (node) => {
+            if (node.id.type !== "Identifier") {
+                checkPattern(
+                    node.id,
+                    "Variable",
+                );
+
+                return;
+            }
+
+            const name = node.id.name;
+
+            // Enforce PascalCase for styled components: const StyledCard = styled(Card)(...)
+            if (isStyledComponent(node.init)) {
+                if (!pascalCaseRegex.test(name)) {
+                    context.report({
+                        message: `Styled component "${name}" should be PascalCase (e.g., StyledCard instead of styledCard)`,
+                        node: node.id,
+                    });
+                }
+
+                return;
+            }
+
+            if (name.startsWith("_") || constantRegex.test(name) || isComponentByNaming(node)) return;
+
+            if (isHookFunction(node)) {
+                if (!hookRegex.test(name)) {
+                    context.report({
+                        message: `Hook "${name}" should start with "use" followed by PascalCase (e.g., useEventsList)`,
+                        node: node.id,
+                    });
+                }
+
+                return;
+            }
+
+            // Allow PascalCase for data arrays and config objects (e.g., SidebarData, Routes)
+            // These typically hold configuration or data that includes component references
+            const dataPatterns = [
+                /^[A-Z][a-zA-Z]*Data$/,
+                /^[A-Z][a-zA-Z]*Config$/,
+                /^Routes$/,
+            ];
+
+            if (dataPatterns.some((pattern) => pattern.test(name))) {
+                // Only allow if initialized with array, object, or function call
+                if (node.init && (node.init.type === "ArrayExpression" || node.init.type === "ObjectExpression" || node.init.type === "CallExpression")) {
+                    return;
+                }
+            }
+
+            if (!camelCaseRegex.test(name)) {
+                context.report({
+                    message: `Variable "${name}" should be camelCase (e.g., userCookie instead of UserCookie)`,
+                    node: node.id,
+                });
+            }
+        };
+
+        const checkProperty = (node) => {
+            if (node.computed || node.key.type !== "Identifier") return;
+
+            const name = node.key.name;
+
+            if (name.startsWith("_") || constantRegex.test(name) || allowedIdentifiers.includes(name)) return;
+
+            // Allow PascalCase for properties that hold component references
+            // e.g., Icon: AdminPanelSettingsIcon, FormComponent: UpdateEventForm
+            if (node.value && node.value.type === "Identifier") {
+                const valueName = node.value.name;
+
+                // If value is PascalCase (component reference), allow PascalCase property name
+                if (pascalCaseRegex.test(valueName) && pascalCaseRegex.test(name)) {
+                    return;
+                }
+            }
+
+            // Allow common component property names
+            if (componentPropertyNames.includes(name)) return;
+
+            // Allow MUI theme component names (start with Mui)
+            if (name.startsWith("Mui")) return;
+
+            if (!camelCaseRegex.test(name)) {
+                context.report({
+                    message: `Property "${name}" should be camelCase`,
+                    node: node.key,
+                });
+            }
+        };
+
+        const checkFunctionParams = (node) => {
+            node.params.forEach((param) => checkPattern(
+                param,
+                "Parameter",
+            ));
+        };
+
+        const checkCallExpressionArguments = (node) => {
+            // Skip argument checking for styled() calls - they accept PascalCase components
+            if (isStyledCall(node)) return;
+
+            node.arguments.forEach((arg) => {
+                if (arg.type === "Identifier") {
+                    const name = arg.name;
+
+                    if (name.startsWith("_") || constantRegex.test(name) || allowedIdentifiers.includes(name)) return;
+
+                    // Allow component property names as arguments (e.g., Icon, Component)
+                    if (componentPropertyNames.includes(name)) return;
+
+                    if (!camelCaseRegex.test(name)) {
+                        context.report({
+                            message: `Argument "${name}" should be camelCase`,
+                            node: arg,
+                        });
+                    }
+                }
+            });
+        };
+
+        return {
+            ArrowFunctionExpression: checkFunctionParams,
+            CallExpression: checkCallExpressionArguments,
+            FunctionDeclaration: checkFunctionParams,
+            FunctionExpression: checkFunctionParams,
+            Property: checkProperty,
+            VariableDeclarator: checkVariableDeclarator,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce naming conventions: camelCase for variables/properties/params/arguments, PascalCase for components, useXxx for hooks" },
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+const multilineIfConditions = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const isParenthesizedHandler = (node) => {
+            const tokenBefore = sourceCode.getTokenBefore(node);
+            const tokenAfter = sourceCode.getTokenAfter(node);
+
+            if (!tokenBefore || !tokenAfter) return false;
+
+            if (tokenBefore.value === "(" && tokenAfter.value === ")") {
+                // Check if this is the if statement's own parens
+                if (node.parent.type === "IfStatement" && node.parent.test === node) {
+                    const beforeLeft = sourceCode.getTokenBefore(tokenBefore);
+
+                    if (beforeLeft && beforeLeft.value === "if") return false;
+                }
+
+                return true;
+            }
+
+            return false;
+        };
+
+        const getSourceTextWithGroupsHandler = (node) => {
+            let start = node.range[0];
+            let end = node.range[1];
+            let left = sourceCode.getTokenBefore(node);
+            let right = sourceCode.getTokenAfter(node);
+
+            while (left && left.value === "(" && right && right.value === ")") {
+                if (node.parent.type === "IfStatement" && node.parent.test === node) {
+                    const beforeLeft = sourceCode.getTokenBefore(left);
+
+                    if (beforeLeft && beforeLeft.value === "if") break;
+                }
+
+                start = left.range[0];
+                end = right.range[1];
+                left = sourceCode.getTokenBefore(left);
+                right = sourceCode.getTokenAfter(right);
+            }
+
+            return sourceCode.text.slice(start, end);
+        };
+
+        const collectOperandsHandler = (node) => {
+            const operands = [];
+
+            const collectHelper = (n) => {
+                if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                    collectHelper(n.left);
+                    collectHelper(n.right);
+                } else {
+                    operands.push(n);
+                }
+            };
+
+            collectHelper(node);
+
+            return operands;
+        };
+
+        const checkIfStatementHandler = (node) => {
+            const { test } = node;
+
+            if (test.type !== "LogicalExpression") return;
+
+            const operands = collectOperandsHandler(test);
+            const openParen = sourceCode.getTokenBefore(test);
+            const closeParen = sourceCode.getTokenAfter(test);
+
+            if (!openParen || !closeParen) return;
+
+            const isMultiLine = openParen.loc.start.line !== closeParen.loc.end.line;
+
+            // 3 or fewer operands: keep on single line
+            if (operands.length <= 3) {
+                if (isMultiLine) {
+                    context.report({
+                        fix: (fixer) => {
+                            const buildSingleLineHandler = (n) => {
+                                if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                                    const leftText = buildSingleLineHandler(n.left);
+                                    const rightText = buildSingleLineHandler(n.right);
+
+                                    return `${leftText} ${n.operator} ${rightText}`;
+                                }
+
+                                return getSourceTextWithGroupsHandler(n);
+                            };
+
+                            return fixer.replaceTextRange(
+                                [openParen.range[0], closeParen.range[1]],
+                                `(${buildSingleLineHandler(test)})`,
+                            );
+                        },
+                        message: "If conditions with 3 or fewer operands should be on a single line",
+                        node: test,
+                    });
+                }
+
+                return;
+            }
+
+            // 4+ operands: each on its own line
+            let isCorrectionNeeded = !isMultiLine;
+
+            if (isMultiLine) {
+                for (let i = 0; i < operands.length - 1; i += 1) {
+                    if (operands[i].loc.end.line === operands[i + 1].loc.start.line) {
+                        isCorrectionNeeded = true;
+                        break;
+                    }
+                }
+
+                if (openParen.loc.end.line === operands[0].loc.start.line) {
+                    isCorrectionNeeded = true;
+                }
+            }
+
+            if (isCorrectionNeeded) {
+                context.report({
+                    fix: (fixer) => {
+                        const indent = " ".repeat(node.loc.start.column + 4);
+                        const parenIndent = " ".repeat(node.loc.start.column);
+
+                        const buildMultilineHandler = (n) => {
+                            if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                                const leftText = buildMultilineHandler(n.left);
+                                const rightText = buildMultilineHandler(n.right);
+
+                                return `${leftText}\n${indent}${n.operator} ${rightText}`;
+                            }
+
+                            return getSourceTextWithGroupsHandler(n);
+                        };
+
+                        return fixer.replaceTextRange(
+                            [openParen.range[0], closeParen.range[1]],
+                            `(\n${indent}${buildMultilineHandler(test)}\n${parenIndent})`,
+                        );
+                    },
+                    message: "If conditions with 4 or more operands should be multiline, with each operand on its own line",
+                    node: test,
+                });
+            }
+        };
+
+        return { IfStatement: checkIfStatementHandler };
+    },
+    meta: {
+        docs: { description: "Enforce multiline if conditions when there are more than 3 operands" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const importFormat = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkImport = (node) => {
+            const importToken = sourceCode.getFirstToken(node);
+            const namedSpecifiers = node.specifiers.filter((s) => s.type === "ImportSpecifier");
+            const defaultSpecifier = node.specifiers.find((s) => s.type === "ImportDefaultSpecifier");
+
+            // Handle default imports: import Foo from "bar"
+            if (defaultSpecifier && namedSpecifiers.length === 0) {
+                const fromToken = sourceCode.getTokenBefore(node.source, (t) => t.value === "from");
+
+                if (fromToken && importToken.loc.start.line !== node.source.loc.end.line) {
+                    const defaultName = defaultSpecifier.local.name;
+                    const sourcePath = node.source.raw;
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(
+                            node,
+                            `import ${defaultName} from ${sourcePath};`,
+                        ),
+                        message: "Default import should be on a single line",
+                        node,
+                    });
+                }
+
+                return;
+            }
+
+            // Handle named imports
+            if (namedSpecifiers.length === 0) return;
+
+            const openBrace = sourceCode.getTokenAfter(importToken, (t) => t.value === "{");
+            const closeBrace = sourceCode.getTokenBefore(node.source, (t) => t.value === "}");
+            const fromToken = sourceCode.getTokenBefore(node.source, (t) => t.value === "from");
+
+            if (!openBrace || !closeBrace || !fromToken) return;
+
+            // Check if "import" and "{" are on different lines
+            if (importToken.loc.end.line !== openBrace.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [importToken.range[1], openBrace.range[0]],
+                        " ",
+                    ),
+                    message: "Opening brace should be on the same line as 'import'",
+                    node: openBrace,
+                });
+            }
+
+            // Check if "}" and "from" are on different lines
+            if (closeBrace.loc.end.line !== fromToken.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [closeBrace.range[1], fromToken.range[0]],
+                        " ",
+                    ),
+                    message: "Closing brace should be on the same line as 'from'",
+                    node: fromToken,
+                });
+            }
+
+            // Collapse to single line if 1-3 specifiers
+            if (namedSpecifiers.length <= 3) {
+                const isMultiLine = openBrace.loc.start.line !== closeBrace.loc.end.line;
+
+                if (isMultiLine) {
+                    const specifiersText = namedSpecifiers.map((s) => {
+                        if (s.imported.name === s.local.name) return s.local.name;
+
+                        return `${s.imported.name} as ${s.local.name}`;
+                    }).join(", ");
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[0], closeBrace.range[1]],
+                            `{ ${specifiersText} }`,
+                        ),
+                        message: "Imports with 1-3 specifiers should be on a single line",
+                        node,
+                    });
+                }
+            }
+        };
+
+        return { ImportDeclaration: checkImport };
+    },
+    meta: {
+        docs: { description: "Format imports: import { on same line, } from on same line, collapse 1-3 specifiers" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const exportFormat = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const checkExport = (node) => {
+            const specifiers = node.specifiers;
+
+            if (specifiers.length === 0) return;
+
+            const exportToken = sourceCode.getFirstToken(node);
+            const openBrace = sourceCode.getTokenAfter(exportToken, (t) => t.value === "{");
+            const closeBrace = sourceCode.getLastToken(node, (t) => t.value === "}");
+
+            if (!openBrace || !closeBrace) return;
+
+            // Check if "export" and "{" are on different lines
+            if (exportToken.loc.end.line !== openBrace.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [exportToken.range[1], openBrace.range[0]],
+                        " ",
+                    ),
+                    message: "Opening brace should be on the same line as 'export'",
+                    node: openBrace,
+                });
+            }
+
+            const isMultiLine = openBrace.loc.start.line !== closeBrace.loc.end.line;
+
+            // 1-3 specifiers: collapse to single line
+            if (specifiers.length <= 3) {
+                if (isMultiLine) {
+                    const specifiersText = specifiers.map((s) => {
+                        if (s.exported.name === s.local.name) return s.local.name;
+
+                        return `${s.local.name} as ${s.exported.name}`;
+                    }).join(", ");
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[0], closeBrace.range[1]],
+                            `{ ${specifiersText} }`,
+                        ),
+                        message: "Exports with 1-3 specifiers should be on a single line",
+                        node,
+                    });
+                }
+            } else {
+                // More than 3 specifiers: each on its own line
+                const firstSpecifier = specifiers[0];
+
+                const lastSpecifier = specifiers[specifiers.length - 1];
+
+                // Check if first specifier is on same line as {
+                if (openBrace.loc.end.line === firstSpecifier.loc.start.line) {
+                    const indent = " ".repeat(exportToken.loc.start.column + 4);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[1], firstSpecifier.range[0]],
+                            "\n" + indent,
+                        ),
+                        message: "First export specifier should be on its own line when more than 3",
+                        node: firstSpecifier,
+                    });
+                }
+
+                // Check if } is on same line as last specifier
+                if (closeBrace.loc.start.line === lastSpecifier.loc.end.line) {
+                    const indent = " ".repeat(exportToken.loc.start.column);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [lastSpecifier.range[1], closeBrace.range[0]],
+                            ",\n" + indent,
+                        ),
+                        message: "Closing brace should be on its own line when more than 3 specifiers",
+                        node: closeBrace,
+                    });
+                }
+
+                // Check each specifier is on its own line
+                for (let i = 0; i < specifiers.length - 1; i += 1) {
+                    const current = specifiers[i];
+
+                    const next = specifiers[i + 1];
+
+                    if (current.loc.end.line === next.loc.start.line) {
+                        const indent = " ".repeat(exportToken.loc.start.column + 4);
+
+                        const commaToken = sourceCode.getTokenAfter(current);
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [commaToken.range[1], next.range[0]],
+                                "\n" + indent,
+                            ),
+                            message: "Each export specifier should be on its own line when more than 3",
+                            node: next,
+                        });
+                    }
+                }
+            }
+        };
+
+        return { ExportNamedDeclaration: checkExport };
+    },
+    meta: {
+        docs: { description: "Format exports: export { on same line, collapse 1-3 specifiers, multiline for 4+" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const ifStatementFormat = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Simple conditions that should be on single line (no logical expressions)
+        const isSimpleCondition = (testNode) => {
+            const simpleTypes = [
+                "Identifier",
+                "MemberExpression",
+                "UnaryExpression",
+                "Literal",
+            ];
+
+            if (simpleTypes.includes(testNode.type)) return true;
+
+            // Simple call expression like fn() or obj.method()
+            if (testNode.type === "CallExpression" && testNode.arguments.length === 0) {
+                return true;
+            }
+
+            // LogicalExpression with multiple conditions should NOT be collapsed
+            // They are intentionally multi-line for readability
+            return false;
+        };
+
+        const checkIfStatement = (node) => {
+            const { consequent, test } = node;
+
+            // Skip braceless if statements - they don't have a block body
+            const hasBlockBody = consequent.type === "BlockStatement";
+
+            const ifToken = sourceCode.getFirstToken(node);
+
+            const openParen = sourceCode.getTokenAfter(
+                ifToken,
+                (t) => t.value === "(",
+            );
+
+            const closeParen = sourceCode.getTokenAfter(
+                test,
+                (t) => t.value === ")",
+            );
+
+            if (!openParen || !closeParen) {
+                return;
+            }
+
+            // Only look for opening brace if the if statement has a block body
+            const openBrace = hasBlockBody
+                ? sourceCode.getFirstToken(consequent)
+                : null;
+
+            // Check if "if" and "(" are on different lines
+            if (ifToken.loc.end.line !== openParen.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [ifToken.range[1], openParen.range[0]],
+                        " ",
+                    ),
+                    message: "Opening parenthesis should be on the same line as 'if'",
+                    node: openParen,
+                });
+
+                return;
+            }
+
+            // Check for simple conditions that span multiple lines - collapse to single line
+            const conditionSpansMultipleLines = openParen.loc.end.line !== closeParen.loc.start.line;
+
+            if (conditionSpansMultipleLines && isSimpleCondition(test)) {
+                const testText = sourceCode.getText(test);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openParen.range[1], closeParen.range[0]],
+                        testText,
+                    ),
+                    message: "Simple if condition should be on a single line",
+                    node: test,
+                });
+
+                return;
+            }
+
+            // Check if ")" and "{" are on different lines (only for block body if statements)
+            if (openBrace && closeParen.loc.end.line !== openBrace.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [closeParen.range[1], openBrace.range[0]],
+                        " ",
+                    ),
+                    message: "Opening brace should be on the same line as closing parenthesis",
+                    node: openBrace,
+                });
+            }
+        };
+
+        return { IfStatement: checkIfStatement };
+    },
+    meta: {
+        docs: { description: "Ensure if statement has proper formatting: if (...) {" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+const commentSpacing = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            Program(node) {
+                const comments = sourceCode.getAllComments();
+
+                if (comments.length === 0) return;
+
+                const firstToken = sourceCode.getFirstToken(node);
+
+                // Check each comment for internal spacing (space after /* or // and before */)
+                comments.forEach((comment) => {
+                    const { type, value } = comment;
+
+                    if (type === "Block") {
+                        // Block comment: /* ... */
+                        // Check if missing space after /* or before */
+                        const needsStartSpace = value.length > 0 && !value.startsWith(" ") && !value.startsWith("*") && !value.startsWith("\n");
+                        const needsEndSpace = value.length > 0 && !value.endsWith(" ") && !value.endsWith("*") && !value.endsWith("\n");
+
+                        if (needsStartSpace || needsEndSpace) {
+                            let newValue = value;
+
+                            if (needsStartSpace) newValue = " " + newValue;
+
+                            if (needsEndSpace) newValue = newValue + " ";
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceText(comment, `/*${newValue}*/`),
+                                loc: comment.loc,
+                                message: "Block comment should have space after /* and before */",
+                            });
+                        }
+                    } else if (type === "Line") {
+                        // Line comment: // ...
+                        // Check if missing space after //
+                        const needsSpace = value.length > 0 && !value.startsWith(" ") && !value.startsWith("/");
+
+                        if (needsSpace) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceText(comment, `// ${value}`),
+                                loc: comment.loc,
+                                message: "Line comment should have space after //",
+                            });
+                        }
+                    }
+
+                    // Check inline comments at end of code lines - should have exactly 1 space before
+                    const tokenBefore = sourceCode.getTokenBefore(comment, { includeComments: false });
+
+                    if (tokenBefore && tokenBefore.loc.end.line === comment.loc.start.line) {
+                        // This is an inline comment at the end of a code line
+                        const spaceBetween = comment.range[0] - tokenBefore.range[1];
+
+                        if (spaceBetween !== 1) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [tokenBefore.range[1], comment.range[0]],
+                                    " ",
+                                ),
+                                loc: comment.loc,
+                                message: "Inline comment should have exactly one space before it",
+                            });
+                        }
+                    }
+                });
+
+                if (!firstToken) return;
+
+                // Get only comments at the very top of the file (before any code)
+                const topComments = comments.filter((comment) => comment.loc.end.line < firstToken.loc.start.line
+                    || (comment.loc.start.line === 1 && firstToken.loc.start.line === 1 && comment.range[1] < firstToken.range[0]));
+
+                // Check consecutive comments (both top-of-file and inline)
+                const sortedComments = [...comments].sort((a, b) => a.range[0] - b.range[0]);
+
+                for (let i = 0; i < sortedComments.length - 1; i += 1) {
+                    const current = sortedComments[i];
+                    const next = sortedComments[i + 1];
+
+                    // If they're on the same line, put each on its own line
+                    if (next.loc.start.line === current.loc.end.line) {
+                        context.report({
+                            fix: (fixer) => fixer.insertTextBefore(next, "\n"),
+                            loc: next.loc,
+                            message: "Each comment should be on its own line",
+                        });
+                    }
+
+                    // Check if there's no code between consecutive comments
+                    const textBetween = sourceCode.text.slice(current.range[1], next.range[0]);
+                    const hasCodeBetween = textBetween.trim().length > 0;
+
+                    if (!hasCodeBetween) {
+                        const linesBetween = next.loc.start.line - current.loc.end.line;
+                        const nextIndent = " ".repeat(next.loc.start.column);
+
+                        // Require exactly one empty line between consecutive comments
+                        if (linesBetween === 1) {
+                            // No empty line - need to add one
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [current.range[1], next.range[0]],
+                                    "\n\n" + nextIndent,
+                                ),
+                                loc: next.loc,
+                                message: "Expected one empty line between consecutive comments",
+                            });
+                        } else if (linesBetween > 2) {
+                            // More than one empty line - reduce to one
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [current.range[1], next.range[0]],
+                                    "\n\n" + nextIndent,
+                                ),
+                                loc: next.loc,
+                                message: "Only one empty line allowed between consecutive comments",
+                            });
+                        }
+                    }
+                }
+
+                // Check spacing between top-of-file comments and first code
+                if (topComments.length > 0) {
+                    const lastTopComment = topComments[topComments.length - 1];
+
+                    // First code could be import, or any other statement
+                    if (firstToken.loc.start.line === lastTopComment.loc.end.line + 1) {
+                        // No empty line between last top comment and code - need one
+                        context.report({
+                            fix: (fixer) => fixer.insertTextAfter(lastTopComment, "\n"),
+                            loc: firstToken.loc,
+                            message: "Expected empty line between top-of-file comments and code",
+                        });
+                    } else if (firstToken.loc.start.line === lastTopComment.loc.end.line) {
+                        // Code is on the same line as comment
+                        context.report({
+                            fix: (fixer) => fixer.insertTextBefore(firstToken, "\n\n"),
+                            loc: firstToken.loc,
+                            message: "Code should be on a new line after top-of-file comments",
+                        });
+                    }
+                }
+
+                // Check inline comments (not at top of file) - require empty line before and after
+                const inlineComments = comments.filter((comment) => !topComments.includes(comment));
+
+                inlineComments.forEach((comment) => {
+                    // Skip inline comments at the end of code lines (e.g., code; // eslint-disable-line)
+                    const tokenBefore = sourceCode.getTokenBefore(comment, { includeComments: true });
+
+                    if (tokenBefore && tokenBefore.loc.end.line === comment.loc.start.line) {
+                        // This is an inline comment at the end of a code line - skip it
+                        return;
+                    }
+
+                    // Check for empty line BEFORE comment (after code)
+                    if (tokenBefore && tokenBefore.type !== "Block" && tokenBefore.type !== "Line") {
+                        const linesBeforeComment = comment.loc.start.line - tokenBefore.loc.end.line;
+                        const textBeforeComment = sourceCode.text.slice(tokenBefore.range[1], comment.range[0]);
+
+                        if (textBeforeComment.trim().length === 0) {
+                            const commentIndent = " ".repeat(comment.loc.start.column);
+
+                            if (linesBeforeComment === 1) {
+                                // No empty line before comment - need to add one
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange(
+                                        [tokenBefore.range[1], comment.range[0]],
+                                        "\n\n" + commentIndent,
+                                    ),
+                                    loc: comment.loc,
+                                    message: "Expected empty line between code and comment",
+                                });
+                            } else if (linesBeforeComment > 2) {
+                                // More than one empty line - reduce to one
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange(
+                                        [tokenBefore.range[1], comment.range[0]],
+                                        "\n\n" + commentIndent,
+                                    ),
+                                    loc: comment.loc,
+                                    message: "Only one empty line allowed between code and comment",
+                                });
+                            }
+                        }
+                    }
+
+                    // Check for empty line AFTER comment (before code)
+                    const tokenAfter = sourceCode.getTokenAfter(comment, { includeComments: true });
+
+                    if (!tokenAfter) return;
+
+                    // Skip if the next token is another comment (handled by consecutive comments logic)
+                    if (tokenAfter.type === "Block" || tokenAfter.type === "Line") return;
+
+                    const linesBetween = tokenAfter.loc.start.line - comment.loc.end.line;
+                    const textBetween = sourceCode.text.slice(comment.range[1], tokenAfter.range[0]);
+
+                    // Only handle if there's just whitespace between them
+                    if (textBetween.trim().length === 0) {
+                        const tokenIndent = " ".repeat(tokenAfter.loc.start.column);
+
+                        // Require exactly one empty line between last comment and code
+                        if (linesBetween === 1) {
+                            // No empty line - need to add one
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [comment.range[1], tokenAfter.range[0]],
+                                    "\n\n" + tokenIndent,
+                                ),
+                                loc: tokenAfter.loc,
+                                message: "Expected empty line between comment and code",
+                            });
+                        } else if (linesBetween > 2) {
+                            // More than one empty line - reduce to one
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [comment.range[1], tokenAfter.range[0]],
+                                    "\n\n" + tokenIndent,
+                                ),
+                                loc: tokenAfter.loc,
+                                message: "Only one empty line allowed between comment and code",
+                            });
+                        }
+                    }
+                });
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce comment spacing and formatting" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: Nested function calls closing brackets should be on same line
+// e.g., styled(Card)(({ theme }) => ({...})); should end with })); not }\n),\n);
+const nestedCallClosingBrackets = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            CallExpression(node) {
+                // Check for pattern: fn()(arg) where fn() is also a CallExpression
+                // e.g., styled(Card)(({ theme }) => ({...}))
+                const { callee } = node;
+
+                if (callee.type !== "CallExpression") return;
+
+                const args = node.arguments;
+
+                if (args.length !== 1) return;
+
+                const arg = args[0];
+
+                // Check for arrow function with object expression body
+                // styled(Card)(({ theme }) => ({...}))
+                if (arg.type === "ArrowFunctionExpression" && arg.body.type === "ObjectExpression") {
+                    const objectBody = arg.body;
+
+                    // Find closing tokens: } ) ) ; (may have comma between parens)
+                    const closeBrace = sourceCode.getLastToken(objectBody);
+                    const closeParenAfterObject = sourceCode.getTokenAfter(objectBody);
+
+                    if (!closeParenAfterObject || closeParenAfterObject.value !== ")") return;
+
+                    // Get next token - might be comma or second close paren
+                    let nextToken = sourceCode.getTokenAfter(closeParenAfterObject);
+
+                    // Skip trailing comma if present: }),) or })\n),\n)
+                    if (nextToken && nextToken.value === ",") {
+                        nextToken = sourceCode.getTokenAfter(nextToken);
+                    }
+
+                    const closeParenOuter = nextToken;
+
+                    if (!closeParenOuter || closeParenOuter.value !== ")") return;
+
+                    // Check if } and first ) are on different lines
+                    if (closeBrace.loc.end.line !== closeParenAfterObject.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [closeBrace.range[1], closeParenAfterObject.range[0]],
+                                "",
+                            ),
+                            message: "Closing brace and parenthesis should be on the same line: })",
+                            node: closeParenAfterObject,
+                        });
+
+                        return;
+                    }
+
+                    // Check if first ) and second ) are on different lines (account for comma)
+                    if (closeParenAfterObject.loc.end.line !== closeParenOuter.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [closeParenAfterObject.range[1], closeParenOuter.range[0]],
+                                "",
+                            ),
+                            message: "Closing parentheses should be on the same line: ))",
+                            node: closeParenOuter,
+                        });
+                    }
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce nested function call closing brackets on same line: }));" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: Array of objects - each object should start on a new line
+// Good: eventTemplates: [\n    {\n        action: updateAction,\n    },\n]
+// Bad: eventTemplates: [{\n    action: updateAction,\n}]
+const arrayObjectsOnNewLines = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            ArrayExpression(node) {
+                const elements = node.elements;
+
+                // Only apply to arrays with object elements
+                if (elements.length === 0) return;
+
+                // Check if all non-null elements are objects
+                const objectElements = elements.filter((el) => el && el.type === "ObjectExpression");
+
+                if (objectElements.length === 0) return;
+
+                // Skip single-line arrays (intentionally compact)
+                if (node.loc.start.line === node.loc.end.line) return;
+
+                const openBracket = sourceCode.getFirstToken(node);
+
+                // Check first object element
+                const firstElement = elements[0];
+
+                if (firstElement && firstElement.type === "ObjectExpression") {
+                    // Check if [ and { are on the same line
+                    if (openBracket.loc.end.line === firstElement.loc.start.line) {
+                        const openBrace = sourceCode.getFirstToken(firstElement);
+                        const indent = " ".repeat(openBracket.loc.start.column + 4);
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBracket.range[1], openBrace.range[0]],
+                                "\n" + indent,
+                            ),
+                            message: "First object in array should start on a new line",
+                            node: firstElement,
+                        });
+                    }
+                }
+
+                // Check closing bracket - should be on its own line
+                const closeBracket = sourceCode.getLastToken(node);
+                const lastElement = elements[elements.length - 1];
+
+                if (lastElement && lastElement.type === "ObjectExpression") {
+                    const lastBrace = sourceCode.getLastToken(lastElement);
+                    const tokenAfterBrace = sourceCode.getTokenAfter(lastBrace);
+
+                    // Skip trailing comma if present
+                    let tokenBeforeCloseBracket = tokenAfterBrace;
+
+                    if (tokenAfterBrace && tokenAfterBrace.value === ",") {
+                        tokenBeforeCloseBracket = sourceCode.getTokenAfter(tokenAfterBrace);
+                    }
+
+                    // Check if } (or },) and ] are on same line - they should NOT be
+                    if (lastBrace.loc.end.line === closeBracket.loc.start.line) {
+                        const indent = " ".repeat(openBracket.loc.start.column);
+
+                        context.report({
+                            fix: (fixer) => {
+                                // Find the actual content between last element and ]
+                                const textBetween = sourceCode.text.slice(lastElement.range[1], closeBracket.range[0]);
+                                const hasComma = textBetween.includes(",");
+
+                                if (hasComma) {
+                                    // Replace from after the object to before ]
+                                    return fixer.replaceTextRange(
+                                        [lastElement.range[1], closeBracket.range[0]],
+                                        ",\n" + indent,
+                                    );
+                                }
+
+                                return fixer.replaceTextRange(
+                                    [lastElement.range[1], closeBracket.range[0]],
+                                    ",\n" + indent,
+                                );
+                            },
+                            message: "Closing bracket should be on its own line after array of objects",
+                            node: closeBracket,
+                        });
+                    }
+                }
+
+                // Check each subsequent object starts on a new line
+                for (let i = 1; i < elements.length; i++) {
+                    const prevElement = elements[i - 1];
+                    const currentElement = elements[i];
+
+                    if (!currentElement || currentElement.type !== "ObjectExpression") continue;
+                    if (!prevElement) continue;
+
+                    // Get the comma after previous element
+                    const commaToken = sourceCode.getTokenAfter(prevElement);
+
+                    if (!commaToken || commaToken.value !== ",") continue;
+
+                    // Check if previous element's closing and current element's opening are on same line
+                    if (commaToken.loc.end.line === currentElement.loc.start.line) {
+                        const indent = " ".repeat(openBracket.loc.start.column + 4);
+                        const openBrace = sourceCode.getFirstToken(currentElement);
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [commaToken.range[1], openBrace.range[0]],
+                                "\n" + indent,
+                            ),
+                            message: "Each object in array should start on a new line",
+                            node: currentElement,
+                        });
+                    }
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce array of objects to have each object on a new line" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: String property keys should not have extra spaces inside quotes
+// e.g., "& a" not " & a "
+const stringPropertySpacing = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            Property(node) {
+                const { key } = node;
+
+                // Only check string literal keys
+                if (key.type !== "Literal" || typeof key.value !== "string") return;
+
+                const keyValue = key.value;
+
+                // Check if the string has leading or trailing spaces
+                const trimmed = keyValue.trim();
+
+                if (keyValue !== trimmed && trimmed.length > 0) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(key, `"${trimmed}"`),
+                        message: `String property key should not have extra spaces inside quotes: "${trimmed}" not "${keyValue}"`,
+                        node: key,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce no extra spaces inside string property keys" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: No spaces inside array brackets for member expressions
+// e.g., arr[value] not arr[ value ]
+const memberExpressionBracketSpacing = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            MemberExpression(node) {
+                // Only check computed member expressions (bracket notation)
+                if (!node.computed) return;
+
+                const openBracket = sourceCode.getTokenBefore(node.property);
+                const closeBracket = sourceCode.getTokenAfter(node.property);
+
+                if (!openBracket || openBracket.value !== "[") return;
+                if (!closeBracket || closeBracket.value !== "]") return;
+
+                // Check for space after [
+                const textAfterOpen = sourceCode.text.slice(openBracket.range[1], node.property.range[0]);
+
+                if (textAfterOpen.includes(" ") || textAfterOpen.includes("\n")) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBracket.range[1], node.property.range[0]],
+                            "",
+                        ),
+                        message: "No space after opening bracket in member expression",
+                        node: openBracket,
+                    });
+                }
+
+                // Check for space before ]
+                const textBeforeClose = sourceCode.text.slice(node.property.range[1], closeBracket.range[0]);
+
+                if (textBeforeClose.includes(" ") || textBeforeClose.includes("\n")) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [node.property.range[1], closeBracket.range[0]],
+                            "",
+                        ),
+                        message: "No space before closing bracket in member expression",
+                        node: closeBracket,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce no spaces inside brackets for member expressions" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: Object property values that are objects should have { on same line as :
+// e.g., "& a": { color: "red" } not "& a":\n    { color: "red" }
+const objectPropertyValueBrace = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            Property(node) {
+                const { value } = node;
+
+                // Only check object expression values
+                if (value.type !== "ObjectExpression") return;
+
+                // Get the colon token
+                const colonToken = sourceCode.getTokenBefore(value, (t) => t.value === ":");
+
+                if (!colonToken) return;
+
+                // Get the opening brace of the object value
+                const openBrace = sourceCode.getFirstToken(value);
+
+                if (!openBrace || openBrace.value !== "{") return;
+
+                // Check if colon and { are on different lines
+                if (colonToken.loc.end.line !== openBrace.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [colonToken.range[1], openBrace.range[0]],
+                            " ",
+                        ),
+                        message: "Opening brace should be on the same line as colon for object property values",
+                        node: openBrace,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce opening brace on same line as colon for object property values" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: No space between function name and opening parenthesis
+// e.g., useDispatch() not useDispatch ()
+const functionCallSpacing = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            CallExpression(node) {
+                const { callee } = node;
+
+                // Get the last token of the callee (function name or member expression)
+                const calleeLastToken = sourceCode.getLastToken(callee);
+
+                // Get the opening parenthesis
+                const openParen = sourceCode.getTokenAfter(callee);
+
+                if (!openParen || openParen.value !== "(") return;
+
+                // Check if there's space between callee and opening paren
+                const textBetween = sourceCode.text.slice(calleeLastToken.range[1], openParen.range[0]);
+
+                if (textBetween.length > 0) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [calleeLastToken.range[1], openParen.range[0]],
+                            "",
+                        ),
+                        message: "No space between function name and opening parenthesis",
+                        node: openParen,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce no space between function name and opening parenthesis" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: No spaces inside import path quotes
+// e.g., from "@mui/material" not from " @mui/material "
+const importSourceSpacing = {
+    create(context) {
+        return {
+            ImportDeclaration(node) {
+                const { source } = node;
+
+                if (source.type !== "Literal" || typeof source.value !== "string") return;
+
+                const sourceValue = source.value;
+                const trimmed = sourceValue.trim();
+
+                if (sourceValue !== trimmed && trimmed.length > 0) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(source, `"${trimmed}"`),
+                        message: `Import path should not have extra spaces inside quotes: "${trimmed}" not "${sourceValue}"`,
+                        node: source,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce no extra spaces inside import path quotes" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: Simplify simple function calls with arrow function to single line
+// e.g., fn(() => call(arg)) not fn(\n    () => call(arg),\n)
+const simpleCallSingleLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Check if a node is simple enough to be on one line
+        const isSimpleArg = (argNode) => {
+            if (!argNode) return false;
+
+            // Simple literals (strings, numbers, booleans)
+            if (argNode.type === "Literal") return true;
+
+            // Simple identifiers
+            if (argNode.type === "Identifier") return true;
+
+            // Template literals without expressions
+            if (argNode.type === "TemplateLiteral" && argNode.expressions.length === 0) return true;
+
+            return false;
+        };
+
+        const isSimpleBody = (bodyNode) => {
+            // Handle ImportExpression (dynamic import)
+            if (bodyNode.type === "ImportExpression") {
+                return isSimpleArg(bodyNode.source);
+            }
+
+            // Handle CallExpression
+            if (bodyNode.type === "CallExpression") {
+                // Check if it's import() or a simple function call
+                const isImport = bodyNode.callee.type === "Import";
+                const isSimpleCall = bodyNode.callee.type === "Identifier";
+                const isMemberCall = bodyNode.callee.type === "MemberExpression";
+
+                if (!isImport && !isSimpleCall && !isMemberCall) return false;
+
+                // Must have simple arguments (0-2 args, all simple)
+                if (bodyNode.arguments.length > 2) return false;
+
+                return bodyNode.arguments.every(isSimpleArg);
+            }
+
+            return false;
+        };
+
+        return {
+            CallExpression(node) {
+                const { callee, arguments: args } = node;
+
+                // Only check simple function calls (identifier or member expression)
+                if (callee.type !== "Identifier" && callee.type !== "MemberExpression") return;
+
+                // Must have exactly one argument
+                if (args.length !== 1) return;
+
+                const arg = args[0];
+
+                // Argument must be arrow function
+                if (arg.type !== "ArrowFunctionExpression") return;
+
+                // Arrow function must have no params
+                if (arg.params.length !== 0) return;
+
+                const { body } = arg;
+
+                // Body must be a simple call expression or import
+                if (!isSimpleBody(body)) return;
+
+                // Check if the call spans multiple lines
+                if (node.loc.start.line === node.loc.end.line) return;
+
+                // Get the text and check if it would be reasonably short on one line
+                const calleeText = sourceCode.getText(callee);
+                const bodyText = sourceCode.getText(body);
+                const simplified = `${calleeText}(() => ${bodyText})`;
+
+                // Only simplify if the result is not too long (max ~120 chars)
+                if (simplified.length > 120) return;
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(node, simplified),
+                    message: "Simple function call with arrow function should be on a single line",
+                    node,
+                });
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Simplify simple function calls with arrow function to single line" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: Single simple argument should be on one line
+// e.g., dayjs.extend(utc) not dayjs.extend(utc,\n)
+// This overrides function-call-argument-newline for single simple arguments
+const singleArgumentOneLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const isSimpleArg = (argNode) => {
+            if (!argNode) return false;
+
+            // Simple literals (strings, numbers, booleans, null)
+            if (argNode.type === "Literal") return true;
+
+            // Simple identifiers
+            if (argNode.type === "Identifier") return true;
+
+            // Simple member expressions like obj.prop
+            if (argNode.type === "MemberExpression") {
+                return argNode.object.type === "Identifier"
+                    && argNode.property.type === "Identifier"
+                    && !argNode.computed;
+            }
+
+            // Template literals without expressions
+            if (argNode.type === "TemplateLiteral" && argNode.expressions.length === 0) return true;
+
+            // Unary expressions like !flag, -1
+            if (argNode.type === "UnaryExpression") {
+                return isSimpleArg(argNode.argument);
+            }
+
+            return false;
+        };
+
+        return {
+            CallExpression(node) {
+                const { arguments: args, callee } = node;
+
+                // Only check calls with exactly one argument
+                if (args.length !== 1) return;
+
+                const arg = args[0];
+
+                // Only handle simple arguments
+                if (!isSimpleArg(arg)) return;
+
+                // Check if the call spans multiple lines
+                if (node.loc.start.line === node.loc.end.line) return;
+
+                // Get tokens
+                const openParen = sourceCode.getTokenAfter(
+                    callee,
+                    (token) => token.value === "(",
+                );
+                const closeParen = sourceCode.getLastToken(node);
+
+                if (!openParen || !closeParen || closeParen.value !== ")") return;
+
+                // Build the fixed version
+                const calleeText = sourceCode.getText(callee);
+                const argText = sourceCode.getText(arg);
+                const fixedCall = `${calleeText}(${argText})`;
+
+                // Only fix if reasonable length
+                if (fixedCall.length > 120) return;
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(
+                        node,
+                        fixedCall,
+                    ),
+                    message: "Single simple argument should be on one line",
+                    node,
+                });
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce single simple argument calls to be on one line" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: Multiple arguments must each be on their own line
+// e.g., setValue(\n    "numberOfCopies",\n    null,\n) not setValue("numberOfCopies", null)
+const multipleArgumentsPerLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            CallExpression(node) {
+                const { arguments: args, callee } = node;
+
+                // Only check calls with 2+ arguments
+                if (args.length < 2) return;
+
+                // Get tokens
+                const openParen = sourceCode.getTokenAfter(
+                    callee,
+                    (token) => token.value === "(",
+                );
+                const closeParen = sourceCode.getLastToken(node);
+
+                if (!openParen || !closeParen || closeParen.value !== ")") return;
+
+                // Calculate indent
+                const callLine = sourceCode.lines[node.loc.start.line - 1];
+                const baseIndent = callLine.match(/^\s*/)[0];
+                const argIndent = baseIndent + "    ";
+
+                const firstArg = args[0];
+                const lastArg = args[args.length - 1];
+
+                // First arg should be on new line after opening paren
+                if (openParen.loc.end.line === firstArg.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openParen.range[1], firstArg.range[0]],
+                            "\n" + argIndent,
+                        ),
+                        message: "First argument should be on its own line",
+                        node: firstArg,
+                    });
+                }
+
+                // Each arg should be on its own line
+                for (let i = 0; i < args.length - 1; i += 1) {
+                    const current = args[i];
+                    const next = args[i + 1];
+
+                    if (current.loc.end.line === next.loc.start.line) {
+                        const commaToken = sourceCode.getTokenAfter(
+                            current,
+                            (token) => token.value === ",",
+                        );
+
+                        if (commaToken) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [commaToken.range[1], next.range[0]],
+                                    "\n" + argIndent,
+                                ),
+                                message: "Each argument should be on its own line",
+                                node: next,
+                            });
+                        }
+                    }
+                }
+
+                // Closing paren should be on its own line
+                if (closeParen.loc.start.line === lastArg.loc.end.line) {
+                    // Check for trailing comma
+                    const tokenBeforeClose = sourceCode.getTokenBefore(closeParen);
+                    const hasTrailingComma = tokenBeforeClose && tokenBeforeClose.value === ",";
+
+                    context.report({
+                        fix: (fixer) => {
+                            if (hasTrailingComma) {
+                                return fixer.replaceTextRange(
+                                    [tokenBeforeClose.range[1], closeParen.range[0]],
+                                    "\n" + baseIndent,
+                                );
+                            }
+
+                            return fixer.replaceTextRange(
+                                [lastArg.range[1], closeParen.range[0]],
+                                ",\n" + baseIndent,
+                            );
+                        },
+                        message: "Closing parenthesis should be on its own line",
+                        node: closeParen,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce multiple arguments to each be on their own line" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: Curried arrow function body must start on same line as =>
+// e.g., ) => async (dispatch) => { not ) =>\n    async (dispatch) => {
+const curriedArrowSameLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            ArrowFunctionExpression(node) {
+                const { body } = node;
+
+                // Only check if body is another arrow function (curried)
+                // or an async arrow function (CallExpression with async)
+                if (body.type !== "ArrowFunctionExpression") return;
+
+                // Get the arrow token =>
+                const arrowToken = sourceCode.getTokenBefore(
+                    body,
+                    (token) => token.value === "=>",
+                );
+
+                if (!arrowToken) return;
+
+                // Get the first token of the body (could be 'async' or '(')
+                const bodyFirstToken = sourceCode.getFirstToken(body);
+
+                if (!bodyFirstToken) return;
+
+                // Check if they're on the same line
+                if (arrowToken.loc.end.line !== bodyFirstToken.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [arrowToken.range[1], bodyFirstToken.range[0]],
+                            " ",
+                        ),
+                        message: "Curried arrow function should start on the same line as =>",
+                        node: body,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce curried arrow function to start on same line as =>" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: Enforce absolute imports from index files only for local paths
+// Local paths (starting with @/) should only import from folder-level index files
+// e.g., @/atoms is OK, @/atoms/menus/photo-actions-menu is NOT OK
+const absoluteImportsOnly = {
+    create(context) {
+        // Get the alias prefix from options or default to "@/"
+        const aliasPrefix = (context.options[0] && context.options[0].aliasPrefix) || "@/";
+
+        // Redux ecosystem folders - can be standalone or inside redux folder
+        // These are allowed as: @/actions, @/types, @/store, @/reducers, @/thunks
+        // OR as: @/redux/actions, @/redux/types, @/redux/store, @/redux/reducers, @/redux/thunks
+        const reduxSubfolders = ["actions", "reducers", "store", "thunks", "types"];
+
+        // List of allowed top-level folders (can be configured via options)
+        const allowedFolders = (context.options[0] && context.options[0].allowedFolders) || [
+            "actions",
+            "apis",
+            "assets",
+            "atoms",
+            "components",
+            "constants",
+            "contexts",
+            "data",
+            "hooks",
+            "layouts",
+            "middlewares",
+            "providers",
+            "reducers",
+            "redux",
+            "requests",
+            "routes",
+            "schemas",
+            "services",
+            "store",
+            "styles",
+            "theme",
+            "thunks",
+            "types",
+            "utils",
+            "views",
+        ];
+
+        return {
+            ImportDeclaration(node) {
+                const importPath = node.source.value;
+
+                // Skip if not a string
+                if (typeof importPath !== "string") return;
+
+                // Get the current filename
+                const filename = context.filename || context.getFilename();
+                const normalizedFilename = filename.replace(/\\/g, "/");
+
+                // Check if this is an index file - index files are allowed to use relative imports
+                // for re-exporting their contents
+                const isIndexFile = /\/index\.(js|jsx|ts|tsx)$/.test(normalizedFilename);
+
+                // 1. Disallow relative imports (starting with ./ or ../)
+                // EXCEPT in index files which need relative imports for re-exports
+                if (importPath.startsWith("./") || importPath.startsWith("../")) {
+                    if (!isIndexFile) {
+                        context.report({
+                            message: `Relative imports are not allowed. Use absolute imports with "${aliasPrefix}" prefix instead.`,
+                            node: node.source,
+                        });
+                    }
+
+                    return;
+                }
+
+                // 2. Skip node_modules packages (bare imports without @ or starting with @scope/ but not @/)
+                // Examples: "react", "react-dom", "lodash"
+                if (!importPath.startsWith("@") && !importPath.startsWith(".")) {
+                    return; // Node modules package
+                }
+
+                // 3. Skip scoped packages from node_modules (e.g., @mui/material, @reduxjs/toolkit)
+                // These start with @ but NOT with the local alias prefix
+                if (importPath.startsWith("@") && !importPath.startsWith(aliasPrefix)) {
+                    return; // Scoped npm package
+                }
+
+                // 4. Check local alias imports (e.g., @/atoms, @/components)
+                if (importPath.startsWith(aliasPrefix)) {
+                    // Remove the alias prefix to get the path
+                    const pathAfterAlias = importPath.slice(aliasPrefix.length);
+
+                    // Split by "/" to get path segments
+                    const segments = pathAfterAlias.split("/").filter((s) => s.length > 0);
+
+                    // Must have at least one segment
+                    if (segments.length === 0) {
+                        context.report({
+                            message: `Invalid import path "${importPath}". Specify a folder to import from.`,
+                            node: node.source,
+                        });
+
+                        return;
+                    }
+
+                    // Get the first segment (folder name)
+                    const folderName = segments[0];
+
+                    // Check if it's an allowed folder
+                    if (!allowedFolders.includes(folderName)) {
+                        context.report({
+                            message: `Unknown folder "${folderName}" in import path. Allowed folders: ${allowedFolders.join(", ")}`,
+                            node: node.source,
+                        });
+
+                        return;
+                    }
+
+                    // Only one segment is allowed (import from index file)
+                    // e.g., @/atoms is OK, @/atoms/menus is NOT OK
+                    // EXCEPTION: Redux ecosystem - @/redux/actions, @/redux/types, etc. are allowed
+                    if (segments.length > 1) {
+                        // Check if this is a redux subfolder import (e.g., @/redux/actions)
+                        const isReduxSubfolder = folderName === "redux"
+                            && segments.length === 2
+                            && reduxSubfolders.includes(segments[1]);
+
+                        if (isReduxSubfolder) {
+                            // This is allowed: @/redux/actions, @/redux/types, etc.
+                            return;
+                        }
+
+                        // Check if importing deeper than allowed redux subfolder
+                        // e.g., @/redux/actions/thunks is NOT allowed
+                        if (folderName === "redux" && segments.length > 2) {
+                            const suggestedImport = `${aliasPrefix}redux/${segments[1]}`;
+
+                            context.report({
+                                message: `Deep imports are not allowed. Import from "${suggestedImport}" instead of "${importPath}". Export the module from the folder's index file.`,
+                                node: node.source,
+                            });
+
+                            return;
+                        }
+
+                        // Assets folder allows deep imports (images, fonts, etc. don't have index files)
+                        // e.g., @/assets/images/logo.svg is allowed
+                        if (folderName === "assets") {
+                            return;
+                        }
+
+                        const suggestedImport = `${aliasPrefix}${folderName}`;
+
+                        context.report({
+                            message: `Deep imports are not allowed. Import from "${suggestedImport}" instead of "${importPath}". Export the module from the folder's index file.`,
+                            node: node.source,
+                        });
+                    }
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce absolute imports from index files only for local paths" },
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    aliasPrefix: { type: "string" },
+                    allowedFolders: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                },
+                type: "object",
+            },
+        ],
+        type: "problem",
+    },
+};
+
+// Rule: Ensure module folders have index files that export all contents
+// Each module folder (atoms, components, etc.) must have an index file
+// The index file must export all subfolders and files in the module
+const moduleIndexExports = {
+    create(context) {
+        const filename = context.filename || context.getFilename();
+        const srcPath = nodePath.resolve(filename, "../../..").replace(/\\/g, "/");
+
+        // Get options or use defaults
+        const options = context.options[0] || {};
+        const moduleFolders = options.moduleFolders || [
+            "apis",
+            "assets",
+            "atoms",
+            "components",
+            "constants",
+            "contexts",
+            "data",
+            "hooks",
+            "layouts",
+            "middlewares",
+            "providers",
+            "redux",
+            "requests",
+            "routes",
+            "schemas",
+            "services",
+            "styles",
+            "theme",
+            "utils",
+            "views",
+        ];
+
+        // Folders that use lazy loading and shouldn't require index exports
+        // These folders typically have components loaded via dynamic import()
+        const lazyLoadFolders = options.lazyLoadFolders || ["views"];
+
+        // Files/folders to ignore
+        const ignorePatterns = options.ignorePatterns || [
+            "index.js",
+            "index.jsx",
+            "index.ts",
+            "index.tsx",
+            ".DS_Store",
+            "__tests__",
+            "__mocks__",
+            "*.test.js",
+            "*.test.jsx",
+            "*.spec.js",
+            "*.spec.jsx",
+        ];
+
+        const shouldIgnore = (name) => ignorePatterns.some((pattern) => {
+            if (pattern.includes("*")) {
+                const regex = new RegExp("^" + pattern.replace(/\*/g, ".*") + "$");
+
+                return regex.test(name);
+            }
+
+            return name === pattern;
+        });
+
+        const getExportedSources = (node) => {
+            const exportedSources = new Set();
+            const importedNames = new Map();
+
+            if (node.type === "Program") {
+                // First pass: collect all imports and their sources
+                node.body.forEach((statement) => {
+                    // import Foo from "./folder/file"
+                    // import { Foo } from "./folder/file"
+                    if (statement.type === "ImportDeclaration" && statement.source) {
+                        const sourcePath = statement.source.value;
+
+                        statement.specifiers.forEach((spec) => {
+                            if (spec.local && spec.local.name) {
+                                importedNames.set(
+                                    spec.local.name,
+                                    sourcePath,
+                                );
+                            }
+                        });
+                    }
+                });
+
+                // Second pass: check what's exported
+                node.body.forEach((statement) => {
+                    // export { Foo, Bar } from "./file"
+                    if (statement.type === "ExportNamedDeclaration") {
+                        // Track direct re-exports: export { ... } from "./path"
+                        if (statement.source) {
+                            const sourcePath = statement.source.value;
+
+                            exportedSources.add(sourcePath);
+                        }
+
+                        // Track exports of imported items: export { Foo }
+                        if (statement.specifiers && !statement.source) {
+                            statement.specifiers.forEach((spec) => {
+                                const exportedName = spec.local ? spec.local.name : spec.exported.name;
+
+                                if (importedNames.has(exportedName)) {
+                                    exportedSources.add(importedNames.get(exportedName));
+                                }
+                            });
+                        }
+                    }
+
+                    // export * from "./file"
+                    if (statement.type === "ExportAllDeclaration" && statement.source) {
+                        exportedSources.add(statement.source.value);
+                    }
+                });
+            }
+
+            return exportedSources;
+        };
+
+        const normalizeModuleName = (name) => {
+            // Remove file extension
+            let normalized = name.replace(/\.(js|jsx|ts|tsx)$/, "");
+
+            // Convert kebab-case to various formats for matching
+            return normalized;
+        };
+
+        const checkIndexFileExports = (programNode, dirPath, folderName) => {
+            // Get all items in the directory
+            let items;
+
+            try {
+                items = fs.readdirSync(dirPath);
+            } catch {
+                return;
+            }
+
+            // Filter out ignored items
+            const moduleItems = items.filter((item) => {
+                if (shouldIgnore(item)) return false;
+
+                const itemPath = nodePath.join(dirPath, item);
+
+                try {
+                    const stat = fs.statSync(itemPath);
+
+                    // Include directories and JS/JSX files
+                    if (stat.isDirectory()) return true;
+                    if (/\.(js|jsx|ts|tsx)$/.test(item)) return true;
+                } catch {
+                    return false;
+                }
+
+                return false;
+            });
+
+            if (moduleItems.length === 0) return;
+
+            // Get all sources that are being exported
+            const exportedSources = getExportedSources(programNode);
+
+            // Check each module item
+            moduleItems.forEach((item) => {
+                const itemName = normalizeModuleName(item);
+                const itemPath = nodePath.join(dirPath, item);
+                const isDirectory = fs.statSync(itemPath).isDirectory();
+
+                // Check if this item or any deep path from it is exported
+                const isExported = Array.from(exportedSources).some((source) => {
+                    // Direct matches: ./folder, ./file
+                    if (source === `./${item}` || source === `./${itemName}`) {
+                        return true;
+                    }
+
+                    // Deep path matches: ./folder/subfolder/file starts with ./folder
+                    if (source.startsWith(`./${itemName}/`)) {
+                        return true;
+                    }
+
+                    // Handle cases like ./folder/index
+                    if (isDirectory && (source === `./${itemName}/index` || source === `./${itemName}/index.js` || source === `./${itemName}/index.jsx`)) {
+                        return true;
+                    }
+
+                    return false;
+                });
+
+                if (!isExported) {
+                    context.report({
+                        message: `Module "${item}" in "${folderName}" folder is not exported from index file. Add: export * from "./${itemName}"; or export { ... } from "./${itemName}";`,
+                        node: programNode,
+                    });
+                }
+            });
+        };
+
+        return {
+            Program(node) {
+                // Normalize the filename path
+                const normalizedFilename = filename.replace(/\\/g, "/");
+
+                // Check if this is an index file in a module folder
+                const indexMatch = normalizedFilename.match(/\/src\/([^/]+)\/index\.(js|jsx|ts|tsx)$/);
+
+                if (indexMatch) {
+                    const folderName = indexMatch[1];
+
+                    // Skip lazy-loaded folders - they use dynamic imports
+                    if (lazyLoadFolders.includes(folderName)) return;
+
+                    if (moduleFolders.includes(folderName)) {
+                        const dirPath = nodePath.dirname(filename);
+
+                        checkIndexFileExports(
+                            node,
+                            dirPath,
+                            folderName,
+                        );
+                    }
+                }
+
+                // Check if this file is in a module folder but NOT the index file
+                // to ensure the module folder HAS an index file
+                const moduleMatch = normalizedFilename.match(/\/src\/([^/]+)\/([^/]+)\.(js|jsx|ts|tsx)$/);
+
+                if (moduleMatch) {
+                    const folderName = moduleMatch[1];
+                    const fileName = moduleMatch[2];
+
+                    if (moduleFolders.includes(folderName) && fileName !== "index") {
+                        const dirPath = nodePath.dirname(filename);
+                        const indexPath = nodePath.join(dirPath, "index.js");
+                        const indexPathJsx = nodePath.join(dirPath, "index.jsx");
+
+                        if (!fs.existsSync(indexPath) && !fs.existsSync(indexPathJsx)) {
+                            context.report({
+                                message: `Module folder "${folderName}" is missing an index file. Create index.js to export all modules.`,
+                                node,
+                            });
+                        }
+                    }
+                }
+
+                // Check for subfolder index files
+                const subfolderMatch = normalizedFilename.match(/\/src\/([^/]+)\/([^/]+)\/index\.(js|jsx|ts|tsx)$/);
+
+                if (subfolderMatch) {
+                    const parentFolder = subfolderMatch[1];
+                    const subFolder = subfolderMatch[2];
+
+                    // Skip lazy-loaded folders - they use dynamic imports
+                    if (lazyLoadFolders.includes(parentFolder)) return;
+
+                    if (moduleFolders.includes(parentFolder)) {
+                        const dirPath = nodePath.dirname(filename);
+
+                        checkIndexFileExports(
+                            node,
+                            dirPath,
+                            `${parentFolder}/${subFolder}`,
+                        );
+                    }
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Ensure module folders have index files that export all contents" },
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    ignorePatterns: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    moduleFolders: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                },
+                type: "object",
+            },
+        ],
+        type: "problem",
+    },
+};
+
+// Rule: Enforce consistent formatting for JSX ternary expressions
+// Simple format: {condition ? <Simple>text</Simple> : <Other>text</Other>}
+// Complex format: {condition ? (
+//     <Complex />
+// ) : (
+//     <Other />
+// )}
+const jsxTernaryFormat = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Helper to get indentation of a line
+        const getIndent = (node) => {
+            const line = sourceCode.lines[node.loc.start.line - 1];
+            const match = line.match(/^(\s*)/);
+
+            return match ? match[1] : "";
+        };
+
+        // Check if JSX element is simple (single line)
+        const isSimpleJsx = (jsxNode) => {
+            if (jsxNode.type !== "JSXElement" && jsxNode.type !== "JSXFragment") return false;
+
+            return jsxNode.loc.start.line === jsxNode.loc.end.line;
+        };
+
+        // Check if a node is wrapped in unnecessary parentheses
+        const hasUnnecessaryParens = (jsxNode) => {
+            const tokenBefore = sourceCode.getTokenBefore(jsxNode);
+            const tokenAfter = sourceCode.getTokenAfter(jsxNode);
+
+            return tokenBefore && tokenAfter && tokenBefore.value === "(" && tokenAfter.value === ")";
+        };
+
+        return {
+            ConditionalExpression(node) {
+                // Only handle ternaries in JSX context
+                const parent = node.parent;
+
+                if (!parent || parent.type !== "JSXExpressionContainer") return;
+
+                const {
+                    alternate,
+                    consequent,
+                } = node;
+
+                // At least one branch should be JSX
+                const isConsequentJsx = consequent.type === "JSXElement" || consequent.type === "JSXFragment";
+                const isAlternateJsx = alternate.type === "JSXElement" || alternate.type === "JSXFragment";
+
+                if (!isConsequentJsx && !isAlternateJsx) return;
+
+                const consequentSimple = isSimpleJsx(consequent);
+                const alternateSimple = isSimpleJsx(alternate);
+
+                const baseIndent = getIndent(node);
+                const contentIndent = baseIndent + "    ";
+
+                // Check 0: Condition should be on same line as opening {
+                const openBrace = sourceCode.getFirstToken(parent);
+
+                if (openBrace && openBrace.value === "{") {
+                    if (openBrace.loc.end.line !== node.test.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBrace.range[1], node.test.range[0]],
+                                "",
+                            ),
+                            message: "Ternary condition should be on same line as opening '{'",
+                            node: node.test,
+                        });
+                    }
+                }
+
+                // Get the question mark token
+                const questionToken = sourceCode.getTokenAfter(
+                    node.test,
+                    (token) => token.value === "?",
+                );
+
+                if (!questionToken) return;
+
+                // Get the colon token
+                const colonToken = sourceCode.getTokenAfter(
+                    consequent,
+                    (token) => token.value === ":",
+                );
+
+                if (!colonToken) return;
+
+                // Get closing brace of JSXExpressionContainer
+                const closeBrace = sourceCode.getLastToken(parent);
+
+                // Check for unnecessary parentheses around simple JSX
+                if (consequentSimple && hasUnnecessaryParens(consequent)) {
+                    const openParen = sourceCode.getTokenBefore(consequent);
+                    const closeParen = sourceCode.getTokenAfter(consequent);
+
+                    context.report({
+                        fix: (fixer) => [
+                            fixer.remove(openParen),
+                            fixer.remove(closeParen),
+                        ],
+                        message: "Unnecessary parentheses around simple JSX element",
+                        node: consequent,
+                    });
+                }
+
+                if (alternateSimple && hasUnnecessaryParens(alternate)) {
+                    const openParen = sourceCode.getTokenBefore(alternate);
+                    const closeParen = sourceCode.getTokenAfter(alternate);
+
+                    context.report({
+                        fix: (fixer) => [
+                            fixer.remove(openParen),
+                            fixer.remove(closeParen),
+                        ],
+                        message: "Unnecessary parentheses around simple JSX element",
+                        node: alternate,
+                    });
+                }
+
+                // CASE 1: Both branches are simple - entire ternary on one line
+                if (consequentSimple && alternateSimple) {
+                    // Check if entire expression is on one line
+                    if (node.loc.start.line !== node.loc.end.line) {
+                        const testText = sourceCode.getText(node.test);
+                        const consequentText = sourceCode.getText(consequent);
+                        const alternateText = sourceCode.getText(alternate);
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceText(
+                                node,
+                                `${testText} ? ${consequentText} : ${alternateText}`,
+                            ),
+                            message: "Simple ternary with single-line JSX should be on one line",
+                            node,
+                        });
+                    }
+
+                    return;
+                }
+
+                // CASE 1.5: Consequent is simple JSX, alternate is non-JSX (e.g., function call)
+                // Format: {condition ? <Simple /> : functionCall({
+                //     props,
+                // })}
+                if (consequentSimple && isConsequentJsx && !isAlternateJsx) {
+                    // Condition, ?, simple JSX, and : should all be on the same line
+                    // Then alternate starts on the same line after :
+
+                    // ? should be on same line as condition
+                    if (node.test.loc.end.line !== questionToken.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [node.test.range[1], questionToken.range[0]],
+                                " ",
+                            ),
+                            message: "'?' should be on same line as condition",
+                            node: questionToken,
+                        });
+                    }
+
+                    // Simple JSX should be on same line as ?
+                    if (questionToken.loc.end.line !== consequent.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [questionToken.range[1], consequent.range[0]],
+                                " ",
+                            ),
+                            message: "Simple JSX should be on same line as '?'",
+                            node: consequent,
+                        });
+                    }
+
+                    // : should be on same line as simple JSX
+                    if (consequent.loc.end.line !== colonToken.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [consequent.range[1], colonToken.range[0]],
+                                " ",
+                            ),
+                            message: "':' should be on same line as simple JSX",
+                            node: colonToken,
+                        });
+                    }
+
+                    // Alternate (function call) should start on same line as :
+                    if (colonToken.loc.end.line !== alternate.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [colonToken.range[1], alternate.range[0]],
+                                " ",
+                            ),
+                            message: "Expression should start on same line as ':'",
+                            node: alternate,
+                        });
+                    }
+
+                    return;
+                }
+
+                // CASE 2: Consequent is simple, alternate is complex JSX
+                // Format: {condition ? <Simple /> : (
+                //     <Complex />
+                // )}
+                // Skip if alternate is not JSX (e.g., function call)
+                if (consequentSimple && !alternateSimple && isAlternateJsx) {
+                    // ? should be on same line as condition
+                    if (node.test.loc.end.line !== questionToken.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [node.test.range[1], questionToken.range[0]],
+                                " ",
+                            ),
+                            message: "'?' should be on same line as condition",
+                            node: questionToken,
+                        });
+                    }
+
+                    // Simple consequent should be on same line as ?
+                    if (questionToken.loc.end.line !== consequent.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [questionToken.range[1], consequent.range[0]],
+                                " ",
+                            ),
+                            message: "Simple JSX should be on same line as '?'",
+                            node: consequent,
+                        });
+                    }
+
+                    // : should be on same line as simple consequent
+                    if (consequent.loc.end.line !== colonToken.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [consequent.range[1], colonToken.range[0]],
+                                " ",
+                            ),
+                            message: "':' should be on same line as simple JSX",
+                            node: colonToken,
+                        });
+                    }
+
+                    // Check ( after :
+                    const tokenAfterColon = sourceCode.getTokenAfter(colonToken);
+
+                    if (tokenAfterColon && tokenAfterColon.value === "(") {
+                        // ( should be on same line as :
+                        if (colonToken.loc.end.line !== tokenAfterColon.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [colonToken.range[1], tokenAfterColon.range[0]],
+                                    " ",
+                                ),
+                                message: "'(' should be on same line as ':'",
+                                node: tokenAfterColon,
+                            });
+                        }
+
+                        // Complex JSX should start on new line after (
+                        const alternateStart = sourceCode.getTokenAfter(tokenAfterColon);
+
+                        if (alternateStart && tokenAfterColon.loc.end.line === alternateStart.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [tokenAfterColon.range[1], alternateStart.range[0]],
+                                    "\n" + contentIndent,
+                                ),
+                                message: "Complex JSX should start on new line after '('",
+                                node: alternate,
+                            });
+                        }
+                    }
+
+                    // Final ) should be on its own line, then )} together
+                    const lastToken = sourceCode.getLastToken(node);
+
+                    if (lastToken && lastToken.value === ")") {
+                        const tokenBeforeLast = sourceCode.getTokenBefore(lastToken);
+
+                        if (tokenBeforeLast && tokenBeforeLast.value !== "(" && tokenBeforeLast.loc.end.line === lastToken.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [tokenBeforeLast.range[1], lastToken.range[0]],
+                                    "\n" + baseIndent,
+                                ),
+                                message: "Closing ')' should be on new line",
+                                node: lastToken,
+                            });
+                        }
+
+                        // ) and } should be on same line
+                        if (closeBrace && closeBrace.value === "}" && lastToken.loc.end.line !== closeBrace.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [lastToken.range[1], closeBrace.range[0]],
+                                    "",
+                                ),
+                                message: "Closing ')}' should be together",
+                                node: closeBrace,
+                            });
+                        }
+                    }
+
+                    return;
+                }
+
+                // CASE 3: Consequent is complex JSX, alternate is simple
+                // Format: {condition ? (
+                //     <Complex />
+                // ) : <Simple />}
+                // Skip if consequent is not JSX (e.g., function call)
+                if (!consequentSimple && alternateSimple && isConsequentJsx) {
+                    const tokenAfterQuestion = sourceCode.getTokenAfter(questionToken);
+
+                    // ? ( should be on same line
+                    if (tokenAfterQuestion && tokenAfterQuestion.value === "(") {
+                        if (node.test.loc.end.line !== questionToken.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [node.test.range[1], questionToken.range[0]],
+                                    " ",
+                                ),
+                                message: "'?' should be on same line as condition",
+                                node: questionToken,
+                            });
+                        }
+
+                        if (questionToken.loc.end.line !== tokenAfterQuestion.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [questionToken.range[1], tokenAfterQuestion.range[0]],
+                                    " ",
+                                ),
+                                message: "'(' should be on same line as '?'",
+                                node: tokenAfterQuestion,
+                            });
+                        }
+
+                        // JSX after ( should start on new line
+                        const jsxStart = sourceCode.getTokenAfter(tokenAfterQuestion);
+
+                        if (jsxStart && tokenAfterQuestion.loc.end.line === jsxStart.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [tokenAfterQuestion.range[1], jsxStart.range[0]],
+                                    "\n" + contentIndent,
+                                ),
+                                message: "Complex JSX should start on new line after '('",
+                                node: consequent,
+                            });
+                        }
+                    }
+
+                    // ) before : should be on new line
+                    const tokenBeforeColon = sourceCode.getTokenBefore(colonToken);
+
+                    if (tokenBeforeColon && tokenBeforeColon.value === ")") {
+                        const jsxEnd = sourceCode.getTokenBefore(tokenBeforeColon);
+
+                        if (jsxEnd && jsxEnd.loc.end.line === tokenBeforeColon.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [jsxEnd.range[1], tokenBeforeColon.range[0]],
+                                    "\n" + baseIndent,
+                                ),
+                                message: "Closing ')' should be on new line after complex JSX",
+                                node: tokenBeforeColon,
+                            });
+                        }
+
+                        // ) : should be on same line
+                        if (tokenBeforeColon.loc.end.line !== colonToken.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [tokenBeforeColon.range[1], colonToken.range[0]],
+                                    " ",
+                                ),
+                                message: "':' should be on same line as ')'",
+                                node: colonToken,
+                            });
+                        }
+                    }
+
+                    // Simple alternate should be on same line as :
+                    if (colonToken.loc.end.line !== alternate.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [colonToken.range[1], alternate.range[0]],
+                                " ",
+                            ),
+                            message: "Simple JSX should be on same line as ':'",
+                            node: alternate,
+                        });
+                    }
+
+                    // } should be on same line as simple alternate
+                    if (closeBrace && closeBrace.value === "}" && alternate.loc.end.line !== closeBrace.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [alternate.range[1], closeBrace.range[0]],
+                                "",
+                            ),
+                            message: "'}' should be on same line as simple JSX",
+                            node: closeBrace,
+                        });
+                    }
+
+                    return;
+                }
+
+                // CASE 4: Both branches are complex JSX
+                // Format: {condition ? (
+                //     <Complex />
+                // ) : (
+                //     <Other />
+                // )}
+                // Skip if not BOTH branches are JSX (e.g., one is a function call)
+                if (!isConsequentJsx || !isAlternateJsx) return;
+
+                const tokenAfterQuestion = sourceCode.getTokenAfter(questionToken);
+
+                if (tokenAfterQuestion && tokenAfterQuestion.value === "(") {
+                    // ? should be on same line as test
+                    if (node.test.loc.end.line !== questionToken.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [node.test.range[1], questionToken.range[0]],
+                                " ",
+                            ),
+                            message: "'?' should be on same line as condition",
+                            node: questionToken,
+                        });
+                    }
+
+                    // ( should be on same line as ?
+                    if (questionToken.loc.end.line !== tokenAfterQuestion.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [questionToken.range[1], tokenAfterQuestion.range[0]],
+                                " ",
+                            ),
+                            message: "'(' should be on same line as '?'",
+                            node: tokenAfterQuestion,
+                        });
+                    }
+
+                    // JSX after ( should start on new line
+                    const jsxStart = sourceCode.getTokenAfter(tokenAfterQuestion);
+
+                    if (jsxStart && tokenAfterQuestion.loc.end.line === jsxStart.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [tokenAfterQuestion.range[1], jsxStart.range[0]],
+                                "\n" + contentIndent,
+                            ),
+                            message: "Complex JSX should start on new line after '('",
+                            node: consequent,
+                        });
+                    } else if (jsxStart && jsxStart.loc.start.line - tokenAfterQuestion.loc.end.line > 1) {
+                        // Check for empty lines after (
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [tokenAfterQuestion.range[1], jsxStart.range[0]],
+                                "\n" + contentIndent,
+                            ),
+                            message: "No empty lines after '(' in ternary",
+                            node: jsxStart,
+                        });
+                    }
+                }
+
+                // ) : ( pattern
+                const tokenBeforeColon = sourceCode.getTokenBefore(colonToken);
+                const tokenAfterColon = sourceCode.getTokenAfter(colonToken);
+
+                if (tokenBeforeColon && tokenBeforeColon.value === ")") {
+                    // ) should be on new line from JSX end
+                    const jsxEnd = sourceCode.getTokenBefore(tokenBeforeColon);
+
+                    if (jsxEnd && jsxEnd.loc.end.line === tokenBeforeColon.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [jsxEnd.range[1], tokenBeforeColon.range[0]],
+                                "\n" + baseIndent,
+                            ),
+                            message: "Closing ')' should be on new line after complex JSX",
+                            node: tokenBeforeColon,
+                        });
+                    } else if (jsxEnd && tokenBeforeColon.loc.start.line - jsxEnd.loc.end.line > 1) {
+                        // Check for empty lines before )
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [jsxEnd.range[1], tokenBeforeColon.range[0]],
+                                "\n" + baseIndent,
+                            ),
+                            message: "No empty lines before ')' in ternary",
+                            node: tokenBeforeColon,
+                        });
+                    }
+
+                    // ) : should be on same line
+                    if (tokenBeforeColon.loc.end.line !== colonToken.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [tokenBeforeColon.range[1], colonToken.range[0]],
+                                " ",
+                            ),
+                            message: "':' should be on same line as ')'",
+                            node: colonToken,
+                        });
+                    }
+                }
+
+                if (tokenAfterColon && tokenAfterColon.value === "(") {
+                    // ( should be on same line as :
+                    if (colonToken.loc.end.line !== tokenAfterColon.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [colonToken.range[1], tokenAfterColon.range[0]],
+                                " ",
+                            ),
+                            message: "'(' should be on same line as ':'",
+                            node: tokenAfterColon,
+                        });
+                    }
+
+                    // JSX after ( should start on new line
+                    const alternateStart = sourceCode.getTokenAfter(tokenAfterColon);
+
+                    if (alternateStart && tokenAfterColon.loc.end.line === alternateStart.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [tokenAfterColon.range[1], alternateStart.range[0]],
+                                "\n" + contentIndent,
+                            ),
+                            message: "Complex JSX should start on new line after '('",
+                            node: alternate,
+                        });
+                    } else if (alternateStart && alternateStart.loc.start.line - tokenAfterColon.loc.end.line > 1) {
+                        // Check for empty lines after ( in alternate
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [tokenAfterColon.range[1], alternateStart.range[0]],
+                                "\n" + contentIndent,
+                            ),
+                            message: "No empty lines after '(' in ternary",
+                            node: alternateStart,
+                        });
+                    }
+                }
+
+                // Final ) should be on its own line
+                const lastToken = sourceCode.getLastToken(node);
+
+                if (lastToken && lastToken.value === ")") {
+                    const tokenBeforeLast = sourceCode.getTokenBefore(lastToken);
+
+                    if (tokenBeforeLast && tokenBeforeLast.value !== "(" && tokenBeforeLast.loc.end.line === lastToken.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [tokenBeforeLast.range[1], lastToken.range[0]],
+                                "\n" + baseIndent,
+                            ),
+                            message: "Closing ')' should be on new line",
+                            node: lastToken,
+                        });
+                    } else if (tokenBeforeLast && tokenBeforeLast.value !== "(" && lastToken.loc.start.line - tokenBeforeLast.loc.end.line > 1) {
+                        // Check for empty lines before final )
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [tokenBeforeLast.range[1], lastToken.range[0]],
+                                "\n" + baseIndent,
+                            ),
+                            message: "No empty lines before ')' in ternary",
+                            node: lastToken,
+                        });
+                    }
+
+                    // ) and } should be on same line: )}
+                    if (closeBrace && closeBrace.value === "}" && lastToken.loc.end.line !== closeBrace.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [lastToken.range[1], closeBrace.range[0]],
+                                "",
+                            ),
+                            message: "Closing ')}' should be together on same line",
+                            node: closeBrace,
+                        });
+                    }
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce consistent formatting for JSX ternary expressions" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: Enforce consistent formatting for React hooks like useEffect, useCallback, useMemo
+// Format: useEffect(
+//     () => { ... },
+//     [deps],
+// );
+const hookCallbackFormat = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Hooks that take callback + deps array pattern
+        const hooksWithDeps = [
+            "useEffect",
+            "useLayoutEffect",
+            "useCallback",
+            "useMemo",
+            "useImperativeHandle",
+        ];
+
+        return {
+            CallExpression(node) {
+                const { callee } = node;
+
+                // Check if this is a hook call
+                if (callee.type !== "Identifier" || !hooksWithDeps.includes(callee.name)) return;
+
+                const args = node.arguments;
+
+                if (args.length === 0) return;
+
+                const firstArg = args[0];
+
+                // First argument should be arrow function or function expression
+                if (firstArg.type !== "ArrowFunctionExpression" && firstArg.type !== "FunctionExpression") return;
+
+                const openParen = sourceCode.getTokenAfter(callee);
+
+                if (!openParen || openParen.value !== "(") return;
+
+                // Check 1: Arrow function should start on new line after (
+                if (openParen.loc.end.line === firstArg.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openParen.range[1], firstArg.range[0]],
+                            "\n        ",
+                        ),
+                        message: `${callee.name} callback should start on a new line after opening parenthesis`,
+                        node: firstArg,
+                    });
+                }
+
+                // Check 2: If there's a second argument (deps array), it should be on its own line
+                if (args.length >= 2) {
+                    const secondArg = args[1];
+                    const commaAfterFirst = sourceCode.getTokenAfter(firstArg);
+
+                    if (commaAfterFirst && commaAfterFirst.value === ",") {
+                        // Deps array should be on new line after the comma
+                        if (commaAfterFirst.loc.end.line === secondArg.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [commaAfterFirst.range[1], secondArg.range[0]],
+                                    "\n        ",
+                                ),
+                                message: `${callee.name} dependency array should be on a new line`,
+                                node: secondArg,
+                            });
+                        }
+                    }
+
+                    // Check 3: Closing paren should be on its own line after deps array
+                    const lastArg = args[args.length - 1];
+                    let closeParen = sourceCode.getTokenAfter(lastArg);
+
+                    // Skip trailing comma
+                    if (closeParen && closeParen.value === ",") {
+                        closeParen = sourceCode.getTokenAfter(closeParen);
+                    }
+
+                    if (closeParen && closeParen.value === ")") {
+                        if (lastArg.loc.end.line === closeParen.loc.start.line) {
+                            // Get the token before closeParen to check for trailing comma
+                            const tokenBeforeClose = sourceCode.getTokenBefore(closeParen);
+                            const hasTrailingComma = tokenBeforeClose && tokenBeforeClose.value === ",";
+
+                            if (!hasTrailingComma) {
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange(
+                                        [lastArg.range[1], closeParen.range[0]],
+                                        ",\n    ",
+                                    ),
+                                    message: `${callee.name} closing parenthesis should be on a new line`,
+                                    node: closeParen,
+                                });
+                            } else {
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange(
+                                        [tokenBeforeClose.range[1], closeParen.range[0]],
+                                        "\n    ",
+                                    ),
+                                    message: `${callee.name} closing parenthesis should be on a new line`,
+                                    node: closeParen,
+                                });
+                            }
+                        }
+                    }
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce consistent formatting for React hooks (useEffect, useCallback, etc.)" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+// Rule: Array formatting based on item count
+// - 3 or less items: all on one line with brackets, no spaces inside brackets
+// - More than 3 items: each item on its own line
+// - No empty lines between items or brackets
+// - Array opening bracket on same line as property key
+const arrayItemsPerLine = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            ArrayExpression(node) {
+                const { elements } = node;
+
+                // Skip empty arrays
+                if (elements.length === 0) return;
+
+                // Skip hook dependency arrays (handled by hook-deps-per-line rule)
+                if (node.parent
+                    && node.parent.type === "CallExpression"
+                    && node.parent.callee
+                    && node.parent.callee.type === "Identifier"
+                    && /^use[A-Z]/.test(node.parent.callee.name)) {
+                    const args = node.parent.arguments;
+
+                    // Dependency array is typically the last argument
+                    if (args[args.length - 1] === node) return;
+                }
+
+                // Skip arrays with spread elements or complex nested structures
+                const hasComplexElement = elements.some((el) => {
+                    if (!el) return false;
+
+                    return el.type === "SpreadElement"
+                        || el.type === "ObjectExpression"
+                        || el.type === "ArrayExpression"
+                        || el.type === "ArrowFunctionExpression"
+                        || el.type === "FunctionExpression";
+                });
+
+                if (hasComplexElement) return;
+
+                const openBracket = sourceCode.getFirstToken(node);
+                const closeBracket = sourceCode.getLastToken(node);
+
+                if (!openBracket || !closeBracket) return;
+
+                const firstElement = elements[0];
+                const lastElement = elements[elements.length - 1];
+
+                if (!firstElement || !lastElement) return;
+
+                // Check if array is a property value that should be on same line as key
+                if (node.parent && node.parent.type === "Property") {
+                    const colonToken = sourceCode.getTokenBefore(node);
+
+                    if (colonToken && colonToken.value === ":") {
+                        if (openBracket.loc.start.line !== colonToken.loc.end.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [colonToken.range[1], openBracket.range[0]],
+                                    " ",
+                                ),
+                                message: "Array should start on same line as property key",
+                                node: openBracket,
+                            });
+                        }
+                    }
+                }
+
+                // Calculate base indent from parent or current line
+                let baseIndent = "";
+
+                if (node.parent && node.parent.type === "Property") {
+                    const propLine = sourceCode.lines[node.parent.loc.start.line - 1];
+
+                    baseIndent = propLine.match(/^\s*/)[0];
+                } else {
+                    const arrayLine = sourceCode.lines[node.loc.start.line - 1];
+
+                    baseIndent = arrayLine.match(/^\s*/)[0];
+                }
+
+                const itemIndent = baseIndent + "    ";
+
+                // 3 or less items: should be on one line with no extra spaces
+                if (elements.length <= 3) {
+                    const isMultiLine = node.loc.start.line !== node.loc.end.line;
+
+                    // Check for spaces inside brackets on single line arrays
+                    if (!isMultiLine) {
+                        const textAfterOpen = sourceCode.text.slice(openBracket.range[1], firstElement.range[0]);
+                        const textBeforeClose = sourceCode.text.slice(lastElement.range[1], closeBracket.range[0]);
+
+                        // Check for space after opening bracket or space before closing bracket
+                        // textBeforeClose might be "" or ", " or " " - any space is not allowed
+                        const hasSpaceAfterOpen = textAfterOpen.length > 0;
+                        const hasSpaceBeforeClose = textBeforeClose.includes(" ");
+
+                        if (hasSpaceAfterOpen || hasSpaceBeforeClose) {
+                            const itemsText = elements
+                                .filter((el) => el !== null)
+                                .map((el) => sourceCode.getText(el))
+                                .join(", ");
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceText(
+                                    node,
+                                    `[${itemsText}]`,
+                                ),
+                                message: "No spaces inside array brackets",
+                                node,
+                            });
+                        }
+
+                        return;
+                    }
+
+                    // Multi-line with 3 or less - collapse to one line
+                    const itemsText = elements
+                        .filter((el) => el !== null)
+                        .map((el) => sourceCode.getText(el))
+                        .join(", ");
+                    const singleLine = `[${itemsText}]`;
+
+                    if (singleLine.length <= 100) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceText(
+                                node,
+                                singleLine,
+                            ),
+                            message: "Array with 3 or fewer items should be on one line",
+                            node,
+                        });
+                    }
+
+                    return;
+                }
+
+                // More than 3 items: each on its own line
+                // Check for empty line after opening bracket
+                if (firstElement.loc.start.line > openBracket.loc.end.line + 1) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBracket.range[1], firstElement.range[0]],
+                            "\n" + itemIndent,
+                        ),
+                        message: "No empty line after opening bracket",
+                        node: firstElement,
+                    });
+                } else if (openBracket.loc.end.line === firstElement.loc.start.line) {
+                    // First element on same line as bracket - move to new line
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBracket.range[1], firstElement.range[0]],
+                            "\n" + itemIndent,
+                        ),
+                        message: "First array item should be on its own line",
+                        node: firstElement,
+                    });
+                }
+
+                // Check each element is on its own line and no empty lines between
+                for (let i = 0; i < elements.length - 1; i += 1) {
+                    const current = elements[i];
+                    const next = elements[i + 1];
+
+                    if (!current || !next) continue;
+
+                    const commaToken = sourceCode.getTokenAfter(
+                        current,
+                        (token) => token.value === ",",
+                    );
+
+                    if (current.loc.end.line === next.loc.start.line) {
+                        if (commaToken) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [commaToken.range[1], next.range[0]],
+                                    "\n" + itemIndent,
+                                ),
+                                message: "Each array item should be on its own line",
+                                node: next,
+                            });
+                        }
+                    } else if (next.loc.start.line > current.loc.end.line + 1) {
+                        // Empty lines between elements
+                        if (commaToken) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [commaToken.range[1], next.range[0]],
+                                    "\n" + itemIndent,
+                                ),
+                                message: "No empty lines between array items",
+                                node: next,
+                            });
+                        }
+                    }
+                }
+
+                // Check for empty line before closing bracket
+                const tokenBeforeClose = sourceCode.getTokenBefore(closeBracket);
+
+                if (closeBracket.loc.start.line > lastElement.loc.end.line + 1) {
+                    const hasTrailingComma = tokenBeforeClose && tokenBeforeClose.value === ",";
+
+                    context.report({
+                        fix: (fixer) => {
+                            if (hasTrailingComma) {
+                                return fixer.replaceTextRange(
+                                    [tokenBeforeClose.range[1], closeBracket.range[0]],
+                                    "\n" + baseIndent,
+                                );
+                            }
+
+                            return fixer.replaceTextRange(
+                                [lastElement.range[1], closeBracket.range[0]],
+                                ",\n" + baseIndent,
+                            );
+                        },
+                        message: "No empty line before closing bracket",
+                        node: closeBracket,
+                    });
+                } else if (closeBracket.loc.start.line === lastElement.loc.end.line) {
+                    // Closing bracket on same line as last element
+                    const hasTrailingComma = tokenBeforeClose && tokenBeforeClose.value === ",";
+
+                    context.report({
+                        fix: (fixer) => {
+                            if (hasTrailingComma) {
+                                return fixer.replaceTextRange(
+                                    [tokenBeforeClose.range[1], closeBracket.range[0]],
+                                    "\n" + baseIndent,
+                                );
+                            }
+
+                            return fixer.replaceTextRange(
+                                [lastElement.range[1], closeBracket.range[0]],
+                                ",\n" + baseIndent,
+                            );
+                        },
+                        message: "Closing bracket should be on its own line",
+                        node: closeBracket,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce array formatting: 3 or less items on one line, more than 3 each on new line" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+export default {
+    meta: {
+        name: "eslint-plugin-code-style",
+        version: "1.0.0",
+    },
+    rules: {
+        "absolute-imports-only": absoluteImportsOnly,
+        "array-items-per-line": arrayItemsPerLine,
+        "array-objects-on-new-lines": arrayObjectsOnNewLines,
+        "arrow-function-block-body": arrowFunctionBlockBody,
+        "arrow-function-simple-jsx": arrowFunctionSimpleJsx,
+        "arrow-function-simplify": arrowFunctionSimplify,
+        "assignment-value-same-line": assignmentValueSameLine,
+        "block-statement-newlines": blockStatementNewlines,
+        "export-format": exportFormat,
+        "comment-spacing": commentSpacing,
+        "function-call-spacing": functionCallSpacing,
+        "function-naming-convention": functionNamingConvention,
+        "hook-callback-format": hookCallbackFormat,
+        "function-params-per-line": functionParamsPerLine,
+        "hook-deps-per-line": hookDepsPerLine,
+        "if-statement-format": ifStatementFormat,
+        "import-format": importFormat,
+        "import-source-spacing": importSourceSpacing,
+        "jsx-children-on-new-line": jsxChildrenOnNewLine,
+        "jsx-closing-bracket-spacing": jsxClosingBracketSpacing,
+        "jsx-element-child-new-line": jsxElementChildNewLine,
+        "jsx-logical-expression-simplify": jsxLogicalExpressionSimplify,
+        "jsx-simple-element-one-line": jsxSimpleElementOneLine,
+        "jsx-parentheses-position": jsxParenthesesPosition,
+        "jsx-prop-naming-convention": jsxPropNamingConvention,
+        "jsx-string-value-trim": jsxStringValueTrim,
+        "jsx-ternary-format": jsxTernaryFormat,
+        "simple-call-single-line": simpleCallSingleLine,
+        "single-argument-on-line": singleArgumentOneLine,
+        "multiple-arguments-per-line": multipleArgumentsPerLine,
+        "curried-arrow-same-line": curriedArrowSameLine,
+        "member-expression-bracket-spacing": memberExpressionBracketSpacing,
+        "module-index-exports": moduleIndexExports,
+        "multiline-argument-newline": multilineArgumentNewline,
+        "multiline-if-conditions": multilineIfConditions,
+        "nested-call-closing-brackets": nestedCallClosingBrackets,
+        "no-empty-lines-in-function-calls": noEmptyLinesInFunctionCalls,
+        "no-empty-lines-in-function-params": noEmptyLinesInFunctionParams,
+        "no-empty-lines-in-jsx": noEmptyLinesInJsx,
+        "no-empty-lines-in-objects": noEmptyLinesInObjects,
+        "no-empty-lines-in-switch-cases": noEmptyLinesInSwitchCases,
+        "object-property-per-line": objectPropertyPerLine,
+        "object-property-value-brace": objectPropertyValueBrace,
+        "object-property-value-format": objectPropertyValueFormat,
+        "opening-brackets-same-line": openingBracketsSameLine,
+        "string-property-spacing": stringPropertySpacing,
+        "variable-naming-convention": variableNamingConvention,
+    },
+};
