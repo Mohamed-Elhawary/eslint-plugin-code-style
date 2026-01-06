@@ -170,7 +170,7 @@ rules: {
     "code-style/object-property-value-format": "error",
     "code-style/opening-brackets-same-line": "error",
     "code-style/simple-call-single-line": "error",
-    "code-style/single-argument-on-line": "error",
+    "code-style/single-argument-on-one-line": "error",
     "code-style/string-property-spacing": "error",
     "code-style/variable-naming-convention": "error",
 }

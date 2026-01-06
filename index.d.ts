@@ -48,7 +48,7 @@ export type RuleNames =
     | "code-style/object-property-value-format"
     | "code-style/opening-brackets-same-line"
     | "code-style/simple-call-single-line"
-    | "code-style/single-argument-on-line"
+    | "code-style/single-argument-on-one-line"
     | "code-style/string-property-spacing"
     | "code-style/variable-naming-convention";
 
