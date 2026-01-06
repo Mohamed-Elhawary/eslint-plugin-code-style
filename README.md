@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/npm/l/eslint-plugin-code-style?style=for-the-badge&color=blue)](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/blob/main/LICENSE)
 
 [![ESLint](https://img.shields.io/badge/ESLint-%3E%3D9.0.0-4B32C3?style=for-the-badge&logo=eslint&logoColor=white)](https://eslint.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D24.0.0-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-JSX%20Support-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 
 [![GitHub stars](https://img.shields.io/github/stars/Mohamed-Elhawary/eslint-plugin-code-style?style=for-the-badge&logo=github&color=yellow)](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/stargazers)
@@ -18,6 +18,24 @@
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
 *47 auto-fixable rules to keep your codebase clean and consistent*
+
+</div>
+
+<br />
+
+## 🎯 Why This Plugin?
+
+This plugin provides **rules that don't exist in ESLint's built-in rule set** and are **not available in popular third-party ESLint packages**. These are the style requirements that teams often check manually, making them easy to miss and hard to enforce consistently.
+
+**Key Benefits:**
+- **Fills the gaps** — Covers formatting rules that ESLint and other plugins miss
+- **Works alongside existing tools** — Complements ESLint's built-in rules and packages like `eslint-plugin-react`, `eslint-plugin-import`, etc.
+- **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
+- **Fully automated** — All 47 rules support auto-fix, eliminating manual style reviews
+
+When combined with ESLint's native rules and other popular plugins, this package helps create a **complete code style solution** that keeps your codebase clean and consistent.
+
+<div align="center">
 
 <br />
 
@@ -34,19 +52,19 @@
 
 <br />
 
-## Features
+## ✨ Features
 
 <table>
 <tr>
 <td width="50%">
 
-### Auto-Fixable Rules
+### 🔧 Auto-Fixable Rules
 All **47 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
 
 </td>
 <td width="50%">
 
-### React & JSX Support
+### ⚛️ React & JSX Support
 Built specifically for React projects with comprehensive JSX formatting rules.
 
 </td>
@@ -54,13 +72,13 @@ Built specifically for React projects with comprehensive JSX formatting rules.
 <tr>
 <td width="50%">
 
-### ESLint v9+ Ready
+### ✅ ESLint v9+ Ready
 Designed for ESLint's new flat config system. Modern and future-proof.
 
 </td>
 <td width="50%">
 
-### Zero Dependencies
+### 📭 Zero Dependencies
 Lightweight plugin with no external dependencies. Fast and efficient.
 
 </td>
@@ -69,7 +87,7 @@ Lightweight plugin with no external dependencies. Fast and efficient.
 
 <br />
 
-## Installation
+## 📦 Installation
 
 ```bash
 # npm
@@ -82,16 +100,16 @@ pnpm add eslint-plugin-code-style -D
 yarn add eslint-plugin-code-style -D
 ```
 
-### Requirements
+### 📋 Requirements
 
 | Dependency | Version |
 |------------|---------|
 | **ESLint** | `>= 9.0.0` |
-| **Node.js** | `>= 24.0.0` |
+| **Node.js** | `>= 18.0.0` |
 
 <br />
 
-## Quick Start
+## 🚀 Quick Start
 
 Create or update your `eslint.config.js`:
 
@@ -121,7 +139,7 @@ eslint src/ --fix
 
 <br />
 
-## Enable All Rules
+## 📋 Enable All Rules
 
 ```javascript
 rules: {
@@ -179,13 +197,71 @@ rules: {
 
 ---
 
-## Rules Reference
+## 📖 Rules Summary
+
+> All **47 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
+
+| Rule | Description |
+|------|-------------|
+| `array-items-per-line` | Enforce array formatting: 3 or less items on one line, more than 3 each on new line |
+| `array-objects-on-new-lines` | Enforce array of objects to have each object on a new line |
+| `arrow-function-block-body` | Enforce parentheses for arrow functions with multiline expressions |
+| `arrow-function-simple-jsx` | Simplify arrow functions returning simple JSX to single line |
+| `arrow-function-simplify` | Simplify arrow functions in JSX props with single statement block body |
+| `curried-arrow-same-line` | Enforce curried arrow function to start on same line as `=>` |
+| `assignment-value-same-line` | Enforce assignment value on same line as equals sign |
+| `block-statement-newlines` | Enforce newlines after opening brace and before closing brace |
+| `comment-spacing` | Enforce comment spacing and formatting |
+| `function-call-spacing` | Enforce no space between function name and opening parenthesis |
+| `function-naming-convention` | Enforce function naming conventions (camelCase, verb prefix) |
+| `function-params-per-line` | Enforce function parameters on separate lines when multiline |
+| `hook-callback-format` | Enforce consistent formatting for React hooks callbacks |
+| `hook-deps-per-line` | Enforce each hook dependency on its own line when more than 2 |
+| `if-statement-format` | Ensure if statement has proper formatting |
+| `multiline-if-conditions` | Enforce multiline if conditions when there are multiple operands |
+| `absolute-imports-only` | Enforce absolute imports using `@/` alias instead of relative paths |
+| `export-format` | Format exports: collapse 1-3 specifiers, multiline for 4+ |
+| `import-format` | Format imports: collapse 1-3 specifiers, multiline for 4+ |
+| `import-source-spacing` | Enforce no extra spaces inside import path quotes |
+| `module-index-exports` | Enforce proper exports in index files |
+| `jsx-children-on-new-line` | Enforce JSX children on separate lines from parent tags |
+| `jsx-closing-bracket-spacing` | No space before `>` or `/>` in JSX tags |
+| `jsx-element-child-new-line` | JSX element children must be on new lines |
+| `jsx-logical-expression-simplify` | Simplify logical expressions in JSX |
+| `jsx-parentheses-position` | Enforce opening parenthesis position for JSX in arrow functions |
+| `jsx-prop-naming-convention` | Enforce JSX prop naming conventions (camelCase) |
+| `jsx-simple-element-one-line` | Simple JSX elements with single child on one line |
+| `jsx-string-value-trim` | Disallow leading/trailing whitespace in JSX string values |
+| `jsx-ternary-format` | Enforce consistent formatting for JSX ternary expressions |
+| `member-expression-bracket-spacing` | Enforce no spaces inside brackets for member expressions |
+| `multiline-argument-newline` | Enforce newlines for function calls with multiline arguments |
+| `multiple-arguments-per-line` | Enforce multiple arguments to each be on their own line |
+| `nested-call-closing-brackets` | Enforce nested function call closing brackets on same line |
+| `no-empty-lines-in-function-calls` | Disallow empty lines in function calls |
+| `no-empty-lines-in-function-params` | Disallow empty lines in function parameters |
+| `no-empty-lines-in-jsx` | Disallow empty lines inside JSX elements |
+| `no-empty-lines-in-objects` | Disallow empty lines inside objects |
+| `no-empty-lines-in-switch-cases` | Prevent empty lines at the beginning of switch case logic |
+| `object-property-per-line` | Enforce each property on its own line when object has 2+ properties |
+| `object-property-value-brace` | Enforce opening brace on same line as colon for object values |
+| `object-property-value-format` | Enforce property value on same line as colon |
+| `opening-brackets-same-line` | Enforce opening brackets on same line for function calls |
+| `simple-call-single-line` | Simplify simple function calls with arrow function to single line |
+| `single-argument-on-one-line` | Enforce single simple argument calls to be on one line |
+| `string-property-spacing` | Enforce no extra spaces inside string property keys |
+| `variable-naming-convention` | Enforce variable naming conventions (camelCase, UPPER_CASE, PascalCase) |
+
+<br />
+
+---
+
+## 📖 Rules Reference
 
 > All rules are **auto-fixable** using `eslint --fix`
 
 <br />
 
-## Array Rules
+## 📚 Array Rules
 
 ### `array-items-per-line`
 
@@ -227,7 +303,7 @@ const items = [{ id: 1, name: "first" },
 
 <br />
 
-## Arrow Function Rules
+## ➡️ Arrow Function Rules
 
 ### `arrow-function-block-body`
 
@@ -299,7 +375,7 @@ const fn = () =>
 
 <br />
 
-## Spacing & Formatting Rules
+## 📐 Spacing & Formatting Rules
 
 ### `assignment-value-same-line`
 
@@ -412,7 +488,7 @@ const userProfile = () => <div />;
 
 <br />
 
-## Function Rules
+## ⚡ Function Rules
 
 ### `function-call-spacing`
 
@@ -468,7 +544,7 @@ function test(param1,
 
 <br />
 
-## React Hooks Rules
+## 🪝 React Hooks Rules
 
 ### `hook-callback-format`
 
@@ -506,7 +582,7 @@ useEffect(() => {}, [dep1, dep2, dep3, dep4])
 
 <br />
 
-## Control Flow Rules
+## 🔀 Control Flow Rules
 
 ### `if-statement-format`
 
@@ -578,7 +654,7 @@ switch (value) {
 
 <br />
 
-## Import/Export Rules
+## 📥 Import/Export Rules
 
 ### `absolute-imports-only`
 
@@ -668,7 +744,7 @@ export { Input } from "./Input";
 
 <br />
 
-## JSX Rules
+## ⚛️ JSX Rules
 
 ### `jsx-children-on-new-line`
 
@@ -857,7 +933,7 @@ JSX elements should not contain empty lines between children or after opening/be
 
 <br />
 
-## Call Expression Rules
+## 📞 Call Expression Rules
 
 ### `multiline-argument-newline`
 
@@ -990,7 +1066,7 @@ fn(
 
 <br />
 
-## Object Rules
+## 📦 Object Rules
 
 ### `no-empty-lines-in-objects`
 
@@ -1086,7 +1162,7 @@ String property keys should not have extra leading or trailing spaces inside the
 
 ---
 
-## Auto-fixing
+## 🔧 Auto-fixing
 
 All rules support auto-fixing. Run ESLint with the `--fix` flag:
 
@@ -1103,7 +1179,7 @@ eslint "src/**/*.{js,jsx,ts,tsx}" --fix
 
 <br />
 
-## Disabling Rules
+## 🚫 Disabling Rules
 
 **Disable for a specific line:**
 ```javascript
@@ -1125,7 +1201,7 @@ rules: {
 
 <br />
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -1137,7 +1213,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 <br />
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
@@ -1147,7 +1223,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-Made with by [Mohamed Elhawary](https://hawary.dev)
+Made with ❤️ by [Mohamed Elhawary](https://hawary.dev)
 
 [![GitHub](https://img.shields.io/badge/GitHub-Mohamed--Elhawary-181717?style=for-the-badge&logo=github)](https://github.com/Mohamed-Elhawary)
 
