@@ -1,6 +1,33 @@
 import fs from "fs";
 import nodePath from "path";
+import { fileURLToPath } from "url";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = nodePath.dirname(__filename);
+const packageJson = JSON.parse(fs.readFileSync(nodePath.join(__dirname, "package.json"), "utf8"));
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Opening Brackets Same Line
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Opening brackets should be on the same line as function/method calls.
+ *   This applies to objects, arrays, and arrow function parameters.
+ *
+ * ✓ Good:
+ *   fn({ prop: value })
+ *   .map(({ x }) => x)
+ *   fn([1, 2, 3])
+ *
+ * ✗ Bad:
+ *   fn(
+ *       { prop: value }
+ *   )
+ *   .map(
+ *       ({ x }) => x
+ *   )
+ */
 const openingBracketsSameLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -791,6 +818,33 @@ const openingBracketsSameLine = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: JSX Parentheses Position
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   JSX return parentheses should be on the same line as the arrow
+ *   or return keyword, not on a new line.
+ *
+ * ✓ Good:
+ *   const Component = () => (
+ *       <div>content</div>
+ *   );
+ *   return (
+ *       <div>content</div>
+ *   );
+ *
+ * ✗ Bad:
+ *   const Component = () =>
+ *       (
+ *           <div>content</div>
+ *       );
+ *   return
+ *       (
+ *           <div>content</div>
+ *       );
+ */
 const jsxParenthesesPosition = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -967,6 +1021,23 @@ const jsxParenthesesPosition = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: JSX Logical Expression Simplify
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Simplify JSX logical expressions by removing unnecessary
+ *   parentheses around conditions and JSX elements.
+ *
+ * ✓ Good:
+ *   {condition && <Component />}
+ *   {isVisible && <Modal />}
+ *
+ * ✗ Bad:
+ *   {(condition) && (<Component />)}
+ *   {(isVisible) && (<Modal />)}
+ */
 const jsxLogicalExpressionSimplify = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -1010,6 +1081,25 @@ const jsxLogicalExpressionSimplify = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Arrow Function Simplify
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Simplify arrow functions that have a single return statement
+ *   by using implicit return instead of block body.
+ *
+ * ✓ Good:
+ *   () => value
+ *   (x) => x * 2
+ *   items.map(item => item.name)
+ *
+ * ✗ Bad:
+ *   () => { return value; }
+ *   (x) => { return x * 2; }
+ *   items.map(item => { return item.name; })
+ */
 const arrowFunctionSimplify = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -1129,6 +1219,25 @@ const arrowFunctionSimplify = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Arrow Function Block Body
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Arrow functions with complex logic should use block body.
+ *   Ensures consistent formatting when function body needs
+ *   multiple statements or complex expressions.
+ *
+ * ✓ Good:
+ *   () => {
+ *       doSomething();
+ *       return value;
+ *   }
+ *
+ * ✗ Bad:
+ *   () => (doSomething(), value)
+ */
 const arrowFunctionBlockBody = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -1460,6 +1569,23 @@ const jsxPropNamingConvention = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: JSX String Value Trim
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   JSX string attribute values should not have leading or
+ *   trailing whitespace inside the quotes.
+ *
+ * ✓ Good:
+ *   className="button"
+ *   title="Hello World"
+ *
+ * ✗ Bad:
+ *   className=" button "
+ *   title=" Hello World "
+ */
 const jsxStringValueTrim = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -1495,6 +1621,28 @@ const jsxStringValueTrim = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: No Empty Lines In Objects
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Object literals should not contain empty lines between
+ *   properties or after opening/before closing braces.
+ *
+ * ✓ Good:
+ *   {
+ *       a: 1,
+ *       b: 2,
+ *   }
+ *
+ * ✗ Bad:
+ *   {
+ *       a: 1,
+ *
+ *       b: 2,
+ *   }
+ */
 const noEmptyLinesInObjects = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -1570,6 +1718,30 @@ const noEmptyLinesInObjects = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: No Empty Lines In JSX
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   JSX elements should not contain empty lines between children
+ *   or after opening/before closing tags.
+ *
+ * ✓ Good:
+ *   <div>
+ *       <span>text</span>
+ *       <span>more</span>
+ *   </div>
+ *
+ * ✗ Bad:
+ *   <div>
+ *
+ *       <span>text</span>
+ *
+ *       <span>more</span>
+ *
+ *   </div>
+ */
 const noEmptyLinesInJsx = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -1856,6 +2028,28 @@ const noEmptyLinesInJsx = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: No Empty Lines In Function Calls
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Function call arguments should not have empty lines between
+ *   them or after opening/before closing parentheses.
+ *
+ * ✓ Good:
+ *   fn(
+ *       arg1,
+ *       arg2,
+ *   )
+ *
+ * ✗ Bad:
+ *   fn(
+ *       arg1,
+ *
+ *       arg2,
+ *   )
+ */
 const noEmptyLinesInFunctionCalls = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -1972,6 +2166,25 @@ const noEmptyLinesInFunctionCalls = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Multiline Argument Newline
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   When function arguments span multiple lines, each argument
+ *   should start on its own line with consistent indentation.
+ *
+ * ✓ Good:
+ *   fn(
+ *       arg1,
+ *       arg2,
+ *   )
+ *
+ * ✗ Bad:
+ *   fn(arg1,
+ *       arg2)
+ */
 const multilineArgumentNewline = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -2103,6 +2316,28 @@ const multilineArgumentNewline = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: No Empty Lines In Function Params
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Function parameter lists should not contain empty lines
+ *   between parameters or after opening/before closing parens.
+ *
+ * ✓ Good:
+ *   function test(
+ *       param1,
+ *       param2,
+ *   ) {}
+ *
+ * ✗ Bad:
+ *   function test(
+ *       param1,
+ *
+ *       param2,
+ *   ) {}
+ */
 const noEmptyLinesInFunctionParams = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -2186,6 +2421,33 @@ const noEmptyLinesInFunctionParams = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: No Empty Lines In Switch Cases
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Switch case blocks should not have empty lines at the
+ *   beginning of the case logic or between consecutive cases.
+ *
+ * ✓ Good:
+ *   switch (value) {
+ *       case 1:
+ *           return "one";
+ *       case 2:
+ *           return "two";
+ *   }
+ *
+ * ✗ Bad:
+ *   switch (value) {
+ *       case 1:
+ *
+ *           return "one";
+ *
+ *       case 2:
+ *           return "two";
+ *   }
+ */
 const noEmptyLinesInSwitchCases = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -2274,6 +2536,25 @@ const noEmptyLinesInSwitchCases = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Object Property Per Line
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   When an object has 2 or more properties and spans multiple
+ *   lines, each property should be on its own line.
+ *
+ * ✓ Good:
+ *   {
+ *       name: "John",
+ *       age: 30,
+ *   }
+ *
+ * ✗ Bad:
+ *   { name: "John",
+ *       age: 30 }
+ */
 const objectPropertyPerLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -2319,6 +2600,29 @@ const objectPropertyPerLine = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Object Property Value Format
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Object property values should be on the same line as the colon
+ *   with proper spacing for simple values.
+ *
+ * ✓ Good:
+ *   {
+ *       name: "John",
+ *       age: 30,
+ *   }
+ *
+ * ✗ Bad:
+ *   {
+ *       name:
+ *           "John",
+ *       age:
+ *           30,
+ *   }
+ */
 const objectPropertyValueFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -2514,6 +2818,26 @@ const objectPropertyValueFormat = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Hook Deps Per Line
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   React hook dependency arrays with more than 2 dependencies
+ *   should have each dependency on its own line.
+ *
+ * ✓ Good:
+ *   useEffect(() => {}, [dep1, dep2])
+ *   useEffect(() => {}, [
+ *       dep1,
+ *       dep2,
+ *       dep3,
+ *   ])
+ *
+ * ✗ Bad:
+ *   useEffect(() => {}, [dep1, dep2, dep3, dep4])
+ */
 const hookDepsPerLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -2624,6 +2948,26 @@ const hookDepsPerLine = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Function Params Per Line
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   When function parameters span multiple lines, each parameter
+ *   should be on its own line with consistent indentation.
+ *
+ * ✓ Good:
+ *   function test(
+ *       param1,
+ *       param2,
+ *       param3,
+ *   ) {}
+ *
+ * ✗ Bad:
+ *   function test(param1,
+ *       param2, param3) {}
+ */
 const functionParamsPerLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -3234,6 +3578,26 @@ const jsxElementChildNewLine = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: JSX Children On New Line
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   When a JSX element has multiple children, each child should
+ *   be on its own line with proper indentation.
+ *
+ * ✓ Good:
+ *   <Container>
+ *       <Header />
+ *       <Content />
+ *       <Footer />
+ *   </Container>
+ *
+ * ✗ Bad:
+ *   <Container><Header /><Content />
+ *       <Footer /></Container>
+ */
 const jsxChildrenOnNewLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -3368,6 +3732,24 @@ const jsxChildrenOnNewLine = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Block Statement Newlines
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Block statements should have proper newlines after the opening
+ *   brace and before the closing brace.
+ *
+ * ✓ Good:
+ *   if (condition) {
+ *       doSomething();
+ *   }
+ *
+ * ✗ Bad:
+ *   if (condition) { doSomething(); }
+ *   if (condition) {doSomething();}
+ */
 const blockStatementNewlines = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -3419,6 +3801,29 @@ const blockStatementNewlines = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Assignment Value Same Line
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   The value in an assignment should start on the same line as
+ *   the equals sign, not on a new line.
+ *
+ * ✓ Good:
+ *   const name = "John";
+ *   const data = {
+ *       key: "value",
+ *   };
+ *
+ * ✗ Bad:
+ *   const name =
+ *       "John";
+ *   const data =
+ *       {
+ *           key: "value",
+ *       };
+ */
 const assignmentValueSameLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -3518,6 +3923,26 @@ const assignmentValueSameLine = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Function Naming Convention
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Function names should follow naming conventions: camelCase,
+ *   starting with a verb, and handlers ending with "Handler".
+ *
+ * ✓ Good:
+ *   function getUserData() {}
+ *   function handleClick() {}
+ *   function isValidEmail() {}
+ *   const submitHandler = () => {}
+ *
+ * ✗ Bad:
+ *   function GetUserData() {}
+ *   function user_data() {}
+ *   function click() {}
+ */
 const functionNamingConvention = {
     create(context) {
         const componentNameRegex = /^[A-Z][a-zA-Z0-9]*$/;
@@ -3611,6 +4036,27 @@ const functionNamingConvention = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Variable Naming Convention
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Variable names should follow naming conventions: camelCase
+ *   for regular variables, UPPER_CASE for constants, and
+ *   PascalCase for React components.
+ *
+ * ✓ Good:
+ *   const userName = "John";
+ *   const MAX_RETRIES = 3;
+ *   const UserProfile = () => <div />;
+ *   const useCustomHook = () => {};
+ *
+ * ✗ Bad:
+ *   const user_name = "John";
+ *   const maxretries = 3;
+ *   const userProfile = () => <div />;
+ */
 const variableNamingConvention = {
     create(context) {
         const camelCaseRegex = /^[a-z][a-zA-Z0-9]*$/;
@@ -3910,6 +4356,26 @@ const variableNamingConvention = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Multiline If Conditions
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   When an if statement has multiple conditions that span
+ *   multiple lines, each condition should be on its own line.
+ *
+ * ✓ Good:
+ *   if (
+ *       conditionA &&
+ *       conditionB &&
+ *       conditionC
+ *   ) {}
+ *
+ * ✗ Bad:
+ *   if (conditionA &&
+ *       conditionB && conditionC) {}
+ */
 const multilineIfConditions = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -4069,6 +4535,29 @@ const multilineIfConditions = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Import Format
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Import statements should have consistent formatting with
+ *   proper spacing. Collapse 1-3 specifiers on one line, use
+ *   multiline for 4+ specifiers.
+ *
+ * ✓ Good:
+ *   import { a, b, c } from "module";
+ *   import {
+ *       a,
+ *       b,
+ *       c,
+ *       d,
+ *   } from "module";
+ *
+ * ✗ Bad:
+ *   import {a,b,c} from "module";
+ *   import { a, b, c, d, e } from "module";
+ */
 const importFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -4165,6 +4654,29 @@ const importFormat = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Export Format
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Export statements should have consistent formatting with
+ *   proper spacing. Collapse 1-3 specifiers on one line, use
+ *   multiline for 4+ specifiers.
+ *
+ * ✓ Good:
+ *   export { a, b, c };
+ *   export {
+ *       a,
+ *       b,
+ *       c,
+ *       d,
+ *   };
+ *
+ * ✗ Bad:
+ *   export {a,b,c};
+ *   export { a, b, c, d, e };
+ */
 const exportFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -4280,6 +4792,33 @@ const exportFormat = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: If Statement Format
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   If statements should have consistent formatting with the
+ *   opening brace on the same line as the condition and else
+ *   on the same line as the closing brace.
+ *
+ * ✓ Good:
+ *   if (condition) {
+ *       doSomething();
+ *   } else {
+ *       doOther();
+ *   }
+ *
+ * ✗ Bad:
+ *   if (condition)
+ *   {
+ *       doSomething();
+ *   }
+ *   else
+ *   {
+ *       doOther();
+ *   }
+ */
 const ifStatementFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -4387,6 +4926,24 @@ const ifStatementFormat = {
     },
 };
 
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Comment Spacing
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Comments should have proper spacing: a space after the opening
+ *   delimiter (// or block comment opener), and proper blank lines
+ *   around comment blocks.
+ *
+ * ✓ Good:
+ *   // This is a comment
+ *   [block] This is a block comment [/block]
+ *
+ * ✗ Bad:
+ *   //This is a comment (missing space)
+ *   [block]No space after opener[/block]
+ */
 const commentSpacing = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -6814,8 +7371,8 @@ const arrayItemsPerLine = {
 
 export default {
     meta: {
-        name: "eslint-plugin-code-style",
-        version: "1.0.0",
+        name: packageJson.name,
+        version: packageJson.version,
     },
     rules: {
         "absolute-imports-only": absoluteImportsOnly,
