@@ -53,14 +53,14 @@ When combined with ESLint's native rules and other popular plugins, this package
 
 We provide **ready-to-use ESLint flat configuration files** that combine `eslint-plugin-code-style` with carefully selected third-party plugins and ESLint built-in rules. These configurations represent our battle-tested setup that reduces code-style differences by ~95%.
 
-### Why Use These Configs?
+### 💡 Why Use These Configs?
 
 - **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 47 code-style rules
 - **Ready-to-Use** — Copy the config file and start linting immediately
 - **Battle-Tested** — These configurations have been refined through real-world usage
 - **Fully Documented** — Each config includes detailed instructions and explanations
 
-### Available Configurations
+### 📋 Available Configurations
 
 | Configuration | Description | Link |
 |---------------|-------------|------|
@@ -68,7 +68,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 | **React + TS + Tailwind** | React + TypeScript + Tailwind CSS | *Coming Soon* |
 | **Next.js + TS + Tailwind** | Next.js + TypeScript + Tailwind CSS | *Coming Soon* |
 
-### Quick Start with Recommended Config
+### ⚡ Quick Start with Recommended Config
 
 1. Navigate to the [recommended-configs](./recommended-configs/) folder
 2. Choose the configuration for your project type
