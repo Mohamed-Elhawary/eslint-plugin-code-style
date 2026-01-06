@@ -445,7 +445,7 @@ const arrowFunctionBlockBody = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const isJsxAttributeArrow = (node) => {
+        const isJsxAttributeArrowHandler = (node) => {
             let parent = node.parent;
 
             if (parent && parent.type === "JSXExpressionContainer") {
@@ -457,8 +457,8 @@ const arrowFunctionBlockBody = {
             return false;
         };
 
-        const checkArrowFunction = (node) => {
-            if (!isJsxAttributeArrow(node)) return;
+        const checkArrowFunctionHandler = (node) => {
+            if (!isJsxAttributeArrowHandler(node)) return;
 
             // Only check expression bodies (not block bodies)
             if (node.body.type === "BlockStatement") return;
@@ -535,7 +535,7 @@ const arrowFunctionBlockBody = {
             }
         };
 
-        return { ArrowFunctionExpression: checkArrowFunction };
+        return { ArrowFunctionExpression: checkArrowFunctionHandler };
     },
     meta: {
         docs: { description: "Enforce parentheses for arrow functions in JSX props with multiline expressions (preserves implicit return)" },
@@ -567,7 +567,7 @@ const arrowFunctionSimpleJsx = {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
         // Check if JSX is simple enough to be on one line
-        const isSimpleJsx = (jsxNode) => {
+        const isSimpleJsxHandler = (jsxNode) => {
             if (jsxNode.type !== "JSXElement" && jsxNode.type !== "JSXFragment") return false;
 
             // Check if JSX has no attributes or only simple attributes
@@ -632,7 +632,7 @@ const arrowFunctionSimpleJsx = {
         };
 
         // Get simplified JSX text (without extra whitespace)
-        const getSimplifiedJsxText = (jsxNode) => {
+        const getSimplifiedJsxTextHandler = (jsxNode) => {
             const text = sourceCode.getText(jsxNode);
 
             // Remove extra whitespace between tags
@@ -655,10 +655,10 @@ const arrowFunctionSimpleJsx = {
                 if (node.loc.start.line === node.loc.end.line) return;
 
                 // Check if JSX is simple
-                if (!isSimpleJsx(body)) return;
+                if (!isSimpleJsxHandler(body)) return;
 
                 // Get the simplified JSX text
-                const jsxText = getSimplifiedJsxText(body);
+                const jsxText = getSimplifiedJsxTextHandler(body);
 
                 // Check if result would be reasonably short (< 120 chars)
                 const arrowStart = sourceCode.getText(node).split("=>")[0] + "=> ";
@@ -729,7 +729,7 @@ const arrowFunctionSimplify = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const isJsxAttributeArrow = (node) => {
+        const isJsxAttributeArrowHandler = (node) => {
             let parent = node.parent;
 
             if (parent && parent.type === "JSXExpressionContainer") {
@@ -743,7 +743,7 @@ const arrowFunctionSimplify = {
 
         // Check if a call expression can be simplified to a single line
         // e.g., dispatch(downloadEventPhoto(overlayImage)) or handler(value)
-        const canSimplifyToOneLine = (expr) => {
+        const canSimplifyToOneLineHandler = (expr) => {
             if (expr.type !== "CallExpression") return false;
 
             const { arguments: args, callee } = expr;
@@ -765,7 +765,7 @@ const arrowFunctionSimplify = {
                 if (arg.type === "Literal") return true;
 
                 // Nested call with simple args: dispatch(downloadPhoto(id))
-                if (arg.type === "CallExpression") return canSimplifyToOneLine(arg);
+                if (arg.type === "CallExpression") return canSimplifyToOneLineHandler(arg);
 
                 // Member expression: dispatch(actions.doSomething)
                 if (arg.type === "MemberExpression") return true;
@@ -775,12 +775,12 @@ const arrowFunctionSimplify = {
         };
 
         // Build simplified text for a call expression
-        const buildSimplifiedText = (expr) => {
+        const buildSimplifiedTextHandler = (expr) => {
             if (expr.type !== "CallExpression") return sourceCode.getText(expr);
 
             const calleeName = sourceCode.getText(expr.callee);
             const argsText = expr.arguments.map((arg) => {
-                if (arg.type === "CallExpression") return buildSimplifiedText(arg);
+                if (arg.type === "CallExpression") return buildSimplifiedTextHandler(arg);
 
                 return sourceCode.getText(arg);
             }).join(", ");
@@ -788,8 +788,8 @@ const arrowFunctionSimplify = {
             return `${calleeName}(${argsText})`;
         };
 
-        const checkArrowFunction = (node) => {
-            if (!isJsxAttributeArrow(node)) return;
+        const checkArrowFunctionHandler = (node) => {
+            if (!isJsxAttributeArrowHandler(node)) return;
 
             if (node.body.type !== "BlockStatement") return;
 
@@ -820,8 +820,8 @@ const arrowFunctionSimplify = {
             }
 
             // Check if multi-line expression can be simplified
-            if (canSimplifyToOneLine(expression)) {
-                const simplifiedText = buildSimplifiedText(expression);
+            if (canSimplifyToOneLineHandler(expression)) {
+                const simplifiedText = buildSimplifiedTextHandler(expression);
 
                 context.report({
                     fix: (fixer) => fixer.replaceText(
@@ -834,7 +834,7 @@ const arrowFunctionSimplify = {
             }
         };
 
-        return { ArrowFunctionExpression: checkArrowFunction };
+        return { ArrowFunctionExpression: checkArrowFunctionHandler };
     },
     meta: {
         docs: { description: "Simplify arrow functions in JSX props with single statement block body" },
@@ -938,7 +938,7 @@ const assignmentValueSameLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkVariableDeclaration = (node) => {
+        const checkVariableDeclarationHandler = (node) => {
             const kindToken = sourceCode.getFirstToken(node); // const, let, var
 
             if (!kindToken) return;
@@ -1023,7 +1023,7 @@ const assignmentValueSameLine = {
             });
         };
 
-        return { VariableDeclaration: checkVariableDeclaration };
+        return { VariableDeclaration: checkVariableDeclarationHandler };
     },
     meta: {
         docs: { description: "Enforce assignment value on same line as equals sign" },
@@ -1055,7 +1055,7 @@ const blockStatementNewlines = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkBlockStatement = (node) => {
+        const checkBlockStatementHandler = (node) => {
             const { body } = node;
 
             if (body.length === 0) return;
@@ -1092,7 +1092,7 @@ const blockStatementNewlines = {
             }
         };
 
-        return { BlockStatement: checkBlockStatement };
+        return { BlockStatement: checkBlockStatementHandler };
     },
     meta: {
         docs: { description: "Enforce newlines after opening brace and before closing brace in blocks" },
@@ -1472,11 +1472,11 @@ const functionNamingConvention = {
             "handle", "on", "click", "change", "input", "submit", "press", "drag", "drop",
         ];
 
-        const startsWithVerb = (name) => verbPrefixes.some((verb) => name.startsWith(verb));
+        const startsWithVerbHandler = (name) => verbPrefixes.some((verb) => name.startsWith(verb));
 
         const endsWithHandler = (name) => handlerRegex.test(name);
 
-        const checkFunction = (node) => {
+        const checkFunctionHandler = (node) => {
             let name = null;
 
             if (node.type === "FunctionDeclaration" && node.id) {
@@ -1495,7 +1495,7 @@ const functionNamingConvention = {
             // Skip hooks
             if (/^use[A-Z]/.test(name)) return;
 
-            const hasVerbPrefix = startsWithVerb(name);
+            const hasVerbPrefix = startsWithVerbHandler(name);
             const hasHandlerSuffix = endsWithHandler(name);
 
             if (!hasVerbPrefix && !hasHandlerSuffix) {
@@ -1517,9 +1517,9 @@ const functionNamingConvention = {
         };
 
         return {
-            ArrowFunctionExpression: checkFunction,
-            FunctionDeclaration: checkFunction,
-            FunctionExpression: checkFunction,
+            ArrowFunctionExpression: checkFunctionHandler,
+            FunctionDeclaration: checkFunctionHandler,
+            FunctionExpression: checkFunctionHandler,
         };
     },
     meta: {
@@ -1553,7 +1553,7 @@ const functionParamsPerLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const getCleanParamText = (param) => {
+        const getCleanParamTextHandler = (param) => {
             if (param.type === "ObjectPattern") {
                 const props = param.properties.map((prop) => {
                     if (prop.type === "RestElement") {
@@ -1573,14 +1573,14 @@ const functionParamsPerLine = {
                 const elems = param.elements.map((el) => {
                     if (el === null) return "";
 
-                    return getCleanParamText(el);
+                    return getCleanParamTextHandler(el);
                 });
 
                 return `[${elems.join(", ")}]`;
             }
 
             if (param.type === "AssignmentPattern") {
-                const leftText = getCleanParamText(param.left);
+                const leftText = getCleanParamTextHandler(param.left);
                 const rightText = sourceCode.getText(param.right);
 
                 return `${leftText} = ${rightText}`;
@@ -1594,7 +1594,7 @@ const functionParamsPerLine = {
         };
 
         // Returns true only if any param has 2+ destructured properties
-        const hasComplexDestructuredParam = (params) => params.some((param) => {
+        const hasComplexDestructuredParamHandler = (params) => params.some((param) => {
             let pattern = param;
 
             if (param.type === "AssignmentPattern") {
@@ -1614,7 +1614,7 @@ const functionParamsPerLine = {
             return false;
         });
 
-        const checkDestructuredParam = (param, baseIndent) => {
+        const checkDestructuredParamHandler = (param, baseIndent) => {
             let pattern = param;
 
             if (param.type === "AssignmentPattern") {
@@ -1734,7 +1734,7 @@ const functionParamsPerLine = {
         };
 
         // Check if arrow function is a callback argument
-        const isCallbackArrow = (node) => {
+        const isCallbackArrowHandler = (node) => {
             if (node.type !== "ArrowFunctionExpression") return false;
 
             const { parent } = node;
@@ -1742,12 +1742,12 @@ const functionParamsPerLine = {
             return parent && parent.type === "CallExpression" && parent.arguments.includes(node);
         };
 
-        const checkFunction = (node) => {
+        const checkFunctionHandler = (node) => {
             const params = node.params;
 
             if (params.length === 0) return;
 
-            const isCallback = isCallbackArrow(node);
+            const isCallback = isCallbackArrowHandler(node);
 
             // Find opening paren
             let openParen = sourceCode.getFirstToken(node);
@@ -1765,14 +1765,14 @@ const functionParamsPerLine = {
 
             const firstParam = params[0];
             const isMultiLine = openParen.loc.end.line !== closeParen.loc.start.line;
-            const paramsText = params.map((p) => getCleanParamText(p)).join(", ");
+            const paramsText = params.map((p) => getCleanParamTextHandler(p)).join(", ");
             const currentText = sourceCode.text.slice(
                 openParen.range[1],
                 closeParen.range[0],
             );
 
             // Callback arrow functions with 2+ simple params: each param on its own line
-            if (isCallback && params.length >= 2 && !hasComplexDestructuredParam(params)) {
+            if (isCallback && params.length >= 2 && !hasComplexDestructuredParamHandler(params)) {
                 // Check if all params are simple identifiers (not destructuring)
                 const allSimpleParams = params.every((p) => p.type === "Identifier");
 
@@ -1835,7 +1835,7 @@ const functionParamsPerLine = {
             if (isCallback) return;
 
             // 1-2 simple params without complex destructuring: keep on same line
-            if (params.length <= 2 && !hasComplexDestructuredParam(params)) {
+            if (params.length <= 2 && !hasComplexDestructuredParamHandler(params)) {
                 const needsSpacingFix = !isMultiLine && params.length > 1 && currentText !== paramsText;
 
                 if (isMultiLine || needsSpacingFix) {
@@ -1907,9 +1907,9 @@ const functionParamsPerLine = {
         };
 
         return {
-            ArrowFunctionExpression: checkFunction,
-            FunctionDeclaration: checkFunction,
-            FunctionExpression: checkFunction,
+            ArrowFunctionExpression: checkFunctionHandler,
+            FunctionDeclaration: checkFunctionHandler,
+            FunctionExpression: checkFunctionHandler,
         };
     },
     meta: {
@@ -2082,7 +2082,7 @@ const hookDepsPerLine = {
             "useImperativeHandle",
         ];
 
-        const checkHookCall = (node) => {
+        const checkHookCallHandler = (node) => {
             // Skip non-hook calls
             if (node.callee.type !== "Identifier" || !hookNames.includes(node.callee.name)) {
                 return;
@@ -2170,7 +2170,7 @@ const hookDepsPerLine = {
             }
         };
 
-        return { CallExpression: checkHookCall };
+        return { CallExpression: checkHookCallHandler };
     },
     meta: {
         docs: { description: "Enforce each hook dependency on its own line when more than 2 dependencies" },
@@ -2212,7 +2212,7 @@ const ifStatementFormat = {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
         // Simple conditions that should be on single line (no logical expressions)
-        const isSimpleCondition = (testNode) => {
+        const isSimpleConditionHandler = (testNode) => {
             const simpleTypes = [
                 "Identifier",
                 "MemberExpression",
@@ -2276,7 +2276,7 @@ const ifStatementFormat = {
             // Check for simple conditions that span multiple lines - collapse to single line
             const conditionSpansMultipleLines = openParen.loc.end.line !== closeParen.loc.start.line;
 
-            if (conditionSpansMultipleLines && isSimpleCondition(test)) {
+            if (conditionSpansMultipleLines && isSimpleConditionHandler(test)) {
                 const testText = sourceCode.getText(test);
 
                 context.report({
@@ -2383,16 +2383,16 @@ const multilineIfConditions = {
         const collectOperandsHandler = (node) => {
             const operands = [];
 
-            const collectHelper = (n) => {
+            const collectHelperHandler = (n) => {
                 if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
-                    collectHelper(n.left);
-                    collectHelper(n.right);
+                    collectHelperHandler(n.left);
+                    collectHelperHandler(n.right);
                 } else {
                     operands.push(n);
                 }
             };
 
-            collectHelper(node);
+            collectHelperHandler(node);
 
             return operands;
         };
@@ -2711,7 +2711,7 @@ const exportFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkExport = (node) => {
+        const checkExportHandler = (node) => {
             const specifiers = node.specifiers;
 
             if (specifiers.length === 0) return;
@@ -2812,7 +2812,7 @@ const exportFormat = {
             }
         };
 
-        return { ExportNamedDeclaration: checkExport };
+        return { ExportNamedDeclaration: checkExportHandler };
     },
     meta: {
         docs: { description: "Format exports: export { on same line, collapse 1-3 specifiers, multiline for 4+" },
@@ -2849,7 +2849,7 @@ const importFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkImport = (node) => {
+        const checkImportHandler = (node) => {
             const importToken = sourceCode.getFirstToken(node);
             const namedSpecifiers = node.specifiers.filter((s) => s.type === "ImportSpecifier");
             const defaultSpecifier = node.specifiers.find((s) => s.type === "ImportDefaultSpecifier");
@@ -2931,7 +2931,7 @@ const importFormat = {
             }
         };
 
-        return { ImportDeclaration: checkImport };
+        return { ImportDeclaration: checkImportHandler };
     },
     meta: {
         docs: { description: "Format imports: import { on same line, } from on same line, collapse 1-3 specifiers" },
@@ -3052,7 +3052,7 @@ const moduleIndexExports = {
             "*.spec.jsx",
         ];
 
-        const shouldIgnore = (name) => ignorePatterns.some((pattern) => {
+        const shouldIgnoreHandler = (name) => ignorePatterns.some((pattern) => {
             if (pattern.includes("*")) {
                 const regex = new RegExp("^" + pattern.replace(/\*/g, ".*") + "$");
 
@@ -3062,7 +3062,7 @@ const moduleIndexExports = {
             return name === pattern;
         });
 
-        const getExportedSources = (node) => {
+        const getExportedSourcesHandler = (node) => {
             const exportedSources = new Set();
             const importedNames = new Map();
 
@@ -3118,7 +3118,7 @@ const moduleIndexExports = {
             return exportedSources;
         };
 
-        const normalizeModuleName = (name) => {
+        const normalizeModuleNameHandler = (name) => {
             // Remove file extension
             let normalized = name.replace(/\.(js|jsx|ts|tsx)$/, "");
 
@@ -3126,7 +3126,7 @@ const moduleIndexExports = {
             return normalized;
         };
 
-        const checkIndexFileExports = (programNode, dirPath, folderName) => {
+        const checkIndexFileExportsHandler = (programNode, dirPath, folderName) => {
             // Get all items in the directory
             let items;
 
@@ -3138,7 +3138,7 @@ const moduleIndexExports = {
 
             // Filter out ignored items
             const moduleItems = items.filter((item) => {
-                if (shouldIgnore(item)) return false;
+                if (shouldIgnoreHandler(item)) return false;
 
                 const itemPath = nodePath.join(dirPath, item);
 
@@ -3158,11 +3158,11 @@ const moduleIndexExports = {
             if (moduleItems.length === 0) return;
 
             // Get all sources that are being exported
-            const exportedSources = getExportedSources(programNode);
+            const exportedSources = getExportedSourcesHandler(programNode);
 
             // Check each module item
             moduleItems.forEach((item) => {
-                const itemName = normalizeModuleName(item);
+                const itemName = normalizeModuleNameHandler(item);
                 const itemPath = nodePath.join(dirPath, item);
                 const isDirectory = fs.statSync(itemPath).isDirectory();
 
@@ -3212,7 +3212,7 @@ const moduleIndexExports = {
                     if (moduleFolders.includes(folderName)) {
                         const dirPath = nodePath.dirname(filename);
 
-                        checkIndexFileExports(
+                        checkIndexFileExportsHandler(
                             node,
                             dirPath,
                             folderName,
@@ -3255,7 +3255,7 @@ const moduleIndexExports = {
                     if (moduleFolders.includes(parentFolder)) {
                         const dirPath = nodePath.dirname(filename);
 
-                        checkIndexFileExports(
+                        checkIndexFileExportsHandler(
                             node,
                             dirPath,
                             `${parentFolder}/${subFolder}`,
@@ -3312,7 +3312,7 @@ const jsxChildrenOnNewLine = {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
         // Check if expression is simple (identifier, literal, or simple member expression)
-        const isSimpleExpression = (expr) => {
+        const isSimpleExpressionHandler = (expr) => {
             if (!expr) return true;
 
             if (expr.type === "Identifier") return true;
@@ -3325,16 +3325,16 @@ const jsxChildrenOnNewLine = {
         };
 
         // Check if child is simple (text or simple expression like {variable})
-        const isSimpleChild = (child) => {
+        const isSimpleChildHandler = (child) => {
             if (child.type === "JSXText") return true;
             if (child.type === "JSXExpressionContainer") {
-                return isSimpleExpression(child.expression);
+                return isSimpleExpressionHandler(child.expression);
             }
 
             return false;
         };
 
-        const checkJSXChildren = (node, openingTag, closingTag) => {
+        const checkJSXChildrenHandler = (node, openingTag, closingTag) => {
             const { children } = node;
 
             // Skip self-closing elements
@@ -3353,7 +3353,7 @@ const jsxChildrenOnNewLine = {
 
             // Allow elements that are entirely on a single line with only simple children (text or {variable})
             const elementIsOnSingleLine = openingTag.loc.start.line === closingTag.loc.end.line;
-            const hasOnlySimpleChildren = significantChildren.every(isSimpleChild);
+            const hasOnlySimpleChildren = significantChildren.every(isSimpleChildHandler);
 
             if (elementIsOnSingleLine && hasOnlySimpleChildren) {
                 // Entire element on one line with only simple children - OK
@@ -3361,7 +3361,7 @@ const jsxChildrenOnNewLine = {
             }
 
             // Allow simple inline elements with single simple child
-            const hasSingleSimpleChild = significantChildren.length === 1 && isSimpleChild(significantChildren[0]);
+            const hasSingleSimpleChild = significantChildren.length === 1 && isSimpleChildHandler(significantChildren[0]);
 
             if (hasSingleSimpleChild) {
                 // This is a simple inline element - don't require new lines
@@ -3420,17 +3420,17 @@ const jsxChildrenOnNewLine = {
             }
         };
 
-        const checkJSXElement = (node) => {
-            checkJSXChildren(node, node.openingElement, node.closingElement);
+        const checkJSXElementHandler = (node) => {
+            checkJSXChildrenHandler(node, node.openingElement, node.closingElement);
         };
 
-        const checkJSXFragment = (node) => {
-            checkJSXChildren(node, node.openingFragment, node.closingFragment);
+        const checkJSXFragmentHandler = (node) => {
+            checkJSXChildrenHandler(node, node.openingFragment, node.closingFragment);
         };
 
         return {
-            JSXElement: checkJSXElement,
-            JSXFragment: checkJSXFragment,
+            JSXElement: checkJSXElementHandler,
+            JSXFragment: checkJSXFragmentHandler,
         };
     },
     meta: {
@@ -3462,7 +3462,7 @@ const jsxClosingBracketSpacing = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkOpeningElement = (node) => {
+        const checkOpeningElementHandler = (node) => {
             const lastToken = sourceCode.getLastToken(node);
 
             if (!lastToken) return;
@@ -3495,8 +3495,8 @@ const jsxClosingBracketSpacing = {
         };
 
         return {
-            JSXOpeningElement: checkOpeningElement,
-            JSXClosingElement: checkOpeningElement,
+            JSXOpeningElement: checkOpeningElementHandler,
+            JSXClosingElement: checkOpeningElementHandler,
         };
     },
     meta: {
@@ -3529,7 +3529,7 @@ const jsxElementChildNewLine = {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
         // Check if expression is simple (identifier, literal, or simple member expression)
-        const isSimpleExpression = (expr) => {
+        const isSimpleExpressionHandler = (expr) => {
             if (!expr) return true;
 
             if (expr.type === "Identifier") return true;
@@ -3542,14 +3542,14 @@ const jsxElementChildNewLine = {
         };
 
         // Check if child is a complex JSX child (not simple text or expression)
-        const isComplexJsxChild = (child) => {
+        const isComplexJsxChildHandler = (child) => {
             if (child.type === "JSXElement" || child.type === "JSXFragment") {
                 return true;
             }
 
             // JSXExpressionContainer with complex expression (not simple variable)
             if (child.type === "JSXExpressionContainer") {
-                return !isSimpleExpression(child.expression);
+                return !isSimpleExpressionHandler(child.expression);
             }
 
             return false;
@@ -3566,7 +3566,7 @@ const jsxElementChildNewLine = {
                 const { children } = node;
 
                 // Find complex JSX element children (not text, not simple expressions)
-                const jsxChildren = children.filter(isComplexJsxChild);
+                const jsxChildren = children.filter(isComplexJsxChildHandler);
 
                 if (jsxChildren.length === 0) return;
 
@@ -3633,7 +3633,7 @@ const jsxLogicalExpressionSimplify = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkLogicalExpression = (node) => {
+        const checkLogicalExpressionHandler = (node) => {
             if (node.operator !== "&&" && node.operator !== "||") return;
 
             const {
@@ -3662,7 +3662,7 @@ const jsxLogicalExpressionSimplify = {
             });
         };
 
-        return { LogicalExpression: checkLogicalExpression };
+        return { LogicalExpression: checkLogicalExpressionHandler };
     },
     meta: {
         docs: { description: "Simplify logical expressions in JSX when right side is single-line" },
@@ -3703,7 +3703,7 @@ const jsxParenthesesPosition = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkArrowFunction = (node) => {
+        const checkArrowFunctionHandler = (node) => {
             // Only check arrow functions that return JSX wrapped in parentheses
             if (node.body.type !== "JSXElement" && node.body.type !== "JSXFragment") return;
 
@@ -3794,7 +3794,7 @@ const jsxParenthesesPosition = {
             }
         };
 
-        const checkProperty = (node) => {
+        const checkPropertyHandler = (node) => {
             if (!node.value) return;
             if (node.value.type !== "JSXElement" && node.value.type !== "JSXFragment") return;
 
@@ -3863,8 +3863,8 @@ const jsxParenthesesPosition = {
         };
 
         return {
-            ArrowFunctionExpression: checkArrowFunction,
-            Property: checkProperty,
+            ArrowFunctionExpression: checkArrowFunctionHandler,
+            Property: checkPropertyHandler,
         };
     },
     meta: {
@@ -3988,7 +3988,7 @@ const jsxSimpleElementOneLine = {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
         // Check if an expression is simple (just an identifier or literal)
-        const isSimpleExpression = (node) => {
+        const isSimpleExpressionHandler = (node) => {
             if (!node) return false;
 
             if (node.type === "Identifier") return true;
@@ -4002,13 +4002,13 @@ const jsxSimpleElementOneLine = {
         };
 
         // Check if child is simple (text or simple expression)
-        const isSimpleChild = (child) => {
+        const isSimpleChildHandler = (child) => {
             if (child.type === "JSXText") {
                 return child.value.trim().length > 0;
             }
 
             if (child.type === "JSXExpressionContainer") {
-                return isSimpleExpression(child.expression);
+                return isSimpleExpressionHandler(child.expression);
             }
 
             return false;
@@ -4041,7 +4041,7 @@ const jsxSimpleElementOneLine = {
 
                 const child = significantChildren[0];
 
-                if (!isSimpleChild(child)) return;
+                if (!isSimpleChildHandler(child)) return;
 
                 // Check if opening tag itself is simple (single line, not too many attributes)
                 if (openingTag.loc.start.line !== openingTag.loc.end.line) return;
@@ -4091,7 +4091,7 @@ const jsxStringValueTrim = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkJSXAttribute = (node) => {
+        const checkJSXAttributeHandler = (node) => {
             if (!node.value || node.value.type !== "Literal" || typeof node.value.value !== "string") return;
 
             const value = node.value.value;
@@ -4112,7 +4112,7 @@ const jsxStringValueTrim = {
             }
         };
 
-        return { JSXAttribute: checkJSXAttribute };
+        return { JSXAttribute: checkJSXAttributeHandler };
     },
     meta: {
         docs: { description: "Disallow leading/trailing whitespace in JSX string values" },
@@ -4150,7 +4150,7 @@ const jsxTernaryFormat = {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
         // Helper to get indentation of a line
-        const getIndent = (node) => {
+        const getIndentHandler = (node) => {
             const line = sourceCode.lines[node.loc.start.line - 1];
             const match = line.match(/^(\s*)/);
 
@@ -4158,14 +4158,14 @@ const jsxTernaryFormat = {
         };
 
         // Check if JSX element is simple (single line)
-        const isSimpleJsx = (jsxNode) => {
+        const isSimpleJsxHandler = (jsxNode) => {
             if (jsxNode.type !== "JSXElement" && jsxNode.type !== "JSXFragment") return false;
 
             return jsxNode.loc.start.line === jsxNode.loc.end.line;
         };
 
         // Check if a node is wrapped in unnecessary parentheses
-        const hasUnnecessaryParens = (jsxNode) => {
+        const hasUnnecessaryParensHandler = (jsxNode) => {
             const tokenBefore = sourceCode.getTokenBefore(jsxNode);
             const tokenAfter = sourceCode.getTokenAfter(jsxNode);
 
@@ -4190,10 +4190,10 @@ const jsxTernaryFormat = {
 
                 if (!isConsequentJsx && !isAlternateJsx) return;
 
-                const consequentSimple = isSimpleJsx(consequent);
-                const alternateSimple = isSimpleJsx(alternate);
+                const consequentSimple = isSimpleJsxHandler(consequent);
+                const alternateSimple = isSimpleJsxHandler(alternate);
 
-                const baseIndent = getIndent(node);
+                const baseIndent = getIndentHandler(node);
                 const contentIndent = baseIndent + "    ";
 
                 // Check 0: Condition should be on same line as opening {
@@ -4232,7 +4232,7 @@ const jsxTernaryFormat = {
                 const closeBrace = sourceCode.getLastToken(parent);
 
                 // Check for unnecessary parentheses around simple JSX
-                if (consequentSimple && hasUnnecessaryParens(consequent)) {
+                if (consequentSimple && hasUnnecessaryParensHandler(consequent)) {
                     const openParen = sourceCode.getTokenBefore(consequent);
                     const closeParen = sourceCode.getTokenAfter(consequent);
 
@@ -4246,7 +4246,7 @@ const jsxTernaryFormat = {
                     });
                 }
 
-                if (alternateSimple && hasUnnecessaryParens(alternate)) {
+                if (alternateSimple && hasUnnecessaryParensHandler(alternate)) {
                     const openParen = sourceCode.getTokenBefore(alternate);
                     const closeParen = sourceCode.getTokenAfter(alternate);
 
@@ -4852,7 +4852,7 @@ const multilineArgumentNewline = {
             "useInsertionEffect",
         ];
 
-        const isReactHook = (node) => {
+        const isReactHookHandler = (node) => {
             if (node.callee.type === "Identifier") {
                 return reactHooks.includes(node.callee.name);
             }
@@ -4860,11 +4860,11 @@ const multilineArgumentNewline = {
             return false;
         };
 
-        const hasMultilineArg = (args) => args.some((arg) => arg.loc.start.line !== arg.loc.end.line);
+        const hasMultilineArgHandler = (args) => args.some((arg) => arg.loc.start.line !== arg.loc.end.line);
 
-        const checkCallExpression = (node) => {
+        const checkCallExpressionHandler = (node) => {
             // Skip React hooks
-            if (isReactHook(node)) return;
+            if (isReactHookHandler(node)) return;
 
             const args = node.arguments;
 
@@ -4886,7 +4886,7 @@ const multilineArgumentNewline = {
                 && args[0].body.type === "ObjectExpression") return;
 
             // Check if any argument is multiline
-            if (!hasMultilineArg(args)) return;
+            if (!hasMultilineArgHandler(args)) return;
 
             const openParen = sourceCode.getTokenAfter(
                 node.callee,
@@ -4951,7 +4951,7 @@ const multilineArgumentNewline = {
             }
         };
 
-        return { CallExpression: checkCallExpression };
+        return { CallExpression: checkCallExpressionHandler };
     },
     meta: {
         docs: { description: "Enforce newlines for function calls with multiline arguments" },
@@ -5202,18 +5202,18 @@ const noEmptyLinesInFunctionCalls = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const isSimpleArg = (arg) => [
+        const isSimpleArgHandler = (arg) => [
             "Literal",
             "Identifier",
             "MemberExpression",
             "TemplateLiteral",
         ].includes(arg.type);
 
-        const isSingleLineArg = (arg) => arg.loc.start.line === arg.loc.end.line;
+        const isSingleLineArgHandler = (arg) => arg.loc.start.line === arg.loc.end.line;
 
-        const isSinglePropertyObject = (arg) => arg.type === "ObjectExpression" && arg.properties.length === 1;
+        const isSinglePropertyObjectHandler = (arg) => arg.type === "ObjectExpression" && arg.properties.length === 1;
 
-        const getCleanObjectText = (arg) => {
+        const getCleanObjectTextHandler = (arg) => {
             const prop = arg.properties[0];
 
             if (prop.type === "SpreadElement") return sourceCode.getText(arg);
@@ -5224,7 +5224,7 @@ const noEmptyLinesInFunctionCalls = {
             return `{ ${keyText}: ${valueText} }`;
         };
 
-        const checkCallExpression = (node) => {
+        const checkCallExpressionHandler = (node) => {
             const args = node.arguments;
 
             if (args.length === 0) return;
@@ -5241,10 +5241,10 @@ const noEmptyLinesInFunctionCalls = {
             const lastArg = args[args.length - 1];
 
             // Single simple argument on different line should be collapsed
-            if (args.length === 1 && (isSimpleArg(firstArg) || isSinglePropertyObject(firstArg)) && isSingleLineArg(firstArg)) {
+            if (args.length === 1 && (isSimpleArgHandler(firstArg) || isSinglePropertyObjectHandler(firstArg)) && isSingleLineArgHandler(firstArg)) {
                 if (firstArg.loc.start.line !== openParen.loc.end.line) {
-                    const argText = isSinglePropertyObject(firstArg)
-                        ? getCleanObjectText(firstArg)
+                    const argText = isSinglePropertyObjectHandler(firstArg)
+                        ? getCleanObjectTextHandler(firstArg)
                         : sourceCode.getText(firstArg);
 
                     context.report({
@@ -5304,7 +5304,7 @@ const noEmptyLinesInFunctionCalls = {
             }
         };
 
-        return { CallExpression: checkCallExpression };
+        return { CallExpression: checkCallExpressionHandler };
     },
     meta: {
         docs: { description: "Disallow empty lines in function calls and enforce single simple argument on same line" },
@@ -5340,7 +5340,7 @@ const noEmptyLinesInFunctionParams = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkFunction = (node) => {
+        const checkFunctionHandler = (node) => {
             const params = node.params;
 
             if (params.length === 0) return;
@@ -5406,9 +5406,9 @@ const noEmptyLinesInFunctionParams = {
         };
 
         return {
-            ArrowFunctionExpression: checkFunction,
-            FunctionDeclaration: checkFunction,
-            FunctionExpression: checkFunction,
+            ArrowFunctionExpression: checkFunctionHandler,
+            FunctionDeclaration: checkFunctionHandler,
+            FunctionExpression: checkFunctionHandler,
         };
     },
     meta: {
@@ -5447,7 +5447,7 @@ const noEmptyLinesInJsx = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkJSXElement = (node) => {
+        const checkJSXElementHandler = (node) => {
             const {
                 children,
                 closingElement,
@@ -5489,9 +5489,9 @@ const noEmptyLinesInJsx = {
             }
         };
 
-        const isSingleLineAttr = (attr) => attr.loc.start.line === attr.loc.end.line;
+        const isSingleLineAttrHandler = (attr) => attr.loc.start.line === attr.loc.end.line;
 
-        const checkJSXOpeningElement = (node) => {
+        const checkJSXOpeningElementHandler = (node) => {
             const {
                 attributes,
                 name,
@@ -5505,7 +5505,7 @@ const noEmptyLinesInJsx = {
             const firstAttr = attributes[0];
             const lastAttr = attributes[attributes.length - 1];
             const isSingleLineElement = elementName.loc.start.line === closingBracket.loc.end.line;
-            const hasSimpleProps = attributes.length === 1 && isSingleLineAttr(firstAttr);
+            const hasSimpleProps = attributes.length === 1 && isSingleLineAttrHandler(firstAttr);
 
             // Check for no space before closing bracket in non-self-closing element
             if (!node.selfClosing && hasSimpleProps && isSingleLineElement) {
@@ -5531,7 +5531,7 @@ const noEmptyLinesInJsx = {
             }
 
             // Single simple prop on different line should be collapsed
-            if (attributes.length === 1 && isSingleLineAttr(firstAttr)) {
+            if (attributes.length === 1 && isSingleLineAttrHandler(firstAttr)) {
                 if (firstAttr.loc.start.line !== elementName.loc.end.line) {
                     const attrText = sourceCode.getText(firstAttr);
                     const isSelfClosing = node.selfClosing;
@@ -5614,7 +5614,7 @@ const noEmptyLinesInJsx = {
             }
         };
 
-        const checkReturnStatement = (node) => {
+        const checkReturnStatementHandler = (node) => {
             const arg = node.argument;
 
             if (!arg) return;
@@ -5675,7 +5675,7 @@ const noEmptyLinesInJsx = {
             }
         };
 
-        const checkArrowFunction = (node) => {
+        const checkArrowFunctionHandler = (node) => {
             if (!node.body || node.body.type === "BlockStatement") return;
 
             const body = node.body;
@@ -5715,10 +5715,10 @@ const noEmptyLinesInJsx = {
         };
 
         return {
-            ArrowFunctionExpression: checkArrowFunction,
-            JSXElement: checkJSXElement,
-            JSXOpeningElement: checkJSXOpeningElement,
-            ReturnStatement: checkReturnStatement,
+            ArrowFunctionExpression: checkArrowFunctionHandler,
+            JSXElement: checkJSXElementHandler,
+            JSXOpeningElement: checkJSXOpeningElementHandler,
+            ReturnStatement: checkReturnStatementHandler,
         };
     },
     meta: {
@@ -5755,7 +5755,7 @@ const noEmptyLinesInObjects = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkObject = (node) => {
+        const checkObjectHandler = (node) => {
             const { properties } = node;
 
             if (properties.length === 0) return;
@@ -5814,8 +5814,8 @@ const noEmptyLinesInObjects = {
         };
 
         return {
-            ObjectExpression: checkObject,
-            ObjectPattern: checkObject,
+            ObjectExpression: checkObjectHandler,
+            ObjectPattern: checkObjectHandler,
         };
     },
     meta: {
@@ -5964,7 +5964,7 @@ const objectPropertyPerLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkObject = (node) => {
+        const checkObjectHandler = (node) => {
             const { properties } = node;
 
             if (properties.length < 2) return;
@@ -5993,8 +5993,8 @@ const objectPropertyPerLine = {
         };
 
         return {
-            ObjectExpression: checkObject,
-            ObjectPattern: checkObject,
+            ObjectExpression: checkObjectHandler,
+            ObjectPattern: checkObjectHandler,
         };
     },
     meta: {
@@ -6091,7 +6091,7 @@ const objectPropertyValueFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkProperty = (node) => {
+        const checkPropertyHandler = (node) => {
             // Skip shorthand properties (no colon)
             if (node.shorthand) return;
 
@@ -6139,7 +6139,7 @@ const objectPropertyValueFormat = {
                 const isWrappedInParens = tokenAfterColon && tokenAfterColon.value === "(";
 
                 // Check if JSX is simple (single element with only text/whitespace children, no attributes)
-                const isSimpleJsx = (jsxNode) => {
+                const isSimpleJsxHandler = (jsxNode) => {
                     if (jsxNode.type === "JSXFragment") return false;
 
                     // Has attributes - not simple
@@ -6167,7 +6167,7 @@ const objectPropertyValueFormat = {
                 };
 
                 // Build collapsed JSX string for simple elements
-                const getCollapsedJsx = (jsxNode) => {
+                const getCollapsedJsxHandler = (jsxNode) => {
                     const tagName = jsxNode.openingElement.name.name;
                     const children = jsxNode.children || [];
                     const textContent = children
@@ -6183,10 +6183,10 @@ const objectPropertyValueFormat = {
                     return `<${tagName} />`;
                 };
 
-                const jsxIsSimple = isSimpleJsx(valueNode);
+                const jsxIsSimple = isSimpleJsxHandler(valueNode);
 
                 if (jsxIsSimple) {
-                    const collapsedJsx = getCollapsedJsx(valueNode);
+                    const collapsedJsx = getCollapsedJsxHandler(valueNode);
                     const currentText = sourceCode.getText(valueNode);
 
                     // Check if already correctly formatted (inline, no parens, collapsed)
@@ -6272,7 +6272,7 @@ const objectPropertyValueFormat = {
             }
         };
 
-        return { Property: checkProperty };
+        return { Property: checkPropertyHandler };
     },
     meta: {
         docs: { description: "Enforce property value on same line as colon with proper spacing" },
@@ -6308,7 +6308,7 @@ const openingBracketsSameLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkCallExpression = (node) => {
+        const checkCallExpressionHandler = (node) => {
             const { callee } = node;
 
             // Case 0: Function call with opening paren on different line - fn\n( should be fn(
@@ -6572,7 +6572,7 @@ const openingBracketsSameLine = {
             }
         };
 
-        const checkJSXExpressionContainer = (node) => {
+        const checkJSXExpressionContainerHandler = (node) => {
             const expression = node.expression;
 
             // Skip empty expressions
@@ -6863,7 +6863,7 @@ const openingBracketsSameLine = {
             }
         };
 
-        const checkArrowFunction = (node) => {
+        const checkArrowFunctionHandler = (node) => {
             // Check 1: Arrow function with block body - ensure => { are on same line
             if (node.body.type === "BlockStatement") {
                 const arrowToken = sourceCode.getTokenBefore(
@@ -7051,7 +7051,7 @@ const openingBracketsSameLine = {
             }
         };
 
-        const checkJSXSpreadAttribute = (node) => {
+        const checkJSXSpreadAttributeHandler = (node) => {
             // Handle simple spread attributes: {...formMethods} should be on single line
             const { argument } = node;
 
@@ -7080,10 +7080,10 @@ const openingBracketsSameLine = {
         };
 
         return {
-            ArrowFunctionExpression: checkArrowFunction,
-            CallExpression: checkCallExpression,
-            JSXExpressionContainer: checkJSXExpressionContainer,
-            JSXSpreadAttribute: checkJSXSpreadAttribute,
+            ArrowFunctionExpression: checkArrowFunctionHandler,
+            CallExpression: checkCallExpressionHandler,
+            JSXExpressionContainer: checkJSXExpressionContainerHandler,
+            JSXSpreadAttribute: checkJSXSpreadAttributeHandler,
         };
     },
     meta: {
@@ -7117,7 +7117,7 @@ const simpleCallSingleLine = {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
         // Check if a node is simple enough to be on one line
-        const isSimpleArg = (argNode) => {
+        const isSimpleArgHandler = (argNode) => {
             if (!argNode) return false;
 
             // Simple literals (strings, numbers, booleans)
@@ -7132,10 +7132,10 @@ const simpleCallSingleLine = {
             return false;
         };
 
-        const isSimpleBody = (bodyNode) => {
+        const isSimpleBodyHandler = (bodyNode) => {
             // Handle ImportExpression (dynamic import)
             if (bodyNode.type === "ImportExpression") {
-                return isSimpleArg(bodyNode.source);
+                return isSimpleArgHandler(bodyNode.source);
             }
 
             // Handle CallExpression
@@ -7150,7 +7150,7 @@ const simpleCallSingleLine = {
                 // Must have simple arguments (0-2 args, all simple)
                 if (bodyNode.arguments.length > 2) return false;
 
-                return bodyNode.arguments.every(isSimpleArg);
+                return bodyNode.arguments.every(isSimpleArgHandler);
             }
 
             return false;
@@ -7177,7 +7177,7 @@ const simpleCallSingleLine = {
                 const { body } = arg;
 
                 // Body must be a simple call expression or import
-                if (!isSimpleBody(body)) return;
+                if (!isSimpleBodyHandler(body)) return;
 
                 // Check if the call spans multiple lines
                 if (node.loc.start.line === node.loc.end.line) return;
@@ -7229,7 +7229,7 @@ const singleArgumentOnOneLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const isSimpleArg = (argNode) => {
+        const isSimpleArgHandler = (argNode) => {
             if (!argNode) return false;
 
             // Simple literals (strings, numbers, booleans, null)
@@ -7250,7 +7250,7 @@ const singleArgumentOnOneLine = {
 
             // Unary expressions like !flag, -1
             if (argNode.type === "UnaryExpression") {
-                return isSimpleArg(argNode.argument);
+                return isSimpleArgHandler(argNode.argument);
             }
 
             return false;
@@ -7266,7 +7266,7 @@ const singleArgumentOnOneLine = {
                 const arg = args[0];
 
                 // Only handle simple arguments
-                if (!isSimpleArg(arg)) return;
+                if (!isSimpleArgHandler(arg)) return;
 
                 // Check if the call spans multiple lines
                 if (node.loc.start.line === node.loc.end.line) return;
@@ -7401,7 +7401,7 @@ const variableNamingConvention = {
         ];
 
         // Check if this is a MUI styled component: styled(Component)(...)
-        const isStyledComponent = (init) => {
+        const isStyledComponentHandler = (init) => {
             if (!init || init.type !== "CallExpression") return false;
 
             const { callee } = init;
@@ -7425,7 +7425,7 @@ const variableNamingConvention = {
         };
 
         // Check if this CallExpression is a styled() call
-        const isStyledCall = (node) => {
+        const isStyledCallHandler = (node) => {
             if (node.type !== "CallExpression") return false;
 
             const { callee } = node;
@@ -7438,7 +7438,7 @@ const variableNamingConvention = {
             return false;
         };
 
-        const isFunctionType = (init) => {
+        const isFunctionTypeHandler = (init) => {
             if (!init) return false;
 
             if (init.type === "ArrowFunctionExpression" || init.type === "FunctionExpression") {
@@ -7455,25 +7455,25 @@ const variableNamingConvention = {
             return false;
         };
 
-        const isComponentByNaming = (node) => {
+        const isComponentByNamingHandler = (node) => {
             if (!node.init) return false;
 
             const name = node.id.name;
 
             // PascalCase naming indicates a component
-            if (/^[A-Z]/.test(name) && isFunctionType(node.init)) {
+            if (/^[A-Z]/.test(name) && isFunctionTypeHandler(node.init)) {
                 return true;
             }
 
             return false;
         };
 
-        const isHookFunction = (node) => {
+        const isHookFunctionHandler = (node) => {
             if (!node.init) return false;
 
             const name = node.id.name;
 
-            return name.startsWith("use") && /^use[A-Z]/.test(name) && isFunctionType(node.init);
+            return name.startsWith("use") && /^use[A-Z]/.test(name) && isFunctionTypeHandler(node.init);
         };
 
         // Common component property names that should allow PascalCase
@@ -7487,7 +7487,7 @@ const variableNamingConvention = {
             "Provider",
         ];
 
-        const checkPattern = (node, typeLabel) => {
+        const checkPatternHandler = (node, typeLabel) => {
             if (node.type === "Identifier") {
                 const name = node.name;
 
@@ -7505,13 +7505,13 @@ const variableNamingConvention = {
             } else if (node.type === "ObjectPattern") {
                 node.properties.forEach((prop) => {
                     if (prop.type === "Property") {
-                        checkPattern(
+                        checkPatternHandler(
                             prop.value,
                             typeLabel,
                         );
                     }
                     else if (prop.type === "RestElement") {
-                        checkPattern(
+                        checkPatternHandler(
                             prop.argument,
                             typeLabel,
                         );
@@ -7520,29 +7520,29 @@ const variableNamingConvention = {
             } else if (node.type === "ArrayPattern") {
                 node.elements.forEach((elem) => {
                     if (elem) {
-                        checkPattern(
+                        checkPatternHandler(
                             elem,
                             typeLabel,
                         );
                     }
                 });
             } else if (node.type === "AssignmentPattern") {
-                checkPattern(
+                checkPatternHandler(
                     node.left,
                     typeLabel,
                 );
             }
             else if (node.type === "RestElement") {
-                checkPattern(
+                checkPatternHandler(
                     node.argument,
                     typeLabel,
                 );
             }
         };
 
-        const checkVariableDeclarator = (node) => {
+        const checkVariableDeclaratorHandler = (node) => {
             if (node.id.type !== "Identifier") {
-                checkPattern(
+                checkPatternHandler(
                     node.id,
                     "Variable",
                 );
@@ -7553,7 +7553,7 @@ const variableNamingConvention = {
             const name = node.id.name;
 
             // Enforce PascalCase for styled components: const StyledCard = styled(Card)(...)
-            if (isStyledComponent(node.init)) {
+            if (isStyledComponentHandler(node.init)) {
                 if (!pascalCaseRegex.test(name)) {
                     context.report({
                         message: `Styled component "${name}" should be PascalCase (e.g., StyledCard instead of styledCard)`,
@@ -7564,9 +7564,9 @@ const variableNamingConvention = {
                 return;
             }
 
-            if (name.startsWith("_") || constantRegex.test(name) || isComponentByNaming(node)) return;
+            if (name.startsWith("_") || constantRegex.test(name) || isComponentByNamingHandler(node)) return;
 
-            if (isHookFunction(node)) {
+            if (isHookFunctionHandler(node)) {
                 if (!hookRegex.test(name)) {
                     context.report({
                         message: `Hook "${name}" should start with "use" followed by PascalCase (e.g., useEventsList)`,
@@ -7600,7 +7600,7 @@ const variableNamingConvention = {
             }
         };
 
-        const checkProperty = (node) => {
+        const checkPropertyHandler = (node) => {
             if (node.computed || node.key.type !== "Identifier") return;
 
             const name = node.key.name;
@@ -7632,16 +7632,16 @@ const variableNamingConvention = {
             }
         };
 
-        const checkFunctionParams = (node) => {
-            node.params.forEach((param) => checkPattern(
+        const checkFunctionHandlerParamsHandler = (node) => {
+            node.params.forEach((param) => checkPatternHandler(
                 param,
                 "Parameter",
             ));
         };
 
-        const checkCallExpressionArguments = (node) => {
+        const checkCallExpressionHandlerArguments = (node) => {
             // Skip argument checking for styled() calls - they accept PascalCase components
-            if (isStyledCall(node)) return;
+            if (isStyledCallHandler(node)) return;
 
             node.arguments.forEach((arg) => {
                 if (arg.type === "Identifier") {
@@ -7663,12 +7663,12 @@ const variableNamingConvention = {
         };
 
         return {
-            ArrowFunctionExpression: checkFunctionParams,
-            CallExpression: checkCallExpressionArguments,
-            FunctionDeclaration: checkFunctionParams,
-            FunctionExpression: checkFunctionParams,
-            Property: checkProperty,
-            VariableDeclarator: checkVariableDeclarator,
+            ArrowFunctionExpression: checkFunctionHandlerParamsHandler,
+            CallExpression: checkCallExpressionHandlerArguments,
+            FunctionDeclaration: checkFunctionHandlerParamsHandler,
+            FunctionExpression: checkFunctionHandlerParamsHandler,
+            Property: checkPropertyHandler,
+            VariableDeclarator: checkVariableDeclaratorHandler,
         };
     },
     meta: {
