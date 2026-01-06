@@ -41,10 +41,42 @@ When combined with ESLint's native rules and other popular plugins, this package
 
 [Installation](#-installation) •
 [Quick Start](#-quick-start) •
+[Recommended Configs](#-recommended-configurations) •
 [Rules](#-rules-reference) •
 [Contributing](#-contributing)
 
 </div>
+
+<br />
+
+## 📁 Recommended Configurations
+
+We provide **ready-to-use ESLint flat configuration files** that combine `eslint-plugin-code-style` with carefully selected third-party plugins and ESLint built-in rules. These configurations represent our battle-tested setup that reduces code-style differences by ~95%.
+
+### Why Use These Configs?
+
+- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 47 code-style rules
+- **Ready-to-Use** — Copy the config file and start linting immediately
+- **Battle-Tested** — These configurations have been refined through real-world usage
+- **Fully Documented** — Each config includes detailed instructions and explanations
+
+### Available Configurations
+
+| Configuration | Description | Link |
+|---------------|-------------|------|
+| **React** | React.js projects (JavaScript, JSX) | [View Config](./recommended-configs/react/) |
+| **React + TS + Tailwind** | React + TypeScript + Tailwind CSS | *Coming Soon* |
+| **Next.js + TS + Tailwind** | Next.js + TypeScript + Tailwind CSS | *Coming Soon* |
+
+### Quick Start with Recommended Config
+
+1. Navigate to the [recommended-configs](./recommended-configs/) folder
+2. Choose the configuration for your project type
+3. Follow the installation instructions in the README
+4. Copy the `eslint.config.js` to your project root
+5. Run `eslint src/ --fix`
+
+> **Note:** Each configuration includes a detailed README with installation commands, plugin explanations, and rule documentation.
 
 <br />
 
