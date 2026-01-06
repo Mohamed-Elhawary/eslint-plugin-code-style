@@ -2503,6 +2503,15 @@ const multilineIfConditions = {
  *   Local paths (starting with @/) should only import from
  *   folder-level index files.
  *
+ * Options:
+ *   - aliasPrefix: string (default: "@/") - The import alias prefix
+ *   - extraAllowedFolders: string[] - Additional folders to allow (extends defaults)
+ *   - extraReduxSubfolders: string[] - Additional redux subfolders (extends defaults)
+ *   - extraDeepImportFolders: string[] - Additional folders allowing deep imports (extends "assets")
+ *   - allowedFolders: string[] - Replace default folders entirely (use extraAllowedFolders to extend)
+ *   - reduxSubfolders: string[] - Replace default redux subfolders entirely
+ *   - deepImportFolders: string[] - Replace default deep import folders entirely
+ *
  * ✓ Good:
  *   import { Button } from "@/components";
  *   import { useAuth } from "@/hooks";
@@ -2510,19 +2519,31 @@ const multilineIfConditions = {
  * ✗ Bad:
  *   import { Button } from "@/components/buttons/primary-button";
  *   import { useAuth } from "@/hooks/auth/useAuth";
+ *
+ * Configuration Example:
+ *   "code-style/absolute-imports-only": ["error", {
+ *       extraAllowedFolders: ["features", "modules", "lib"],
+ *       extraDeepImportFolders: ["images", "fonts"]
+ *   }]
  */
 const absoluteImportsOnly = {
     create(context) {
+        const options = context.options[0] || {};
+
         // Get the alias prefix from options or default to "@/"
-        const aliasPrefix = (context.options[0] && context.options[0].aliasPrefix) || "@/";
+        const aliasPrefix = options.aliasPrefix || "@/";
+
+        // Default redux subfolders
+        const defaultReduxSubfolders = ["actions", "reducers", "store", "thunks", "types"];
 
         // Redux ecosystem folders - can be standalone or inside redux folder
         // These are allowed as: @/actions, @/types, @/store, @/reducers, @/thunks
         // OR as: @/redux/actions, @/redux/types, @/redux/store, @/redux/reducers, @/redux/thunks
-        const reduxSubfolders = ["actions", "reducers", "store", "thunks", "types"];
+        const reduxSubfolders = options.reduxSubfolders
+            || [...defaultReduxSubfolders, ...(options.extraReduxSubfolders || [])];
 
-        // List of allowed top-level folders (can be configured via options)
-        const allowedFolders = (context.options[0] && context.options[0].allowedFolders) || [
+        // Default allowed folders
+        const defaultAllowedFolders = [
             "actions",
             "apis",
             "assets",
@@ -2549,6 +2570,19 @@ const absoluteImportsOnly = {
             "utils",
             "views",
         ];
+
+        // List of allowed top-level folders (can be configured via options)
+        // Use allowedFolders to replace entirely, or extraAllowedFolders to extend defaults
+        const allowedFolders = options.allowedFolders
+            || [...defaultAllowedFolders, ...(options.extraAllowedFolders || [])];
+
+        // Default folders that allow deep imports
+        const defaultDeepImportFolders = ["assets"];
+
+        // Folders that allow deep imports (images, fonts, etc. don't have index files)
+        // e.g., @/assets/images/logo.svg is allowed
+        const deepImportFolders = options.deepImportFolders
+            || [...defaultDeepImportFolders, ...(options.extraDeepImportFolders || [])];
 
         return {
             ImportDeclaration(node) {
@@ -2648,9 +2682,9 @@ const absoluteImportsOnly = {
                             return;
                         }
 
-                        // Assets folder allows deep imports (images, fonts, etc. don't have index files)
+                        // Some folders allow deep imports (images, fonts, etc. don't have index files)
                         // e.g., @/assets/images/logo.svg is allowed
-                        if (folderName === "assets") {
+                        if (deepImportFolders.includes(folderName)) {
                             return;
                         }
 
@@ -2673,6 +2707,26 @@ const absoluteImportsOnly = {
                 properties: {
                     aliasPrefix: { type: "string" },
                     allowedFolders: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    deepImportFolders: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    extraAllowedFolders: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    extraDeepImportFolders: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    extraReduxSubfolders: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    reduxSubfolders: {
                         items: { type: "string" },
                         type: "array",
                     },
@@ -2995,6 +3049,14 @@ const importSourceSpacing = {
  *   Each module folder must have an index file that exports all
  *   subfolders and files in the module.
  *
+ * Options:
+ *   - extraModuleFolders: string[] - Additional module folders (extends defaults)
+ *   - extraLazyLoadFolders: string[] - Additional lazy load folders (extends defaults)
+ *   - extraIgnorePatterns: string[] - Additional ignore patterns (extends defaults)
+ *   - moduleFolders: string[] - Replace default module folders entirely
+ *   - lazyLoadFolders: string[] - Replace default lazy load folders entirely
+ *   - ignorePatterns: string[] - Replace default ignore patterns entirely
+ *
  * ✓ Good:
  *   // index.js
  *   export { Button } from "./Button";
@@ -3002,6 +3064,13 @@ const importSourceSpacing = {
  *
  * ✗ Bad:
  *   // Missing exports in index.js
+ *
+ * Configuration Example:
+ *   "code-style/module-index-exports": ["error", {
+ *       extraModuleFolders: ["features", "modules", "lib"],
+ *       extraLazyLoadFolders: ["pages"],
+ *       extraIgnorePatterns: ["*.stories.js", "*.mock.js"]
+ *   }]
  */
 const moduleIndexExports = {
     create(context) {
@@ -3010,7 +3079,9 @@ const moduleIndexExports = {
 
         // Get options or use defaults
         const options = context.options[0] || {};
-        const moduleFolders = options.moduleFolders || [
+
+        // Default module folders
+        const defaultModuleFolders = [
             "apis",
             "assets",
             "atoms",
@@ -3033,12 +3104,21 @@ const moduleIndexExports = {
             "views",
         ];
 
+        // List of module folders (can be configured via options)
+        // Use moduleFolders to replace entirely, or extraModuleFolders to extend defaults
+        const moduleFolders = options.moduleFolders
+            || [...defaultModuleFolders, ...(options.extraModuleFolders || [])];
+
+        // Default lazy load folders
+        const defaultLazyLoadFolders = ["views"];
+
         // Folders that use lazy loading and shouldn't require index exports
         // These folders typically have components loaded via dynamic import()
-        const lazyLoadFolders = options.lazyLoadFolders || ["views"];
+        const lazyLoadFolders = options.lazyLoadFolders
+            || [...defaultLazyLoadFolders, ...(options.extraLazyLoadFolders || [])];
 
-        // Files/folders to ignore
-        const ignorePatterns = options.ignorePatterns || [
+        // Default ignore patterns
+        const defaultIgnorePatterns = [
             "index.js",
             "index.jsx",
             "index.ts",
@@ -3051,6 +3131,10 @@ const moduleIndexExports = {
             "*.spec.js",
             "*.spec.jsx",
         ];
+
+        // Files/folders to ignore
+        const ignorePatterns = options.ignorePatterns
+            || [...defaultIgnorePatterns, ...(options.extraIgnorePatterns || [])];
 
         const shouldIgnoreHandler = (name) => ignorePatterns.some((pattern) => {
             if (pattern.includes("*")) {
@@ -3271,7 +3355,23 @@ const moduleIndexExports = {
             {
                 additionalProperties: false,
                 properties: {
+                    extraIgnorePatterns: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    extraLazyLoadFolders: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    extraModuleFolders: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
                     ignorePatterns: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    lazyLoadFolders: {
                         items: { type: "string" },
                         type: "array",
                     },

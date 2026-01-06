@@ -232,6 +232,8 @@ rules: {
 ## 📖 Rules Summary
 
 > All **47 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
+>
+> Rules marked with ⚙️ support customization options (e.g., extending default folder lists).
 
 | Rule | Description |
 |------|-------------|
@@ -251,11 +253,11 @@ rules: {
 | `hook-deps-per-line` | Enforce each hook dependency on its own line when more than 2 |
 | `if-statement-format` | Ensure if statement has proper formatting |
 | `multiline-if-conditions` | Enforce multiline if conditions when there are multiple operands |
-| `absolute-imports-only` | Enforce absolute imports using `@/` alias instead of relative paths |
+| `absolute-imports-only` | Enforce absolute imports using `@/` alias instead of relative paths ⚙️ |
 | `export-format` | Format exports: collapse 1-3 specifiers, multiline for 4+ |
 | `import-format` | Format imports: collapse 1-3 specifiers, multiline for 4+ |
 | `import-source-spacing` | Enforce no extra spaces inside import path quotes |
-| `module-index-exports` | Enforce proper exports in index files |
+| `module-index-exports` | Enforce proper exports in index files ⚙️ |
 | `jsx-children-on-new-line` | Enforce JSX children on separate lines from parent tags |
 | `jsx-closing-bracket-spacing` | No space before `>` or `/>` in JSX tags |
 | `jsx-element-child-new-line` | JSX element children must be on new lines |
@@ -702,6 +704,29 @@ import { Button } from "@/components/buttons/primary-button";
 import { useAuth } from "@/hooks/auth/useAuth";
 ```
 
+**Default Allowed Folders:**
+`actions`, `apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `hooks`, `layouts`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `utils`, `views`
+
+**Customization Options:**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `extraAllowedFolders` | `string[]` | Add extra folders to the default list |
+| `extraReduxSubfolders` | `string[]` | Add extra redux subfolders (default: `actions`, `reducers`, `store`, `thunks`, `types`) |
+| `extraDeepImportFolders` | `string[]` | Add extra folders that allow deep imports (default: `assets`) |
+| `aliasPrefix` | `string` | Change the import alias prefix (default: `@/`) |
+| `allowedFolders` | `string[]` | Replace default folders entirely |
+| `reduxSubfolders` | `string[]` | Replace default redux subfolders entirely |
+| `deepImportFolders` | `string[]` | Replace default deep import folders entirely |
+
+```javascript
+// Example: Add custom folders to the defaults
+"code-style/absolute-imports-only": ["error", {
+    extraAllowedFolders: ["features", "modules", "lib"],
+    extraDeepImportFolders: ["images", "fonts"]
+}]
+```
+
 ---
 
 ### `export-format`
@@ -772,6 +797,32 @@ export { Input } from "./Input";
 
 // Bad
 // Missing exports in index.js
+```
+
+**Default Module Folders:**
+`apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `hooks`, `layouts`, `middlewares`, `providers`, `redux`, `requests`, `routes`, `schemas`, `services`, `styles`, `theme`, `utils`, `views`
+
+**Customization Options:**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `extraModuleFolders` | `string[]` | Add extra module folders to the default list |
+| `extraLazyLoadFolders` | `string[]` | Add extra lazy load folders (default: `views`) |
+| `extraIgnorePatterns` | `string[]` | Add extra ignore patterns (supports wildcards like `*.stories.js`) |
+| `moduleFolders` | `string[]` | Replace default module folders entirely |
+| `lazyLoadFolders` | `string[]` | Replace default lazy load folders entirely |
+| `ignorePatterns` | `string[]` | Replace default ignore patterns entirely |
+
+**Default Ignore Patterns:**
+`index.js`, `index.jsx`, `index.ts`, `index.tsx`, `.DS_Store`, `__tests__`, `__mocks__`, `*.test.js`, `*.test.jsx`, `*.spec.js`, `*.spec.jsx`
+
+```javascript
+// Example: Add custom folders and patterns to the defaults
+"code-style/module-index-exports": ["error", {
+    extraModuleFolders: ["features", "modules", "lib"],
+    extraLazyLoadFolders: ["pages"],
+    extraIgnorePatterns: ["*.stories.js", "*.mock.js"]
+}]
 ```
 
 <br />

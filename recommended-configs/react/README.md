@@ -301,6 +301,33 @@ export default [
 ];
 ```
 
+### Extending Folder Lists
+
+The `absolute-imports-only` and `module-index-exports` rules come with default folder lists. You can extend these without replacing the defaults:
+
+```javascript
+rules: {
+    // Add extra folders to the allowed imports list
+    "code-style/absolute-imports-only": ["error", {
+        extraAllowedFolders: ["features", "modules", "lib"],
+        extraDeepImportFolders: ["images", "fonts"],
+    }],
+
+    // Add extra module folders for index exports validation
+    "code-style/module-index-exports": ["error", {
+        extraModuleFolders: ["features", "modules", "lib"],
+        extraLazyLoadFolders: ["pages"],
+        extraIgnorePatterns: ["*.stories.js", "*.mock.js"],
+    }],
+}
+```
+
+**Default Allowed Folders (absolute-imports-only):**
+`actions`, `apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `hooks`, `layouts`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `utils`, `views`
+
+**Default Module Folders (module-index-exports):**
+`apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `hooks`, `layouts`, `middlewares`, `providers`, `redux`, `requests`, `routes`, `schemas`, `services`, `styles`, `theme`, `utils`, `views`
+
 ---
 
 ## Future Configurations
