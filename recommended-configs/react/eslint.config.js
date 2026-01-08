@@ -388,7 +388,6 @@ export default [ // eslint-disable-line
         },
     },
     {
-        // Override for index files - no blank lines required between exports
         files: ["**/index.{js,jsx}"],
         rules: {
             "padding-line-between-statements": [
@@ -413,7 +412,6 @@ export default [ // eslint-disable-line
                     next: "expression",
                     prev: "expression",
                 },
-                // No export-export rule here - allows exports without blank lines
             ],
         },
     },
