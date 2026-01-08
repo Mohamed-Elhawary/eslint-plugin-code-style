@@ -3389,6 +3389,239 @@ const moduleIndexExports = {
 
 /**
  * ───────────────────────────────────────────────────────────────
+ * Rule: Index Export Style
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforce consistent export style in index files. Choose between
+ *   shorthand re-exports or import-then-export pattern.
+ *
+ * Options:
+ *   - style: "shorthand" (default) | "import-export"
+ *     - "shorthand": export { a } from "./file";
+ *     - "import-export": import { a } from "./file"; export { a };
+ *
+ * ✓ Good (style: "shorthand" - default):
+ *   export { Button } from "./button";
+ *   export { Input, Select } from "./form";
+ *
+ * ✓ Good (style: "import-export"):
+ *   import { Button } from "./button";
+ *   import { Input, Select } from "./form";
+ *   export { Button, Input, Select };
+ *
+ * ✗ Bad (mixing styles):
+ *   export { Button } from "./button";
+ *   import { Input } from "./input";
+ *   export { Input };
+ *
+ * Configuration Example:
+ *   "code-style/index-export-style": ["error", { style: "shorthand" }]
+ *   "code-style/index-export-style": ["error", { style: "import-export" }]
+ */
+const indexExportStyle = {
+    create(context) {
+        const options = context.options[0] || {};
+        const preferredStyle = options.style || "shorthand";
+        const sourceCode = context.sourceCode || context.getSourceCode();
+        const filename = context.filename || context.getFilename();
+        const normalizedFilename = filename.replace(/\\/g, "/");
+
+        // Only apply to index files
+        const isIndexFile = /\/index\.(js|jsx|ts|tsx)$/.test(normalizedFilename);
+
+        if (!isIndexFile) return {};
+
+        return {
+            Program(node) {
+                const imports = [];
+                const shorthandExports = [];
+                const standaloneExports = [];
+                const importSourceMap = new Map();
+
+                // Collect all imports and exports
+                node.body.forEach((statement) => {
+                    if (statement.type === "ImportDeclaration" && statement.source) {
+                        imports.push(statement);
+
+                        // Map imported names to their source
+                        statement.specifiers.forEach((spec) => {
+                            if (spec.local && spec.local.name) {
+                                importSourceMap.set(spec.local.name, {
+                                    source: statement.source.value,
+                                    statement,
+                                });
+                            }
+                        });
+                    }
+
+                    if (statement.type === "ExportNamedDeclaration") {
+                        if (statement.source) {
+                            // Shorthand: export { a } from "./file"
+                            shorthandExports.push(statement);
+                        } else if (statement.specifiers && statement.specifiers.length > 0 && !statement.declaration) {
+                            // Standalone: export { a }
+                            standaloneExports.push(statement);
+                        }
+                    }
+                });
+
+                // Skip if no exports to check
+                if (shorthandExports.length === 0 && standaloneExports.length === 0) return;
+
+                // Check for mixed styles
+                const hasShorthand = shorthandExports.length > 0;
+                const hasImportExport = standaloneExports.length > 0 && imports.length > 0;
+
+                if (hasShorthand && hasImportExport) {
+                    context.report({
+                        message: `Mixed export styles detected. Use consistent "${preferredStyle}" style throughout the index file.`,
+                        node,
+                    });
+
+                    return;
+                }
+
+                if (preferredStyle === "shorthand") {
+                    // Check if using import-then-export pattern when shorthand is preferred
+                    standaloneExports.forEach((exportStmt) => {
+                        const specifiersToConvert = [];
+
+                        exportStmt.specifiers.forEach((spec) => {
+                            const exportedName = spec.local ? spec.local.name : spec.exported.name;
+                            const importInfo = importSourceMap.get(exportedName);
+
+                            if (importInfo) {
+                                specifiersToConvert.push({
+                                    exportedName,
+                                    importInfo,
+                                    localName: spec.local ? spec.local.name : exportedName,
+                                    spec,
+                                });
+                            }
+                        });
+
+                        if (specifiersToConvert.length > 0) {
+                            context.report({
+                                fix(fixer) {
+                                    const fixes = [];
+
+                                    // Group specifiers by source
+                                    const bySource = new Map();
+
+                                    specifiersToConvert.forEach(({ exportedName, importInfo, localName }) => {
+                                        const source = importInfo.source;
+
+                                        if (!bySource.has(source)) {
+                                            bySource.set(source, []);
+                                        }
+
+                                        if (exportedName === localName) {
+                                            bySource.get(source).push(exportedName);
+                                        } else {
+                                            bySource.get(source).push(`${localName} as ${exportedName}`);
+                                        }
+                                    });
+
+                                    // Create shorthand exports
+                                    const newExports = [];
+
+                                    bySource.forEach((specifiers, source) => {
+                                        newExports.push(`export { ${specifiers.join(", ")} } from "${source}";`);
+                                    });
+
+                                    // Remove the standalone export
+                                    fixes.push(fixer.remove(exportStmt));
+
+                                    // Remove associated imports
+                                    const importsToRemove = new Set();
+
+                                    specifiersToConvert.forEach(({ importInfo }) => {
+                                        importsToRemove.add(importInfo.statement);
+                                    });
+
+                                    importsToRemove.forEach((importStmt) => {
+                                        // Check if all specifiers from this import are being converted
+                                        const allSpecifiersConverted = importStmt.specifiers.every((spec) => {
+                                            const name = spec.local ? spec.local.name : spec.imported.name;
+
+                                            return specifiersToConvert.some((s) => s.localName === name);
+                                        });
+
+                                        if (allSpecifiersConverted) {
+                                            fixes.push(fixer.remove(importStmt));
+                                        }
+                                    });
+
+                                    // Insert new shorthand exports at the position of removed export
+                                    fixes.push(fixer.insertTextAfter(exportStmt, "\n" + newExports.join("\n")));
+
+                                    return fixes;
+                                },
+                                message: `Use shorthand export: export { ... } from "source" instead of import then export.`,
+                                node: exportStmt,
+                            });
+                        }
+                    });
+                } else if (preferredStyle === "import-export") {
+                    // Check if using shorthand when import-export is preferred
+                    shorthandExports.forEach((exportStmt) => {
+                        const source = exportStmt.source.value;
+                        const specifiers = exportStmt.specifiers.map((spec) => {
+                            const imported = spec.local ? spec.local.name : spec.exported.name;
+                            const exported = spec.exported.name;
+
+                            if (imported === exported) {
+                                return imported;
+                            }
+
+                            return `${imported} as ${exported}`;
+                        });
+
+                        context.report({
+                            fix(fixer) {
+                                const importSpecifiers = exportStmt.specifiers.map((spec) => {
+                                    const imported = spec.local ? spec.local.name : spec.exported.name;
+
+                                    return imported;
+                                });
+
+                                const exportSpecifiers = exportStmt.specifiers.map((spec) => spec.exported.name);
+
+                                const importLine = `import { ${importSpecifiers.join(", ")} } from "${source}";`;
+                                const exportLine = `export { ${exportSpecifiers.join(", ")} };`;
+
+                                return fixer.replaceText(exportStmt, `${importLine}\n${exportLine}`);
+                            },
+                            message: `Use import-then-export style: import { ... } from "source"; export { ... };`,
+                            node: exportStmt,
+                        });
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce consistent export style in index files (shorthand or import-then-export)" },
+        fixable: "code",
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    style: {
+                        enum: ["shorthand", "import-export"],
+                        type: "string",
+                    },
+                },
+                type: "object",
+            },
+        ],
+        type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
  * Rule: JSX Children On New Line
  * ───────────────────────────────────────────────────────────────
  *
@@ -7821,6 +8054,7 @@ export default {
         "export-format": exportFormat,
         "import-format": importFormat,
         "import-source-spacing": importSourceSpacing,
+        "index-export-style": indexExportStyle,
         "module-index-exports": moduleIndexExports,
 
         // JSX rules

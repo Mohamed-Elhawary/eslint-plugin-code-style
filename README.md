@@ -195,6 +195,7 @@ rules: {
     "code-style/export-format": "error",
     "code-style/import-format": "error",
     "code-style/import-source-spacing": "error",
+    "code-style/index-export-style": "error",
     "code-style/module-index-exports": "error",
     "code-style/jsx-children-on-new-line": "error",
     "code-style/jsx-closing-bracket-spacing": "error",
@@ -257,6 +258,7 @@ rules: {
 | `export-format` | Format exports: collapse 1-3 specifiers, multiline for 4+ |
 | `import-format` | Format imports: collapse 1-3 specifiers, multiline for 4+ |
 | `import-source-spacing` | Enforce no extra spaces inside import path quotes |
+| `index-export-style` | Enforce consistent export style in index files (shorthand or import-then-export) ⚙️ |
 | `module-index-exports` | Enforce proper exports in index files ⚙️ |
 | `jsx-children-on-new-line` | Enforce JSX children on separate lines from parent tags |
 | `jsx-closing-bracket-spacing` | No space before `>` or `/>` in JSX tags |
@@ -781,6 +783,58 @@ import { Button } from "@mui/material";
 
 // Bad
 import { Button } from " @mui/material ";
+```
+
+---
+
+### `index-export-style`
+
+Enforce consistent export style in index files. Choose between shorthand re-exports or import-then-export pattern.
+
+**Style: "shorthand" (default)**
+```javascript
+// Good - shorthand re-exports
+export { Button } from "./button";
+export { Input, Select } from "./form";
+export { StyledCard, StyledCardWithActions } from "./card";
+```
+
+**Style: "import-export"**
+```javascript
+// Good - import then export
+import { Button } from "./button";
+import { Input, Select } from "./form";
+import { StyledCard, StyledCardWithActions } from "./card";
+
+export {
+    Button,
+    Input,
+    Select,
+    StyledCard,
+    StyledCardWithActions,
+};
+```
+
+**Bad - mixing styles**
+```javascript
+// Bad - don't mix shorthand with import-then-export
+export { Button } from "./button";
+import { Input } from "./input";
+export { Input };
+```
+
+**Customization Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `style` | `"shorthand"` \| `"import-export"` | `"shorthand"` | The export style to enforce |
+
+```javascript
+// Example: Use shorthand style (default)
+"code-style/index-export-style": "error"
+
+// Example: Use import-then-export style
+"code-style/index-export-style": ["error", { style: "import-export" }]
 ```
 
 ---

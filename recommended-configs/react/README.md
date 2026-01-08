@@ -255,6 +255,7 @@ Our custom plugin provides **47 auto-fixable rules** that fill the gaps not cove
 | `if-statement-format` | Consistent if statement formatting |
 | `import-format` | Format imports consistently |
 | `import-source-spacing` | No spaces in import paths |
+| `index-export-style` | Enforce shorthand exports in index files |
 | `jsx-children-on-new-line` | Children on separate lines |
 | `jsx-closing-bracket-spacing` | No space before `>` or `/>` |
 | `jsx-element-child-new-line` | JSX element children on new lines |

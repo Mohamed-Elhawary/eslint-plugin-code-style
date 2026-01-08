@@ -83,6 +83,7 @@ export default [ // eslint-disable-line
             "code-style/if-statement-format": "error",
             "code-style/import-format": "error",
             "code-style/import-source-spacing": "error",
+            "code-style/index-export-style": "error",
             "code-style/jsx-children-on-new-line": "error",
             "code-style/jsx-closing-bracket-spacing": "error",
             "code-style/jsx-element-child-new-line": "error",
