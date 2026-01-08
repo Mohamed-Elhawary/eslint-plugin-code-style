@@ -3398,21 +3398,40 @@ const moduleIndexExports = {
  *
  * Options:
  *   - style: "shorthand" (default) | "import-export"
- *     - "shorthand": export { a } from "./file";
- *     - "import-export": import { a } from "./file"; export { a };
+ *     - "shorthand": export { a } from "./file"; (no empty lines between exports)
+ *     - "import-export": import { a } from "./file"; export { a }; (single export statement)
  *
  * ✓ Good (style: "shorthand" - default):
  *   export { Button } from "./button";
  *   export { Input, Select } from "./form";
+ *   export { Modal } from "./modal";
  *
  * ✓ Good (style: "import-export"):
  *   import { Button } from "./button";
  *   import { Input, Select } from "./form";
- *   export { Button, Input, Select };
+ *   import { Modal } from "./modal";
+ *
+ *   export {
+ *       Button,
+ *       Input,
+ *       Modal,
+ *       Select,
+ *   };
  *
  * ✗ Bad (mixing styles):
  *   export { Button } from "./button";
  *   import { Input } from "./input";
+ *   export { Input };
+ *
+ * ✗ Bad (empty lines between shorthand exports):
+ *   export { Button } from "./button";
+ *
+ *   export { Input } from "./input";
+ *
+ * ✗ Bad (multiple standalone exports):
+ *   import { Button } from "./button";
+ *   import { Input } from "./input";
+ *   export { Button };
  *   export { Input };
  *
  * Configuration Example:
@@ -3484,24 +3503,28 @@ const indexExportStyle = {
 
                 if (preferredStyle === "shorthand") {
                     // Check if using import-then-export pattern when shorthand is preferred
-                    standaloneExports.forEach((exportStmt) => {
-                        const specifiersToConvert = [];
+                    if (standaloneExports.length > 0 && imports.length > 0) {
+                        // Collect all specifiers to convert
+                        const allSpecifiersToConvert = [];
 
-                        exportStmt.specifiers.forEach((spec) => {
-                            const exportedName = spec.local ? spec.local.name : spec.exported.name;
-                            const importInfo = importSourceMap.get(exportedName);
+                        standaloneExports.forEach((exportStmt) => {
+                            exportStmt.specifiers.forEach((spec) => {
+                                const exportedName = spec.local ? spec.local.name : spec.exported.name;
+                                const importInfo = importSourceMap.get(exportedName);
 
-                            if (importInfo) {
-                                specifiersToConvert.push({
-                                    exportedName,
-                                    importInfo,
-                                    localName: spec.local ? spec.local.name : exportedName,
-                                    spec,
-                                });
-                            }
+                                if (importInfo) {
+                                    allSpecifiersToConvert.push({
+                                        exportStmt,
+                                        exportedName,
+                                        importInfo,
+                                        localName: spec.local ? spec.local.name : exportedName,
+                                        spec,
+                                    });
+                                }
+                            });
                         });
 
-                        if (specifiersToConvert.length > 0) {
+                        if (allSpecifiersToConvert.length > 0) {
                             context.report({
                                 fix(fixer) {
                                     const fixes = [];
@@ -3509,7 +3532,7 @@ const indexExportStyle = {
                                     // Group specifiers by source
                                     const bySource = new Map();
 
-                                    specifiersToConvert.forEach(({ exportedName, importInfo, localName }) => {
+                                    allSpecifiersToConvert.forEach(({ exportedName, importInfo, localName }) => {
                                         const source = importInfo.source;
 
                                         if (!bySource.has(source)) {
@@ -3523,80 +3546,184 @@ const indexExportStyle = {
                                         }
                                     });
 
-                                    // Create shorthand exports
+                                    // Create shorthand exports (no empty lines between them)
                                     const newExports = [];
 
                                     bySource.forEach((specifiers, source) => {
                                         newExports.push(`export { ${specifiers.join(", ")} } from "${source}";`);
                                     });
 
-                                    // Remove the standalone export
-                                    fixes.push(fixer.remove(exportStmt));
-
-                                    // Remove associated imports
-                                    const importsToRemove = new Set();
-
-                                    specifiersToConvert.forEach(({ importInfo }) => {
-                                        importsToRemove.add(importInfo.statement);
+                                    // Remove all standalone exports
+                                    standaloneExports.forEach((exportStmt) => {
+                                        fixes.push(fixer.remove(exportStmt));
                                     });
 
-                                    importsToRemove.forEach((importStmt) => {
-                                        // Check if all specifiers from this import are being converted
-                                        const allSpecifiersConverted = importStmt.specifiers.every((spec) => {
-                                            const name = spec.local ? spec.local.name : spec.imported.name;
-
-                                            return specifiersToConvert.some((s) => s.localName === name);
-                                        });
-
-                                        if (allSpecifiersConverted) {
-                                            fixes.push(fixer.remove(importStmt));
-                                        }
+                                    // Remove all imports
+                                    imports.forEach((importStmt) => {
+                                        fixes.push(fixer.remove(importStmt));
                                     });
 
-                                    // Insert new shorthand exports at the position of removed export
-                                    fixes.push(fixer.insertTextAfter(exportStmt, "\n" + newExports.join("\n")));
+                                    // Insert new shorthand exports at the beginning
+                                    const firstStatement = node.body[0];
+
+                                    if (firstStatement) {
+                                        fixes.push(fixer.insertTextBefore(firstStatement, newExports.join("\n") + "\n"));
+                                    }
 
                                     return fixes;
                                 },
-                                message: `Use shorthand export: export { ... } from "source" instead of import then export.`,
-                                node: exportStmt,
+                                message: `Use shorthand export style: export { ... } from "source" instead of import then export.`,
+                                node,
                             });
                         }
-                    });
+                    }
+
+                    // Check for empty lines between shorthand exports
+                    for (let i = 0; i < shorthandExports.length - 1; i += 1) {
+                        const currentExport = shorthandExports[i];
+                        const nextExport = shorthandExports[i + 1];
+                        const currentEndLine = currentExport.loc.end.line;
+                        const nextStartLine = nextExport.loc.start.line;
+
+                        if (nextStartLine - currentEndLine > 1) {
+                            context.report({
+                                fix(fixer) {
+                                    const textBetween = sourceCode.getText().slice(
+                                        currentExport.range[1],
+                                        nextExport.range[0],
+                                    );
+
+                                    // Replace multiple newlines with single newline
+                                    return fixer.replaceTextRange(
+                                        [currentExport.range[1], nextExport.range[0]],
+                                        "\n",
+                                    );
+                                },
+                                message: "No empty lines between shorthand exports in index files.",
+                                node: nextExport,
+                            });
+                        }
+                    }
                 } else if (preferredStyle === "import-export") {
                     // Check if using shorthand when import-export is preferred
-                    shorthandExports.forEach((exportStmt) => {
-                        const source = exportStmt.source.value;
-                        const specifiers = exportStmt.specifiers.map((spec) => {
-                            const imported = spec.local ? spec.local.name : spec.exported.name;
-                            const exported = spec.exported.name;
-
-                            if (imported === exported) {
-                                return imported;
-                            }
-
-                            return `${imported} as ${exported}`;
-                        });
-
+                    if (shorthandExports.length > 0) {
+                        // Convert all shorthand exports to import-then-export with single export statement
                         context.report({
                             fix(fixer) {
-                                const importSpecifiers = exportStmt.specifiers.map((spec) => {
-                                    const imported = spec.local ? spec.local.name : spec.exported.name;
+                                const fixes = [];
+                                const allImports = [];
+                                const allExportNames = [];
 
-                                    return imported;
+                                shorthandExports.forEach((exportStmt) => {
+                                    const source = exportStmt.source.value;
+                                    const importSpecifiers = [];
+
+                                    exportStmt.specifiers.forEach((spec) => {
+                                        const imported = spec.local ? spec.local.name : spec.exported.name;
+                                        const exported = spec.exported.name;
+
+                                        importSpecifiers.push(imported);
+                                        allExportNames.push(exported);
+                                    });
+
+                                    allImports.push(`import { ${importSpecifiers.join(", ")} } from "${source}";`);
+
+                                    // Remove the shorthand export
+                                    fixes.push(fixer.remove(exportStmt));
                                 });
 
-                                const exportSpecifiers = exportStmt.specifiers.map((spec) => spec.exported.name);
+                                // Sort export names alphabetically
+                                allExportNames.sort((a, b) => a.localeCompare(b));
 
-                                const importLine = `import { ${importSpecifiers.join(", ")} } from "${source}";`;
-                                const exportLine = `export { ${exportSpecifiers.join(", ")} };`;
+                                // Create single export statement with proper formatting
+                                let exportStatement;
 
-                                return fixer.replaceText(exportStmt, `${importLine}\n${exportLine}`);
+                                if (allExportNames.length <= 3) {
+                                    exportStatement = `export { ${allExportNames.join(", ")} };`;
+                                } else {
+                                    exportStatement = `export {\n    ${allExportNames.join(",\n    ")},\n};`;
+                                }
+
+                                // Insert imports and export at the beginning
+                                const firstStatement = node.body[0];
+
+                                if (firstStatement) {
+                                    const newContent = allImports.join("\n") + "\n\n" + exportStatement + "\n";
+
+                                    fixes.push(fixer.insertTextBefore(firstStatement, newContent));
+                                }
+
+                                return fixes;
                             },
-                            message: `Use import-then-export style: import { ... } from "source"; export { ... };`,
-                            node: exportStmt,
+                            message: `Use import-then-export style with a single export statement.`,
+                            node,
                         });
-                    });
+                    }
+
+                    // Check for multiple standalone exports - should be combined into one
+                    if (standaloneExports.length > 1) {
+                        context.report({
+                            fix(fixer) {
+                                const fixes = [];
+                                const allExportNames = [];
+
+                                standaloneExports.forEach((exportStmt) => {
+                                    exportStmt.specifiers.forEach((spec) => {
+                                        const exported = spec.exported.name;
+
+                                        allExportNames.push(exported);
+                                    });
+
+                                    // Remove all but the last export
+                                    fixes.push(fixer.remove(exportStmt));
+                                });
+
+                                // Sort export names alphabetically
+                                allExportNames.sort((a, b) => a.localeCompare(b));
+
+                                // Create single export statement
+                                let exportStatement;
+
+                                if (allExportNames.length <= 3) {
+                                    exportStatement = `export { ${allExportNames.join(", ")} };`;
+                                } else {
+                                    exportStatement = `export {\n    ${allExportNames.join(",\n    ")},\n};`;
+                                }
+
+                                // Find last import to insert after
+                                const lastImport = imports[imports.length - 1];
+
+                                if (lastImport) {
+                                    fixes.push(fixer.insertTextAfter(lastImport, "\n\n" + exportStatement));
+                                }
+
+                                return fixes;
+                            },
+                            message: `Combine multiple export statements into a single export statement.`,
+                            node,
+                        });
+                    }
+
+                    // Check for empty lines between imports
+                    for (let i = 0; i < imports.length - 1; i += 1) {
+                        const currentImport = imports[i];
+                        const nextImport = imports[i + 1];
+                        const currentEndLine = currentImport.loc.end.line;
+                        const nextStartLine = nextImport.loc.start.line;
+
+                        if (nextStartLine - currentEndLine > 1) {
+                            context.report({
+                                fix(fixer) {
+                                    return fixer.replaceTextRange(
+                                        [currentImport.range[1], nextImport.range[0]],
+                                        "\n",
+                                    );
+                                },
+                                message: "No empty lines between imports in index files.",
+                                node: nextImport,
+                            });
+                        }
+                    }
                 }
             },
         };

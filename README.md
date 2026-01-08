@@ -789,11 +789,11 @@ import { Button } from " @mui/material ";
 
 ### `index-export-style`
 
-Enforce consistent export style in index files. Choose between shorthand re-exports or import-then-export pattern.
+Enforce consistent export style in index files. Choose between shorthand re-exports or import-then-export pattern. Also enforces no empty lines between exports/imports.
 
 **Style: "shorthand" (default)**
 ```javascript
-// Good - shorthand re-exports
+// Good - shorthand re-exports (no empty lines between them)
 export { Button } from "./button";
 export { Input, Select } from "./form";
 export { StyledCard, StyledCardWithActions } from "./card";
@@ -801,7 +801,7 @@ export { StyledCard, StyledCardWithActions } from "./card";
 
 **Style: "import-export"**
 ```javascript
-// Good - import then export
+// Good - imports grouped, single export statement at bottom
 import { Button } from "./button";
 import { Input, Select } from "./form";
 import { StyledCard, StyledCardWithActions } from "./card";
@@ -815,11 +815,22 @@ export {
 };
 ```
 
-**Bad - mixing styles**
+**Bad Examples**
 ```javascript
-// Bad - don't mix shorthand with import-then-export
+// Bad - mixing styles
 export { Button } from "./button";
 import { Input } from "./input";
+export { Input };
+
+// Bad - empty lines between shorthand exports
+export { Button } from "./button";
+
+export { Input } from "./input";
+
+// Bad - multiple standalone exports (should be one)
+import { Button } from "./button";
+import { Input } from "./input";
+export { Button };
 export { Input };
 ```
 

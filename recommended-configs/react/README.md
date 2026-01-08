@@ -334,6 +334,19 @@ rules: {
 **Default Module Folders (module-index-exports):**
 `apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `hooks`, `layouts`, `middlewares`, `providers`, `redux`, `requests`, `routes`, `schemas`, `services`, `styles`, `theme`, `utils`, `views`
 
+### Index Files Override
+
+This configuration includes a special override for index files (`**/index.{js,jsx}`) that removes the requirement for blank lines between export statements. This allows exports in index files to be grouped together without spacing:
+
+```javascript
+// index.js - exports grouped without blank lines
+export { ComponentA } from "./component-a";
+export { ComponentB } from "./component-b";
+export { ComponentC } from "./component-c";
+```
+
+This override works together with the `code-style/index-export-style` rule to ensure clean, consistent index files.
+
 ---
 
 ## Future Configurations

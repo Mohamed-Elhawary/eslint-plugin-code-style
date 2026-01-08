@@ -387,4 +387,34 @@ export default [ // eslint-disable-line
             react: { version: "detect" },
         },
     },
+    {
+        // Override for index files - no blank lines required between exports
+        files: ["**/index.{js,jsx}"],
+        rules: {
+            "padding-line-between-statements": [
+                "error",
+                {
+                    blankLine: "always",
+                    next: "return",
+                    prev: "*",
+                },
+                {
+                    blankLine: "always",
+                    next: "*",
+                    prev: ["const", "let", "var"],
+                },
+                {
+                    blankLine: "always",
+                    next: "*",
+                    prev: "expression",
+                },
+                {
+                    blankLine: "always",
+                    next: "expression",
+                    prev: "expression",
+                },
+                // No export-export rule here - allows exports without blank lines
+            ],
+        },
+    },
 ];
