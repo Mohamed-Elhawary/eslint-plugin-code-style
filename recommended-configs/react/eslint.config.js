@@ -251,10 +251,45 @@ export default [ // eslint-disable-line
                     prev: "export",
                 },
             ],
+            "perfectionist/sort-array-includes": [
+                "error",
+                {
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
+            "perfectionist/sort-maps": [
+                "error",
+                {
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
             "perfectionist/sort-objects": [
                 "error",
                 {
                     ignoreCase: false,
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
+            "perfectionist/sort-sets": [
+                "error",
+                {
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
+            "perfectionist/sort-switch-case": [
+                "error",
+                {
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
+            "perfectionist/sort-variable-declarations": [
+                "error",
+                {
                     order: "asc",
                     type: "natural",
                 },

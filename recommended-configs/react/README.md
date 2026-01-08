@@ -137,7 +137,12 @@ eslint src/ --fix
 **Key Rules Used:**
 | Rule | Description |
 |------|-------------|
+| `perfectionist/sort-array-includes` | Sort arrays when using `.includes()` method |
+| `perfectionist/sort-maps` | Sort Map entries when creating `new Map([...])` |
 | `perfectionist/sort-objects` | Sort object keys alphabetically (natural order, case-sensitive) |
+| `perfectionist/sort-sets` | Sort Set entries when creating `new Set([...])` |
+| `perfectionist/sort-switch-case` | Sort switch case clauses for easier scanning |
+| `perfectionist/sort-variable-declarations` | Sort destructured variables and multiple declarations |
 
 ---
 
