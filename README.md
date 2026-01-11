@@ -17,7 +17,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*47 auto-fixable rules to keep your codebase clean and consistent*
+*48 auto-fixable rules to keep your codebase clean and consistent*
 
 </div>
 
@@ -31,7 +31,7 @@ This plugin provides **rules that don't exist in ESLint's built-in rule set** an
 - **Fills the gaps** — Covers formatting rules that ESLint and other plugins miss
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like `eslint-plugin-react`, `eslint-plugin-import`, etc.
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Fully automated** — All 47 rules support auto-fix, eliminating manual style reviews
+- **Fully automated** — All 48 rules support auto-fix, eliminating manual style reviews
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a **complete code style solution** that keeps your codebase clean and consistent.
 
@@ -55,7 +55,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 
 ### 💡 Why Use These Configs?
 
-- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 47 code-style rules
+- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 48 code-style rules
 - **Ready-to-Use** — Copy the config file and start linting immediately
 - **Battle-Tested** — These configurations have been refined through real-world usage
 - **Fully Documented** — Each config includes detailed instructions and explanations
@@ -91,7 +91,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-All **47 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
+All **48 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
 
 </td>
 <td width="50%">
@@ -232,7 +232,7 @@ rules: {
 
 ## 📖 Rules Summary
 
-> All **47 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
+> All **48 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
 >
 > Rules marked with ⚙️ support customization options (e.g., extending default folder lists).
 

@@ -13,10 +13,13 @@ import globals from "globals";
 export default [ // eslint-disable-line
     {
         ignores: [
-            "node_modules/**",
-            "dist/**",
+            ".vite/**/*",
             "build/**",
+            "coverage/**/*",
+            "dist/**",
             "eslint-rules/**",
+            "node_modules/**",
+            "public/**/*",
         ],
     },
     js.configs.recommended,

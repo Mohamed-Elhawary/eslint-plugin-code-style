@@ -231,7 +231,7 @@ These are native ESLint rules that complement our custom plugin:
 
 ## eslint-plugin-code-style Rules
 
-Our custom plugin provides **47 auto-fixable rules** that fill the gaps not covered by ESLint's built-in rules or other plugins.
+Our custom plugin provides **48 auto-fixable rules** that fill the gaps not covered by ESLint's built-in rules or other plugins.
 
 ### All Rules Enabled in This Config:
 
