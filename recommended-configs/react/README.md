@@ -256,7 +256,7 @@ Our custom plugin provides **48 auto-fixable rules** that fill the gaps not cove
 | `member-expression-bracket-spacing` | No spaces in brackets |
 | `module-index-exports` | Enforce proper exports in module index files (configurable folders) ⚙️ |
 | `multiline-argument-newline` | Arguments on new lines when multiline |
-| `multiline-if-conditions` | Conditions on separate lines |
+| `multiline-if-conditions` | Conditions on separate lines when exceeding threshold (default: >3) ⚙️ |
 | `multiple-arguments-per-line` | Each argument on own line |
 | `nested-call-closing-brackets` | Closing brackets on same line |
 | `no-empty-lines-in-function-calls` | No empty lines in function calls |

@@ -2359,6 +2359,9 @@ const ifStatementFormat = {
  *   When an if statement has multiple conditions that span
  *   multiple lines, each condition should be on its own line.
  *
+ * Options:
+ *   { maxOperands: 3 } - Maximum operands on single line (default: 3)
+ *
  * ✓ Good:
  *   if (
  *       conditionA &&
@@ -2373,6 +2376,8 @@ const ifStatementFormat = {
 const multilineIfConditions = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
+        const options = context.options[0] || {};
+        const maxOperands = options.maxOperands !== undefined ? options.maxOperands : 3;
 
         const isParenthesizedHandler = (node) => {
             const tokenBefore = sourceCode.getTokenBefore(node);
@@ -2446,8 +2451,8 @@ const multilineIfConditions = {
 
             const isMultiLine = openParen.loc.start.line !== closeParen.loc.end.line;
 
-            // 3 or fewer operands: keep on single line
-            if (operands.length <= 3) {
+            // maxOperands or fewer operands: keep on single line
+            if (operands.length <= maxOperands) {
                 if (isMultiLine) {
                     context.report({
                         fix: (fixer) => {
@@ -2467,7 +2472,7 @@ const multilineIfConditions = {
                                 `(${buildSingleLineHandler(test)})`,
                             );
                         },
-                        message: "If conditions with 3 or fewer operands should be on a single line",
+                        message: `If conditions with ${maxOperands} or fewer operands should be on a single line`,
                         node: test,
                     });
                 }
@@ -2475,7 +2480,7 @@ const multilineIfConditions = {
                 return;
             }
 
-            // 4+ operands: each on its own line
+            // More than maxOperands: each on its own line
             let isCorrectionNeeded = !isMultiLine;
 
             if (isMultiLine) {
@@ -2513,7 +2518,7 @@ const multilineIfConditions = {
                             `(\n${indent}${buildMultilineHandler(test)}\n${parenIndent})`,
                         );
                     },
-                    message: "If conditions with 4 or more operands should be multiline, with each operand on its own line",
+                    message: `If conditions with more than ${maxOperands} operands should be multiline, with each operand on its own line`,
                     node: test,
                 });
             }
@@ -2522,9 +2527,22 @@ const multilineIfConditions = {
         return { IfStatement: checkIfStatementHandler };
     },
     meta: {
-        docs: { description: "Enforce multiline if conditions when there are more than 3 operands" },
+        docs: { description: "Enforce multiline if conditions when exceeding threshold (default: >3 operands)" },
         fixable: "whitespace",
-        schema: [],
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    maxOperands: {
+                        default: 3,
+                        description: "Maximum operands to keep on single line (default: 3)",
+                        minimum: 1,
+                        type: "integer",
+                    },
+                },
+                type: "object",
+            },
+        ],
         type: "layout",
     },
 };

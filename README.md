@@ -253,7 +253,7 @@ rules: {
 | `hook-callback-format` | Enforce consistent formatting for React hooks callbacks |
 | `hook-deps-per-line` | Enforce each hook dependency on its own line when exceeding threshold (default: >2) ⚙️ |
 | `if-statement-format` | Ensure if statement has proper formatting |
-| `multiline-if-conditions` | Enforce multiline if conditions when there are multiple operands |
+| `multiline-if-conditions` | Enforce multiline if conditions when exceeding threshold (default: >3) ⚙️ |
 | `absolute-imports-only` | Enforce absolute imports using alias (default: `@/`) instead of relative paths ⚙️ |
 | `export-format` | Format exports: `export {` on same line, collapse specifiers (default: ≤3) ⚙️ |
 | `import-format` | Format imports: `import {` and `} from` on same line, collapse specifiers (default: ≤3) ⚙️ |
@@ -669,19 +669,31 @@ else
 
 ### `multiline-if-conditions`
 
-When an if statement has multiple conditions that span multiple lines, each condition should be on its own line.
+When an if statement has conditions exceeding the threshold, each condition should be on its own line.
 
 ```javascript
 // Good
 if (
     conditionA &&
     conditionB &&
-    conditionC
+    conditionC &&
+    conditionD
 ) {}
 
 // Bad
 if (conditionA &&
-    conditionB && conditionC) {}
+    conditionB && conditionC && conditionD) {}
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxOperands` | `integer` | `3` | Maximum operands to keep on single line |
+
+```javascript
+// Example: Allow up to 4 operands on single line
+"code-style/multiline-if-conditions": ["error", { maxOperands: 4 }]
 ```
 
 ---
