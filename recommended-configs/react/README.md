@@ -362,15 +362,11 @@ rules: {
 }
 ```
 
-**Objects** use `object-property-per-line` together with `@stylistic/object-curly-newline`:
+**Objects** are handled entirely by `object-property-per-line` - it automatically enforces newline after `{`, each property on its own line, and newline before `}`:
 
 ```javascript
 rules: {
     // Change objects to require multiline at 3+ properties
-    "@stylistic/object-curly-newline": ["error", {
-        ObjectExpression: { minProperties: 3, multiline: true },
-        ObjectPattern: { minProperties: 3, multiline: true },
-    }],
     "code-style/object-property-per-line": ["error", { minProperties: 3 }],
 }
 ```
@@ -458,10 +454,9 @@ This configuration is carefully designed so that ESLint built-in rules, third-pa
 
 ### Object Formatting
 
-| @stylistic Rule | Plugin Rule | Relationship |
-|-----------------|-------------|--------------|
-| `@stylistic/object-curly-newline` | `object-property-per-line` | **Work Together** — @stylistic forces multiline at threshold; plugin ensures each property on separate line |
-| `@stylistic/object-property-newline` | `object-property-per-line` | **Complementary** — Both ensure properties on separate lines; plugin adds threshold control |
+| Plugin Rule | Description |
+|-------------|-------------|
+| `object-property-per-line` | **Self-sufficient** — Handles newline after `{`, each property on own line, and newline before `}` |
 
 ### Function Arguments
 

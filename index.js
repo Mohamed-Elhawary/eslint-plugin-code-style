@@ -6561,24 +6561,27 @@ const noEmptyLinesInSwitchCases = {
  *
  * Description:
  *   When an object has minProperties or more properties,
- *   each property should be on its own line (default: 2).
+ *   enforces multiline formatting with:
+ *   - Newline after opening `{`
+ *   - Each property on its own line
+ *   - Newline before closing `}`
  *
- *   Works with ESLint's `object-curly-newline` ObjectExpression
- *   and ObjectPattern options. Set minProperties to match for
- *   consistent behavior.
+ *   This rule is self-sufficient and handles complete object
+ *   multiline formatting without needing object-curly-newline.
  *
  * Options:
- *   { minProperties: 2 } - Enforce separate lines when >= 2 properties
+ *   { minProperties: 2 } - Enforce multiline when >= 2 properties
  *
  * ✓ Good:
- *   {
+ *   const obj = {
  *       name: "John",
  *       age: 30,
- *   }
+ *   };
  *
  * ✗ Bad:
- *   { name: "John",
- *       age: 30 }
+ *   const obj = { name: "John", age: 30 };
+ *   const obj = { name: "John",
+ *       age: 30 };
  */
 const objectPropertyPerLine = {
     create(context) {
@@ -6591,22 +6594,67 @@ const objectPropertyPerLine = {
 
             if (properties.length < minProperties) return;
 
+            const openBrace = sourceCode.getFirstToken(node);
+            const closeBrace = sourceCode.getLastToken(node);
+            const firstProperty = properties[0];
+            const lastProperty = properties[properties.length - 1];
+
+            if (!openBrace || !closeBrace || openBrace.value !== "{" || closeBrace.value !== "}") return;
+
+            // Calculate proper indentation based on the object's position
+            const objectIndent = " ".repeat(openBrace.loc.start.column);
+            const propertyIndent = objectIndent + "    ";
+
+            // Check if first property is on same line as opening brace
+            if (openBrace.loc.end.line === firstProperty.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openBrace.range[1], firstProperty.range[0]],
+                        "\n" + propertyIndent,
+                    ),
+                    message: `Objects with ${minProperties}+ properties should have first property on its own line`,
+                    node: firstProperty,
+                });
+            }
+
+            // Check if closing brace is on same line as last property
+            if (closeBrace.loc.start.line === lastProperty.loc.end.line) {
+                context.report({
+                    fix: (fixer) => {
+                        const lastToken = sourceCode.getLastToken(lastProperty);
+                        const afterLastToken = sourceCode.getTokenAfter(lastProperty);
+                        const hasTrailingComma = afterLastToken && afterLastToken.value === ",";
+
+                        if (hasTrailingComma) {
+                            return fixer.replaceTextRange(
+                                [afterLastToken.range[1], closeBrace.range[0]],
+                                "\n" + objectIndent,
+                            );
+                        }
+
+                        return fixer.replaceTextRange(
+                            [lastToken.range[1], closeBrace.range[0]],
+                            ",\n" + objectIndent,
+                        );
+                    },
+                    message: `Objects with ${minProperties}+ properties should have closing brace on its own line`,
+                    node: closeBrace,
+                });
+            }
+
+            // Check each property is on its own line
             for (let i = 0; i < properties.length - 1; i += 1) {
                 const current = properties[i];
                 const next = properties[i + 1];
 
                 if (current.loc.end.line === next.loc.start.line) {
-                    const commaToken = sourceCode.getTokenAfter(current);
+                    const commaToken = sourceCode.getTokenAfter(current, (t) => t.value === ",");
 
                     context.report({
-                        fix: (fixer) => {
-                            const indent = " ".repeat(current.loc.start.column);
-
-                            return fixer.replaceTextRange(
-                                [commaToken.range[1], next.range[0]],
-                                "\n" + indent,
-                            );
-                        },
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [commaToken.range[1], next.range[0]],
+                            "\n" + propertyIndent,
+                        ),
                         message: "Each property should be on its own line",
                         node: next,
                     });
@@ -6620,7 +6668,7 @@ const objectPropertyPerLine = {
         };
     },
     meta: {
-        docs: { description: "Enforce each property on its own line when object has minProperties+ properties. Works with object-curly-newline (use same minProperties value)" },
+        docs: { description: "Enforce multiline object formatting: newline after {, each property on own line, newline before }" },
         fixable: "whitespace",
         schema: [
             {
@@ -6628,7 +6676,7 @@ const objectPropertyPerLine = {
                 properties: {
                     minProperties: {
                         default: 2,
-                        description: "Minimum properties to enforce separate lines (default: 2). Match with object-curly-newline minProperties.",
+                        description: "Minimum properties to enforce multiline formatting (default: 2)",
                         minimum: 1,
                         type: "integer",
                     },

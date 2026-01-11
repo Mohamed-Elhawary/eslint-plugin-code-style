@@ -1312,30 +1312,31 @@ Object literals should not contain empty lines between properties or after openi
 
 ### `object-property-per-line`
 
-When an object has minProperties or more properties, each property should be on its own line.
-
-**Works with ESLint's `object-curly-newline`** - This rule ensures each property is on separate lines, while `object-curly-newline` enforces the opening/closing brace newlines. Set the same `minProperties` value for consistency.
+When an object has minProperties or more properties, enforces complete multiline formatting: newline after `{`, each property on its own line, and newline before `}`.
 
 ```javascript
-// Good
-{
+// Good - 1 property stays on single line
+const single = { name: "John" };
+
+// Good - 2+ properties on multiline
+const multi = {
     name: "John",
     age: 30,
-}
+};
 
 // Bad
-{ name: "John",
-    age: 30 }
+const obj = { name: "John", age: 30 };
+const obj2 = { name: "John",
+    age: 30 };
 ```
 
 **Options:**
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `minProperties` | `integer` | `2` | Minimum properties to enforce separate lines |
+| `minProperties` | `integer` | `2` | Minimum properties to enforce multiline formatting |
 
 ```javascript
-// Example: Match with object-curly-newline minProperties: 3
 "code-style/object-property-per-line": ["error", { minProperties: 3 }]
 ```
 
