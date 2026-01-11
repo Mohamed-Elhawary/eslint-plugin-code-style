@@ -217,11 +217,6 @@ export default [ // eslint-disable-line
                     next: "expression",
                     prev: "expression",
                 },
-                {
-                    blankLine: "always",
-                    next: "export",
-                    prev: "export",
-                },
             ],
             "perfectionist/sort-array-includes": [
                 "error",
@@ -285,8 +280,8 @@ export default [ // eslint-disable-line
             "react/jsx-closing-tag-location": "error",
             "react/jsx-curly-spacing": ["error",
                 {
-                    "children": true,
-                    "when": "never",
+                    children: true,
+                    when: "never",
                 },
             ],
             "react/jsx-equals-spacing": ["error", "never"],
@@ -328,15 +323,15 @@ export default [ // eslint-disable-line
             "react/require-default-props": 0,
             "react/self-closing-comp": ["error",
                 {
-                    "component": true,
-                    "html": true,
+                    component: true,
+                    html: true,
                 },
             ],
             "@stylistic/semi": ["error", "always"],
             "@stylistic/semi-spacing": ["error",
                 {
-                    "after": true,
-                    "before": false,
+                    after: true,
+                    before: false,
                 },
             ],
             "simple-import-sort/exports": "error",
@@ -356,34 +351,6 @@ export default [ // eslint-disable-line
                 },
             },
             react: { version: "detect" },
-        },
-    },
-    {
-        files: ["**/index.{js,jsx}"],
-        rules: {
-            "@stylistic/padding-line-between-statements": [
-                "error",
-                {
-                    blankLine: "always",
-                    next: "return",
-                    prev: "*",
-                },
-                {
-                    blankLine: "always",
-                    next: "*",
-                    prev: ["const", "let", "var"],
-                },
-                {
-                    blankLine: "always",
-                    next: "*",
-                    prev: "expression",
-                },
-                {
-                    blankLine: "always",
-                    next: "expression",
-                    prev: "expression",
-                },
-            ],
         },
     },
 ];

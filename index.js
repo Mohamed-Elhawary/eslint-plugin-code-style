@@ -3541,47 +3541,36 @@ const moduleIndexExports = {
  * ───────────────────────────────────────────────────────────────
  *
  * Description:
- *   Enforce consistent export style in index files. Choose between
- *   shorthand re-exports or import-then-export pattern. Also enforces
- *   no blank lines between grouped exports in index files.
+ *   Enforces consistent export formatting across all files:
+ *   - Index files: no blank lines between exports, consistent style
+ *   - Non-index files: require blank lines between exports
+ *
+ *   For index files, choose between shorthand re-exports or
+ *   import-then-export pattern.
  *
  * Options:
  *   - style: "shorthand" (default) | "import-export"
  *     - "shorthand": export { a } from "./file"; (no empty lines between exports)
  *     - "import-export": import { a } from "./file"; export { a }; (single export statement)
  *
- * ✓ Good (style: "shorthand" - default):
+ * ✓ Good (index files - shorthand style):
  *   export { Button } from "./button";
  *   export { Input, Select } from "./form";
  *   export { Modal } from "./modal";
  *
- * ✓ Good (style: "import-export"):
- *   import { Button } from "./button";
- *   import { Input, Select } from "./form";
- *   import { Modal } from "./modal";
+ * ✓ Good (non-index files - blank lines required):
+ *   export const foo = 1;
  *
- *   export {
- *       Button,
- *       Input,
- *       Modal,
- *       Select,
- *   };
+ *   export const bar = 2;
  *
- * ✗ Bad (mixing styles):
- *   export { Button } from "./button";
- *   import { Input } from "./input";
- *   export { Input };
- *
- * ✗ Bad (empty lines between shorthand exports):
+ * ✗ Bad (index files - empty lines between exports):
  *   export { Button } from "./button";
  *
  *   export { Input } from "./input";
  *
- * ✗ Bad (multiple standalone exports):
- *   import { Button } from "./button";
- *   import { Input } from "./input";
- *   export { Button };
- *   export { Input };
+ * ✗ Bad (non-index files - no blank lines):
+ *   export const foo = 1;
+ *   export const bar = 2;
  *
  * Configuration Example:
  *   "code-style/index-export-style": ["error", { style: "shorthand" }]
@@ -3595,10 +3584,46 @@ const indexExportStyle = {
         const filename = context.filename || context.getFilename();
         const normalizedFilename = filename.replace(/\\/g, "/");
 
-        // Only apply to index files
         const isIndexFile = /\/index\.(js|jsx|ts|tsx)$/.test(normalizedFilename);
 
-        if (!isIndexFile) return {};
+        // For non-index files: require blank lines between exports
+        if (!isIndexFile) {
+            return {
+                Program(node) {
+                    const exports = [];
+
+                    node.body.forEach((statement) => {
+                        if (statement.type === "ExportNamedDeclaration" || statement.type === "ExportDefaultDeclaration") {
+                            exports.push(statement);
+                        }
+                    });
+
+                    if (exports.length < 2) return;
+
+                    for (let i = 0; i < exports.length - 1; i += 1) {
+                        const currentExport = exports[i];
+                        const nextExport = exports[i + 1];
+                        const currentEndLine = currentExport.loc.end.line;
+                        const nextStartLine = nextExport.loc.start.line;
+
+                        if (nextStartLine - currentEndLine < 2) {
+                            context.report({
+                                fix(fixer) {
+                                    return fixer.replaceTextRange(
+                                        [currentExport.range[1], nextExport.range[0]],
+                                        "\n\n",
+                                    );
+                                },
+                                message: "Require blank line between exports.",
+                                node: nextExport,
+                            });
+                        }
+                    }
+                },
+            };
+        }
+
+        // For index files: enforce style and no blank lines
 
         return {
             Program(node) {
@@ -3878,7 +3903,7 @@ const indexExportStyle = {
         };
     },
     meta: {
-        docs: { description: "Enforce consistent export style in index files (shorthand or import-then-export) with no blank lines between grouped exports" },
+        docs: { description: "Enforce export formatting: blank lines in regular files, no blank lines in index files with consistent style: shorthand (default) or import-export" },
         fixable: "code",
         schema: [
             {

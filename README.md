@@ -265,7 +265,7 @@ rules: {
 | `export-format` | Format exports: `export {` on same line, collapse specifiers (default: ≤3) ⚙️ |
 | `import-format` | Format imports: `import {` and `} from` on same line, collapse specifiers (default: ≤3) ⚙️ |
 | `import-source-spacing` | Enforce no extra spaces inside import path quotes |
-| `index-export-style` | Enforce consistent export style in index files (default: shorthand) ⚙️ |
+| `index-export-style` | Enforce export formatting: blank lines in regular files, no blank lines in index files: shorthand (default) or import-export ⚙️ |
 | `module-index-exports` | Enforce proper exports in module index files (configurable folders) ⚙️ |
 | `jsx-children-on-new-line` | Enforce JSX children on separate lines from parent tags |
 | `jsx-closing-bracket-spacing` | No space before `>` or `/>` in JSX tags |
@@ -860,11 +860,23 @@ import { Button } from " @mui/material ";
 
 ### `index-export-style`
 
-Enforce consistent export style in index files. Choose between shorthand re-exports or import-then-export pattern. Also enforces no empty lines between exports/imports.
+Enforces consistent export formatting across all files:
+- **Index files**: no blank lines between exports, consistent style (shorthand or import-then-export)
+- **Non-index files**: require blank lines between exports
 
-> **Note:** If you use `@stylistic/padding-line-between-statements` with `{ blankLine: "always", prev: "export", next: "export" }`, you may want to add a file-specific override for index files to remove that requirement. This is optional - our rule handles blank line enforcement for index files independently.
+**Non-index files**
+```javascript
+// Good - blank lines required between exports
+export const foo = 1;
 
-**Style: "shorthand" (default)**
+export const bar = 2;
+
+// Bad - no blank lines
+export const foo = 1;
+export const bar = 2;
+```
+
+**Index files - Style: "shorthand" (default)**
 ```javascript
 // Good - shorthand re-exports (no empty lines between them)
 export { Button } from "./button";
@@ -872,7 +884,7 @@ export { Input, Select } from "./form";
 export { StyledCard, StyledCardWithActions } from "./card";
 ```
 
-**Style: "import-export"**
+**Index files - Style: "import-export"**
 ```javascript
 // Good - imports grouped, single export statement at bottom
 import { Button } from "./button";
@@ -888,36 +900,13 @@ export {
 };
 ```
 
-**Bad Examples**
-```javascript
-// Bad - mixing styles
-export { Button } from "./button";
-import { Input } from "./input";
-export { Input };
-
-// Bad - empty lines between shorthand exports
-export { Button } from "./button";
-
-export { Input } from "./input";
-
-// Bad - multiple standalone exports (should be one)
-import { Button } from "./button";
-import { Input } from "./input";
-export { Button };
-export { Input };
-```
-
 **Customization Options:**
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `style` | `"shorthand"` \| `"import-export"` | `"shorthand"` | The export style to enforce |
+| `style` | `"shorthand"` \| `"import-export"` | `"shorthand"` | The export style to enforce in index files |
 
 ```javascript
-// Example: Use shorthand style (default)
-"code-style/index-export-style": "error"
-
-// Example: Use import-then-export style
 "code-style/index-export-style": ["error", { style: "import-export" }]
 ```
 
