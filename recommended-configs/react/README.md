@@ -1,14 +1,22 @@
 # Recommended ESLint Configuration for React Projects
 
-This is the **recommended ESLint flat configuration** for React.js projects (without TypeScript or Tailwind). This configuration provides the ultimate code style consistency by combining ESLint's built-in rules, carefully selected third-party plugins, and our custom `eslint-plugin-code-style` rules.
+This is the **recommended ESLint flat configuration** for React.js projects (without TypeScript or Tailwind). This configuration provides the ultimate code style consistency by combining:
+
+- **[@stylistic/eslint-plugin](https://eslint.style/)** — Formatting rules (replaces ESLint's deprecated formatting rules)
+- **ESLint built-in rules** — Code quality and best practices
+- **Third-party plugins** — React, accessibility, import sorting, etc.
+- **eslint-plugin-code-style** — Our 48 custom formatting rules
+
+> **Why @stylistic?** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0, moving them to `@stylistic/eslint-plugin`. This config uses @stylistic as the modern replacement.
 
 ## Why Use This Configuration?
 
-- **Complete Coverage** — Combines built-in ESLint rules with third-party plugins and our custom rules
+- **Complete Coverage** — Combines @stylistic, ESLint code quality rules, third-party plugins, and our custom rules
 - **Battle-Tested** — This configuration has been refined through real-world usage
 - **Consistent Code Style** — Reduces code-style differences between team members by ~95%
 - **Fully Auto-Fixable** — Most rules support `eslint --fix` for automatic formatting
 - **React-Optimized** — Specifically designed for React/JSX projects
+- **Future-Proof** — Uses @stylistic instead of deprecated ESLint formatting rules
 
 > **Note:** This configuration is recommended but not mandatory. You can customize it based on your project needs.
 
@@ -22,6 +30,7 @@ Install all required dependencies:
 npm install --save-dev \
   eslint \
   @eslint/js \
+  @stylistic/eslint-plugin \
   globals \
   eslint-plugin-react \
   eslint-plugin-react-hooks \
@@ -36,7 +45,7 @@ npm install --save-dev \
 Or with a single line:
 
 ```bash
-npm install --save-dev eslint @eslint/js globals eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-import-x eslint-plugin-jsx-a11y eslint-plugin-check-file eslint-plugin-perfectionist eslint-plugin-simple-import-sort eslint-plugin-code-style
+npm install --save-dev eslint @eslint/js @stylistic/eslint-plugin globals eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-import-x eslint-plugin-jsx-a11y eslint-plugin-check-file eslint-plugin-perfectionist eslint-plugin-simple-import-sort eslint-plugin-code-style
 ```
 
 ---
@@ -157,9 +166,40 @@ eslint src/ --fix
 
 ---
 
+## @stylistic/eslint-plugin Rules
+
+These are formatting rules from `@stylistic/eslint-plugin` (the modern replacement for ESLint's deprecated formatting rules):
+
+### Spacing & Formatting Rules
+
+| Rule | Setting | Description |
+|------|---------|-------------|
+| `@stylistic/comma-dangle` | `always-multiline` | Require trailing commas in multiline |
+| `@stylistic/comma-spacing` | `after: true` | Enforce space after comma |
+| `@stylistic/dot-location` | `object` | Dot on same line as object |
+| `@stylistic/indent` | `4` | 4-space indentation |
+| `@stylistic/jsx-quotes` | `prefer-double` | Prefer double quotes in JSX |
+| `@stylistic/key-spacing` | `afterColon: true` | Space after colon in objects |
+| `@stylistic/no-extra-semi` | `error` | Remove extra semicolons |
+| `@stylistic/no-multi-spaces` | `error` | Disallow multiple spaces |
+| `@stylistic/no-multiple-empty-lines` | `max: 1` | Maximum one empty line |
+| `@stylistic/object-curly-spacing` | `always` | Spaces inside curly braces |
+| `@stylistic/padded-blocks` | `never` | No padding inside blocks |
+| `@stylistic/quotes` | `double` | Enforce double quotes |
+| `@stylistic/semi` | `always` | Require semicolons |
+| `@stylistic/semi-spacing` | `after: true` | Space after semicolon |
+| `@stylistic/space-in-parens` | `never` | No spaces inside parentheses |
+| `@stylistic/space-infix-ops` | `error` | Spaces around operators |
+| `@stylistic/multiline-comment-style` | `bare-block` | Enforce comment style |
+| `@stylistic/nonblock-statement-body-position` | `beside` | Position of single-line statements |
+| `@stylistic/function-call-argument-newline` | `always` | Newlines in function arguments |
+| `@stylistic/padding-line-between-statements` | (complex) | Blank lines between statements |
+
+---
+
 ## ESLint Built-in Rules
 
-These are native ESLint rules that complement our custom plugin:
+These are native ESLint rules for code quality and best practices:
 
 ### Code Style Rules
 
@@ -167,30 +207,11 @@ These are native ESLint rules that complement our custom plugin:
 |------|---------|-------------|
 | `arrow-body-style` | `as-needed` | Require braces only when needed in arrow functions |
 | `capitalized-comments` | `error` | Enforce capitalized first letter in comments |
-| `comma-dangle` | `always-multiline` | Require trailing commas in multiline |
-| `comma-spacing` | `after: true` | Enforce space after comma |
 | `curly` | `multi-or-nest` | Require braces for multi-line blocks |
-| `dot-location` | `object` | Dot on same line as object |
+| `dot-notation` | `error` | Use dot notation when possible |
 | `eqeqeq` | `error` | Require `===` and `!==` |
 | `func-style` | `expression` | Enforce function expressions |
-| `indent` | `4` | 4-space indentation |
-| `jsx-quotes` | `prefer-double` | Prefer double quotes in JSX |
-| `quotes` | `double` | Enforce double quotes |
-| `semi` | `always` | Require semicolons |
-
-### Spacing & Formatting Rules
-
-| Rule | Setting | Description |
-|------|---------|-------------|
-| `key-spacing` | `afterColon: true` | Space after colon in objects |
-| `no-multi-spaces` | `error` | Disallow multiple spaces |
-| `no-multiple-empty-lines` | `max: 1` | Maximum one empty line |
-| `object-curly-spacing` | `always` | Spaces inside curly braces |
-| `object-property-newline` | `error` | Each property on its own line |
-| `padded-blocks` | `never` | No padding inside blocks |
-| `space-in-parens` | `never` | No spaces inside parentheses |
-| `space-infix-ops` | `error` | Spaces around operators |
-| `semi-spacing` | `after: true` | Space after semicolon |
+| `no-inline-comments` | `error` | Disallow inline comments |
 
 ### Best Practices Rules
 

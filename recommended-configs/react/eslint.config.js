@@ -1,4 +1,5 @@
 import js from "@eslint/js";
+import stylistic from "@stylistic/eslint-plugin";
 import checkFile from "eslint-plugin-check-file";
 import codeStyle from "eslint-plugin-code-style";
 import importX from "eslint-plugin-import-x";
@@ -40,6 +41,7 @@ export default [ // eslint-disable-line
             sourceType: "module",
         },
         plugins: {
+            "@stylistic": stylistic,
             "check-file": checkFile,
             "code-style": codeStyle,
             "import-x": importX,
@@ -113,8 +115,8 @@ export default [ // eslint-disable-line
             "code-style/single-argument-on-one-line": "error",
             "code-style/string-property-spacing": "error",
             "code-style/variable-naming-convention": "error",
-            "comma-dangle": ["error", "always-multiline"],
-            "comma-spacing": ["error",
+            "@stylistic/comma-dangle": ["error", "always-multiline"],
+            "@stylistic/comma-spacing": ["error",
                 {
                     after: true,
                     before: false,
@@ -125,19 +127,19 @@ export default [ // eslint-disable-line
             curly: ["error", "multi-or-nest"],
             "default-case": "off",
             "default-param-last": 0,
-            "dot-location": ["error", "object"],
+            "@stylistic/dot-location": ["error", "object"],
             "dot-notation": ["error", { allowKeywords: false }],
             eqeqeq: "error",
             "func-style": ["error", "expression"],
-            "function-call-argument-newline": ["error", "always"],
-            "function-paren-newline": "off",
+            "@stylistic/function-call-argument-newline": ["error", "always"],
+            "@stylistic/function-paren-newline": "off",
             "import-x/no-cycle": 0,
             "import-x/no-default-export": "error",
             "import-x/no-named-as-default": 0,
             "import-x/no-named-as-default-member": 0,
             "import-x/no-unresolved": 0,
             "import-x/prefer-default-export": 0,
-            indent: ["error", 4],
+            "@stylistic/indent": ["error", 4],
             "jsx-a11y/anchor-is-valid": "off",
             "jsx-a11y/click-events-have-key-events": "off",
             "jsx-a11y/html-has-lang": "off",
@@ -145,34 +147,34 @@ export default [ // eslint-disable-line
             "jsx-a11y/media-has-caption": "off",
             "jsx-a11y/no-static-element-interactions": "off",
             "jsx-a11y/tabindex-no-positive": "off",
-            "jsx-quotes": ["error", "prefer-double"],
-            "key-spacing": ["error",
+            "@stylistic/jsx-quotes": ["error", "prefer-double"],
+            "@stylistic/key-spacing": ["error",
                 {
                     afterColon: true,
                     beforeColon: false,
                 },
             ],
-            "linebreak-style": "off",
+            "@stylistic/linebreak-style": "off",
             "max-depth": ["error", 4],
             "max-len": "off",
             "max-lines": "off",
             "max-lines-per-function": "off",
             "max-nested-callbacks": ["error", 4],
             "max-params": "off",
-            "multiline-comment-style": ["error", "bare-block"],
+            "@stylistic/multiline-comment-style": ["error", "bare-block"],
             "no-alert": "error",
             "no-await-in-loop": "error",
             "no-cond-assign": "error",
             "no-else-return": "error",
             "no-eq-null": "error",
-            "no-extra-semi": "error",
+            "@stylistic/no-extra-semi": "error",
             "no-fallthrough": "error",
             "no-inline-comments": "error",
             "no-irregular-whitespace": "error",
             "no-lone-blocks": "error",
             "no-lonely-if": "error",
-            "no-multi-spaces": "error",
-            "no-multiple-empty-lines": [
+            "@stylistic/no-multi-spaces": "error",
+            "@stylistic/no-multiple-empty-lines": [
                 "error",
                 {
                     max: 1,
@@ -190,8 +192,8 @@ export default [ // eslint-disable-line
             "no-use-before-define": "error",
             "no-useless-escape": "off",
             "no-var": "error",
-            "nonblock-statement-body-position": ["error", "beside"],
-            "object-curly-newline": [
+            "@stylistic/nonblock-statement-body-position": ["error", "beside"],
+            "@stylistic/object-curly-newline": [
                 "error",
                 {
                     ExportDeclaration: { // eslint-disable-line
@@ -212,13 +214,13 @@ export default [ // eslint-disable-line
                     },
                 },
             ],
-            "object-curly-spacing": ["error", "always"],
-            "object-property-newline": [
+            "@stylistic/object-curly-spacing": ["error", "always"],
+            "@stylistic/object-property-newline": [
                 "error",
                 { allowAllPropertiesOnSameLine: false },
             ],
-            "padded-blocks": ["error", "never"],
-            "padding-line-between-statements": [
+            "@stylistic/padded-blocks": ["error", "never"],
+            "@stylistic/padding-line-between-statements": [
                 "error",
                 {
                     blankLine: "always",
@@ -289,7 +291,7 @@ export default [ // eslint-disable-line
                     type: "natural",
                 },
             ],
-            quotes: ["error", "double"],
+            "@stylistic/quotes": ["error", "double"],
             radix: 0,
             "react-hooks/exhaustive-deps": "off",
             "react-hooks/set-state-in-effect": 0,
@@ -355,8 +357,8 @@ export default [ // eslint-disable-line
                     "html": true,
                 },
             ],
-            semi: ["error", "always"],
-            "semi-spacing": ["error",
+            "@stylistic/semi": ["error", "always"],
+            "@stylistic/semi-spacing": ["error",
                 {
                     "after": true,
                     "before": false,
@@ -365,8 +367,8 @@ export default [ // eslint-disable-line
             "simple-import-sort/exports": "error",
             "simple-import-sort/imports": "error",
             "sort-keys": "off",
-            "space-in-parens": ["error", "never"],
-            "space-infix-ops": ["error", { "int32Hint": false }],
+            "@stylistic/space-in-parens": ["error", "never"],
+            "@stylistic/space-infix-ops": ["error", { "int32Hint": false }],
             "valid-typeof": "error",
             "vars-on-top": "error",
         },
@@ -384,7 +386,8 @@ export default [ // eslint-disable-line
     {
         files: ["**/index.{js,jsx}"],
         rules: {
-            "padding-line-between-statements": [
+            // Override for index files: removes export-export blank line requirement
+            "@stylistic/padding-line-between-statements": [
                 "error",
                 {
                     blankLine: "always",

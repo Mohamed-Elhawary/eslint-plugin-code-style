@@ -25,15 +25,22 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **rules that don't exist in ESLint's built-in rule set** and are **not available in popular third-party ESLint packages**. These are the style requirements that teams often check manually, making them easy to miss and hard to enforce consistently.
+This plugin provides **48 custom auto-fixable rules** for code formatting that complement ESLint's ecosystem. Built for **ESLint v9 flat configs**, it works alongside:
+
+- **[@stylistic/eslint-plugin](https://eslint.style/)** — For formatting rules (replaces ESLint's deprecated formatting rules)
+- **ESLint built-in rules** — For code quality and best practices
+- **Third-party plugins** — Like `eslint-plugin-react`, `eslint-plugin-import-x`, etc.
+
+> **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
 **Key Benefits:**
-- **Fills the gaps** — Covers formatting rules that ESLint and other plugins miss
-- **Works alongside existing tools** — Complements ESLint's built-in rules and packages like `eslint-plugin-react`, `eslint-plugin-import`, etc.
-- **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
+- **Fills the gaps** — Provides formatting rules not available in @stylistic or other plugins
+- **Works alongside @stylistic** — Complements @stylistic's formatting rules with additional custom rules
+- **Consistency at scale** — Reduces code-style differences between team members by ~95%
 - **Fully automated** — All 48 rules support auto-fix, eliminating manual style reviews
+- **Self-sufficient rules** — Our rules handle complete formatting without requiring other ESLint rules
 
-When combined with ESLint's native rules and other popular plugins, this package helps create a **complete code style solution** that keeps your codebase clean and consistent.
+When combined with @stylistic, ESLint's code quality rules, and other popular plugins, this package helps create a **complete code style solution** that keeps your codebase clean and consistent.
 
 <div align="center">
 
