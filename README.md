@@ -238,7 +238,7 @@ rules: {
 
 | Rule | Description |
 |------|-------------|
-| `array-items-per-line` | Enforce array formatting: 3 or less items on one line, more than 3 each on new line |
+| `array-items-per-line` | Enforce array formatting based on item count (default: ≤3 on one line) ⚙️ |
 | `array-objects-on-new-lines` | Enforce array of objects to have each object on a new line |
 | `arrow-function-block-body` | Enforce parentheses for arrow functions with multiline expressions |
 | `arrow-function-simple-jsx` | Simplify arrow functions returning simple JSX to single line |
@@ -301,7 +301,7 @@ rules: {
 
 ### `array-items-per-line`
 
-Enforce array formatting based on item count. 3 or less items on one line, more than 3 items each on its own line.
+Enforce array formatting based on item count. Items within threshold on one line, more items each on its own line.
 
 ```javascript
 // Good
@@ -317,6 +317,17 @@ const arr = [
 const arr = [1, 2, 3, 4, 5];
 const arr = [item1,
     item2, item3];
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxItems` | `integer` | `3` | Maximum items to keep on single line |
+
+```javascript
+// Example: Allow up to 4 items on single line
+"code-style/array-items-per-line": ["error", { maxItems: 4 }]
 ```
 
 ---

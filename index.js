@@ -12,8 +12,11 @@ const packageJson = JSON.parse(fs.readFileSync(nodePath.join(__dirname, "package
  * ───────────────────────────────────────────────────────────────
  *
  * Description:
- *   Enforce array formatting based on item count. 3 or less items
- *   on one line, more than 3 items each on its own line.
+ *   Enforce array formatting based on item count. Items within
+ *   maxItems threshold on one line, more items each on its own line.
+ *
+ * Options:
+ *   { maxItems: 3 } - Maximum items on single line (default: 3)
  *
  * ✓ Good:
  *   const arr = [1, 2, 3];
@@ -32,6 +35,8 @@ const packageJson = JSON.parse(fs.readFileSync(nodePath.join(__dirname, "package
 const arrayItemsPerLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
+        const options = context.options[0] || {};
+        const maxItems = options.maxItems !== undefined ? options.maxItems : 3;
 
         return {
             ArrayExpression(node) {
@@ -108,8 +113,8 @@ const arrayItemsPerLine = {
 
                 const itemIndent = baseIndent + "    ";
 
-                // 3 or less items: should be on one line with no extra spaces
-                if (elements.length <= 3) {
+                // maxItems or less items: should be on one line with no extra spaces
+                if (elements.length <= maxItems) {
                     const isMultiLine = node.loc.start.line !== node.loc.end.line;
 
                     // Check for spaces inside brackets on single line arrays
@@ -154,7 +159,7 @@ const arrayItemsPerLine = {
                                 node,
                                 singleLine,
                             ),
-                            message: "Array with 3 or fewer items should be on one line",
+                            message: `Array with ${maxItems} or fewer items should be on one line`,
                             node,
                         });
                     }
@@ -162,7 +167,7 @@ const arrayItemsPerLine = {
                     return;
                 }
 
-                // More than 3 items: each on its own line
+                // More than maxItems: each on its own line
                 // Check for empty line after opening bracket
                 if (firstElement.loc.start.line > openBracket.loc.end.line + 1) {
                     context.report({
@@ -272,9 +277,22 @@ const arrayItemsPerLine = {
         };
     },
     meta: {
-        docs: { description: "Enforce array formatting: 3 or less items on one line, more than 3 each on new line" },
+        docs: { description: "Enforce array formatting based on item count (default: ≤3 on one line, >3 each on new line)" },
         fixable: "code",
-        schema: [],
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    maxItems: {
+                        default: 3,
+                        description: "Maximum items to keep on single line (default: 3)",
+                        minimum: 1,
+                        type: "integer",
+                    },
+                },
+                type: "object",
+            },
+        ],
         type: "layout",
     },
 };

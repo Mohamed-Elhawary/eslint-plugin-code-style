@@ -226,7 +226,7 @@ Our custom plugin provides **48 auto-fixable rules** that fill the gaps not cove
 | Rule | Description |
 |------|-------------|
 | `absolute-imports-only` | Enforce absolute imports using alias (default: `@/`) ⚙️ |
-| `array-items-per-line` | 3 or less items on one line, 4+ each on new line |
+| `array-items-per-line` | Items within threshold on one line (default: ≤3) ⚙️ |
 | `array-objects-on-new-lines` | Each object in array on new line |
 | `arrow-function-block-body` | Parentheses for multiline arrow expressions |
 | `arrow-function-simple-jsx` | Simplify arrow functions returning simple JSX |
