@@ -193,17 +193,10 @@ export default [ // eslint-disable-line
             "no-useless-escape": "off",
             "no-var": "error",
             "@stylistic/nonblock-statement-body-position": ["error", "beside"],
+            // Import/Export formatting is handled by code-style/import-format and code-style/export-format
             "@stylistic/object-curly-newline": [
                 "error",
                 {
-                    ExportDeclaration: { // eslint-disable-line
-                        minProperties: 4,
-                        multiline: true,
-                    },
-                    ImportDeclaration: { // eslint-disable-line
-                        minProperties: 4,
-                        multiline: true,
-                    },
                     ObjectExpression: {
                         minProperties: 2,
                         multiline: true,

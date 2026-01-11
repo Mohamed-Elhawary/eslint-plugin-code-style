@@ -774,28 +774,34 @@ import { useAuth } from "@/hooks/auth/useAuth";
 
 ### `export-format`
 
-Export statements should have consistent formatting. Ensures `export {` is on the same line, and collapses specifiers to a single line when count is within the limit.
-
-**Works with ESLint's `object-curly-newline`** - This rule collapses small exports to single line, while `object-curly-newline` enforces multiline for larger exports. Set `maxSpecifiers = minProperties - 1` for consistency.
+Export statements should have consistent formatting. Ensures `export {` is on the same line. Automatically collapses to single line when specifiers count is within the limit, and expands to multiline when exceeding it.
 
 ```javascript
-// Good
+// Good - 3 or fewer specifiers on single line
 export { a, b, c };
+
+// Good - 4+ specifiers on multiline
+export {
+    a,
+    b,
+    c,
+    d,
+};
 
 // Bad
 export {a,b,c};
 export
     { a };
+export { a, b, c, d, e };  // Too many on one line
 ```
 
 **Options:**
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `maxSpecifiers` | `integer` | `3` | Maximum specifiers to keep on single line |
+| `maxSpecifiers` | `integer` | `3` | Maximum specifiers to keep on single line. Exports exceeding this will be expanded to multiline |
 
 ```javascript
-// Example: Match with object-curly-newline minProperties: 5
 "code-style/export-format": ["error", { maxSpecifiers: 4 }]
 ```
 
@@ -803,13 +809,19 @@ export
 
 ### `import-format`
 
-Import statements should have consistent formatting. Ensures `import {` and `} from` are on the same line, and collapses specifiers to a single line when count is within the limit.
-
-**Works with ESLint's `object-curly-newline`** - This rule collapses small imports to single line, while `object-curly-newline` enforces multiline for larger imports. Set `maxSpecifiers = minProperties - 1` for consistency.
+Import statements should have consistent formatting. Ensures `import {` and `} from` are on the same line. Automatically collapses to single line when specifiers count is within the limit, and expands to multiline when exceeding it.
 
 ```javascript
-// Good
+// Good - 3 or fewer specifiers on single line
 import { a, b, c } from "module";
+
+// Good - 4+ specifiers on multiline
+import {
+    a,
+    b,
+    c,
+    d,
+} from "module";
 
 // Bad
 import {a,b,c} from "module";
@@ -817,16 +829,16 @@ import
     { a } from "module";
 import { a }
     from "module";
+import { a, b, c, d, e } from "module";  // Too many on one line
 ```
 
 **Options:**
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `maxSpecifiers` | `integer` | `3` | Maximum specifiers to keep on single line |
+| `maxSpecifiers` | `integer` | `3` | Maximum specifiers to keep on single line. Imports exceeding this will be expanded to multiline |
 
 ```javascript
-// Example: Match with object-curly-newline minProperties: 5
 "code-style/import-format": ["error", { maxSpecifiers: 4 }]
 ```
 

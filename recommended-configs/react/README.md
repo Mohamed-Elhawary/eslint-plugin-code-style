@@ -345,27 +345,29 @@ rules: {
 
 ### Import/Export/Object Formatting
 
-The `import-format`, `export-format`, and `object-property-per-line` rules work together with ESLint's `object-curly-newline`. This config uses these default thresholds:
+This config uses these default thresholds for formatting:
 
 | Context | Single Line | Multiline |
 |---------|-------------|-----------|
 | Imports/Exports | 1-3 specifiers | 4+ specifiers |
 | Objects | 1 property | 2+ properties |
 
-To change these thresholds, update **both** rules together:
+**Imports/Exports** are handled entirely by `import-format` and `export-format` rules - they automatically collapse or expand based on specifier count:
 
 ```javascript
 rules: {
     // Change imports/exports to single line up to 5 specifiers
-    "object-curly-newline": ["error", {
-        ImportDeclaration: { minProperties: 6, multiline: true },
-        ExportDeclaration: { minProperties: 6, multiline: true },
-    }],
     "code-style/import-format": ["error", { maxSpecifiers: 5 }],
     "code-style/export-format": ["error", { maxSpecifiers: 5 }],
+}
+```
 
+**Objects** use `object-property-per-line` together with `@stylistic/object-curly-newline`:
+
+```javascript
+rules: {
     // Change objects to require multiline at 3+ properties
-    "object-curly-newline": ["error", {
+    "@stylistic/object-curly-newline": ["error", {
         ObjectExpression: { minProperties: 3, multiline: true },
         ObjectPattern: { minProperties: 3, multiline: true },
     }],
@@ -447,13 +449,19 @@ This configuration is carefully designed so that ESLint built-in rules, third-pa
 | `arrow-body-style: as-needed` | `arrow-function-simplify` | **Complementary** — ESLint decides when to use block vs expression body; plugin simplifies expression bodies (implicit returns) |
 | `arrow-body-style: as-needed` | `arrow-function-block-body` | **Complementary** — ESLint handles block requirement; plugin wraps multiline expressions in parentheses for JSX handlers |
 
+### Import/Export Formatting
+
+| Plugin Rule | Description |
+|-------------|-------------|
+| `import-format` | **Self-sufficient** — Handles both collapse (≤ threshold) and expand (> threshold) for import specifiers |
+| `export-format` | **Self-sufficient** — Handles both collapse (≤ threshold) and expand (> threshold) for export specifiers |
+
 ### Object Formatting
 
-| ESLint Rule | Plugin Rule | Relationship |
-|-------------|-------------|--------------|
-| `object-curly-newline` | `import-format` / `export-format` | **Work Together** — ESLint forces multiline at threshold; plugin collapses specifiers within threshold |
-| `object-curly-newline` | `object-property-per-line` | **Work Together** — ESLint forces multiline at threshold; plugin ensures each property on separate line |
-| `object-property-newline` | `object-property-per-line` | **Complementary** — Both ensure properties on separate lines; plugin adds threshold control |
+| @stylistic Rule | Plugin Rule | Relationship |
+|-----------------|-------------|--------------|
+| `@stylistic/object-curly-newline` | `object-property-per-line` | **Work Together** — @stylistic forces multiline at threshold; plugin ensures each property on separate line |
+| `@stylistic/object-property-newline` | `object-property-per-line` | **Complementary** — Both ensure properties on separate lines; plugin adds threshold control |
 
 ### Function Arguments
 

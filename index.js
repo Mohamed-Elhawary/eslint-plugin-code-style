@@ -2799,23 +2799,31 @@ const absoluteImportsOnly = {
  *
  * Description:
  *   Export statements should have consistent formatting with
- *   proper spacing. Ensures `export {` is on the same line,
- *   and collapses specifiers to single line when count <=
- *   maxSpecifiers (default 3).
+ *   proper spacing. Ensures `export {` is on the same line.
+ *   - Collapses to single line when count <= maxSpecifiers (default 3)
+ *   - Expands to multiline when count > maxSpecifiers, with each
+ *     specifier on its own line
  *
- *   Works with ESLint's `object-curly-newline` ExportDeclaration
- *   option. Set maxSpecifiers = minProperties - 1 for consistency.
+ *   This rule is self-sufficient and handles both collapsing and
+ *   expanding of export specifiers.
  *
  * Options:
- *   { maxSpecifiers: 3 } - Collapse to single line when <= 3 specifiers
+ *   { maxSpecifiers: 3 } - Threshold for single line vs multiline
  *
  * ✓ Good:
  *   export { a, b, c };
+ *   export {
+ *       a,
+ *       b,
+ *       c,
+ *       d,
+ *   };
  *
  * ✗ Bad:
  *   export {a,b,c};
  *   export
  *       { a };
+ *   export { a, b, c, d, e };
  */
 const exportFormat = {
     create(context) {
@@ -2846,10 +2854,12 @@ const exportFormat = {
                 });
             }
 
+            const isMultiLine = openBrace.loc.start.line !== closeBrace.loc.end.line;
+            const firstSpecifier = specifiers[0];
+            const lastSpecifier = specifiers[specifiers.length - 1];
+
             // Collapse to single line if specifiers <= maxSpecifiers
             if (specifiers.length <= maxSpecifiers) {
-                const isMultiLine = openBrace.loc.start.line !== closeBrace.loc.end.line;
-
                 if (isMultiLine) {
                     const specifiersText = specifiers.map((s) => {
                         if (s.exported.name === s.local.name) return s.local.name;
@@ -2866,13 +2876,60 @@ const exportFormat = {
                         node,
                     });
                 }
+            } else {
+                // Expand to multiline if specifiers > maxSpecifiers
+                const baseIndent = " ".repeat(exportToken.loc.start.column);
+                const specifierIndent = baseIndent + "    ";
+
+                // Check if first specifier is on same line as opening brace
+                if (openBrace.loc.end.line === firstSpecifier.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[1], firstSpecifier.range[0]],
+                            "\n" + specifierIndent,
+                        ),
+                        message: `Exports with more than ${maxSpecifiers} specifiers should have first specifier on its own line`,
+                        node: firstSpecifier,
+                    });
+                }
+
+                // Check if closing brace is on same line as last specifier
+                if (closeBrace.loc.start.line === lastSpecifier.loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [lastSpecifier.range[1], closeBrace.range[0]],
+                            ",\n" + baseIndent,
+                        ),
+                        message: `Exports with more than ${maxSpecifiers} specifiers should have closing brace on its own line`,
+                        node: closeBrace,
+                    });
+                }
+
+                // Check each specifier is on its own line
+                for (let i = 0; i < specifiers.length - 1; i += 1) {
+                    const current = specifiers[i];
+                    const next = specifiers[i + 1];
+
+                    if (current.loc.end.line === next.loc.start.line) {
+                        const commaToken = sourceCode.getTokenAfter(current, (t) => t.value === ",");
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [commaToken.range[1], next.range[0]],
+                                "\n" + specifierIndent,
+                            ),
+                            message: `Each export specifier should be on its own line when more than ${maxSpecifiers} specifiers`,
+                            node: next,
+                        });
+                    }
+                }
             }
         };
 
         return { ExportNamedDeclaration: checkExportHandler };
     },
     meta: {
-        docs: { description: "Format exports: export { on same line, collapse specifiers to single line. Works with object-curly-newline (set maxSpecifiers = minProperties - 1)" },
+        docs: { description: "Format exports: export { on same line, collapse/expand specifiers based on count threshold" },
         fixable: "code",
         schema: [
             {
@@ -2880,7 +2937,7 @@ const exportFormat = {
                 properties: {
                     maxSpecifiers: {
                         default: 3,
-                        description: "Maximum specifiers to keep on single line (default: 3). Set to minProperties - 1 from object-curly-newline.",
+                        description: "Maximum specifiers to keep on single line (default: 3). Exports exceeding this will be expanded to multiline.",
                         minimum: 1,
                         type: "integer",
                     },
@@ -2900,22 +2957,31 @@ const exportFormat = {
  * Description:
  *   Import statements should have consistent formatting with
  *   proper spacing. Ensures `import {` and `} from` are on
- *   the same line, and collapses specifiers to single line
- *   when count <= maxSpecifiers (default 3).
+ *   the same line.
+ *   - Collapses to single line when count <= maxSpecifiers (default 3)
+ *   - Expands to multiline when count > maxSpecifiers, with each
+ *     specifier on its own line
  *
- *   Works with ESLint's `object-curly-newline` ImportDeclaration
- *   option. Set maxSpecifiers = minProperties - 1 for consistency.
+ *   This rule is self-sufficient and handles both collapsing and
+ *   expanding of import specifiers.
  *
  * Options:
- *   { maxSpecifiers: 3 } - Collapse to single line when <= 3 specifiers
+ *   { maxSpecifiers: 3 } - Threshold for single line vs multiline
  *
  * ✓ Good:
  *   import { a, b, c } from "module";
+ *   import {
+ *       a,
+ *       b,
+ *       c,
+ *       d,
+ *   } from "module";
  *
  * ✗ Bad:
  *   import {a,b,c} from "module";
  *   import
  *       { a } from "module";
+ *   import { a, b, c, d, e } from "module";
  */
 const importFormat = {
     create(context) {
@@ -2982,10 +3048,12 @@ const importFormat = {
                 });
             }
 
+            const isMultiLine = openBrace.loc.start.line !== closeBrace.loc.end.line;
+            const firstSpecifier = namedSpecifiers[0];
+            const lastSpecifier = namedSpecifiers[namedSpecifiers.length - 1];
+
             // Collapse to single line if specifiers <= maxSpecifiers
             if (namedSpecifiers.length <= maxSpecifiers) {
-                const isMultiLine = openBrace.loc.start.line !== closeBrace.loc.end.line;
-
                 if (isMultiLine) {
                     const specifiersText = namedSpecifiers.map((s) => {
                         if (s.imported.name === s.local.name) return s.local.name;
@@ -3002,13 +3070,60 @@ const importFormat = {
                         node,
                     });
                 }
+            } else {
+                // Expand to multiline if specifiers > maxSpecifiers
+                const baseIndent = " ".repeat(importToken.loc.start.column);
+                const specifierIndent = baseIndent + "    ";
+
+                // Check if first specifier is on same line as opening brace
+                if (openBrace.loc.end.line === firstSpecifier.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[1], firstSpecifier.range[0]],
+                            "\n" + specifierIndent,
+                        ),
+                        message: `Imports with more than ${maxSpecifiers} specifiers should have first specifier on its own line`,
+                        node: firstSpecifier,
+                    });
+                }
+
+                // Check if closing brace is on same line as last specifier
+                if (closeBrace.loc.start.line === lastSpecifier.loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [lastSpecifier.range[1], closeBrace.range[0]],
+                            ",\n" + baseIndent,
+                        ),
+                        message: `Imports with more than ${maxSpecifiers} specifiers should have closing brace on its own line`,
+                        node: closeBrace,
+                    });
+                }
+
+                // Check each specifier is on its own line
+                for (let i = 0; i < namedSpecifiers.length - 1; i += 1) {
+                    const current = namedSpecifiers[i];
+                    const next = namedSpecifiers[i + 1];
+
+                    if (current.loc.end.line === next.loc.start.line) {
+                        const commaToken = sourceCode.getTokenAfter(current, (t) => t.value === ",");
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [commaToken.range[1], next.range[0]],
+                                "\n" + specifierIndent,
+                            ),
+                            message: `Each import specifier should be on its own line when more than ${maxSpecifiers} specifiers`,
+                            node: next,
+                        });
+                    }
+                }
             }
         };
 
         return { ImportDeclaration: checkImportHandler };
     },
     meta: {
-        docs: { description: "Format imports: import { on same line, } from on same line, collapse specifiers to single line. Works with object-curly-newline (set maxSpecifiers = minProperties - 1)" },
+        docs: { description: "Format imports: import { on same line, } from on same line, collapse/expand specifiers based on count threshold" },
         fixable: "code",
         schema: [
             {
@@ -3016,7 +3131,7 @@ const importFormat = {
                 properties: {
                     maxSpecifiers: {
                         default: 3,
-                        description: "Maximum specifiers to keep on single line (default: 3). Set to minProperties - 1 from object-curly-newline.",
+                        description: "Maximum specifiers to keep on single line (default: 3). Imports exceeding this will be expanded to multiline.",
                         minimum: 1,
                         type: "integer",
                     },
