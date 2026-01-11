@@ -2818,7 +2818,7 @@ const exportFormat = {
         return { ExportNamedDeclaration: checkExportHandler };
     },
     meta: {
-        docs: { description: "Format exports: export { on same line, collapse specifiers to single line" },
+        docs: { description: "Format exports: export { on same line, collapse specifiers to single line. Works with object-curly-newline (set maxSpecifiers = minProperties - 1)" },
         fixable: "code",
         schema: [
             {
@@ -2954,7 +2954,7 @@ const importFormat = {
         return { ImportDeclaration: checkImportHandler };
     },
     meta: {
-        docs: { description: "Format imports: import { on same line, } from on same line, collapse specifiers to single line" },
+        docs: { description: "Format imports: import { on same line, } from on same line, collapse specifiers to single line. Works with object-curly-newline (set maxSpecifiers = minProperties - 1)" },
         fixable: "code",
         schema: [
             {
@@ -3375,6 +3375,11 @@ const moduleIndexExports = {
  *   Enforce consistent export style in index files. Choose between
  *   shorthand re-exports or import-then-export pattern.
  *
+ *   Works with ESLint's `padding-line-between-statements` rule.
+ *   When using { blankLine: "always", prev: "export", next: "export" },
+ *   add a file-specific override for index files to remove the
+ *   export-export blank line requirement for grouped re-exports.
+ *
  * Options:
  *   - style: "shorthand" (default) | "import-export"
  *     - "shorthand": export { a } from "./file"; (no empty lines between exports)
@@ -3708,7 +3713,7 @@ const indexExportStyle = {
         };
     },
     meta: {
-        docs: { description: "Enforce consistent export style in index files (shorthand or import-then-export)" },
+        docs: { description: "Enforce consistent export style in index files (shorthand or import-then-export). Works with padding-line-between-statements (add file override to remove export-export blank line requirement)" },
         fixable: "code",
         schema: [
             {
@@ -6446,7 +6451,7 @@ const objectPropertyPerLine = {
         };
     },
     meta: {
-        docs: { description: "Enforce each property on its own line when object has minProperties+ properties" },
+        docs: { description: "Enforce each property on its own line when object has minProperties+ properties. Works with object-curly-newline (use same minProperties value)" },
         fixable: "whitespace",
         schema: [
             {

@@ -192,7 +192,7 @@ These are native ESLint rules that complement our custom plugin:
 | `space-infix-ops` | `error` | Spaces around operators |
 | `semi-spacing` | `after: true` | Space after semicolon |
 
-### Best Practices
+### Best Practices Rules
 
 | Rule | Setting | Description |
 |------|---------|-------------|
@@ -207,13 +207,13 @@ These are native ESLint rules that complement our custom plugin:
 | `no-use-before-define` | `error` | Disallow use before definition |
 | `vars-on-top` | `error` | Require variable declarations at top |
 
-### Complexity Controls
+### Complexity Controls Rules
 
 | Rule | Setting | Description |
 |------|---------|-------------|
 | `max-depth` | `4` | Maximum nesting depth |
-| `max-nested-callbacks` | `10` | Maximum callback nesting |
-| `max-params` | `18` | Maximum function parameters |
+| `max-nested-callbacks` | `4` | Maximum callback nesting |
+| `max-params` | `off` | Maximum function parameters |
 
 ---
 
@@ -322,19 +322,6 @@ rules: {
 **Default Module Folders (module-index-exports):**
 `apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `hooks`, `layouts`, `middlewares`, `providers`, `redux`, `requests`, `routes`, `schemas`, `services`, `styles`, `theme`, `utils`, `views`
 
-### Index Files Override
-
-This configuration includes a special override for index files (`**/index.{js,jsx}`) that removes the requirement for blank lines between export statements. This allows exports in index files to be grouped together without spacing:
-
-```javascript
-// index.js - exports grouped without blank lines
-export { ComponentA } from "./component-a";
-export { ComponentB } from "./component-b";
-export { ComponentC } from "./component-c";
-```
-
-This override works together with the `code-style/index-export-style` rule to ensure clean, consistent index files.
-
 ### Import/Export/Object Formatting
 
 The `import-format`, `export-format`, and `object-property-per-line` rules work together with ESLint's `object-curly-newline`. This config uses these default thresholds:
@@ -364,6 +351,133 @@ rules: {
     "code-style/object-property-per-line": ["error", { minProperties: 3 }],
 }
 ```
+
+### Index Files (Export Padding)
+
+The `padding-line-between-statements` rule and `index-export-style` rule work together with a special file override for index files.
+
+**The Challenge:**
+
+By default, `padding-line-between-statements` requires blank lines between export statements:
+
+```javascript
+// Regular files - blank lines required between exports
+export const foo = 1;
+
+export const bar = 2;
+```
+
+But for index files (barrel files), we want grouped exports without blank lines.
+
+**The Configuration:**
+
+```javascript
+// Main config - requires blank lines between exports
+{
+    rules: {
+        "padding-line-between-statements": [
+            "error",
+            { blankLine: "always", prev: "*", next: "return" },
+            { blankLine: "always", prev: ["const", "let", "var"], next: "*" },
+            { blankLine: "always", prev: "expression", next: "*" },
+            { blankLine: "always", prev: "expression", next: "expression" },
+            { blankLine: "always", prev: "export", next: "export" }, // ← Removed in index files
+        ],
+    },
+},
+
+// Index files override - removes export-export blank line requirement
+{
+    files: ["**/index.{js,jsx}"],
+    rules: {
+        "padding-line-between-statements": [
+            "error",
+            { blankLine: "always", prev: "*", next: "return" },
+            { blankLine: "always", prev: ["const", "let", "var"], next: "*" },
+            { blankLine: "always", prev: "expression", next: "*" },
+            { blankLine: "always", prev: "expression", next: "expression" },
+            // No export-export rule here - allows grouped exports
+        ],
+    },
+},
+```
+
+**Result:**
+
+```javascript
+// index.js - exports grouped without blank lines
+export { ComponentA } from "./component-a";
+export { ComponentB } from "./component-b";
+export { ComponentC } from "./component-c";
+```
+
+The `index-export-style` rule then enforces consistent export syntax (shorthand vs longhand) within these grouped exports.
+
+---
+
+## How Rules Work Together
+
+This configuration is carefully designed so that ESLint built-in rules, third-party plugins, and our custom `eslint-plugin-code-style` rules complement each other without conflicts. Below are the key relationships:
+
+### Arrow Functions
+
+| ESLint Rule | Plugin Rule | Relationship |
+|-------------|-------------|--------------|
+| `arrow-body-style: as-needed` | `arrow-function-simplify` | **Complementary** — ESLint decides when to use block vs expression body; plugin simplifies expression bodies (implicit returns) |
+| `arrow-body-style: as-needed` | `arrow-function-block-body` | **Complementary** — ESLint handles block requirement; plugin wraps multiline expressions in parentheses for JSX handlers |
+
+### Object Formatting
+
+| ESLint Rule | Plugin Rule | Relationship |
+|-------------|-------------|--------------|
+| `object-curly-newline` | `import-format` / `export-format` | **Work Together** — ESLint forces multiline at threshold; plugin collapses specifiers within threshold |
+| `object-curly-newline` | `object-property-per-line` | **Work Together** — ESLint forces multiline at threshold; plugin ensures each property on separate line |
+| `object-property-newline` | `object-property-per-line` | **Complementary** — Both ensure properties on separate lines; plugin adds threshold control |
+
+### Function Arguments
+
+| ESLint Rule | Plugin Rule | Relationship |
+|-------------|-------------|--------------|
+| `function-call-argument-newline: always` | `multiline-argument-newline` | **Complementary** — ESLint enforces newlines between args; plugin handles positioning when multiline |
+| `function-call-argument-newline: always` | `multiple-arguments-per-line` | **Complementary** — ESLint enforces newlines; plugin ensures each argument on own line |
+
+### JSX Formatting
+
+| React Rule | Plugin Rule | Relationship |
+|------------|-------------|--------------|
+| `react/jsx-closing-bracket-location` | `jsx-closing-bracket-spacing` | **Complementary** — React controls bracket position (line-aligned); plugin ensures no space before `>` or `/>` |
+| `react/jsx-wrap-multilines` | `jsx-parentheses-position` | **Complementary** — React requires parentheses; plugin ensures opening `(` on same line as arrow/return |
+| `react/jsx-first-prop-new-line` | `jsx-children-on-new-line` | **Complementary** — React handles prop positioning; plugin handles children positioning |
+| `react/jsx-one-expression-per-line` | `jsx-element-child-new-line` | **Complementary** — React handles expression per line; plugin handles JSX element children specifically |
+
+### Comments
+
+| ESLint Rule | Plugin Rule | Relationship |
+|-------------|-------------|--------------|
+| `capitalized-comments` | `comment-spacing` | **Complementary** — ESLint enforces capitalized first letter; plugin enforces spacing after `//` and inside `/* */` |
+
+### Empty Lines
+
+| ESLint Rule | Plugin Rule | Relationship |
+|-------------|-------------|--------------|
+| `no-multiple-empty-lines: max: 1` | `no-empty-lines-in-jsx` | **Complementary** — ESLint limits consecutive empty lines globally; plugin removes empty lines inside JSX |
+| `no-multiple-empty-lines: max: 1` | `no-empty-lines-in-objects` | **Complementary** — ESLint limits globally; plugin removes empty lines inside objects |
+| `no-multiple-empty-lines: max: 1` | `no-empty-lines-in-function-calls` | **Complementary** — ESLint limits globally; plugin removes empty lines in function calls |
+| `no-multiple-empty-lines: max: 1` | `no-empty-lines-in-function-params` | **Complementary** — ESLint limits globally; plugin removes empty lines in function parameters |
+| `no-multiple-empty-lines: max: 1` | `no-empty-lines-in-switch-cases` | **Complementary** — ESLint limits globally; plugin removes empty lines in switch cases |
+
+### Spacing
+
+| ESLint Rule | Plugin Rule | Relationship |
+|-------------|-------------|--------------|
+| `object-curly-spacing: always` | `member-expression-bracket-spacing` | **Complementary** — ESLint handles object braces; plugin handles bracket spacing in member expressions |
+| `space-in-parens: never` | `function-call-spacing` | **Complementary** — ESLint handles parentheses spacing; plugin ensures no space before function call `(` |
+
+### Index Files (Export Padding)
+
+| ESLint Rule | Plugin Rule | Relationship |
+|-------------|-------------|--------------|
+| `padding-line-between-statements` | `index-export-style` | **File-specific override** — ESLint requires blank lines between exports globally, but index files have an override that removes this requirement for grouped re-exports |
 
 ---
 

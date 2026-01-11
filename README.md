@@ -291,60 +291,6 @@ rules: {
 
 ---
 
-## 🔗 Working with ESLint's Built-in Rules
-
-Some `eslint-plugin-code-style` rules are designed to work **together** with ESLint's built-in `object-curly-newline` rule. These rules complement each other:
-
-| Plugin Rule | ESLint Rule | How They Work Together |
-|-------------|-------------|------------------------|
-| `import-format` | `object-curly-newline` (ImportDeclaration) | Plugin collapses small imports; ESLint enforces multiline for large imports |
-| `export-format` | `object-curly-newline` (ExportDeclaration) | Plugin collapses small exports; ESLint enforces multiline for large exports |
-| `object-property-per-line` | `object-curly-newline` (ObjectExpression/ObjectPattern) | Plugin separates properties to lines; ESLint enforces brace newlines |
-
-### Configuration Example
-
-To ensure consistency, match the options between the rules:
-
-```javascript
-// eslint.config.js
-rules: {
-    // ESLint's object-curly-newline - forces multiline at minProperties
-    "object-curly-newline": ["error", {
-        ImportDeclaration: { minProperties: 4, multiline: true },
-        ExportDeclaration: { minProperties: 4, multiline: true },
-        ObjectExpression: { minProperties: 2, multiline: true },
-        ObjectPattern: { minProperties: 2, multiline: true },
-    }],
-
-    // Plugin rules - collapse to single line when below threshold
-    // maxSpecifiers = minProperties - 1
-    "code-style/import-format": ["error", { maxSpecifiers: 3 }],
-    "code-style/export-format": ["error", { maxSpecifiers: 3 }],
-    // minProperties should match object-curly-newline
-    "code-style/object-property-per-line": ["error", { minProperties: 2 }],
-}
-```
-
-### Customizing the Thresholds
-
-If you want to change when multiline kicks in, update **both** rules:
-
-```javascript
-// Example: Keep imports/exports on single line up to 5 specifiers
-rules: {
-    "object-curly-newline": ["error", {
-        ImportDeclaration: { minProperties: 6, multiline: true },
-        ExportDeclaration: { minProperties: 6, multiline: true },
-    }],
-    "code-style/import-format": ["error", { maxSpecifiers: 5 }],
-    "code-style/export-format": ["error", { maxSpecifiers: 5 }],
-}
-```
-
-<br />
-
----
-
 ## 📖 Rules Reference
 
 > All rules are **auto-fixable** using `eslint --fix`
@@ -862,6 +808,8 @@ import { Button } from " @mui/material ";
 ### `index-export-style`
 
 Enforce consistent export style in index files. Choose between shorthand re-exports or import-then-export pattern. Also enforces no empty lines between exports/imports.
+
+**Works with ESLint's `padding-line-between-statements`** - This rule enforces grouped exports without blank lines. When using `padding-line-between-statements` with `{ blankLine: "always", prev: "export", next: "export" }`, add a file-specific override for index files to remove the export-export blank line requirement.
 
 **Style: "shorthand" (default)**
 ```javascript
