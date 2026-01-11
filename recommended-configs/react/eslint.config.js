@@ -193,8 +193,6 @@ export default [ // eslint-disable-line
             "no-useless-escape": "off",
             "no-var": "error",
             "@stylistic/nonblock-statement-body-position": ["error", "beside"],
-            // Object formatting is handled by code-style/object-property-per-line (self-sufficient)
-            // Import/Export formatting is handled by code-style/import-format and code-style/export-format (self-sufficient)
             "@stylistic/object-curly-spacing": ["error", "always"],
             "@stylistic/padded-blocks": ["error", "never"],
             "@stylistic/padding-line-between-statements": [
@@ -363,7 +361,6 @@ export default [ // eslint-disable-line
     {
         files: ["**/index.{js,jsx}"],
         rules: {
-            // Override for index files: removes export-export blank line requirement
             "@stylistic/padding-line-between-statements": [
                 "error",
                 {

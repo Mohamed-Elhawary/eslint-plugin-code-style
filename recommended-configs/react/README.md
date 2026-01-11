@@ -373,64 +373,28 @@ rules: {
 
 ### Index Files (Export Padding)
 
-The `padding-line-between-statements` rule and `index-export-style` rule work together with a special file override for index files.
+The `index-export-style` rule handles both:
+- **Consistent export style** (shorthand re-exports vs import-then-export pattern)
+- **No blank lines** between grouped exports in index files
 
-**The Challenge:**
+**How it works with @stylistic/padding-line-between-statements:**
 
-By default, `padding-line-between-statements` requires blank lines between export statements:
+The `@stylistic/padding-line-between-statements` rule handles general blank line requirements:
+- Blank lines before `return` statements
+- Blank lines after `const/let/var` declarations
+- Blank lines between expressions
+- Blank lines between exports (in regular files)
 
-```javascript
-// Regular files - blank lines required between exports
-export const foo = 1;
-
-export const bar = 2;
-```
-
-But for index files (barrel files), we want grouped exports without blank lines.
-
-**The Configuration:**
+For **index files**, this config includes a file-specific override that removes the export-export blank line requirement, allowing `index-export-style` to manage grouped exports:
 
 ```javascript
-// Main config - requires blank lines between exports
-{
-    rules: {
-        "padding-line-between-statements": [
-            "error",
-            { blankLine: "always", prev: "*", next: "return" },
-            { blankLine: "always", prev: ["const", "let", "var"], next: "*" },
-            { blankLine: "always", prev: "expression", next: "*" },
-            { blankLine: "always", prev: "expression", next: "expression" },
-            { blankLine: "always", prev: "export", next: "export" }, // ← Removed in index files
-        ],
-    },
-},
-
-// Index files override - removes export-export blank line requirement
-{
-    files: ["**/index.{js,jsx}"],
-    rules: {
-        "padding-line-between-statements": [
-            "error",
-            { blankLine: "always", prev: "*", next: "return" },
-            { blankLine: "always", prev: ["const", "let", "var"], next: "*" },
-            { blankLine: "always", prev: "expression", next: "*" },
-            { blankLine: "always", prev: "expression", next: "expression" },
-            // No export-export rule here - allows grouped exports
-        ],
-    },
-},
-```
-
-**Result:**
-
-```javascript
-// index.js - exports grouped without blank lines
+// Result in index.js - exports grouped without blank lines
 export { ComponentA } from "./component-a";
 export { ComponentB } from "./component-b";
 export { ComponentC } from "./component-c";
 ```
 
-The `index-export-style` rule then enforces consistent export syntax (shorthand vs longhand) within these grouped exports.
+> **Note:** The `index-export-style` rule independently enforces no blank lines between exports. The file override for `@stylistic/padding-line-between-statements` is included to prevent conflicts between the two rules.
 
 ---
 

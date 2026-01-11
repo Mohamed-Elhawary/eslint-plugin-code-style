@@ -3542,12 +3542,8 @@ const moduleIndexExports = {
  *
  * Description:
  *   Enforce consistent export style in index files. Choose between
- *   shorthand re-exports or import-then-export pattern.
- *
- *   Works with ESLint's `padding-line-between-statements` rule.
- *   When using { blankLine: "always", prev: "export", next: "export" },
- *   add a file-specific override for index files to remove the
- *   export-export blank line requirement for grouped re-exports.
+ *   shorthand re-exports or import-then-export pattern. Also enforces
+ *   no blank lines between grouped exports in index files.
  *
  * Options:
  *   - style: "shorthand" (default) | "import-export"
@@ -3882,7 +3878,7 @@ const indexExportStyle = {
         };
     },
     meta: {
-        docs: { description: "Enforce consistent export style in index files (shorthand or import-then-export). Works with padding-line-between-statements (add file override to remove export-export blank line requirement)" },
+        docs: { description: "Enforce consistent export style in index files (shorthand or import-then-export) with no blank lines between grouped exports" },
         fixable: "code",
         schema: [
             {
@@ -5483,7 +5479,7 @@ const multilineArgumentNewline = {
 
             if (args.length === 0) return;
 
-            // Skip if only argument is an object expression (let object-curly-newline handle it)
+            // Skip if only argument is an object expression
             if (args.length === 1 && args[0].type === "ObjectExpression") return;
 
             // Skip if only argument is an array expression (fn([{...}]) format)
@@ -6566,8 +6562,7 @@ const noEmptyLinesInSwitchCases = {
  *   - Each property on its own line
  *   - Newline before closing `}`
  *
- *   This rule is self-sufficient and handles complete object
- *   multiline formatting without needing object-curly-newline.
+ *   This rule handles complete object multiline formatting.
  *
  * Options:
  *   { minProperties: 2 } - Enforce multiline when >= 2 properties

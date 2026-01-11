@@ -862,7 +862,7 @@ import { Button } from " @mui/material ";
 
 Enforce consistent export style in index files. Choose between shorthand re-exports or import-then-export pattern. Also enforces no empty lines between exports/imports.
 
-**Works with ESLint's `padding-line-between-statements`** - This rule enforces grouped exports without blank lines. When using `padding-line-between-statements` with `{ blankLine: "always", prev: "export", next: "export" }`, add a file-specific override for index files to remove the export-export blank line requirement.
+> **Note:** If you use `@stylistic/padding-line-between-statements` with `{ blankLine: "always", prev: "export", next: "export" }`, you may want to add a file-specific override for index files to remove that requirement. This is optional - our rule handles blank line enforcement for index files independently.
 
 **Style: "shorthand" (default)**
 ```javascript
