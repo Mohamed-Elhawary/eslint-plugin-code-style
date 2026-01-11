@@ -254,12 +254,12 @@ rules: {
 | `hook-deps-per-line` | Enforce each hook dependency on its own line when more than 2 |
 | `if-statement-format` | Ensure if statement has proper formatting |
 | `multiline-if-conditions` | Enforce multiline if conditions when there are multiple operands |
-| `absolute-imports-only` | Enforce absolute imports using `@/` alias instead of relative paths ⚙️ |
-| `export-format` | Format exports: collapse 1-3 specifiers, multiline for 4+ |
-| `import-format` | Format imports: collapse 1-3 specifiers, multiline for 4+ |
+| `absolute-imports-only` | Enforce absolute imports using alias (default: `@/`) instead of relative paths ⚙️ |
+| `export-format` | Format exports: `export {` on same line, collapse specifiers (default: ≤3) ⚙️ |
+| `import-format` | Format imports: `import {` and `} from` on same line, collapse specifiers (default: ≤3) ⚙️ |
 | `import-source-spacing` | Enforce no extra spaces inside import path quotes |
-| `index-export-style` | Enforce consistent export style in index files (shorthand or import-then-export) ⚙️ |
-| `module-index-exports` | Enforce proper exports in index files ⚙️ |
+| `index-export-style` | Enforce consistent export style in index files (default: shorthand) ⚙️ |
+| `module-index-exports` | Enforce proper exports in module index files (configurable folders) ⚙️ |
 | `jsx-children-on-new-line` | Enforce JSX children on separate lines from parent tags |
 | `jsx-closing-bracket-spacing` | No space before `>` or `/>` in JSX tags |
 | `jsx-element-child-new-line` | JSX element children must be on new lines |
@@ -278,7 +278,7 @@ rules: {
 | `no-empty-lines-in-jsx` | Disallow empty lines inside JSX elements |
 | `no-empty-lines-in-objects` | Disallow empty lines inside objects |
 | `no-empty-lines-in-switch-cases` | Prevent empty lines at the beginning of switch case logic |
-| `object-property-per-line` | Enforce each property on its own line when object has 2+ properties |
+| `object-property-per-line` | Enforce each property on its own line (default: ≥2 properties) ⚙️ |
 | `object-property-value-brace` | Enforce opening brace on same line as colon for object values |
 | `object-property-value-format` | Enforce property value on same line as colon |
 | `opening-brackets-same-line` | Enforce opening brackets on same line for function calls |
@@ -286,6 +286,60 @@ rules: {
 | `single-argument-on-one-line` | Enforce single simple argument calls to be on one line |
 | `string-property-spacing` | Enforce no extra spaces inside string property keys |
 | `variable-naming-convention` | Enforce variable naming conventions (camelCase, UPPER_CASE, PascalCase) |
+
+<br />
+
+---
+
+## 🔗 Working with ESLint's Built-in Rules
+
+Some `eslint-plugin-code-style` rules are designed to work **together** with ESLint's built-in `object-curly-newline` rule. These rules complement each other:
+
+| Plugin Rule | ESLint Rule | How They Work Together |
+|-------------|-------------|------------------------|
+| `import-format` | `object-curly-newline` (ImportDeclaration) | Plugin collapses small imports; ESLint enforces multiline for large imports |
+| `export-format` | `object-curly-newline` (ExportDeclaration) | Plugin collapses small exports; ESLint enforces multiline for large exports |
+| `object-property-per-line` | `object-curly-newline` (ObjectExpression/ObjectPattern) | Plugin separates properties to lines; ESLint enforces brace newlines |
+
+### Configuration Example
+
+To ensure consistency, match the options between the rules:
+
+```javascript
+// eslint.config.js
+rules: {
+    // ESLint's object-curly-newline - forces multiline at minProperties
+    "object-curly-newline": ["error", {
+        ImportDeclaration: { minProperties: 4, multiline: true },
+        ExportDeclaration: { minProperties: 4, multiline: true },
+        ObjectExpression: { minProperties: 2, multiline: true },
+        ObjectPattern: { minProperties: 2, multiline: true },
+    }],
+
+    // Plugin rules - collapse to single line when below threshold
+    // maxSpecifiers = minProperties - 1
+    "code-style/import-format": ["error", { maxSpecifiers: 3 }],
+    "code-style/export-format": ["error", { maxSpecifiers: 3 }],
+    // minProperties should match object-curly-newline
+    "code-style/object-property-per-line": ["error", { minProperties: 2 }],
+}
+```
+
+### Customizing the Thresholds
+
+If you want to change when multiline kicks in, update **both** rules:
+
+```javascript
+// Example: Keep imports/exports on single line up to 5 specifiers
+rules: {
+    "object-curly-newline": ["error", {
+        ImportDeclaration: { minProperties: 6, multiline: true },
+        ExportDeclaration: { minProperties: 6, multiline: true },
+    }],
+    "code-style/import-format": ["error", { maxSpecifiers: 5 }],
+    "code-style/export-format": ["error", { maxSpecifiers: 5 }],
+}
+```
 
 <br />
 
@@ -733,42 +787,60 @@ import { useAuth } from "@/hooks/auth/useAuth";
 
 ### `export-format`
 
-Export statements should have consistent formatting with proper spacing. Collapse 1-3 specifiers on one line, use multiline for 4+ specifiers.
+Export statements should have consistent formatting. Ensures `export {` is on the same line, and collapses specifiers to a single line when count is within the limit.
+
+**Works with ESLint's `object-curly-newline`** - This rule collapses small exports to single line, while `object-curly-newline` enforces multiline for larger exports. Set `maxSpecifiers = minProperties - 1` for consistency.
 
 ```javascript
 // Good
 export { a, b, c };
-export {
-    a,
-    b,
-    c,
-    d,
-};
 
 // Bad
 export {a,b,c};
-export { a, b, c, d, e };
+export
+    { a };
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxSpecifiers` | `integer` | `3` | Maximum specifiers to keep on single line |
+
+```javascript
+// Example: Match with object-curly-newline minProperties: 5
+"code-style/export-format": ["error", { maxSpecifiers: 4 }]
 ```
 
 ---
 
 ### `import-format`
 
-Import statements should have consistent formatting with proper spacing. Collapse 1-3 specifiers on one line, use multiline for 4+ specifiers.
+Import statements should have consistent formatting. Ensures `import {` and `} from` are on the same line, and collapses specifiers to a single line when count is within the limit.
+
+**Works with ESLint's `object-curly-newline`** - This rule collapses small imports to single line, while `object-curly-newline` enforces multiline for larger imports. Set `maxSpecifiers = minProperties - 1` for consistency.
 
 ```javascript
 // Good
 import { a, b, c } from "module";
-import {
-    a,
-    b,
-    c,
-    d,
-} from "module";
 
 // Bad
 import {a,b,c} from "module";
-import { a, b, c, d, e } from "module";
+import
+    { a } from "module";
+import { a }
+    from "module";
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxSpecifiers` | `integer` | `3` | Maximum specifiers to keep on single line |
+
+```javascript
+// Example: Match with object-curly-newline minProperties: 5
+"code-style/import-format": ["error", { maxSpecifiers: 4 }]
 ```
 
 ---
@@ -1239,7 +1311,9 @@ Object literals should not contain empty lines between properties or after openi
 
 ### `object-property-per-line`
 
-When an object has 2 or more properties and spans multiple lines, each property should be on its own line.
+When an object has minProperties or more properties, each property should be on its own line.
+
+**Works with ESLint's `object-curly-newline`** - This rule ensures each property is on separate lines, while `object-curly-newline` enforces the opening/closing brace newlines. Set the same `minProperties` value for consistency.
 
 ```javascript
 // Good
@@ -1251,6 +1325,17 @@ When an object has 2 or more properties and spans multiple lines, each property 
 // Bad
 { name: "John",
     age: 30 }
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `minProperties` | `integer` | `2` | Minimum properties to enforce separate lines |
+
+```javascript
+// Example: Match with object-curly-newline minProperties: 3
+"code-style/object-property-per-line": ["error", { minProperties: 3 }]
 ```
 
 ---

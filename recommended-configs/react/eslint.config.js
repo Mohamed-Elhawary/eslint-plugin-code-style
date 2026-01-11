@@ -3,7 +3,6 @@ import checkFile from "eslint-plugin-check-file";
 import codeStyle from "eslint-plugin-code-style";
 import importX from "eslint-plugin-import-x";
 import jsxA11y from "eslint-plugin-jsx-a11y";
-import newline from "eslint-plugin-newline";
 import perfectionist from "eslint-plugin-perfectionist";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -45,7 +44,6 @@ export default [ // eslint-disable-line
             "code-style": codeStyle,
             "import-x": importX,
             "jsx-a11y": jsxA11y,
-            newline,
             perfectionist,
             react,
             "react-hooks": reactHooks,
@@ -118,8 +116,8 @@ export default [ // eslint-disable-line
             "comma-dangle": ["error", "always-multiline"],
             "comma-spacing": ["error",
                 {
-                    "after": true,
-                    "before": false,
+                    after: true,
+                    before: false,
                 },
             ],
             complexity: "off",
@@ -150,8 +148,8 @@ export default [ // eslint-disable-line
             "jsx-quotes": ["error", "prefer-double"],
             "key-spacing": ["error",
                 {
-                    "afterColon": true,
-                    "beforeColon": false,
+                    afterColon: true,
+                    beforeColon: false,
                 },
             ],
             "linebreak-style": "off",
@@ -159,16 +157,9 @@ export default [ // eslint-disable-line
             "max-len": "off",
             "max-lines": "off",
             "max-lines-per-function": "off",
-            "max-nested-callbacks": ["error", 10],
-            "max-params": ["error", 18],
+            "max-nested-callbacks": ["error", 4],
+            "max-params": "off",
             "multiline-comment-style": ["error", "bare-block"],
-            "newline/import-module": [
-                "error",
-                {
-                    minItems: 4,
-                    tab: 4,
-                },
-            ],
             "no-alert": "error",
             "no-await-in-loop": "error",
             "no-cond-assign": "error",

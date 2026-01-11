@@ -2745,25 +2745,29 @@ const absoluteImportsOnly = {
  *
  * Description:
  *   Export statements should have consistent formatting with
- *   proper spacing. Collapse 1-3 specifiers on one line, use
- *   multiline for 4+ specifiers.
+ *   proper spacing. Ensures `export {` is on the same line,
+ *   and collapses specifiers to single line when count <=
+ *   maxSpecifiers (default 3).
+ *
+ *   Works with ESLint's `object-curly-newline` ExportDeclaration
+ *   option. Set maxSpecifiers = minProperties - 1 for consistency.
+ *
+ * Options:
+ *   { maxSpecifiers: 3 } - Collapse to single line when <= 3 specifiers
  *
  * ✓ Good:
  *   export { a, b, c };
- *   export {
- *       a,
- *       b,
- *       c,
- *       d,
- *   };
  *
  * ✗ Bad:
  *   export {a,b,c};
- *   export { a, b, c, d, e };
+ *   export
+ *       { a };
  */
 const exportFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
+        const options = context.options[0] || {};
+        const maxSpecifiers = options.maxSpecifiers !== undefined ? options.maxSpecifiers : 3;
 
         const checkExportHandler = (node) => {
             const specifiers = node.specifiers;
@@ -2788,10 +2792,10 @@ const exportFormat = {
                 });
             }
 
-            const isMultiLine = openBrace.loc.start.line !== closeBrace.loc.end.line;
+            // Collapse to single line if specifiers <= maxSpecifiers
+            if (specifiers.length <= maxSpecifiers) {
+                const isMultiLine = openBrace.loc.start.line !== closeBrace.loc.end.line;
 
-            // 1-3 specifiers: collapse to single line
-            if (specifiers.length <= 3) {
                 if (isMultiLine) {
                     const specifiersText = specifiers.map((s) => {
                         if (s.exported.name === s.local.name) return s.local.name;
@@ -2804,64 +2808,9 @@ const exportFormat = {
                             [openBrace.range[0], closeBrace.range[1]],
                             `{ ${specifiersText} }`,
                         ),
-                        message: "Exports with 1-3 specifiers should be on a single line",
+                        message: `Exports with ${maxSpecifiers} or fewer specifiers should be on a single line`,
                         node,
                     });
-                }
-            } else {
-                // More than 3 specifiers: each on its own line
-                const firstSpecifier = specifiers[0];
-
-                const lastSpecifier = specifiers[specifiers.length - 1];
-
-                // Check if first specifier is on same line as {
-                if (openBrace.loc.end.line === firstSpecifier.loc.start.line) {
-                    const indent = " ".repeat(exportToken.loc.start.column + 4);
-
-                    context.report({
-                        fix: (fixer) => fixer.replaceTextRange(
-                            [openBrace.range[1], firstSpecifier.range[0]],
-                            "\n" + indent,
-                        ),
-                        message: "First export specifier should be on its own line when more than 3",
-                        node: firstSpecifier,
-                    });
-                }
-
-                // Check if } is on same line as last specifier
-                if (closeBrace.loc.start.line === lastSpecifier.loc.end.line) {
-                    const indent = " ".repeat(exportToken.loc.start.column);
-
-                    context.report({
-                        fix: (fixer) => fixer.replaceTextRange(
-                            [lastSpecifier.range[1], closeBrace.range[0]],
-                            ",\n" + indent,
-                        ),
-                        message: "Closing brace should be on its own line when more than 3 specifiers",
-                        node: closeBrace,
-                    });
-                }
-
-                // Check each specifier is on its own line
-                for (let i = 0; i < specifiers.length - 1; i += 1) {
-                    const current = specifiers[i];
-
-                    const next = specifiers[i + 1];
-
-                    if (current.loc.end.line === next.loc.start.line) {
-                        const indent = " ".repeat(exportToken.loc.start.column + 4);
-
-                        const commaToken = sourceCode.getTokenAfter(current);
-
-                        context.report({
-                            fix: (fixer) => fixer.replaceTextRange(
-                                [commaToken.range[1], next.range[0]],
-                                "\n" + indent,
-                            ),
-                            message: "Each export specifier should be on its own line when more than 3",
-                            node: next,
-                        });
-                    }
                 }
             }
         };
@@ -2869,9 +2818,22 @@ const exportFormat = {
         return { ExportNamedDeclaration: checkExportHandler };
     },
     meta: {
-        docs: { description: "Format exports: export { on same line, collapse 1-3 specifiers, multiline for 4+" },
+        docs: { description: "Format exports: export { on same line, collapse specifiers to single line" },
         fixable: "code",
-        schema: [],
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    maxSpecifiers: {
+                        default: 3,
+                        description: "Maximum specifiers to keep on single line (default: 3). Set to minProperties - 1 from object-curly-newline.",
+                        minimum: 1,
+                        type: "integer",
+                    },
+                },
+                type: "object",
+            },
+        ],
         type: "layout",
     },
 };
@@ -2883,25 +2845,29 @@ const exportFormat = {
  *
  * Description:
  *   Import statements should have consistent formatting with
- *   proper spacing. Collapse 1-3 specifiers on one line, use
- *   multiline for 4+ specifiers.
+ *   proper spacing. Ensures `import {` and `} from` are on
+ *   the same line, and collapses specifiers to single line
+ *   when count <= maxSpecifiers (default 3).
+ *
+ *   Works with ESLint's `object-curly-newline` ImportDeclaration
+ *   option. Set maxSpecifiers = minProperties - 1 for consistency.
+ *
+ * Options:
+ *   { maxSpecifiers: 3 } - Collapse to single line when <= 3 specifiers
  *
  * ✓ Good:
  *   import { a, b, c } from "module";
- *   import {
- *       a,
- *       b,
- *       c,
- *       d,
- *   } from "module";
  *
  * ✗ Bad:
  *   import {a,b,c} from "module";
- *   import { a, b, c, d, e } from "module";
+ *   import
+ *       { a } from "module";
  */
 const importFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
+        const options = context.options[0] || {};
+        const maxSpecifiers = options.maxSpecifiers !== undefined ? options.maxSpecifiers : 3;
 
         const checkImportHandler = (node) => {
             const importToken = sourceCode.getFirstToken(node);
@@ -2962,8 +2928,8 @@ const importFormat = {
                 });
             }
 
-            // Collapse to single line if 1-3 specifiers
-            if (namedSpecifiers.length <= 3) {
+            // Collapse to single line if specifiers <= maxSpecifiers
+            if (namedSpecifiers.length <= maxSpecifiers) {
                 const isMultiLine = openBrace.loc.start.line !== closeBrace.loc.end.line;
 
                 if (isMultiLine) {
@@ -2978,7 +2944,7 @@ const importFormat = {
                             [openBrace.range[0], closeBrace.range[1]],
                             `{ ${specifiersText} }`,
                         ),
-                        message: "Imports with 1-3 specifiers should be on a single line",
+                        message: `Imports with ${maxSpecifiers} or fewer specifiers should be on a single line`,
                         node,
                     });
                 }
@@ -2988,9 +2954,22 @@ const importFormat = {
         return { ImportDeclaration: checkImportHandler };
     },
     meta: {
-        docs: { description: "Format imports: import { on same line, } from on same line, collapse 1-3 specifiers" },
+        docs: { description: "Format imports: import { on same line, } from on same line, collapse specifiers to single line" },
         fixable: "code",
-        schema: [],
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    maxSpecifiers: {
+                        default: 3,
+                        description: "Maximum specifiers to keep on single line (default: 3). Set to minProperties - 1 from object-curly-newline.",
+                        minimum: 1,
+                        type: "integer",
+                    },
+                },
+                type: "object",
+            },
+        ],
         type: "layout",
     },
 };
@@ -6407,8 +6386,15 @@ const noEmptyLinesInSwitchCases = {
  * ───────────────────────────────────────────────────────────────
  *
  * Description:
- *   When an object has 2 or more properties and spans multiple
- *   lines, each property should be on its own line.
+ *   When an object has minProperties or more properties,
+ *   each property should be on its own line (default: 2).
+ *
+ *   Works with ESLint's `object-curly-newline` ObjectExpression
+ *   and ObjectPattern options. Set minProperties to match for
+ *   consistent behavior.
+ *
+ * Options:
+ *   { minProperties: 2 } - Enforce separate lines when >= 2 properties
  *
  * ✓ Good:
  *   {
@@ -6423,11 +6409,13 @@ const noEmptyLinesInSwitchCases = {
 const objectPropertyPerLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
+        const options = context.options[0] || {};
+        const minProperties = options.minProperties !== undefined ? options.minProperties : 2;
 
         const checkObjectHandler = (node) => {
             const { properties } = node;
 
-            if (properties.length < 2) return;
+            if (properties.length < minProperties) return;
 
             for (let i = 0; i < properties.length - 1; i += 1) {
                 const current = properties[i];
@@ -6458,9 +6446,22 @@ const objectPropertyPerLine = {
         };
     },
     meta: {
-        docs: { description: "Enforce each property on its own line when object has 2+ properties" },
+        docs: { description: "Enforce each property on its own line when object has minProperties+ properties" },
         fixable: "whitespace",
-        schema: [],
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    minProperties: {
+                        default: 2,
+                        description: "Minimum properties to enforce separate lines (default: 2). Match with object-curly-newline minProperties.",
+                        minimum: 1,
+                        type: "integer",
+                    },
+                },
+                type: "object",
+            },
+        ],
         type: "layout",
     },
 };

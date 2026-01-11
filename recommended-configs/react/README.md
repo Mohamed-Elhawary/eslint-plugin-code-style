@@ -30,14 +30,13 @@ npm install --save-dev \
   eslint-plugin-check-file \
   eslint-plugin-perfectionist \
   eslint-plugin-simple-import-sort \
-  eslint-plugin-newline \
   eslint-plugin-code-style
 ```
 
 Or with a single line:
 
 ```bash
-npm install --save-dev eslint @eslint/js globals eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-import-x eslint-plugin-jsx-a11y eslint-plugin-check-file eslint-plugin-perfectionist eslint-plugin-simple-import-sort eslint-plugin-newline eslint-plugin-code-style
+npm install --save-dev eslint @eslint/js globals eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-import-x eslint-plugin-jsx-a11y eslint-plugin-check-file eslint-plugin-perfectionist eslint-plugin-simple-import-sort eslint-plugin-code-style
 ```
 
 ---
@@ -158,17 +157,6 @@ eslint src/ --fix
 
 ---
 
-### eslint-plugin-newline
-
-**Purpose:** Enforce newlines in import statements for better readability.
-
-**Key Rules Used:**
-| Rule | Description |
-|------|-------------|
-| `newline/import-module` | Enforce newlines in imports with 4+ specifiers |
-
----
-
 ## ESLint Built-in Rules
 
 These are native ESLint rules that complement our custom plugin:
@@ -237,7 +225,7 @@ Our custom plugin provides **48 auto-fixable rules** that fill the gaps not cove
 
 | Rule | Description |
 |------|-------------|
-| `absolute-imports-only` | Enforce absolute imports using `@/` alias |
+| `absolute-imports-only` | Enforce absolute imports using alias (default: `@/`) ⚙️ |
 | `array-items-per-line` | 3 or less items on one line, 4+ each on new line |
 | `array-objects-on-new-lines` | Each object in array on new line |
 | `arrow-function-block-body` | Parentheses for multiline arrow expressions |
@@ -247,15 +235,15 @@ Our custom plugin provides **48 auto-fixable rules** that fill the gaps not cove
 | `block-statement-newlines` | Proper newlines in block statements |
 | `comment-spacing` | Proper comment spacing |
 | `curried-arrow-same-line` | Curried functions on same line as `=>` |
-| `export-format` | Format exports consistently |
+| `export-format` | Format exports: collapse specifiers (default: ≤3) ⚙️ |
 | `function-call-spacing` | No space before function call parenthesis |
 | `function-params-per-line` | Parameters on separate lines when multiline |
 | `hook-callback-format` | Consistent React hooks formatting |
 | `hook-deps-per-line` | Dependencies on separate lines when 3+ |
 | `if-statement-format` | Consistent if statement formatting |
-| `import-format` | Format imports consistently |
+| `import-format` | Format imports: collapse specifiers (default: ≤3) ⚙️ |
 | `import-source-spacing` | No spaces in import paths |
-| `index-export-style` | Enforce shorthand exports in index files |
+| `index-export-style` | Enforce consistent export style in index files (default: shorthand) ⚙️ |
 | `jsx-children-on-new-line` | Children on separate lines |
 | `jsx-closing-bracket-spacing` | No space before `>` or `/>` |
 | `jsx-element-child-new-line` | JSX element children on new lines |
@@ -266,7 +254,7 @@ Our custom plugin provides **48 auto-fixable rules** that fill the gaps not cove
 | `jsx-string-value-trim` | No whitespace in string values |
 | `jsx-ternary-format` | Consistent ternary formatting |
 | `member-expression-bracket-spacing` | No spaces in brackets |
-| `module-index-exports` | Proper index file exports |
+| `module-index-exports` | Enforce proper exports in module index files (configurable folders) ⚙️ |
 | `multiline-argument-newline` | Arguments on new lines when multiline |
 | `multiline-if-conditions` | Conditions on separate lines |
 | `multiple-arguments-per-line` | Each argument on own line |
@@ -276,7 +264,7 @@ Our custom plugin provides **48 auto-fixable rules** that fill the gaps not cove
 | `no-empty-lines-in-jsx` | No empty lines in JSX |
 | `no-empty-lines-in-objects` | No empty lines in objects |
 | `no-empty-lines-in-switch-cases` | No empty lines in switch cases |
-| `object-property-per-line` | Each property on own line |
+| `object-property-per-line` | Each property on own line (default: ≥2) ⚙️ |
 | `object-property-value-brace` | Brace on same line as colon |
 | `object-property-value-format` | Value on same line as colon |
 | `opening-brackets-same-line` | Opening brackets on same line |
@@ -346,6 +334,36 @@ export { ComponentC } from "./component-c";
 ```
 
 This override works together with the `code-style/index-export-style` rule to ensure clean, consistent index files.
+
+### Import/Export/Object Formatting
+
+The `import-format`, `export-format`, and `object-property-per-line` rules work together with ESLint's `object-curly-newline`. This config uses these default thresholds:
+
+| Context | Single Line | Multiline |
+|---------|-------------|-----------|
+| Imports/Exports | 1-3 specifiers | 4+ specifiers |
+| Objects | 1 property | 2+ properties |
+
+To change these thresholds, update **both** rules together:
+
+```javascript
+rules: {
+    // Change imports/exports to single line up to 5 specifiers
+    "object-curly-newline": ["error", {
+        ImportDeclaration: { minProperties: 6, multiline: true },
+        ExportDeclaration: { minProperties: 6, multiline: true },
+    }],
+    "code-style/import-format": ["error", { maxSpecifiers: 5 }],
+    "code-style/export-format": ["error", { maxSpecifiers: 5 }],
+
+    // Change objects to require multiline at 3+ properties
+    "object-curly-newline": ["error", {
+        ObjectExpression: { minProperties: 3, multiline: true },
+        ObjectPattern: { minProperties: 3, multiline: true },
+    }],
+    "code-style/object-property-per-line": ["error", { minProperties: 3 }],
+}
+```
 
 ---
 
