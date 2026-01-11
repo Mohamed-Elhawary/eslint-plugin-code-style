@@ -2074,8 +2074,11 @@ const hookCallbackFormat = {
  * ───────────────────────────────────────────────────────────────
  *
  * Description:
- *   React hook dependency arrays with more than 2 dependencies
+ *   React hook dependency arrays with more than maxDeps dependencies
  *   should have each dependency on its own line.
+ *
+ * Options:
+ *   { maxDeps: 2 } - Maximum dependencies on single line (default: 2)
  *
  * ✓ Good:
  *   useEffect(() => {}, [dep1, dep2])
@@ -2091,6 +2094,8 @@ const hookCallbackFormat = {
 const hookDepsPerLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
+        const options = context.options[0] || {};
+        const maxDeps = options.maxDeps !== undefined ? options.maxDeps : 2;
 
         const hookNames = [
             "useEffect",
@@ -2123,8 +2128,8 @@ const hookDepsPerLine = {
             const firstElement = elements[0];
             const lastElement = elements[elements.length - 1];
 
-            // If 2 or fewer dependencies, they should be on the same line
-            if (elements.length <= 2) {
+            // If maxDeps or fewer dependencies, they should be on the same line
+            if (elements.length <= maxDeps) {
                 const isMultiLine = openBracket.loc.end.line !== closeBracket.loc.start.line;
 
                 if (isMultiLine) {
@@ -2135,7 +2140,7 @@ const hookDepsPerLine = {
                             [openBracket.range[1], closeBracket.range[0]],
                             elementsText,
                         ),
-                        message: "Dependencies should be on same line when 2 or fewer",
+                        message: `Dependencies should be on same line when ${maxDeps} or fewer`,
                         node: depsArg,
                     });
                 }
@@ -2143,7 +2148,7 @@ const hookDepsPerLine = {
                 return;
             }
 
-            // More than 2 dependencies - each on its own line
+            // More than maxDeps dependencies - each on its own line
             const elementIndent = " ".repeat(openBracket.loc.start.column + 4);
             const bracketIndent = " ".repeat(openBracket.loc.start.column);
 
@@ -2153,7 +2158,7 @@ const hookDepsPerLine = {
                         [openBracket.range[1], firstElement.range[0]],
                         "\n" + elementIndent,
                     ),
-                    message: "First dependency should be on its own line when more than 2",
+                    message: `First dependency should be on its own line when more than ${maxDeps}`,
                     node: firstElement,
                 });
             }
@@ -2164,7 +2169,7 @@ const hookDepsPerLine = {
                         [lastElement.range[1], closeBracket.range[0]],
                         ",\n" + bracketIndent,
                     ),
-                    message: "Closing bracket should be on its own line when more than 2 dependencies",
+                    message: `Closing bracket should be on its own line when more than ${maxDeps} dependencies`,
                     node: closeBracket,
                 });
             }
@@ -2181,7 +2186,7 @@ const hookDepsPerLine = {
                             [commaToken.range[1], next.range[0]],
                             "\n" + elementIndent,
                         ),
-                        message: "Each dependency should be on its own line when more than 2",
+                        message: `Each dependency should be on its own line when more than ${maxDeps}`,
                         node: next,
                     });
                 }
@@ -2191,9 +2196,22 @@ const hookDepsPerLine = {
         return { CallExpression: checkHookCallHandler };
     },
     meta: {
-        docs: { description: "Enforce each hook dependency on its own line when more than 2 dependencies" },
+        docs: { description: "Enforce each hook dependency on its own line when exceeding threshold (default: >2)" },
         fixable: "whitespace",
-        schema: [],
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    maxDeps: {
+                        default: 2,
+                        description: "Maximum dependencies to keep on single line (default: 2)",
+                        minimum: 1,
+                        type: "integer",
+                    },
+                },
+                type: "object",
+            },
+        ],
         type: "layout",
     },
 };

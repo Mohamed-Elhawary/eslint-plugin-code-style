@@ -251,7 +251,7 @@ rules: {
 | `function-naming-convention` | Enforce function naming conventions (camelCase, verb prefix) |
 | `function-params-per-line` | Enforce function parameters on separate lines when multiline |
 | `hook-callback-format` | Enforce consistent formatting for React hooks callbacks |
-| `hook-deps-per-line` | Enforce each hook dependency on its own line when more than 2 |
+| `hook-deps-per-line` | Enforce each hook dependency on its own line when exceeding threshold (default: >2) ⚙️ |
 | `if-statement-format` | Ensure if statement has proper formatting |
 | `multiline-if-conditions` | Enforce multiline if conditions when there are multiple operands |
 | `absolute-imports-only` | Enforce absolute imports using alias (default: `@/`) instead of relative paths ⚙️ |
@@ -612,7 +612,7 @@ useEffect(() => { doSomething(); }, [dep1, dep2]);
 
 ### `hook-deps-per-line`
 
-React hook dependency arrays with more than 2 dependencies should have each dependency on its own line.
+React hook dependency arrays with more than the threshold should have each dependency on its own line.
 
 ```javascript
 // Good
@@ -625,6 +625,17 @@ useEffect(() => {}, [
 
 // Bad
 useEffect(() => {}, [dep1, dep2, dep3, dep4])
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxDeps` | `integer` | `2` | Maximum dependencies to keep on single line |
+
+```javascript
+// Example: Allow up to 3 dependencies on single line
+"code-style/hook-deps-per-line": ["error", { maxDeps: 3 }]
 ```
 
 <br />

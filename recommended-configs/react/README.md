@@ -239,7 +239,7 @@ Our custom plugin provides **48 auto-fixable rules** that fill the gaps not cove
 | `function-call-spacing` | No space before function call parenthesis |
 | `function-params-per-line` | Parameters on separate lines when multiline |
 | `hook-callback-format` | Consistent React hooks formatting |
-| `hook-deps-per-line` | Dependencies on separate lines when 3+ |
+| `hook-deps-per-line` | Dependencies on separate lines when exceeding threshold (default: >2) ⚙️ |
 | `if-statement-format` | Consistent if statement formatting |
 | `import-format` | Format imports: collapse specifiers (default: ≤3) ⚙️ |
 | `import-source-spacing` | No spaces in import paths |
