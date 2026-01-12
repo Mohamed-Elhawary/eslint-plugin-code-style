@@ -1150,28 +1150,41 @@ const commentSpacing = {
 
                 const firstToken = sourceCode.getFirstToken(node);
 
-                // Check each comment for internal spacing (space after /* or // and before */)
+                // Check each comment for internal spacing and syntax
                 comments.forEach((comment) => {
                     const { type, value } = comment;
 
                     if (type === "Block") {
-                        // Block comment: /* ... */
-                        // Check if missing space after /* or before */
-                        const needsStartSpace = value.length > 0 && !value.startsWith(" ") && !value.startsWith("*") && !value.startsWith("\n");
-                        const needsEndSpace = value.length > 0 && !value.endsWith(" ") && !value.endsWith("*") && !value.endsWith("\n");
+                        // Check if this is a single-line block comment (should be converted to //)
+                        const isSingleLine = !value.includes("\n");
 
-                        if (needsStartSpace || needsEndSpace) {
-                            let newValue = value;
-
-                            if (needsStartSpace) newValue = " " + newValue;
-
-                            if (needsEndSpace) newValue = newValue + " ";
+                        if (isSingleLine) {
+                            // Single-line block comment should use // syntax
+                            const trimmedValue = value.trim();
 
                             context.report({
-                                fix: (fixer) => fixer.replaceText(comment, `/*${newValue}*/`),
+                                fix: (fixer) => fixer.replaceText(comment, `// ${trimmedValue}`),
                                 loc: comment.loc,
-                                message: "Block comment should have space after /* and before */",
+                                message: "Single-line comments should use // syntax instead of /* */",
                             });
+                        } else {
+                            // Multi-line block comment: check spacing
+                            const needsStartSpace = value.length > 0 && !value.startsWith(" ") && !value.startsWith("*") && !value.startsWith("\n");
+                            const needsEndSpace = value.length > 0 && !value.endsWith(" ") && !value.endsWith("*") && !value.endsWith("\n");
+
+                            if (needsStartSpace || needsEndSpace) {
+                                let newValue = value;
+
+                                if (needsStartSpace) newValue = " " + newValue;
+
+                                if (needsEndSpace) newValue = newValue + " ";
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceText(comment, `/*${newValue}*/`),
+                                    loc: comment.loc,
+                                    message: "Block comment should have space after /* and before */",
+                                });
+                            }
                         }
                     } else if (type === "Line") {
                         // Line comment: // ...
@@ -1213,50 +1226,22 @@ const commentSpacing = {
                 const topComments = comments.filter((comment) => comment.loc.end.line < firstToken.loc.start.line
                     || (comment.loc.start.line === 1 && firstToken.loc.start.line === 1 && comment.range[1] < firstToken.range[0]));
 
-                // Check consecutive comments (both top-of-file and inline)
-                const sortedComments = [...comments].sort((a, b) => a.range[0] - b.range[0]);
-
-                for (let i = 0; i < sortedComments.length - 1; i += 1) {
-                    const current = sortedComments[i];
-                    const next = sortedComments[i + 1];
-
-                    // If they're on the same line, put each on its own line
-                    if (next.loc.start.line === current.loc.end.line) {
-                        context.report({
-                            fix: (fixer) => fixer.insertTextBefore(next, "\n"),
-                            loc: next.loc,
-                            message: "Each comment should be on its own line",
-                        });
-                    }
-
-                    // Check if there's no code between consecutive comments
-                    const textBetween = sourceCode.text.slice(current.range[1], next.range[0]);
-                    const hasCodeBetween = textBetween.trim().length > 0;
-
-                    if (!hasCodeBetween) {
+                // Check top-of-file comments: no blank lines between them
+                if (topComments.length > 1) {
+                    for (let i = 0; i < topComments.length - 1; i += 1) {
+                        const current = topComments[i];
+                        const next = topComments[i + 1];
                         const linesBetween = next.loc.start.line - current.loc.end.line;
-                        const nextIndent = " ".repeat(next.loc.start.column);
 
-                        // Require exactly one empty line between consecutive comments
-                        if (linesBetween === 1) {
-                            // No empty line - need to add one
+                        if (linesBetween > 1) {
+                            // There's a blank line between top comments - remove it
                             context.report({
                                 fix: (fixer) => fixer.replaceTextRange(
                                     [current.range[1], next.range[0]],
-                                    "\n\n" + nextIndent,
+                                    "\n",
                                 ),
                                 loc: next.loc,
-                                message: "Expected one empty line between consecutive comments",
-                            });
-                        } else if (linesBetween > 2) {
-                            // More than one empty line - reduce to one
-                            context.report({
-                                fix: (fixer) => fixer.replaceTextRange(
-                                    [current.range[1], next.range[0]],
-                                    "\n\n" + nextIndent,
-                                ),
-                                loc: next.loc,
-                                message: "Only one empty line allowed between consecutive comments",
+                                message: "No blank lines allowed between top-of-file comments",
                             });
                         }
                     }
@@ -1284,89 +1269,6 @@ const commentSpacing = {
                     }
                 }
 
-                // Check inline comments (not at top of file) - require empty line before and after
-                const inlineComments = comments.filter((comment) => !topComments.includes(comment));
-
-                inlineComments.forEach((comment) => {
-                    // Skip inline comments at the end of code lines (e.g., code; // eslint-disable-line)
-                    const tokenBefore = sourceCode.getTokenBefore(comment, { includeComments: true });
-
-                    if (tokenBefore && tokenBefore.loc.end.line === comment.loc.start.line) {
-                        // This is an inline comment at the end of a code line - skip it
-                        return;
-                    }
-
-                    // Check for empty line BEFORE comment (after code)
-                    if (tokenBefore && tokenBefore.type !== "Block" && tokenBefore.type !== "Line") {
-                        const linesBeforeComment = comment.loc.start.line - tokenBefore.loc.end.line;
-                        const textBeforeComment = sourceCode.text.slice(tokenBefore.range[1], comment.range[0]);
-
-                        if (textBeforeComment.trim().length === 0) {
-                            const commentIndent = " ".repeat(comment.loc.start.column);
-
-                            if (linesBeforeComment === 1) {
-                                // No empty line before comment - need to add one
-                                context.report({
-                                    fix: (fixer) => fixer.replaceTextRange(
-                                        [tokenBefore.range[1], comment.range[0]],
-                                        "\n\n" + commentIndent,
-                                    ),
-                                    loc: comment.loc,
-                                    message: "Expected empty line between code and comment",
-                                });
-                            } else if (linesBeforeComment > 2) {
-                                // More than one empty line - reduce to one
-                                context.report({
-                                    fix: (fixer) => fixer.replaceTextRange(
-                                        [tokenBefore.range[1], comment.range[0]],
-                                        "\n\n" + commentIndent,
-                                    ),
-                                    loc: comment.loc,
-                                    message: "Only one empty line allowed between code and comment",
-                                });
-                            }
-                        }
-                    }
-
-                    // Check for empty line AFTER comment (before code)
-                    const tokenAfter = sourceCode.getTokenAfter(comment, { includeComments: true });
-
-                    if (!tokenAfter) return;
-
-                    // Skip if the next token is another comment (handled by consecutive comments logic)
-                    if (tokenAfter.type === "Block" || tokenAfter.type === "Line") return;
-
-                    const linesBetween = tokenAfter.loc.start.line - comment.loc.end.line;
-                    const textBetween = sourceCode.text.slice(comment.range[1], tokenAfter.range[0]);
-
-                    // Only handle if there's just whitespace between them
-                    if (textBetween.trim().length === 0) {
-                        const tokenIndent = " ".repeat(tokenAfter.loc.start.column);
-
-                        // Require exactly one empty line between last comment and code
-                        if (linesBetween === 1) {
-                            // No empty line - need to add one
-                            context.report({
-                                fix: (fixer) => fixer.replaceTextRange(
-                                    [comment.range[1], tokenAfter.range[0]],
-                                    "\n\n" + tokenIndent,
-                                ),
-                                loc: tokenAfter.loc,
-                                message: "Expected empty line between comment and code",
-                            });
-                        } else if (linesBetween > 2) {
-                            // More than one empty line - reduce to one
-                            context.report({
-                                fix: (fixer) => fixer.replaceTextRange(
-                                    [comment.range[1], tokenAfter.range[0]],
-                                    "\n\n" + tokenIndent,
-                                ),
-                                loc: tokenAfter.loc,
-                                message: "Only one empty line allowed between comment and code",
-                            });
-                        }
-                    }
-                });
             },
         };
     },
@@ -6539,10 +6441,70 @@ const objectPropertyPerLine = {
         const options = context.options[0] || {};
         const minProperties = options.minProperties !== undefined ? options.minProperties : 2;
 
+        // Check if a value can be collapsed to single line
+        const canCollapse = (valueNode) => {
+            if (!valueNode) return true;
+
+            // Simple values can always be collapsed
+            if (["Literal", "Identifier", "TemplateLiteral", "MemberExpression", "UnaryExpression"].includes(valueNode.type)) {
+                return true;
+            }
+
+            // Arrays: can collapse only if already on single line (let array-items-per-line handle it)
+            if (valueNode.type === "ArrayExpression") {
+                const isAlreadySingleLine = valueNode.loc.start.line === valueNode.loc.end.line;
+
+                return isAlreadySingleLine;
+            }
+
+            // Objects: can collapse if fewer than minProperties and all values can collapse
+            if (valueNode.type === "ObjectExpression") {
+                const { properties } = valueNode;
+
+                if (properties.length === 0) return true;
+
+                if (properties.length >= minProperties) return false;
+
+                // Check all property values can be collapsed
+                return properties.every((prop) => canCollapse(prop.value));
+            }
+
+            // Other complex types (functions, calls, etc.) cannot be collapsed
+            return false;
+        };
+
+        // Generate collapsed single-line text for a value
+        const getCollapsedText = (valueNode) => {
+            if (!valueNode) return "";
+
+            // Arrays: use source text since it's already formatted by array-items-per-line
+            if (valueNode.type === "ArrayExpression") {
+                return sourceCode.getText(valueNode).replace(/\s+/g, " ").trim();
+            }
+
+            if (valueNode.type === "ObjectExpression") {
+                const { properties } = valueNode;
+
+                if (properties.length === 0) return "{}";
+
+                const propsText = properties.map((prop) => {
+                    const keyText = prop.computed ? `[${sourceCode.getText(prop.key)}]` : sourceCode.getText(prop.key);
+                    const valueText = getCollapsedText(prop.value);
+
+                    return prop.shorthand ? keyText : `${keyText}: ${valueText}`;
+                }).join(", ");
+
+                return `{ ${propsText} }`;
+            }
+
+            return sourceCode.getText(valueNode).trim();
+        };
+
         const checkObjectHandler = (node) => {
             const { properties } = node;
 
-            if (properties.length < minProperties) return;
+            // Skip empty objects
+            if (properties.length === 0) return;
 
             const openBrace = sourceCode.getFirstToken(node);
             const closeBrace = sourceCode.getLastToken(node);
@@ -6551,6 +6513,82 @@ const objectPropertyPerLine = {
 
             if (!openBrace || !closeBrace || openBrace.value !== "{" || closeBrace.value !== "}") return;
 
+            // COLLAPSE: Objects with fewer than minProperties should be on single line if possible
+            if (properties.length < minProperties) {
+                const isMultiline = openBrace.loc.start.line !== closeBrace.loc.end.line;
+
+                // Check if all property values can be collapsed
+                const allCanCollapse = properties.every((prop) => canCollapse(prop.value));
+
+                if (isMultiline && allCanCollapse) {
+                    // Generate collapsed text for all properties
+                    const propertiesText = properties.map((prop) => {
+                        const keyText = prop.computed ? `[${sourceCode.getText(prop.key)}]` : sourceCode.getText(prop.key);
+                        const valueText = getCollapsedText(prop.value);
+
+                        return prop.shorthand ? keyText : `${keyText}: ${valueText}`;
+                    }).join(", ");
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[0], closeBrace.range[1]],
+                            `{ ${propertiesText} }`,
+                        ),
+                        message: `Objects with fewer than ${minProperties} properties should be on a single line`,
+                        node,
+                    });
+
+                    return;
+                }
+
+                // If can't fully collapse, still check for partial formatting issues
+                if (!allCanCollapse && isMultiline) {
+                    // Object has complex nested value that can't collapse
+                    // Just ensure proper multiline formatting
+                    const objectIndent = " ".repeat(openBrace.loc.start.column);
+                    const propertyIndent = objectIndent + "    ";
+
+                    // First property should be on new line
+                    if (openBrace.loc.end.line === firstProperty.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBrace.range[1], firstProperty.range[0]],
+                                "\n" + propertyIndent,
+                            ),
+                            message: "Property with complex value should be on its own line",
+                            node: firstProperty,
+                        });
+                    }
+
+                    // Closing brace should be on new line
+                    if (closeBrace.loc.start.line === lastProperty.loc.end.line) {
+                        context.report({
+                            fix: (fixer) => {
+                                const afterLastToken = sourceCode.getTokenAfter(lastProperty);
+                                const hasTrailingComma = afterLastToken && afterLastToken.value === ",";
+
+                                if (hasTrailingComma) {
+                                    return fixer.replaceTextRange(
+                                        [afterLastToken.range[1], closeBrace.range[0]],
+                                        "\n" + objectIndent,
+                                    );
+                                }
+
+                                return fixer.replaceTextRange(
+                                    [lastProperty.range[1], closeBrace.range[0]],
+                                    ",\n" + objectIndent,
+                                );
+                            },
+                            message: "Closing brace should be on its own line for object with complex value",
+                            node: closeBrace,
+                        });
+                    }
+                }
+
+                return;
+            }
+
+            // EXPAND: Objects with minProperties or more should be multiline
             // Calculate proper indentation based on the object's position
             const objectIndent = " ".repeat(openBrace.loc.start.column);
             const propertyIndent = objectIndent + "    ";
@@ -6618,7 +6656,7 @@ const objectPropertyPerLine = {
         };
     },
     meta: {
-        docs: { description: "Enforce multiline object formatting: newline after {, each property on own line, newline before }" },
+        docs: { description: "Enforce object formatting: collapse to single line when < minProperties (including nested objects/arrays), expand to multiline when >= minProperties" },
         fixable: "whitespace",
         schema: [
             {
