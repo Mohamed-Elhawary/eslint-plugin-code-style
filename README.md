@@ -214,8 +214,7 @@ rules: {
     "code-style/jsx-string-value-trim": "error",
     "code-style/jsx-ternary-format": "error",
     "code-style/member-expression-bracket-spacing": "error",
-    "code-style/multiline-argument-newline": "error",
-    "code-style/multiple-arguments-per-line": "error",
+    "code-style/function-arguments-format": "error",
     "code-style/nested-call-closing-brackets": "error",
     "code-style/no-empty-lines-in-function-calls": "error",
     "code-style/no-empty-lines-in-function-params": "error",
@@ -277,8 +276,7 @@ rules: {
 | `jsx-string-value-trim` | Disallow leading/trailing whitespace in JSX string values |
 | `jsx-ternary-format` | Enforce consistent formatting for JSX ternary expressions |
 | `member-expression-bracket-spacing` | Enforce no spaces inside brackets for member expressions |
-| `multiline-argument-newline` | Enforce newlines for function calls with multiline arguments |
-| `multiple-arguments-per-line` | Enforce multiple arguments to each be on their own line |
+| `function-arguments-format` | Enforce function arguments formatting: each on own line when >= minArgs (default: 2) or multiline ⚙️ |
 | `nested-call-closing-brackets` | Enforce nested function call closing brackets on same line |
 | `no-empty-lines-in-function-calls` | Disallow empty lines in function calls |
 | `no-empty-lines-in-function-params` | Disallow empty lines in function parameters |
@@ -1145,37 +1143,49 @@ JSX elements should not contain empty lines between children or after opening/be
 
 ## 📞 Call Expression Rules
 
-### `multiline-argument-newline`
+### `function-arguments-format`
 
-When function arguments span multiple lines, each argument should start on its own line with consistent indentation.
-
-```javascript
-// Good
-fn(
-    arg1,
-    arg2,
-)
-
-// Bad
-fn(arg1,
-    arg2)
-```
-
----
-
-### `multiple-arguments-per-line`
-
-When a function call has 2+ arguments, each argument should be on its own line with proper indentation.
+Enforce consistent formatting for function call arguments. When arguments count >= minArgs OR any argument is multiline, each argument should be on its own line.
 
 ```javascript
-// Good
+// Good - single argument stays on one line
+fn(singleArg);
+
+// Good - 2+ arguments on separate lines
 setValue(
     "numberOfCopies",
     null,
-)
+);
 
-// Bad
-setValue("numberOfCopies", null)
+// Good - multiline argument triggers formatting
+fn(
+    {
+        key: value,
+    },
+);
+
+// Bad - multiple arguments on same line
+setValue("numberOfCopies", null);
+
+// Bad - arguments not properly formatted
+fn(arg1,
+    arg2);
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `minArgs` | `integer` | `2` | Minimum arguments to enforce multiline formatting |
+| `skipHooks` | `boolean` | `true` | Skip React hooks |
+| `skipSingleArg` | `boolean` | `true` | Skip single argument patterns (objects, arrays, callbacks) |
+
+```javascript
+// Example: Require multiline for 3+ arguments
+"code-style/function-arguments-format": ["error", { minArgs: 3 }]
+
+// Example: Don't skip React hooks
+"code-style/function-arguments-format": ["error", { skipHooks: false }]
 ```
 
 ---

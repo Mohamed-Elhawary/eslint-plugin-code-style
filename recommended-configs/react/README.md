@@ -192,7 +192,6 @@ These are formatting rules from `@stylistic/eslint-plugin` (the modern replaceme
 | `@stylistic/space-infix-ops` | `error` | Spaces around operators |
 | `@stylistic/multiline-comment-style` | `bare-block` | Enforce comment style |
 | `@stylistic/nonblock-statement-body-position` | `beside` | Position of single-line statements |
-| `@stylistic/function-call-argument-newline` | `always` | Newlines in function arguments |
 | `@stylistic/padding-line-between-statements` | (complex) | Blank lines between statements |
 
 ---
@@ -275,10 +274,9 @@ Our custom plugin provides **48 auto-fixable rules** that fill the gaps not cove
 | `jsx-string-value-trim` | No whitespace in string values |
 | `jsx-ternary-format` | Consistent ternary formatting |
 | `member-expression-bracket-spacing` | No spaces in brackets |
+| `function-arguments-format` | Each argument on own line when >= minArgs (default: 2) or multiline ⚙️ |
 | `module-index-exports` | Enforce proper exports in module index files (configurable folders) ⚙️ |
-| `multiline-argument-newline` | Arguments on new lines when multiline |
 | `multiline-if-conditions` | Conditions on separate lines when exceeding threshold (default: >3) ⚙️ |
-| `multiple-arguments-per-line` | Each argument on own line |
 | `nested-call-closing-brackets` | Closing brackets on same line |
 | `no-empty-lines-in-function-calls` | No empty lines in function calls |
 | `no-empty-lines-in-function-params` | No empty lines in parameters |
@@ -417,10 +415,9 @@ This configuration is carefully designed so that ESLint built-in rules, third-pa
 
 ### Function Arguments
 
-| ESLint Rule | Plugin Rule | Relationship |
-|-------------|-------------|--------------|
-| `function-call-argument-newline: always` | `multiline-argument-newline` | **Complementary** — ESLint enforces newlines between args; plugin handles positioning when multiline |
-| `function-call-argument-newline: always` | `multiple-arguments-per-line` | **Complementary** — ESLint enforces newlines; plugin ensures each argument on own line |
+| Plugin Rule | Description |
+|-------------|-------------|
+| `function-arguments-format` | **Self-sufficient** — Handles all function argument formatting: first arg on new line, each arg on own line, closing paren on new line |
 
 ### JSX Formatting
 

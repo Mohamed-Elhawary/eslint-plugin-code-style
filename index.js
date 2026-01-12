@@ -5447,26 +5447,38 @@ const memberExpressionBracketSpacing = {
 
 /**
  * ───────────────────────────────────────────────────────────────
- * Rule: Multiline Argument Newline
+ * Rule: Function Arguments Format
  * ───────────────────────────────────────────────────────────────
  *
  * Description:
- *   When function arguments span multiple lines, each argument
- *   should start on its own line with consistent indentation.
+ *   Enforce consistent formatting for function call arguments.
+ *   When arguments exceed minArgs OR any argument is multiline,
+ *   each argument should be on its own line with proper indentation.
+ *
+ * Options:
+ *   - minArgs: Minimum arguments to enforce multiline (default: 2)
+ *   - skipHooks: Skip React hooks (default: true)
+ *   - skipSingleArg: Skip single arg patterns like objects, arrays, callbacks (default: true)
  *
  * ✓ Good:
+ *   fn(a);
  *   fn(
  *       arg1,
  *       arg2,
- *   )
+ *   );
  *
  * ✗ Bad:
+ *   fn(arg1, arg2);
  *   fn(arg1,
- *       arg2)
+ *       arg2);
  */
-const multilineArgumentNewline = {
+const functionArgumentsFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
+        const options = context.options[0] || {};
+        const minArgs = options.minArgs !== undefined ? options.minArgs : 2;
+        const skipHooks = options.skipHooks !== undefined ? options.skipHooks : true;
+        const skipSingleArg = options.skipSingleArg !== undefined ? options.skipSingleArg : true;
 
         const reactHooks = [
             "useEffect",
@@ -5497,30 +5509,28 @@ const multilineArgumentNewline = {
         const hasMultilineArgHandler = (args) => args.some((arg) => arg.loc.start.line !== arg.loc.end.line);
 
         const checkCallExpressionHandler = (node) => {
-            // Skip React hooks
-            if (isReactHookHandler(node)) return;
+            // Skip React hooks if option enabled
+            if (skipHooks && isReactHookHandler(node)) return;
 
             const args = node.arguments;
 
             if (args.length === 0) return;
 
-            // Skip if only argument is an object expression
-            if (args.length === 1 && args[0].type === "ObjectExpression") return;
+            // Skip single argument patterns if option enabled
+            if (skipSingleArg && args.length === 1) {
+                if (args[0].type === "ObjectExpression") return;
+                if (args[0].type === "ArrayExpression") return;
+                if (args[0].type === "ArrowFunctionExpression") return;
+                if (args[0].type === "FunctionExpression") return;
+            }
 
-            // Skip if only argument is an array expression (fn([{...}]) format)
-            if (args.length === 1 && args[0].type === "ArrayExpression") return;
+            // Check if formatting should be enforced:
+            // 1. Arguments count >= minArgs, OR
+            // 2. Any argument is multiline
+            const hasEnoughArgs = args.length >= minArgs;
+            const hasMultilineArg = hasMultilineArgHandler(args);
 
-            // Skip if only argument is an arrow function (callback)
-            if (args.length === 1 && args[0].type === "ArrowFunctionExpression") return;
-
-            // Skip styled component pattern: styled(X)(({ theme }) => ({...}))
-            // The arrow function returning an object should stay on same line
-            if (args.length === 1
-                && args[0].type === "ArrowFunctionExpression"
-                && args[0].body.type === "ObjectExpression") return;
-
-            // Check if any argument is multiline
-            if (!hasMultilineArgHandler(args)) return;
+            if (!hasEnoughArgs && !hasMultilineArg) return;
 
             const openParen = sourceCode.getTokenAfter(
                 node.callee,
@@ -5533,32 +5543,20 @@ const multilineArgumentNewline = {
             const firstArg = args[0];
             const lastArg = args[args.length - 1];
 
-            // Calculate indent based on the opening paren position, not the arg position
-            const baseIndent = openParen.loc.start.column;
-            const argIndent = " ".repeat(baseIndent + 4);
-            const parenIndent = " ".repeat(baseIndent);
+            // Calculate indent
+            const callLine = sourceCode.lines[node.loc.start.line - 1];
+            const baseIndent = callLine.match(/^\s*/)[0];
+            const argIndent = baseIndent + "    ";
 
-            // First arg should be on new line
+            // First arg should be on new line after opening paren
             if (openParen.loc.end.line === firstArg.loc.start.line) {
                 context.report({
                     fix: (fixer) => fixer.replaceTextRange(
                         [openParen.range[1], firstArg.range[0]],
                         "\n" + argIndent,
                     ),
-                    message: "Multiline argument should start on its own line",
+                    message: "First argument should be on its own line",
                     node: firstArg,
-                });
-            }
-
-            // Closing paren should be on its own line
-            if (closeParen.loc.start.line === lastArg.loc.end.line) {
-                context.report({
-                    fix: (fixer) => fixer.replaceTextRange(
-                        [lastArg.range[1], closeParen.range[0]],
-                        "\n" + parenIndent,
-                    ),
-                    message: "Closing parenthesis should be on its own line when argument is multiline",
-                    node: closeParen,
                 });
             }
 
@@ -5573,141 +5571,73 @@ const multilineArgumentNewline = {
                         (token) => token.value === ",",
                     );
 
-                    context.report({
-                        fix: (fixer) => fixer.replaceTextRange(
-                            [commaToken.range[1], next.range[0]],
-                            "\n" + argIndent,
-                        ),
-                        message: "Each argument should be on its own line when any argument is multiline",
-                        node: next,
-                    });
+                    if (commaToken) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [commaToken.range[1], next.range[0]],
+                                "\n" + argIndent,
+                            ),
+                            message: "Each argument should be on its own line",
+                            node: next,
+                        });
+                    }
                 }
+            }
+
+            // Closing paren should be on its own line
+            if (closeParen.loc.start.line === lastArg.loc.end.line) {
+                const tokenBeforeClose = sourceCode.getTokenBefore(closeParen);
+                const hasTrailingComma = tokenBeforeClose && tokenBeforeClose.value === ",";
+
+                context.report({
+                    fix: (fixer) => {
+                        if (hasTrailingComma) {
+                            return fixer.replaceTextRange(
+                                [tokenBeforeClose.range[1], closeParen.range[0]],
+                                "\n" + baseIndent,
+                            );
+                        }
+
+                        return fixer.replaceTextRange(
+                            [lastArg.range[1], closeParen.range[0]],
+                            ",\n" + baseIndent,
+                        );
+                    },
+                    message: "Closing parenthesis should be on its own line",
+                    node: closeParen,
+                });
             }
         };
 
         return { CallExpression: checkCallExpressionHandler };
     },
     meta: {
-        docs: { description: "Enforce newlines for function calls with multiline arguments" },
-        fixable: "whitespace",
-        schema: [],
-        type: "layout",
-    },
-};
-
-/**
- * ───────────────────────────────────────────────────────────────
- * Rule: Multiple Arguments Per Line
- * ───────────────────────────────────────────────────────────────
- *
- * Description:
- *   When a function call has 2+ arguments, each argument should
- *   be on its own line with proper indentation.
- *
- * ✓ Good:
- *   setValue(
- *       "numberOfCopies",
- *       null,
- *   )
- *
- * ✗ Bad:
- *   setValue("numberOfCopies", null)
- */
-const multipleArgumentsPerLine = {
-    create(context) {
-        const sourceCode = context.sourceCode || context.getSourceCode();
-
-        return {
-            CallExpression(node) {
-                const { arguments: args, callee } = node;
-
-                // Only check calls with 2+ arguments
-                if (args.length < 2) return;
-
-                // Get tokens
-                const openParen = sourceCode.getTokenAfter(
-                    callee,
-                    (token) => token.value === "(",
-                );
-                const closeParen = sourceCode.getLastToken(node);
-
-                if (!openParen || !closeParen || closeParen.value !== ")") return;
-
-                // Calculate indent
-                const callLine = sourceCode.lines[node.loc.start.line - 1];
-                const baseIndent = callLine.match(/^\s*/)[0];
-                const argIndent = baseIndent + "    ";
-
-                const firstArg = args[0];
-                const lastArg = args[args.length - 1];
-
-                // First arg should be on new line after opening paren
-                if (openParen.loc.end.line === firstArg.loc.start.line) {
-                    context.report({
-                        fix: (fixer) => fixer.replaceTextRange(
-                            [openParen.range[1], firstArg.range[0]],
-                            "\n" + argIndent,
-                        ),
-                        message: "First argument should be on its own line",
-                        node: firstArg,
-                    });
-                }
-
-                // Each arg should be on its own line
-                for (let i = 0; i < args.length - 1; i += 1) {
-                    const current = args[i];
-                    const next = args[i + 1];
-
-                    if (current.loc.end.line === next.loc.start.line) {
-                        const commaToken = sourceCode.getTokenAfter(
-                            current,
-                            (token) => token.value === ",",
-                        );
-
-                        if (commaToken) {
-                            context.report({
-                                fix: (fixer) => fixer.replaceTextRange(
-                                    [commaToken.range[1], next.range[0]],
-                                    "\n" + argIndent,
-                                ),
-                                message: "Each argument should be on its own line",
-                                node: next,
-                            });
-                        }
-                    }
-                }
-
-                // Closing paren should be on its own line
-                if (closeParen.loc.start.line === lastArg.loc.end.line) {
-                    // Check for trailing comma
-                    const tokenBeforeClose = sourceCode.getTokenBefore(closeParen);
-                    const hasTrailingComma = tokenBeforeClose && tokenBeforeClose.value === ",";
-
-                    context.report({
-                        fix: (fixer) => {
-                            if (hasTrailingComma) {
-                                return fixer.replaceTextRange(
-                                    [tokenBeforeClose.range[1], closeParen.range[0]],
-                                    "\n" + baseIndent,
-                                );
-                            }
-
-                            return fixer.replaceTextRange(
-                                [lastArg.range[1], closeParen.range[0]],
-                                ",\n" + baseIndent,
-                            );
-                        },
-                        message: "Closing parenthesis should be on its own line",
-                        node: closeParen,
-                    });
-                }
-            },
-        };
-    },
-    meta: {
-        docs: { description: "Enforce multiple arguments to each be on their own line" },
+        docs: { description: "Enforce function arguments formatting: each argument on its own line when >= minArgs (default: 2) or any argument is multiline" },
         fixable: "code",
-        schema: [],
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    minArgs: {
+                        default: 2,
+                        description: "Minimum arguments to enforce multiline formatting (default: 2)",
+                        minimum: 1,
+                        type: "integer",
+                    },
+                    skipHooks: {
+                        default: true,
+                        description: "Skip React hooks (default: true)",
+                        type: "boolean",
+                    },
+                    skipSingleArg: {
+                        default: true,
+                        description: "Skip single argument patterns like objects, arrays, callbacks (default: true)",
+                        type: "boolean",
+                    },
+                },
+                type: "object",
+            },
+        ],
         type: "layout",
     },
 };
@@ -8441,9 +8371,8 @@ export default {
         // Member expression rules
         "member-expression-bracket-spacing": memberExpressionBracketSpacing,
 
-        // Multiline/Multiple argument rules
-        "multiline-argument-newline": multilineArgumentNewline,
-        "multiple-arguments-per-line": multipleArgumentsPerLine,
+        // Function arguments formatting rule
+        "function-arguments-format": functionArgumentsFormat,
 
         // Nested call rules
         "nested-call-closing-brackets": nestedCallClosingBrackets,
