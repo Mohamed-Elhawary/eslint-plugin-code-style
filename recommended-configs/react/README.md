@@ -67,23 +67,22 @@ eslint src/ --fix
 
 **Purpose:** React-specific linting rules for JSX and React patterns.
 
-**Key Rules Used:**
-| Rule | Description |
-|------|-------------|
-| `react/jsx-closing-bracket-location` | Enforce closing bracket location in JSX |
-| `react/jsx-closing-tag-location` | Enforce closing tag location for multiline JSX |
-| `react/jsx-curly-spacing` | Enforce spacing inside JSX curly braces |
-| `react/jsx-equals-spacing` | Enforce spacing around equals signs in JSX |
-| `react/jsx-first-prop-new-line` | Enforce first prop on new line for multiline JSX |
-| `react/jsx-indent` | Enforce JSX indentation (4 spaces) |
-| `react/jsx-indent-props` | Enforce props indentation (4 spaces) |
-| `react/jsx-max-props-per-line` | Enforce one prop per line |
-| `react/jsx-newline` | Prevent unnecessary newlines between JSX elements |
-| `react/jsx-one-expression-per-line` | Enforce one expression per line in JSX |
-| `react/jsx-sort-props` | Enforce alphabetical sorting of props |
-| `react/jsx-wrap-multilines` | Enforce parentheses around multiline JSX |
-| `react/function-component-definition` | Enforce arrow functions for components |
-| `react/self-closing-comp` | Enforce self-closing tags for components without children |
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `react/jsx-closing-bracket-location` | `line-aligned` | Closing `>` or `/>` aligns with the opening tag for visual consistency |
+| `react/jsx-closing-tag-location` | `error` | Closing `</Tag>` must be properly positioned, not floating randomly |
+| `react/jsx-curly-spacing` | `never`, `children: true` | No spaces inside `{value}` — keeps JSX compact and consistent |
+| `react/jsx-equals-spacing` | `never` | No space around `=` in props: `prop="value"` not `prop = "value"` |
+| `react/jsx-first-prop-new-line` | `multiline` | First prop on new line only when element spans multiple lines |
+| `react/jsx-indent` | `4` | 4-space indentation for JSX (matches our overall indent style) |
+| `react/jsx-indent-props` | `4` | Props indented 4 spaces when on separate lines |
+| `react/jsx-max-props-per-line` | `1` | One prop per line for multiline elements — easier to read and diff |
+| `react/jsx-newline` | `prevent: true` | No unnecessary blank lines between adjacent JSX elements |
+| `react/jsx-one-expression-per-line` | `allow: single-child` | Single children can stay inline: `<T>{x}</T>` is fine |
+| `react/jsx-sort-props` | `callbacksLast, shorthandLast` | Props sorted alphabetically, callbacks (`onClick`) at end, shorthand (`disabled`) at end |
+| `react/jsx-wrap-multilines` | `parens-new-line` | Multiline JSX wrapped in parentheses with `(` on same line as return/arrow |
+| `react/function-component-definition` | `arrow-function` | All components use arrow function syntax: `const X = () => ...` |
+| `react/self-closing-comp` | `error` | Use `<Component />` not `<Component></Component>` when no children |
 
 ---
 
@@ -91,11 +90,10 @@ eslint src/ --fix
 
 **Purpose:** Enforces the Rules of Hooks to prevent common mistakes with React Hooks.
 
-**Key Rules Used:**
-| Rule | Description |
-|------|-------------|
-| `react-hooks/rules-of-hooks` | Enforces Rules of Hooks (included in recommended) |
-| `react-hooks/exhaustive-deps` | Disabled - allows flexible dependency arrays |
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `react-hooks/rules-of-hooks` | `error` (recommended) | Prevents calling hooks conditionally or in loops — catches real bugs |
+| `react-hooks/exhaustive-deps` | `off` | Disabled to allow intentional dependency omissions; can be noisy for experienced developers |
 
 ---
 
@@ -103,137 +101,180 @@ eslint src/ --fix
 
 **Purpose:** Linting rules for ES6+ import/export syntax. Helps maintain clean import statements.
 
-**Key Rules Used:**
-| Rule | Description |
-|------|-------------|
-| `import-x/no-default-export` | Enforce named exports over default exports |
-| `import-x/no-cycle` | Disabled - allows circular dependencies when needed |
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `import-x/no-default-export` | `error` | Named exports are more refactor-friendly and provide better IDE autocomplete |
+| `import-x/no-cycle` | `off` | Circular dependencies sometimes needed; this check is slow on large codebases |
+| `import-x/no-unresolved` | `off` | Path aliases like `@/` cause false positives; rely on TypeScript/bundler for this |
 
 ---
 
 ### eslint-plugin-jsx-a11y
 
-**Purpose:** Accessibility linting rules for JSX elements. Helps ensure your app is accessible.
+**Purpose:** Accessibility linting rules for JSX elements.
 
-**Key Rules Used:**
-| Rule | Description |
-|------|-------------|
-| `jsx-a11y/anchor-is-valid` | Disabled - flexible anchor usage |
-| `jsx-a11y/click-events-have-key-events` | Disabled - flexible event handling |
-| `jsx-a11y/label-has-associated-control` | Disabled - flexible label usage |
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `jsx-a11y/anchor-is-valid` | `off` | React Router's `<Link>` and SPA navigation patterns cause false positives |
+| `jsx-a11y/click-events-have-key-events` | `off` | Sometimes div clicks are intentional (modals, overlays); enable if strict a11y needed |
+| `jsx-a11y/no-static-element-interactions` | `off` | Same as above — enable for strict accessibility requirements |
+| `jsx-a11y/label-has-associated-control` | `off` | Custom form components may not match the expected pattern |
 
-> Note: Some a11y rules are disabled for flexibility. Enable them based on your accessibility requirements.
+> **Note:** These rules are disabled for flexibility. Enable them if you need strict WCAG compliance.
 
 ---
 
 ### eslint-plugin-check-file
 
-**Purpose:** Enforce consistent file and folder naming conventions across your project.
+**Purpose:** Enforce consistent file and folder naming conventions.
 
-**Key Rules Used:**
-| Rule | Description |
-|------|-------------|
-| `check-file/filename-naming-convention` | Enforce kebab-case for all `.js` and `.jsx` files |
-| `check-file/folder-naming-convention` | Enforce kebab-case for all folders in `src/` |
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `check-file/filename-naming-convention` | `KEBAB_CASE` | Files named `my-component.jsx` not `MyComponent.jsx` — prevents case-sensitivity issues across OS |
+| `check-file/folder-naming-convention` | `KEBAB_CASE` for `src/**` | Folders named `my-feature` not `MyFeature` — consistent with file naming |
 
 ---
 
 ### eslint-plugin-perfectionist
 
-**Purpose:** Sorting and organizing code elements for better readability and consistency.
+**Purpose:** Automatic sorting of code elements for consistency.
 
-**Key Rules Used:**
-| Rule | Description |
-|------|-------------|
-| `perfectionist/sort-array-includes` | Sort arrays when using `.includes()` method |
-| `perfectionist/sort-maps` | Sort Map entries when creating `new Map([...])` |
-| `perfectionist/sort-objects` | Sort object keys alphabetically (natural order, case-sensitive) |
-| `perfectionist/sort-sets` | Sort Set entries when creating `new Set([...])` |
-| `perfectionist/sort-switch-case` | Sort switch case clauses for easier scanning |
-| `perfectionist/sort-variable-declarations` | Sort destructured variables and multiple declarations |
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `perfectionist/sort-array-includes` | `natural, asc` | Sort `.includes()` arrays: `["a", "b", "c"]` for easier scanning |
+| `perfectionist/sort-maps` | `natural, asc` | Sort `new Map()` entries alphabetically |
+| `perfectionist/sort-objects` | `natural, asc, ignoreCase: false` | Sort object keys: `{ a, b, c }` — case-sensitive for consistency |
+| `perfectionist/sort-sets` | `natural, asc` | Sort `new Set()` entries alphabetically |
+| `perfectionist/sort-switch-case` | `natural, asc` | Sort case labels: `case "a": case "b":` for easier scanning |
+| `perfectionist/sort-variable-declarations` | `natural, asc` | Sort destructured: `const { a, b, c } = obj` |
 
 ---
 
 ### eslint-plugin-simple-import-sort
 
-**Purpose:** Easy and automatic sorting of import and export statements.
+**Purpose:** Automatic sorting of import and export statements.
 
-**Key Rules Used:**
-| Rule | Description |
-|------|-------------|
-| `simple-import-sort/imports` | Auto-sort import statements |
-| `simple-import-sort/exports` | Auto-sort export statements |
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `simple-import-sort/imports` | `error` | Auto-sorts imports by type (external, internal, relative) then alphabetically |
+| `simple-import-sort/exports` | `error` | Auto-sorts export statements alphabetically |
 
 ---
 
 ## @stylistic/eslint-plugin Rules
 
-These are formatting rules from `@stylistic/eslint-plugin` (the modern replacement for ESLint's deprecated formatting rules):
+These are formatting rules from `@stylistic/eslint-plugin` — the modern replacement for ESLint's deprecated formatting rules.
 
-### Spacing & Formatting Rules
+### Commas & Semicolons
 
-| Rule | Setting | Description |
-|------|---------|-------------|
-| `@stylistic/comma-dangle` | `always-multiline` | Require trailing commas in multiline |
-| `@stylistic/comma-spacing` | `after: true` | Enforce space after comma |
-| `@stylistic/dot-location` | `object` | Dot on same line as object |
-| `@stylistic/indent` | `4` | 4-space indentation |
-| `@stylistic/jsx-quotes` | `prefer-double` | Prefer double quotes in JSX |
-| `@stylistic/key-spacing` | `afterColon: true` | Space after colon in objects |
-| `@stylistic/no-extra-semi` | `error` | Remove extra semicolons |
-| `@stylistic/no-multi-spaces` | `error` | Disallow multiple spaces |
-| `@stylistic/no-multiple-empty-lines` | `max: 1` | Maximum one empty line |
-| `@stylistic/object-curly-spacing` | `always` | Spaces inside curly braces |
-| `@stylistic/padded-blocks` | `never` | No padding inside blocks |
-| `@stylistic/quotes` | `double` | Enforce double quotes |
-| `@stylistic/semi` | `always` | Require semicolons |
-| `@stylistic/semi-spacing` | `after: true` | Space after semicolon |
-| `@stylistic/space-in-parens` | `never` | No spaces inside parentheses |
-| `@stylistic/space-infix-ops` | `error` | Spaces around operators |
-| `@stylistic/multiline-comment-style` | `bare-block` | Enforce comment style |
-| `@stylistic/nonblock-statement-body-position` | `beside` | Position of single-line statements |
-| `@stylistic/padding-line-between-statements` | (complex) | Blank lines between statements |
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `@stylistic/comma-dangle` | `always-multiline` | Trailing commas in multiline make diffs cleaner: adding a line doesn't modify the previous line |
+| `@stylistic/comma-spacing` | default (`after: true`) | Space after commas: `[a, b, c]` not `[a,b,c]` — standard JavaScript style |
+| `@stylistic/semi` | default (`always`) | Always use semicolons — prevents ASI (automatic semicolon insertion) gotchas |
+| `@stylistic/semi-spacing` | default (`after: true`) | Space after semicolons in for loops: `for (;;)` formatted correctly |
+| `@stylistic/no-extra-semi` | `error` | Remove accidental double semicolons `;;` |
+
+### Indentation & Spacing
+
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `@stylistic/indent` | `4` | 4-space indentation — more readable than 2, especially in deeply nested JSX |
+| `@stylistic/no-multi-spaces` | `error` | No multiple spaces — keeps alignment from `   =` style (use prettier for that) |
+| `@stylistic/no-multiple-empty-lines` | `max: 1, maxBOF: 0, maxEOF: 0` | Max 1 blank line between code; none at file start/end |
+| `@stylistic/space-in-parens` | default (`never`) | No spaces inside parens: `fn(x)` not `fn( x )` |
+| `@stylistic/space-infix-ops` | `error` | Spaces around operators: `a + b` not `a+b` |
+| `@stylistic/padded-blocks` | `never` | No blank lines at start/end of blocks: `{ code }` not `{\n\ncode\n\n}` |
+
+### Quotes & Strings
+
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `@stylistic/quotes` | default (`double`) | Double quotes for strings — consistent with JSX attribute style |
+| `@stylistic/jsx-quotes` | default (`prefer-double`) | Double quotes in JSX: `<T prop="value">` — HTML-like convention |
+
+### Objects & Properties
+
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `@stylistic/object-curly-spacing` | `always` | Spaces inside braces: `{ a, b }` not `{a, b}` — more readable |
+| `@stylistic/key-spacing` | default (`afterColon: true`) | Space after colon: `{ key: value }` not `{ key:value }` |
+| `@stylistic/dot-location` | default (`object`) | Dot stays with object in chained calls: `obj\n  .method()` |
+
+### Misc Formatting
+
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `@stylistic/nonblock-statement-body-position` | default (`beside`) | Single-line if body beside keyword: `if (x) return;` |
+| `@stylistic/multiline-comment-style` | `bare-block` | Multi-line comments use `/* */` with bare style (no leading `*` on each line) |
+| `@stylistic/function-paren-newline` | `off` | Let other rules handle function formatting |
+| `@stylistic/linebreak-style` | `off` | Don't enforce LF vs CRLF — let git handle line endings |
+
+### Statement Padding
+
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `@stylistic/padding-line-between-statements` | (see below) | Enforces blank lines in specific situations for readability |
+
+**Padding Rules:**
+- Blank line before `return` statements
+- Blank line after variable declarations (`const`, `let`, `var`)
+- Blank line between consecutive expressions
 
 ---
 
 ## ESLint Built-in Rules
 
-These are native ESLint rules for code quality and best practices:
+These are native ESLint rules for code quality and best practices.
 
-### Code Style Rules
+### Code Style
 
-| Rule | Setting | Description |
-|------|---------|-------------|
-| `arrow-body-style` | `as-needed` | Require braces only when needed in arrow functions |
-| `capitalized-comments` | `error` | Enforce capitalized first letter in comments |
-| `curly` | `multi-or-nest` | Require braces for multi-line blocks |
-| `dot-notation` | `error` | Use dot notation when possible |
-| `eqeqeq` | `error` | Require `===` and `!==` |
-| `func-style` | `expression` | Enforce function expressions |
-| `no-inline-comments` | `error` | Disallow inline comments |
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `arrow-body-style` | `as-needed` | Use `() => x` not `() => { return x; }` — cleaner for simple returns |
+| `capitalized-comments` | `error` | Comments start with capital letter — looks professional: `// This is a comment` |
+| `curly` | `multi-or-nest` | Braces required for multi-line blocks; single-line can omit: `if (x) return;` |
+| `dot-notation` | `error, allowKeywords: false` | Use `obj.prop` not `obj["prop"]` when possible — cleaner syntax |
+| `eqeqeq` | `error` | Always use `===` and `!==` — prevents type coercion bugs |
+| `func-style` | `expression` | Use `const fn = () => {}` not `function fn() {}` — consistent with React component style |
+| `no-inline-comments` | `error` | Comments on their own line, not after code — easier to scan |
 
-### Best Practices Rules
+### Best Practices
 
-| Rule | Setting | Description |
-|------|---------|-------------|
-| `no-alert` | `error` | Disallow `alert`, `confirm`, `prompt` |
-| `no-await-in-loop` | `error` | Disallow `await` inside loops |
-| `no-else-return` | `error` | Disallow `else` after `return` |
-| `no-lone-blocks` | `error` | Disallow unnecessary nested blocks |
-| `no-lonely-if` | `error` | Disallow `if` as only statement in `else` |
-| `no-plusplus` | `error` | Disallow `++` and `--` operators |
-| `no-var` | `error` | Require `let` or `const` |
-| `no-unused-vars` | `error` | Disallow unused variables |
-| `no-use-before-define` | `error` | Disallow use before definition |
-| `vars-on-top` | `error` | Require variable declarations at top |
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `no-alert` | `error` | Disallow `alert()`, `confirm()`, `prompt()` — use proper UI components instead |
+| `no-await-in-loop` | `error` | Avoid `for` loop with `await` inside — usually should be `Promise.all()` |
+| `no-else-return` | `error` | Avoid `else` after `return` — use early returns for cleaner code |
+| `no-lone-blocks` | `error` | No unnecessary `{}` blocks — they don't create scope in modern JS |
+| `no-lonely-if` | `error` | No `else { if (x) }` — use `else if (x)` instead |
+| `no-plusplus` | `error` | No `++` or `--` — use `+= 1` for clarity (avoids precedence confusion) |
+| `no-var` | `error` | Use `const` or `let`, never `var` — block scoping prevents bugs |
+| `no-unused-vars` | `error` | Remove unused variables — keeps code clean |
+| `no-use-before-define` | `error` | Define variables/functions before using them — easier to follow code flow |
+| `vars-on-top` | `error` | Variable declarations at top of scope — makes scope clear at a glance |
 
-### Complexity Controls Rules
+### Complexity Controls
 
-| Rule | Setting | Description |
-|------|---------|-------------|
-| `max-depth` | `4` | Maximum nesting depth |
-| `max-nested-callbacks` | `4` | Maximum callback nesting |
-| `max-params` | `off` | Maximum function parameters |
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `max-depth` | `4` | Maximum 4 levels of nesting — beyond this, extract to functions |
+| `max-nested-callbacks` | `4` | Maximum 4 callback levels — beyond this, refactor to async/await or named functions |
+| `max-len` | `off` | No line length limit — let Prettier or your IDE handle wrapping |
+| `max-lines` | `off` | No file length limit — some files naturally need to be longer |
+| `max-params` | `off` | No parameter count limit — sometimes many params are appropriate |
+| `complexity` | `off` | No cyclomatic complexity limit — can be noisy for legitimate complex functions |
+
+### Disabled by Default
+
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `array-callback-return` | `off` | Sometimes intentionally returning undefined from map/filter |
+| `consistent-return` | `off` | Sometimes functions legitimately return different types |
+| `default-case` | `off` | Not all switches need a default case |
+| `no-nested-ternary` | `off` | Nested ternaries can be readable when formatted properly |
+| `no-return-assign` | `off` | Assignments in return are sometimes useful (refs, etc.) |
+| `camelcase` | `off` | API responses often use snake_case |
 
 ---
 
@@ -241,56 +282,94 @@ These are native ESLint rules for code quality and best practices:
 
 Our custom plugin provides **48 auto-fixable rules** that fill the gaps not covered by ESLint's built-in rules or other plugins.
 
-### All Rules Enabled in This Config:
+### Import/Export Rules
 
-| Rule | Description |
-|------|-------------|
-| `absolute-imports-only` | Enforce absolute imports using alias (default: `@/`) ⚙️ |
-| `array-items-per-line` | Items within threshold on one line (default: ≤3) ⚙️ |
-| `array-objects-on-new-lines` | Each object in array on new line |
-| `arrow-function-block-body` | Parentheses for multiline arrow expressions |
-| `arrow-function-simple-jsx` | Simplify arrow functions returning simple JSX |
-| `arrow-function-simplify` | Use implicit return for single statements |
-| `assignment-value-same-line` | Value on same line as equals sign |
-| `block-statement-newlines` | Proper newlines in block statements |
-| `comment-spacing` | Proper comment spacing |
-| `curried-arrow-same-line` | Curried functions on same line as `=>` |
-| `export-format` | Format exports: collapse specifiers (default: ≤3) ⚙️ |
-| `function-call-spacing` | No space before function call parenthesis |
-| `function-params-per-line` | Parameters on separate lines when multiline |
-| `hook-callback-format` | Consistent React hooks formatting |
-| `hook-deps-per-line` | Dependencies on separate lines when exceeding threshold (default: >2) ⚙️ |
-| `if-statement-format` | Consistent if statement formatting |
-| `import-format` | Format imports: collapse specifiers (default: ≤3) ⚙️ |
-| `import-source-spacing` | No spaces in import paths |
-| `index-export-style` | Enforce consistent export style in index files (default: shorthand) ⚙️ |
-| `jsx-children-on-new-line` | Children on separate lines |
+| Rule | What It Does |
+|------|--------------|
+| `absolute-imports-only` | Use `@/components` not `../../components` — cleaner imports ⚙️ |
+| `import-format` | ≤3 specifiers on one line, 4+ get one per line ⚙️ |
+| `export-format` | ≤3 specifiers on one line, 4+ get one per line ⚙️ |
+| `import-source-spacing` | No spaces in paths: `"module"` not `" module "` |
+| `index-export-style` | Index files: no blank lines; regular files: blank lines required ⚙️ |
+| `module-index-exports` | Ensure index.js exports all folder contents ⚙️ |
+
+### Array & Object Rules
+
+| Rule | What It Does |
+|------|--------------|
+| `array-items-per-line` | ≤3 items on one line, 4+ get one per line ⚙️ |
+| `array-objects-on-new-lines` | Each object in array starts on its own line |
+| `object-property-per-line` | 1 property inline, 2+ get full multiline expansion ⚙️ |
+| `object-property-value-brace` | Opening `{` on same line as `:` |
+| `object-property-value-format` | Values on same line as `:` |
+| `no-empty-lines-in-objects` | No blank lines between object properties |
+| `string-property-spacing` | No spaces in string keys: `"key"` not `" key "` |
+
+### Arrow Function Rules
+
+| Rule | What It Does |
+|------|--------------|
+| `arrow-function-simplify` | Convert `() => { return x; }` to `() => x` |
+| `arrow-function-simple-jsx` | Collapse `() => (<Single />)` to `() => <Single />` |
+| `arrow-function-block-body` | Wrap multiline expressions in parentheses |
+| `curried-arrow-same-line` | Keep `() => () =>` on same line |
+
+### JSX Rules
+
+| Rule | What It Does |
+|------|--------------|
+| `jsx-children-on-new-line` | Each child on own line when multiple children |
+| `jsx-element-child-new-line` | Nested JSX elements on new lines |
 | `jsx-closing-bracket-spacing` | No space before `>` or `/>` |
-| `jsx-element-child-new-line` | JSX element children on new lines |
-| `jsx-logical-expression-simplify` | Simplify JSX logical expressions |
-| `jsx-parentheses-position` | Parentheses on same line as arrow/return |
-| `jsx-prop-naming-convention` | camelCase for props |
-| `jsx-simple-element-one-line` | Simple elements on one line |
-| `jsx-string-value-trim` | No whitespace in string values |
-| `jsx-ternary-format` | Consistent ternary formatting |
-| `member-expression-bracket-spacing` | No spaces in brackets |
-| `function-arguments-format` | Each argument on own line when >= minArgs (default: 2) or multiline ⚙️ |
-| `module-index-exports` | Enforce proper exports in module index files (configurable folders) ⚙️ |
-| `multiline-if-conditions` | Conditions on separate lines when exceeding threshold (default: >3) ⚙️ |
-| `nested-call-closing-brackets` | Closing brackets on same line |
-| `no-empty-lines-in-function-calls` | No empty lines in function calls |
-| `no-empty-lines-in-function-params` | No empty lines in parameters |
-| `no-empty-lines-in-jsx` | No empty lines in JSX |
-| `no-empty-lines-in-objects` | No empty lines in objects |
-| `no-empty-lines-in-switch-cases` | No empty lines in switch cases |
-| `object-property-per-line` | Each property on own line (default: ≥2) ⚙️ |
-| `object-property-value-brace` | Brace on same line as colon |
-| `object-property-value-format` | Value on same line as colon |
-| `opening-brackets-same-line` | Opening brackets on same line |
-| `simple-call-single-line` | Simple calls on single line |
-| `single-argument-on-one-line` | Single argument on one line |
-| `string-property-spacing` | No spaces in string property keys |
-| `variable-naming-convention` | camelCase, UPPER_CASE, PascalCase |
+| `jsx-parentheses-position` | Opening `(` on same line as `return`/`=>` |
+| `jsx-simple-element-one-line` | Simple `<T>text</T>` stays on one line |
+| `jsx-string-value-trim` | No whitespace in props: `"value"` not `" value "` |
+| `jsx-prop-naming-convention` | Props use camelCase: `onClick` not `on_click` |
+| `jsx-logical-expression-simplify` | Remove unnecessary parens: `{x && <Y/>}` |
+| `jsx-ternary-format` | Consistent ternary formatting in JSX |
+| `no-empty-lines-in-jsx` | No blank lines inside JSX elements |
+
+### Function Rules
+
+| Rule | What It Does |
+|------|--------------|
+| `function-call-spacing` | No space before `(`: `fn()` not `fn ()` |
+| `function-params-per-line` | When multiline, each param on own line |
+| `function-arguments-format` | 2+ arguments get one per line ⚙️ |
+| `function-naming-convention` | Functions use camelCase with verb prefix |
+| `opening-brackets-same-line` | Opening `{` or `[` on same line as call |
+| `nested-call-closing-brackets` | Chain closing: `}));` not `})\n);` |
+| `simple-call-single-line` | Collapse `fn(\n() => call()\n)` to `fn(() => call())` |
+| `single-argument-on-one-line` | Single simple argument stays inline |
+| `no-empty-lines-in-function-calls` | No blank lines between arguments |
+| `no-empty-lines-in-function-params` | No blank lines between parameters |
+
+### React Hooks Rules
+
+| Rule | What It Does |
+|------|--------------|
+| `hook-callback-format` | Format hooks with callback on new line |
+| `hook-deps-per-line` | >2 dependencies get one per line ⚙️ |
+
+### Control Flow Rules
+
+| Rule | What It Does |
+|------|--------------|
+| `if-statement-format` | Opening `{` on same line as `if`, `else` on same line as `}` |
+| `multiline-if-conditions` | >3 conditions get one per line ⚙️ |
+| `no-empty-lines-in-switch-cases` | No blank line after `case X:` |
+
+### Spacing & Formatting Rules
+
+| Rule | What It Does |
+|------|--------------|
+| `assignment-value-same-line` | Values start on same line as `=` |
+| `block-statement-newlines` | Newlines after `{` and before `}` in blocks |
+| `comment-spacing` | Space after `//`, convert single-line `/* */` to `//` |
+| `member-expression-bracket-spacing` | No spaces in brackets: `arr[0]` not `arr[ 0 ]` |
+| `variable-naming-convention` | camelCase variables, UPPER_CASE constants, PascalCase components |
+
+> Rules marked with ⚙️ have configurable options. See the [main README](../../README.md) for details.
 
 ---
 
