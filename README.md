@@ -237,7 +237,7 @@ rules: {
 
 | Rule | Description |
 |------|-------------|
-| `array-items-per-line` | Arrays with ≤3 items stay on one line; 4+ items get one per line for readability ⚙️ |
+| `array-items-per-line` | Arrays with items within threshold stay on one line; more items get one per line (default: ≤3) ⚙️ |
 | `array-objects-on-new-lines` | Each object in an array starts on its own line to improve visual scanning |
 | `arrow-function-block-body` | Wrap multiline arrow function expressions in parentheses for clear boundaries |
 | `arrow-function-simple-jsx` | Collapse `() => (<Single />)` to `() => <Single />` when JSX is simple |
@@ -250,14 +250,14 @@ rules: {
 | `function-naming-convention` | Functions use camelCase with verb prefix: `getUserData`, `handleClick` |
 | `function-params-per-line` | When params span multiple lines, put each on its own line |
 | `hook-callback-format` | Format React hooks with callback on new line: `useEffect(\n  () => {},\n  []\n)` |
-| `hook-deps-per-line` | Dependencies array with >2 items gets one dependency per line ⚙️ |
+| `hook-deps-per-line` | Dependencies array exceeding threshold gets one dependency per line (default: >2) ⚙️ |
 | `if-statement-format` | Opening `{` on same line as `if`, `else` on same line as `}` |
-| `multiline-if-conditions` | Conditions with >3 operands get one operand per line ⚙️ |
-| `absolute-imports-only` | Use `@/components` not `../../components` for cleaner imports ⚙️ |
-| `export-format` | ≤3 specifiers on one line; 4+ get one per line with proper structure ⚙️ |
-| `import-format` | ≤3 specifiers on one line; 4+ get one per line with proper structure ⚙️ |
+| `multiline-if-conditions` | Conditions exceeding threshold get one operand per line (default: >3) ⚙️ |
+| `absolute-imports-only` | Use alias imports not relative paths for cleaner imports (default: `@/`) ⚙️ |
+| `export-format` | Specifiers within threshold on one line; more get one per line (default: ≤3) ⚙️ |
+| `import-format` | Specifiers within threshold on one line; more get one per line (default: ≤3) ⚙️ |
 | `import-source-spacing` | No spaces inside import path: `"module"` not `" module "` |
-| `index-export-style` | Index files: no blank lines between exports; regular files: blank lines required ⚙️ |
+| `index-export-style` | Index files: no blank lines between exports; regular files: blank lines required (default: shorthand) ⚙️ |
 | `module-index-exports` | Ensure index.js files export all items from their folder ⚙️ |
 | `jsx-children-on-new-line` | Each JSX child on its own line when parent has multiple children |
 | `jsx-closing-bracket-spacing` | No space before `>` or `/>`: `<Button/>` not `<Button />` |
@@ -269,14 +269,14 @@ rules: {
 | `jsx-string-value-trim` | No whitespace inside string props: `"value"` not `" value "` |
 | `jsx-ternary-format` | Format JSX ternaries consistently with proper indentation |
 | `member-expression-bracket-spacing` | No spaces in brackets: `arr[0]` not `arr[ 0 ]` |
-| `function-arguments-format` | 2+ arguments get one per line with proper structure ⚙️ |
+| `function-arguments-format` | Arguments exceeding threshold get one per line (default: ≥2) ⚙️ |
 | `nested-call-closing-brackets` | Chain closing brackets together: `}));` not `})\n);` |
 | `no-empty-lines-in-function-calls` | No blank lines between function arguments |
 | `no-empty-lines-in-function-params` | No blank lines between function parameters |
 | `no-empty-lines-in-jsx` | No blank lines inside JSX elements |
 | `no-empty-lines-in-objects` | No blank lines between object properties |
 | `no-empty-lines-in-switch-cases` | No blank line after `case X:` before the code |
-| `object-property-per-line` | 1 property stays inline; 2+ get one per line with `{` and `}` on own lines ⚙️ |
+| `object-property-per-line` | Properties within threshold stay inline; more get one per line (default: ≥2) ⚙️ |
 | `object-property-value-brace` | Opening `{` on same line as `:`, not on new line |
 | `object-property-value-format` | Property values on same line as `:`, not on new line |
 | `opening-brackets-same-line` | Opening `{` or `[` on same line as function call |
