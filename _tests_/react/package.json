@@ -1,0 +1,29 @@
+{
+    "name": "eslint-plugin-code-style-test-react",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "lint": "eslint src/",
+        "lint:fix": "eslint src/ --fix",
+        "test": "eslint src/ --format stylish"
+    },
+    "dependencies": {
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.0.0",
+        "@stylistic/eslint-plugin": "^2.0.0",
+        "eslint": "^9.0.0",
+        "eslint-plugin-check-file": "^2.8.0",
+        "eslint-plugin-code-style": "file:../../",
+        "eslint-plugin-import-x": "^4.0.0",
+        "eslint-plugin-jsx-a11y": "^6.8.0",
+        "eslint-plugin-perfectionist": "^3.0.0",
+        "eslint-plugin-react": "^7.34.0",
+        "eslint-plugin-react-hooks": "^5.0.0",
+        "eslint-plugin-simple-import-sort": "^12.0.0",
+        "globals": "^15.0.0"
+    }
+}
