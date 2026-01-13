@@ -1,6 +1,6 @@
 {
     "name": "eslint-plugin-code-style",
-    "version": "1.0.34",
+    "version": "1.0.35",
     "description": "A custom ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects",
     "main": "index.js",
     "types": "index.d.ts",
@@ -15,6 +15,7 @@
     "files": [
         "index.js",
         "index.d.ts",
+        "AGENTS.md",
         "README.md",
         "LICENSE"
     ],
