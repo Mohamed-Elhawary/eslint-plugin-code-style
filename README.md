@@ -31,9 +31,12 @@ This plugin provides **48 custom auto-fixable rules** for code formatting. Built
 
 **Key Benefits:**
 - **Fills the gaps** — Provides formatting rules not available in other plugins
+- **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
-- **Consistency at scale** — Reduces code-style differences between team members by ~95%
+- **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
 - **Fully automated** — All 48 rules support auto-fix, eliminating manual style reviews
+
+When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
 <div align="center">
 
