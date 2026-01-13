@@ -15,6 +15,7 @@ export type RuleNames =
     | "code-style/comment-spacing"
     | "code-style/curried-arrow-same-line"
     | "code-style/export-format"
+    | "code-style/function-arguments-format"
     | "code-style/function-call-spacing"
     | "code-style/function-naming-convention"
     | "code-style/function-params-per-line"
@@ -23,6 +24,7 @@ export type RuleNames =
     | "code-style/if-statement-format"
     | "code-style/import-format"
     | "code-style/import-source-spacing"
+    | "code-style/index-export-style"
     | "code-style/jsx-children-on-new-line"
     | "code-style/jsx-closing-bracket-spacing"
     | "code-style/jsx-element-child-new-line"
@@ -34,9 +36,7 @@ export type RuleNames =
     | "code-style/jsx-ternary-format"
     | "code-style/member-expression-bracket-spacing"
     | "code-style/module-index-exports"
-    | "code-style/multiline-argument-newline"
     | "code-style/multiline-if-conditions"
-    | "code-style/multiple-arguments-per-line"
     | "code-style/nested-call-closing-brackets"
     | "code-style/no-empty-lines-in-function-calls"
     | "code-style/no-empty-lines-in-function-params"
@@ -84,6 +84,7 @@ interface PluginRules {
     "comment-spacing": Rule.RuleModule;
     "curried-arrow-same-line": Rule.RuleModule;
     "export-format": Rule.RuleModule;
+    "function-arguments-format": Rule.RuleModule;
     "function-call-spacing": Rule.RuleModule;
     "function-naming-convention": Rule.RuleModule;
     "function-params-per-line": Rule.RuleModule;
@@ -92,6 +93,7 @@ interface PluginRules {
     "if-statement-format": Rule.RuleModule;
     "import-format": Rule.RuleModule;
     "import-source-spacing": Rule.RuleModule;
+    "index-export-style": Rule.RuleModule;
     "jsx-children-on-new-line": Rule.RuleModule;
     "jsx-closing-bracket-spacing": Rule.RuleModule;
     "jsx-element-child-new-line": Rule.RuleModule;
@@ -103,9 +105,7 @@ interface PluginRules {
     "jsx-ternary-format": Rule.RuleModule;
     "member-expression-bracket-spacing": Rule.RuleModule;
     "module-index-exports": Rule.RuleModule;
-    "multiline-argument-newline": Rule.RuleModule;
     "multiline-if-conditions": Rule.RuleModule;
-    "multiple-arguments-per-line": Rule.RuleModule;
     "nested-call-closing-brackets": Rule.RuleModule;
     "no-empty-lines-in-function-calls": Rule.RuleModule;
     "no-empty-lines-in-function-params": Rule.RuleModule;
@@ -117,7 +117,7 @@ interface PluginRules {
     "object-property-value-format": Rule.RuleModule;
     "opening-brackets-same-line": Rule.RuleModule;
     "simple-call-single-line": Rule.RuleModule;
-    "single-argument-on-line": Rule.RuleModule;
+    "single-argument-on-one-line": Rule.RuleModule;
     "string-property-spacing": Rule.RuleModule;
     "variable-naming-convention": Rule.RuleModule;
 }

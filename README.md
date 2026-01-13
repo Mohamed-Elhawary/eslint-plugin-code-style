@@ -17,7 +17,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*48 auto-fixable rules to keep your codebase clean and consistent*
+*47 auto-fixable rules to keep your codebase clean and consistent*
 
 </div>
 
@@ -25,7 +25,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **48 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **47 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -34,7 +34,7 @@ This plugin provides **48 custom auto-fixable rules** for code formatting. Built
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Fully automated** — All 48 rules support auto-fix, eliminating manual style reviews
+- **Fully automated** — All 47 rules support auto-fix, eliminating manual style reviews
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -94,7 +94,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-All **48 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
+All **47 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
 
 </td>
 <td width="50%">
@@ -234,7 +234,7 @@ rules: {
 
 ## 📖 Rules Summary
 
-> All **48 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
+> All **47 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
 >
 > Rules marked with ⚙️ support customization options (e.g., extending default folder lists).
 
