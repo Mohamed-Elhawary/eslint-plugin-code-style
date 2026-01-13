@@ -8,16 +8,24 @@ Instructions for AI coding agents working with this codebase.
 
 - **Main entry:** `index.js` - Contains all 48 rules in a single file
 - **Type definitions:** `index.d.ts` - TypeScript declarations for IDE support
-- **Recommended config:** `recommended-configs/react/` - Ready-to-use ESLint configuration
-- **Test app:** `_tests_/react/` - Sample React app for testing rules
+- **Recommended configs:** `recommended-configs/` - Ready-to-use ESLint configurations
+- **Test apps:** `_tests_/` - Sample apps for testing rules
+
+### Available Configurations
+
+| Config | Folder | Status |
+|--------|--------|--------|
+| React (JS) | `react/` | Available |
+| React + TypeScript | `react-ts/` | Coming Soon |
+| React + TS + Tailwind | `react-ts-tw/` | Coming Soon |
 
 ## Build & Test Commands
 
 ```bash
 # No build step required - plain JavaScript ES modules
 
-# Test rules against sample React app
-cd _tests_/react
+# Test rules against a test app (e.g., react, react-ts, react-ts-tw)
+cd _tests_/<config-name>
 npm install
 npm run lint        # Check for errors
 npm run lint:fix    # Auto-fix issues
@@ -110,7 +118,7 @@ const ruleName = {
 4. Update `README.md`:
    - Add to the Rules Summary table
    - Add detailed description with examples
-5. Add to recommended config if applicable: `recommended-configs/react/eslint.config.js`
+5. Add to relevant recommended configs in `recommended-configs/`
 
 ## Key Patterns & Conventions
 
@@ -225,7 +233,7 @@ Rules are organized in these categories (see default export):
 ## Documentation Files
 
 - `README.md` - Main documentation with all 48 rules
-- `recommended-configs/react/README.md` - React config documentation (references main README for rule details)
+- `recommended-configs/<config-name>/README.md` - Config-specific documentation (references main README for rule details)
 - `index.d.ts` - TypeScript types for IDE autocomplete
 
 ## Important Notes
@@ -234,4 +242,4 @@ Rules are organized in these categories (see default export):
 - Use 4-space indentation throughout
 - Object properties in `context.report()` must be alphabetically sorted
 - Keep rules self-sufficient (no dependencies on other ESLint rules)
-- Test with `_tests_/react/` app before publishing
+- Test with relevant test app in `_tests_/` before publishing

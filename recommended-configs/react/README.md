@@ -385,8 +385,8 @@ export const bar = 2;
 
 Additional configurations for other project types are planned:
 
+- **react-ts** — React + TypeScript
 - **react-ts-tw** — React + TypeScript + Tailwind CSS
-- **next-ts-tw** — Next.js + TypeScript + Tailwind CSS
 
 ---
 
