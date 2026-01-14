@@ -58,7 +58,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 
 ### 💡 Why Use These Configs?
 
-- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 48 code-style rules
+- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 47 code-style rules
 - **Ready-to-Use** — Copy the config file and start linting immediately
 - **Battle-Tested** — These configurations have been refined through real-world usage
 - **Fully Documented** — Each config includes detailed instructions and explanations
