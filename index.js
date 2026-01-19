@@ -6446,8 +6446,28 @@ const objectPropertyPerLine = {
             if (!valueNode) return true;
 
             // Simple values can always be collapsed
-            if (["Literal", "Identifier", "TemplateLiteral", "MemberExpression", "UnaryExpression"].includes(valueNode.type)) {
+            if (["Literal", "Identifier", "MemberExpression", "UnaryExpression"].includes(valueNode.type)) {
                 return true;
+            }
+
+            // Template literals: can only collapse if single-line (multi-line templates would break)
+            if (valueNode.type === "TemplateLiteral") {
+                return valueNode.loc.start.line === valueNode.loc.end.line;
+            }
+
+            // Call expressions: can only collapse if already on single line
+            if (valueNode.type === "CallExpression") {
+                return valueNode.loc.start.line === valueNode.loc.end.line;
+            }
+
+            // Arrow functions: can only collapse if already on single line
+            if (valueNode.type === "ArrowFunctionExpression") {
+                return valueNode.loc.start.line === valueNode.loc.end.line;
+            }
+
+            // Spread elements: check if the argument can be collapsed
+            if (valueNode.type === "SpreadElement") {
+                return canCollapse(valueNode.argument);
             }
 
             // Arrays: can collapse only if already on single line (let array-items-per-line handle it)
@@ -6465,11 +6485,15 @@ const objectPropertyPerLine = {
 
                 if (properties.length >= minProperties) return false;
 
-                // Check all property values can be collapsed
-                return properties.every((prop) => canCollapse(prop.value));
+                // Check all property values can be collapsed (handle SpreadElement)
+                return properties.every((prop) => {
+                    if (prop.type === "SpreadElement") return canCollapse(prop.argument);
+
+                    return canCollapse(prop.value);
+                });
             }
 
-            // Other complex types (functions, calls, etc.) cannot be collapsed
+            // Other complex types (functions, etc.) cannot be collapsed
             return false;
         };
 
@@ -6488,6 +6512,11 @@ const objectPropertyPerLine = {
                 if (properties.length === 0) return "{}";
 
                 const propsText = properties.map((prop) => {
+                    // Handle SpreadElement (e.g., ...obj)
+                    if (prop.type === "SpreadElement") {
+                        return `...${getCollapsedText(prop.argument)}`;
+                    }
+
                     const keyText = prop.computed ? `[${sourceCode.getText(prop.key)}]` : sourceCode.getText(prop.key);
                     const valueText = getCollapsedText(prop.value);
 
@@ -6517,12 +6546,21 @@ const objectPropertyPerLine = {
             if (properties.length < minProperties) {
                 const isMultiline = openBrace.loc.start.line !== closeBrace.loc.end.line;
 
-                // Check if all property values can be collapsed
-                const allCanCollapse = properties.every((prop) => canCollapse(prop.value));
+                // Check if all property values can be collapsed (handle SpreadElement)
+                const allCanCollapse = properties.every((prop) => {
+                    if (prop.type === "SpreadElement") return canCollapse(prop.argument);
+
+                    return canCollapse(prop.value);
+                });
 
                 if (isMultiline && allCanCollapse) {
                     // Generate collapsed text for all properties
                     const propertiesText = properties.map((prop) => {
+                        // Handle SpreadElement (e.g., ...obj)
+                        if (prop.type === "SpreadElement") {
+                            return `...${getCollapsedText(prop.argument)}`;
+                        }
+
                         const keyText = prop.computed ? `[${sourceCode.getText(prop.key)}]` : sourceCode.getText(prop.key);
                         const valueText = getCollapsedText(prop.value);
 
