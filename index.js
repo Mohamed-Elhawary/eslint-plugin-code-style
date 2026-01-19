@@ -8527,6 +8527,125 @@ const variableNamingConvention = {
  *       lastName: string;             // Empty line above and semicolon
  *   }
  */
+/*
+ * enum-format
+ *
+ * Enforce consistent formatting for TypeScript enums:
+ * - Enum name must be PascalCase and end with "Enum" suffix
+ * - Member names must be UPPER_CASE (e.g., DELETE, GET, POST)
+ * - No empty lines between members
+ * - Each member must end with comma (,) not semicolon (;)
+ *
+ * ✓ Good:
+ *   export enum HttpMethodEnum {
+ *       DELETE = "delete",
+ *       GET = "get",
+ *       POST = "post",
+ *   }
+ *
+ * ✗ Bad:
+ *   export enum HttpMethod {           // Missing "Enum" suffix
+ *       delete = "delete";             // lowercase and semicolon
+ *
+ *       Get = "get";                   // PascalCase, empty line, semicolon
+ *   }
+ */
+const enumFormat = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const pascalCaseRegex = /^[A-Z][a-zA-Z0-9]*$/;
+        const upperCaseRegex = /^[A-Z][A-Z0-9_]*$/;
+
+        return {
+            TSEnumDeclaration(node) {
+                const enumName = node.id.name;
+
+                // Check enum name is PascalCase and ends with Enum
+                if (!pascalCaseRegex.test(enumName)) {
+                    context.report({
+                        message: `Enum name "${enumName}" must be PascalCase`,
+                        node: node.id,
+                    });
+                } else if (!enumName.endsWith("Enum")) {
+                    context.report({
+                        fix(fixer) {
+                            return fixer.replaceText(node.id, `${enumName}Enum`);
+                        },
+                        message: `Enum name "${enumName}" must end with "Enum" suffix`,
+                        node: node.id,
+                    });
+                }
+
+                // Check members
+                const members = node.members;
+
+                members.forEach((member, index) => {
+                    // Check member name is UPPER_CASE
+                    if (member.id && member.id.type === "Identifier") {
+                        const memberName = member.id.name;
+
+                        if (!upperCaseRegex.test(memberName)) {
+                            context.report({
+                                message: `Enum member "${memberName}" must be UPPER_CASE (e.g., ${memberName.toUpperCase()})`,
+                                node: member.id,
+                            });
+                        }
+                    }
+
+                    // Check for empty lines between members
+                    if (index > 0) {
+                        const prevMember = members[index - 1];
+                        const currentLine = member.loc.start.line;
+                        const prevLine = prevMember.loc.end.line;
+
+                        if (currentLine - prevLine > 1) {
+                            context.report({
+                                fix(fixer) {
+                                    const textBetween = sourceCode.getText().slice(
+                                        prevMember.range[1],
+                                        member.range[0],
+                                    );
+                                    const newText = textBetween.replace(/\n\s*\n/g, "\n");
+
+                                    return fixer.replaceTextRange(
+                                        [prevMember.range[1], member.range[0]],
+                                        newText,
+                                    );
+                                },
+                                message: "No empty lines allowed between enum members",
+                                node: member,
+                            });
+                        }
+                    }
+
+                    // Check member ends with comma, not semicolon
+                    const memberText = sourceCode.getText(member);
+
+                    if (memberText.trimEnd().endsWith(";")) {
+                        context.report({
+                            fix(fixer) {
+                                const lastChar = memberText.lastIndexOf(";");
+                                const absolutePos = member.range[0] + lastChar;
+
+                                return fixer.replaceTextRange([absolutePos, absolutePos + 1], ",");
+                            },
+                            message: "Enum members must end with comma (,) not semicolon (;)",
+                            node: member,
+                        });
+                    }
+                });
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce enum naming (PascalCase + Enum suffix), UPPER_CASE members, no empty lines, and trailing commas" },
+        fixable: "code",
+        schema: [],
+        type: "suggestion",
+    },
+};
+
 const interfaceFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -8768,6 +8887,7 @@ export default {
         "variable-naming-convention": variableNamingConvention,
 
         // TypeScript rules
+        "enum-format": enumFormat,
         "interface-format": interfaceFormat,
         "typescript-definition-location": typescriptDefinitionLocation,
     },
