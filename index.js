@@ -8504,6 +8504,125 @@ const variableNamingConvention = {
  *   // src/components/user.tsx
  *   export interface UserInterface { ... }  // Interface not in interfaces folder
  */
+/*
+ * interface-format
+ *
+ * Enforce consistent formatting for TypeScript interfaces:
+ * - Interface name must be PascalCase and end with "Interface" suffix
+ * - Properties must be in camelCase
+ * - No empty lines between properties
+ * - Each property must end with comma (,) not semicolon (;)
+ *
+ * ✓ Good:
+ *   export interface UserInterface {
+ *       firstName: string,
+ *       lastName: string,
+ *       age: number,
+ *   }
+ *
+ * ✗ Bad:
+ *   export interface User {           // Missing "Interface" suffix
+ *       first_name: string;           // snake_case and semicolon
+ *
+ *       lastName: string;             // Empty line above and semicolon
+ *   }
+ */
+const interfaceFormat = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const pascalCaseRegex = /^[A-Z][a-zA-Z0-9]*$/;
+        const camelCaseRegex = /^[a-z][a-zA-Z0-9]*$/;
+
+        return {
+            TSInterfaceDeclaration(node) {
+                const interfaceName = node.id.name;
+
+                // Check interface name is PascalCase and ends with Interface
+                if (!pascalCaseRegex.test(interfaceName)) {
+                    context.report({
+                        message: `Interface name "${interfaceName}" must be PascalCase`,
+                        node: node.id,
+                    });
+                } else if (!interfaceName.endsWith("Interface")) {
+                    context.report({
+                        fix(fixer) {
+                            return fixer.replaceText(node.id, `${interfaceName}Interface`);
+                        },
+                        message: `Interface name "${interfaceName}" must end with "Interface" suffix`,
+                        node: node.id,
+                    });
+                }
+
+                // Check properties
+                const members = node.body.body;
+
+                members.forEach((member, index) => {
+                    // Check property name is camelCase
+                    if (member.type === "TSPropertySignature" && member.key && member.key.type === "Identifier") {
+                        const propName = member.key.name;
+
+                        if (!camelCaseRegex.test(propName)) {
+                            context.report({
+                                message: `Interface property "${propName}" must be camelCase`,
+                                node: member.key,
+                            });
+                        }
+                    }
+
+                    // Check for empty lines between properties
+                    if (index > 0) {
+                        const prevMember = members[index - 1];
+                        const currentLine = member.loc.start.line;
+                        const prevLine = prevMember.loc.end.line;
+
+                        if (currentLine - prevLine > 1) {
+                            context.report({
+                                fix(fixer) {
+                                    const textBetween = sourceCode.getText().slice(
+                                        prevMember.range[1],
+                                        member.range[0],
+                                    );
+                                    const newText = textBetween.replace(/\n\s*\n/g, "\n");
+
+                                    return fixer.replaceTextRange(
+                                        [prevMember.range[1], member.range[0]],
+                                        newText,
+                                    );
+                                },
+                                message: "No empty lines allowed between interface properties",
+                                node: member,
+                            });
+                        }
+                    }
+
+                    // Check property ends with comma, not semicolon
+                    const memberText = sourceCode.getText(member);
+
+                    if (memberText.trimEnd().endsWith(";")) {
+                        context.report({
+                            fix(fixer) {
+                                const lastChar = memberText.lastIndexOf(";");
+                                const absolutePos = member.range[0] + lastChar;
+
+                                return fixer.replaceTextRange([absolutePos, absolutePos + 1], ",");
+                            },
+                            message: "Interface properties must end with comma (,) not semicolon (;)",
+                            node: member,
+                        });
+                    }
+                });
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce interface naming (PascalCase + Interface suffix), camelCase properties, no empty lines, and trailing commas" },
+        fixable: "code",
+        schema: [],
+        type: "suggestion",
+    },
+};
+
 const typescriptDefinitionLocation = {
     create(context) {
         const filename = context.filename || context.getFilename();
@@ -8649,6 +8768,7 @@ export default {
         "variable-naming-convention": variableNamingConvention,
 
         // TypeScript rules
+        "interface-format": interfaceFormat,
         "typescript-definition-location": typescriptDefinitionLocation,
     },
 };

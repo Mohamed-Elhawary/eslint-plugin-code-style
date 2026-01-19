@@ -50,6 +50,7 @@ export type RuleNames =
     | "code-style/simple-call-single-line"
     | "code-style/single-argument-on-one-line"
     | "code-style/string-property-spacing"
+    | "code-style/interface-format"
     | "code-style/typescript-definition-location"
     | "code-style/variable-naming-convention";
 
@@ -120,6 +121,7 @@ interface PluginRules {
     "simple-call-single-line": Rule.RuleModule;
     "single-argument-on-one-line": Rule.RuleModule;
     "string-property-spacing": Rule.RuleModule;
+    "interface-format": Rule.RuleModule;
     "typescript-definition-location": Rule.RuleModule;
     "variable-naming-convention": Rule.RuleModule;
 }
