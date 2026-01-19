@@ -186,7 +186,7 @@ rules: {
     "code-style/curried-arrow-same-line": "error",
     "code-style/assignment-value-same-line": "error",
     "code-style/block-statement-newlines": "error",
-    "code-style/comment-spacing": "error",
+    "code-style/comment-format": "error",
     "code-style/function-call-spacing": "error",
     "code-style/function-naming-convention": "error",
     "code-style/function-params-per-line": "error",
@@ -248,7 +248,7 @@ rules: {
 | `curried-arrow-same-line` | Curried arrow functions start on same line as `=>`, not on new line |
 | `assignment-value-same-line` | Assignment values start on same line as `=`, not on new line |
 | `block-statement-newlines` | Newline after `{` and before `}` in if/for/while/function blocks |
-| `comment-spacing` | Space after `//`, space inside `/* */`, convert single-line blocks to `//`, no blank lines between file-top comments |
+| `comment-format` | Space after `//`, space inside `/* */`, convert single-line blocks to `//`, no blank lines between file-top comments |
 | `function-call-spacing` | No space between function name and `(`: `fn()` not `fn ()` |
 | `function-naming-convention` | Functions use camelCase, start with verb (get/set/handle/is/has), handlers end with Handler |
 | `function-params-per-line` | When multiline, each param on own line with consistent indentation |
@@ -554,7 +554,7 @@ for (const item of items) { process(item);
 
 ---
 
-### `comment-spacing`
+### `comment-format`
 
 **What it does:** Enforces proper comment formatting:
 - Space after `//` in line comments

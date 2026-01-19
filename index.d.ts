@@ -12,7 +12,7 @@ export type RuleNames =
     | "code-style/arrow-function-simplify"
     | "code-style/assignment-value-same-line"
     | "code-style/block-statement-newlines"
-    | "code-style/comment-spacing"
+    | "code-style/comment-format"
     | "code-style/curried-arrow-same-line"
     | "code-style/export-format"
     | "code-style/function-arguments-format"
@@ -81,7 +81,7 @@ interface PluginRules {
     "arrow-function-simplify": Rule.RuleModule;
     "assignment-value-same-line": Rule.RuleModule;
     "block-statement-newlines": Rule.RuleModule;
-    "comment-spacing": Rule.RuleModule;
+    "comment-format": Rule.RuleModule;
     "curried-arrow-same-line": Rule.RuleModule;
     "export-format": Rule.RuleModule;
     "function-arguments-format": Rule.RuleModule;

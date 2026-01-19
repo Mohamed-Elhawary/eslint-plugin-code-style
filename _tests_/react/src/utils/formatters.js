@@ -9,7 +9,7 @@ Test Rules:
 - object-property-value-brace
 - string-property-spacing
 - member-expression-bracket-spacing
-- comment-spacing
+- comment-format
 - assignment-value-same-line
 - absolute-imports-only
 */

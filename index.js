@@ -1138,7 +1138,7 @@ const blockStatementNewlines = {
  *   //This is a comment (missing space)
  *   [block]No space after opener[/block]
  */
-const commentSpacing = {
+const commentFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
@@ -8410,7 +8410,7 @@ export default {
         "block-statement-newlines": blockStatementNewlines,
 
         // Comment rules
-        "comment-spacing": commentSpacing,
+        "comment-format": commentFormat,
 
         // Function rules
         "function-call-spacing": functionCallSpacing,
