@@ -879,55 +879,68 @@ useEffect(() => {}, [
 
 ### `if-statement-format`
 
-**What it does:** Enforces consistent if/else formatting:
+**What it does:** Enforces consistent if/else formatting for multi-line block bodies:
 - Opening `{` on the same line as `if`/`else if`/`else`
 - `else` on the same line as the closing `}`
 - Proper spacing around keywords
 
+**Note:** This rule applies to multi-line block bodies. Single-line logic (e.g., `if (x) doSomething();`) is handled by ESLint's built-in `curly` rule with `"multi-or-nest"` option.
+
 **Why use it:** Consistent brace placement reduces visual noise and follows the most common JavaScript style (K&R / "one true brace style").
 
 ```javascript
-// ✅ Good — consistent formatting
+// ✅ Good — consistent formatting (multi-line body)
 if (condition) {
     doSomething();
+    doMore();
 }
 
 if (condition) {
     doSomething();
+    doMore();
 } else {
     doOther();
+    doAnother();
 }
 
 if (conditionA) {
     handleA();
+    processA();
 } else if (conditionB) {
     handleB();
+    processB();
 } else {
     handleDefault();
+    processDefault();
 }
 
 // ❌ Bad — brace on new line
 if (condition)
 {
     doSomething();
+    doMore();
 }
 
 // ❌ Bad — else on new line
 if (condition) {
     doSomething();
+    doMore();
 }
 else {
     doOther();
+    doAnother();
 }
 
 // ❌ Bad — inconsistent formatting
 if (condition)
 {
     doSomething();
+    doMore();
 }
 else
 {
     doOther();
+    doAnother();
 }
 ```
 
