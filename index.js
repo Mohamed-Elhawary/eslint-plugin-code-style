@@ -8482,6 +8482,81 @@ const variableNamingConvention = {
     },
 };
 
+/*
+ * typescript-definition-location
+ *
+ * Enforce that TypeScript definitions are declared in their designated folders:
+ * - Interfaces must be in files inside the "interfaces" folder
+ * - Enums must be in files inside the "enums" folder
+ * - Types must be in files inside the "types" folder
+ *
+ * ✓ Good:
+ *   // src/interfaces/user.ts
+ *   export interface UserInterface { ... }
+ *
+ *   // src/enums/status.ts
+ *   export enum StatusEnum { ... }
+ *
+ *   // src/types/config.ts
+ *   export type ConfigType = { ... }
+ *
+ * ✗ Bad:
+ *   // src/components/user.tsx
+ *   export interface UserInterface { ... }  // Interface not in interfaces folder
+ */
+const typescriptDefinitionLocation = {
+    create(context) {
+        const filename = context.filename || context.getFilename();
+        const normalizedFilename = filename.replace(/\\/g, "/");
+
+        const isInFolderHandler = (folderName) => {
+            const pattern = new RegExp(`/${folderName}/[^/]+\\.(ts|tsx)$`);
+
+            return pattern.test(normalizedFilename);
+        };
+
+        const isTypeScriptFileHandler = () => /\.(ts|tsx)$/.test(normalizedFilename);
+
+        return {
+            TSInterfaceDeclaration(node) {
+                if (!isTypeScriptFileHandler()) return;
+
+                if (!isInFolderHandler("interfaces")) {
+                    context.report({
+                        message: "Interfaces must be declared in files inside the \"interfaces\" folder",
+                        node: node.id || node,
+                    });
+                }
+            },
+            TSEnumDeclaration(node) {
+                if (!isTypeScriptFileHandler()) return;
+
+                if (!isInFolderHandler("enums")) {
+                    context.report({
+                        message: "Enums must be declared in files inside the \"enums\" folder",
+                        node: node.id || node,
+                    });
+                }
+            },
+            TSTypeAliasDeclaration(node) {
+                if (!isTypeScriptFileHandler()) return;
+
+                if (!isInFolderHandler("types")) {
+                    context.report({
+                        message: "Type aliases must be declared in files inside the \"types\" folder",
+                        node: node.id || node,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce that interfaces are in interfaces folder, enums in enums folder, and types in types folder" },
+        schema: [],
+        type: "suggestion",
+    },
+};
+
 export default {
     meta: {
         name: packageJson.name,
@@ -8572,5 +8647,8 @@ export default {
 
         // Variable rules
         "variable-naming-convention": variableNamingConvention,
+
+        // TypeScript rules
+        "typescript-definition-location": typescriptDefinitionLocation,
     },
 };
