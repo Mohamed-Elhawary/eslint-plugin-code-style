@@ -3,3 +3,4 @@
 export { Button } from "./button";
 export { Card } from "./card";
 export { Modal } from "./modal";
+export { TernaryTest } from "./ternary-test";

@@ -4708,12 +4708,46 @@ const jsxTernaryFormat = {
             return tokenBefore && tokenAfter && tokenBefore.value === "(" && tokenAfter.value === ")";
         };
 
+        // Check if condition has broken operators (spread across lines)
+        const hasConditionBrokenAcrossLinesHandler = (testNode) => {
+            // Check binary expressions (===, !==, etc.)
+            if (testNode.type === "BinaryExpression") {
+                const leftEnd = testNode.left.loc.end.line;
+                const rightStart = testNode.right.loc.start.line;
+
+                if (leftEnd !== rightStart) return true;
+
+                // Recursively check nested expressions
+                return hasConditionBrokenAcrossLinesHandler(testNode.left)
+                    || hasConditionBrokenAcrossLinesHandler(testNode.right);
+            }
+
+            // Check logical expressions (&&, ||)
+            if (testNode.type === "LogicalExpression") {
+                const leftEnd = testNode.left.loc.end.line;
+                const rightStart = testNode.right.loc.start.line;
+
+                if (leftEnd !== rightStart) return true;
+
+                return hasConditionBrokenAcrossLinesHandler(testNode.left)
+                    || hasConditionBrokenAcrossLinesHandler(testNode.right);
+            }
+
+            return false;
+        };
+
+        // Get the full condition text collapsed to single line
+        const getCollapsedConditionTextHandler = (testNode) => sourceCode.getText(testNode).replace(/\s*\n\s*/g, " ").trim();
+
         return {
             ConditionalExpression(node) {
-                // Only handle ternaries in JSX context
                 const parent = node.parent;
 
-                if (!parent || parent.type !== "JSXExpressionContainer") return;
+                // Handle ternaries in JSX context or return statements
+                const isJsxContext = parent && parent.type === "JSXExpressionContainer";
+                const isReturnContext = parent && parent.type === "ReturnStatement";
+
+                if (!isJsxContext && !isReturnContext) return;
 
                 const {
                     alternate,
@@ -4732,19 +4766,32 @@ const jsxTernaryFormat = {
                 const baseIndent = getIndentHandler(node);
                 const contentIndent = baseIndent + "    ";
 
-                // Check 0: Condition should be on same line as opening {
-                const openBrace = sourceCode.getFirstToken(parent);
+                // Check: Condition should not be broken across multiple lines
+                if (hasConditionBrokenAcrossLinesHandler(node.test)) {
+                    const collapsedCondition = getCollapsedConditionTextHandler(node.test);
 
-                if (openBrace && openBrace.value === "{") {
-                    if (openBrace.loc.end.line !== node.test.loc.start.line) {
-                        context.report({
-                            fix: (fixer) => fixer.replaceTextRange(
-                                [openBrace.range[1], node.test.range[0]],
-                                "",
-                            ),
-                            message: "Ternary condition should be on same line as opening '{'",
-                            node: node.test,
-                        });
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(node.test, collapsedCondition),
+                        message: "Ternary condition should not be broken across multiple lines",
+                        node: node.test,
+                    });
+                }
+
+                // Check: Condition should be on same line as opening { (for JSX context)
+                if (isJsxContext) {
+                    const openBrace = sourceCode.getFirstToken(parent);
+
+                    if (openBrace && openBrace.value === "{") {
+                        if (openBrace.loc.end.line !== node.test.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [openBrace.range[1], node.test.range[0]],
+                                    "",
+                                ),
+                                message: "Ternary condition should be on same line as opening '{'",
+                                node: node.test,
+                            });
+                        }
                     }
                 }
 
@@ -4764,8 +4811,8 @@ const jsxTernaryFormat = {
 
                 if (!colonToken) return;
 
-                // Get closing brace of JSXExpressionContainer
-                const closeBrace = sourceCode.getLastToken(parent);
+                // Get closing brace of JSXExpressionContainer (null for return statements)
+                const closeBrace = isJsxContext ? sourceCode.getLastToken(parent) : null;
 
                 // Check for unnecessary parentheses around simple JSX
                 if (consequentSimple && hasUnnecessaryParensHandler(consequent)) {
@@ -5059,6 +5106,30 @@ const jsxTernaryFormat = {
                         }
                     }
 
+                    // Check if simple alternate is wrapped in unnecessary parentheses
+                    const tokenAfterColon = sourceCode.getTokenAfter(colonToken);
+
+                    if (tokenAfterColon && tokenAfterColon.value === "(") {
+                        // Find the matching closing paren
+                        const closingParen = sourceCode.getTokenAfter(alternate);
+
+                        if (closingParen && closingParen.value === ")") {
+                            // Remove parentheses and put simple alternate on same line as :
+                            const alternateText = sourceCode.getText(alternate);
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [colonToken.range[1], closingParen.range[1]],
+                                    ` ${alternateText}`,
+                                ),
+                                message: "Simple JSX should not be wrapped in parentheses; put on same line as ':'",
+                                node: alternate,
+                            });
+
+                            return;
+                        }
+                    }
+
                     // Simple alternate should be on same line as :
                     if (colonToken.loc.end.line !== alternate.loc.start.line) {
                         context.report({
@@ -5071,7 +5142,7 @@ const jsxTernaryFormat = {
                         });
                     }
 
-                    // } should be on same line as simple alternate
+                    // } should be on same line as simple alternate (only for JSX context)
                     if (closeBrace && closeBrace.value === "}" && alternate.loc.end.line !== closeBrace.loc.start.line) {
                         context.report({
                             fix: (fixer) => fixer.replaceTextRange(
