@@ -2128,19 +2128,19 @@ const hookDepsPerLine = {
  *   opening brace on the same line as the condition and else
  *   on the same line as the closing brace.
  *
- *   Note: This rule applies to multi-line block bodies. Single-line
- *   logic is handled by ESLint's built-in `curly` rule (e.g., "multi-or-nest").
  *
- * ✓ Good (multi-line body):
+ * ✓ Good:
  *   if (condition) {
  *       doSomething();
+ * 
  *       doMore();
  *   } else {
  *       doOther();
+ * 
  *       doAnother();
  *   }
  *
- * ✗ Bad (brace on new line):
+ * ✗ Bad:
  *   if (condition)
  *   {
  *       doSomething();
