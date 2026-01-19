@@ -3185,8 +3185,12 @@ const moduleIndexExports = {
             "__mocks__",
             "*.test.js",
             "*.test.jsx",
+            "*.test.ts",
+            "*.test.tsx",
             "*.spec.js",
             "*.spec.jsx",
+            "*.spec.ts",
+            "*.spec.tsx",
         ];
 
         // Files/folders to ignore
@@ -3320,7 +3324,13 @@ const moduleIndexExports = {
                     }
 
                     // Handle cases like ./folder/index
-                    if (isDirectory && (source === `./${itemName}/index` || source === `./${itemName}/index.js` || source === `./${itemName}/index.jsx`)) {
+                    if (isDirectory && (
+                        source === `./${itemName}/index`
+                        || source === `./${itemName}/index.js`
+                        || source === `./${itemName}/index.jsx`
+                        || source === `./${itemName}/index.ts`
+                        || source === `./${itemName}/index.tsx`
+                    )) {
                         return true;
                     }
 
@@ -3371,12 +3381,19 @@ const moduleIndexExports = {
 
                     if (moduleFolders.includes(folderName) && fileName !== "index") {
                         const dirPath = nodePath.dirname(filename);
-                        const indexPath = nodePath.join(dirPath, "index.js");
+                        const indexPathJs = nodePath.join(dirPath, "index.js");
                         const indexPathJsx = nodePath.join(dirPath, "index.jsx");
+                        const indexPathTs = nodePath.join(dirPath, "index.ts");
+                        const indexPathTsx = nodePath.join(dirPath, "index.tsx");
 
-                        if (!fs.existsSync(indexPath) && !fs.existsSync(indexPathJsx)) {
+                        const hasIndexFile = fs.existsSync(indexPathJs)
+                            || fs.existsSync(indexPathJsx)
+                            || fs.existsSync(indexPathTs)
+                            || fs.existsSync(indexPathTsx);
+
+                        if (!hasIndexFile) {
                             context.report({
-                                message: `Module folder "${folderName}" is missing an index file. Create index.js to export all modules.`,
+                                message: `Module folder "${folderName}" is missing an index file. Create an index file to export all modules.`,
                                 node,
                             });
                         }

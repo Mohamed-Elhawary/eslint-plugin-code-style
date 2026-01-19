@@ -9,6 +9,7 @@
 [![ESLint](https://img.shields.io/badge/ESLint-%3E%3D9.0.0-4B32C3?style=for-the-badge&logo=eslint&logoColor=white)](https://eslint.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-JSX%20Support-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Supported-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
 [![GitHub stars](https://img.shields.io/github/stars/Mohamed-Elhawary/eslint-plugin-code-style?style=for-the-badge&logo=github&color=yellow)](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/Mohamed-Elhawary/eslint-plugin-code-style?style=for-the-badge&logo=github)](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/issues)
@@ -68,8 +69,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 | Configuration | Description | Link |
 |---------------|-------------|------|
 | **React** | React.js projects (JavaScript, JSX) | [View Config](./recommended-configs/react/) |
-| **React + TypeScript** | React + TypeScript | *Coming Soon* |
-| **React + TS + Tailwind** | React + TypeScript + Tailwind CSS | *Coming Soon* |
+| **React + TS + Tailwind** | React + TypeScript + Tailwind CSS | [View Config](./recommended-configs/react-ts-tw/) |
 
 ### ⚡ Quick Start with Recommended Config
 
@@ -1339,7 +1339,7 @@ import { Button } from "@/components/Button/Button"; // Avoid this!
 `apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `hooks`, `layouts`, `middlewares`, `providers`, `redux`, `requests`, `routes`, `schemas`, `services`, `styles`, `theme`, `utils`, `views`
 
 **Default Ignore Patterns:**
-`index.js`, `index.jsx`, `index.ts`, `index.tsx`, `.DS_Store`, `__tests__`, `__mocks__`, `*.test.js`, `*.test.jsx`, `*.spec.js`, `*.spec.jsx`
+`index.js`, `index.jsx`, `index.ts`, `index.tsx`, `.DS_Store`, `__tests__`, `__mocks__`, `*.test.js`, `*.test.jsx`, `*.test.ts`, `*.test.tsx`, `*.spec.js`, `*.spec.jsx`, `*.spec.ts`, `*.spec.tsx`
 
 **Customization Options:**
 
