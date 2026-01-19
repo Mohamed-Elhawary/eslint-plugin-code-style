@@ -52,6 +52,7 @@ export type RuleNames =
     | "code-style/string-property-spacing"
     | "code-style/enum-format"
     | "code-style/interface-format"
+    | "code-style/type-format"
     | "code-style/typescript-definition-location"
     | "code-style/variable-naming-convention";
 
@@ -124,6 +125,7 @@ interface PluginRules {
     "string-property-spacing": Rule.RuleModule;
     "enum-format": Rule.RuleModule;
     "interface-format": Rule.RuleModule;
+    "type-format": Rule.RuleModule;
     "typescript-definition-location": Rule.RuleModule;
     "variable-naming-convention": Rule.RuleModule;
 }

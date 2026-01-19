@@ -8550,6 +8550,137 @@ const variableNamingConvention = {
  *       Get = "get";                   // PascalCase, empty line, semicolon
  *   }
  */
+/*
+ * type-format
+ *
+ * Enforce consistent formatting for TypeScript type aliases:
+ * - Type name must be PascalCase and end with "Type" suffix
+ * - If object-like, properties must be in camelCase
+ * - No empty lines between properties (for object types)
+ * - Each property must end with comma (,) not semicolon (;)
+ *
+ * ✓ Good:
+ *   export type UserType = {
+ *       firstName: string,
+ *       lastName: string,
+ *   }
+ *
+ *   export type IdType = string | number;
+ *
+ * ✗ Bad:
+ *   export type User = {             // Missing "Type" suffix
+ *       first_name: string;          // snake_case and semicolon
+ *   }
+ */
+const typeFormat = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const pascalCaseRegex = /^[A-Z][a-zA-Z0-9]*$/;
+        const camelCaseRegex = /^[a-z][a-zA-Z0-9]*$/;
+
+        const checkTypeLiteralHandler = (node, members) => {
+            members.forEach((member, index) => {
+                // Check property name is camelCase
+                if (member.type === "TSPropertySignature" && member.key && member.key.type === "Identifier") {
+                    const propName = member.key.name;
+
+                    if (!camelCaseRegex.test(propName)) {
+                        context.report({
+                            message: `Type property "${propName}" must be camelCase`,
+                            node: member.key,
+                        });
+                    }
+                }
+
+                // Check for empty lines between properties
+                if (index > 0) {
+                    const prevMember = members[index - 1];
+                    const currentLine = member.loc.start.line;
+                    const prevLine = prevMember.loc.end.line;
+
+                    if (currentLine - prevLine > 1) {
+                        context.report({
+                            fix(fixer) {
+                                const textBetween = sourceCode.getText().slice(
+                                    prevMember.range[1],
+                                    member.range[0],
+                                );
+                                const newText = textBetween.replace(/\n\s*\n/g, "\n");
+
+                                return fixer.replaceTextRange(
+                                    [prevMember.range[1], member.range[0]],
+                                    newText,
+                                );
+                            },
+                            message: "No empty lines allowed between type properties",
+                            node: member,
+                        });
+                    }
+                }
+
+                // Check property ends with comma, not semicolon
+                const memberText = sourceCode.getText(member);
+
+                if (memberText.trimEnd().endsWith(";")) {
+                    context.report({
+                        fix(fixer) {
+                            const lastChar = memberText.lastIndexOf(";");
+                            const absolutePos = member.range[0] + lastChar;
+
+                            return fixer.replaceTextRange([absolutePos, absolutePos + 1], ",");
+                        },
+                        message: "Type properties must end with comma (,) not semicolon (;)",
+                        node: member,
+                    });
+                }
+            });
+        };
+
+        return {
+            TSTypeAliasDeclaration(node) {
+                const typeName = node.id.name;
+
+                // Check type name is PascalCase and ends with Type
+                if (!pascalCaseRegex.test(typeName)) {
+                    context.report({
+                        message: `Type name "${typeName}" must be PascalCase`,
+                        node: node.id,
+                    });
+                } else if (!typeName.endsWith("Type")) {
+                    context.report({
+                        fix(fixer) {
+                            return fixer.replaceText(node.id, `${typeName}Type`);
+                        },
+                        message: `Type name "${typeName}" must end with "Type" suffix`,
+                        node: node.id,
+                    });
+                }
+
+                // Check if it's an object type (TSTypeLiteral)
+                if (node.typeAnnotation && node.typeAnnotation.type === "TSTypeLiteral") {
+                    checkTypeLiteralHandler(node, node.typeAnnotation.members);
+                }
+
+                // Also check intersection types that contain object types
+                if (node.typeAnnotation && node.typeAnnotation.type === "TSIntersectionType") {
+                    node.typeAnnotation.types.forEach((type) => {
+                        if (type.type === "TSTypeLiteral") {
+                            checkTypeLiteralHandler(node, type.members);
+                        }
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce type naming (PascalCase + Type suffix), camelCase properties, no empty lines, and trailing commas" },
+        fixable: "code",
+        schema: [],
+        type: "suggestion",
+    },
+};
+
 const enumFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
@@ -8889,6 +9020,7 @@ export default {
         // TypeScript rules
         "enum-format": enumFormat,
         "interface-format": interfaceFormat,
+        "type-format": typeFormat,
         "typescript-definition-location": typescriptDefinitionLocation,
     },
 };
