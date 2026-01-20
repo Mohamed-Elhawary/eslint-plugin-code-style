@@ -2515,7 +2515,9 @@ const absoluteImportsOnly = {
             "constants",
             "contexts",
             "data",
+            "enums",
             "hooks",
+            "interfaces",
             "layouts",
             "middlewares",
             "providers",
@@ -3139,6 +3141,7 @@ const moduleIndexExports = {
 
         // Default module folders
         const defaultModuleFolders = [
+            "actions",
             "apis",
             "assets",
             "atoms",
@@ -3146,17 +3149,23 @@ const moduleIndexExports = {
             "constants",
             "contexts",
             "data",
+            "enums",
             "hooks",
+            "interfaces",
             "layouts",
             "middlewares",
             "providers",
+            "reducers",
             "redux",
             "requests",
             "routes",
             "schemas",
             "services",
+            "store",
             "styles",
             "theme",
+            "thunks",
+            "types",
             "utils",
             "views",
         ];
@@ -8942,27 +8951,32 @@ export default {
         "arrow-function-simplify": arrowFunctionSimplify,
         "curried-arrow-same-line": curriedArrowSameLine,
 
-        // Assignment rules
-        "assignment-value-same-line": assignmentValueSameLine,
-
-        // Block statement rules
-        "block-statement-newlines": blockStatementNewlines,
+        // Call expression rules
+        "function-arguments-format": functionArgumentsFormat,
+        "nested-call-closing-brackets": nestedCallClosingBrackets,
+        "no-empty-lines-in-function-calls": noEmptyLinesInFunctionCalls,
+        "opening-brackets-same-line": openingBracketsSameLine,
+        "simple-call-single-line": simpleCallSingleLine,
+        "single-argument-on-one-line": singleArgumentOnOneLine,
 
         // Comment rules
         "comment-format": commentFormat,
+
+        // Control flow rules
+        "block-statement-newlines": blockStatementNewlines,
+        "if-statement-format": ifStatementFormat,
+        "multiline-if-conditions": multilineIfConditions,
+        "no-empty-lines-in-switch-cases": noEmptyLinesInSwitchCases,
 
         // Function rules
         "function-call-spacing": functionCallSpacing,
         "function-naming-convention": functionNamingConvention,
         "function-params-per-line": functionParamsPerLine,
+        "no-empty-lines-in-function-params": noEmptyLinesInFunctionParams,
 
         // Hook rules
         "hook-callback-format": hookCallbackFormat,
         "hook-deps-per-line": hookDepsPerLine,
-
-        // If statement rules
-        "if-statement-format": ifStatementFormat,
-        "multiline-if-conditions": multilineIfConditions,
 
         // Import/Export rules
         "absolute-imports-only": absoluteImportsOnly,
@@ -8982,45 +8996,26 @@ export default {
         "jsx-simple-element-one-line": jsxSimpleElementOneLine,
         "jsx-string-value-trim": jsxStringValueTrim,
         "jsx-ternary-format": jsxTernaryFormat,
-
-        // Member expression rules
-        "member-expression-bracket-spacing": memberExpressionBracketSpacing,
-
-        // Function arguments formatting rule
-        "function-arguments-format": functionArgumentsFormat,
-
-        // Nested call rules
-        "nested-call-closing-brackets": nestedCallClosingBrackets,
-
-        // No empty lines rules
-        "no-empty-lines-in-function-calls": noEmptyLinesInFunctionCalls,
-        "no-empty-lines-in-function-params": noEmptyLinesInFunctionParams,
         "no-empty-lines-in-jsx": noEmptyLinesInJsx,
-        "no-empty-lines-in-objects": noEmptyLinesInObjects,
-        "no-empty-lines-in-switch-cases": noEmptyLinesInSwitchCases,
 
-        // Object property rules
+        // Object rules
+        "no-empty-lines-in-objects": noEmptyLinesInObjects,
         "object-property-per-line": objectPropertyPerLine,
         "object-property-value-brace": objectPropertyValueBrace,
         "object-property-value-format": objectPropertyValueFormat,
-
-        // Opening brackets rules
-        "opening-brackets-same-line": openingBracketsSameLine,
-
-        // Simple call/Single argument rules
-        "simple-call-single-line": simpleCallSingleLine,
-        "single-argument-on-one-line": singleArgumentOnOneLine,
-
-        // String property rules
         "string-property-spacing": stringPropertySpacing,
 
-        // Variable rules
-        "variable-naming-convention": variableNamingConvention,
+        // Spacing rules
+        "assignment-value-same-line": assignmentValueSameLine,
+        "member-expression-bracket-spacing": memberExpressionBracketSpacing,
 
         // TypeScript rules
         "enum-format": enumFormat,
         "interface-format": interfaceFormat,
         "type-format": typeFormat,
         "typescript-definition-location": typescriptDefinitionLocation,
+
+        // Variable rules
+        "variable-naming-convention": variableNamingConvention,
     },
 };
