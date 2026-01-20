@@ -14,7 +14,8 @@ This is the **recommended ESLint flat configuration** for React projects using T
 - **Tailwind CSS Optimization** — Enforces class ordering, shorthand usage, and catches common mistakes
 - **Type-Safe Imports** — Enforces consistent type imports with `import type`
 - **Sorted Interfaces & Enums** — Auto-sortable TypeScript interfaces and string enums
-- **All Base React Rules** — Includes all 47 custom code-style rules plus React best practices
+- **All Base React Rules** — Includes all 51 custom code-style rules plus React best practices
+- **TypeScript Formatting Rules** — Enforce consistent naming and formatting for interfaces, types, and enums
 
 ---
 
@@ -112,6 +113,52 @@ type Config = {
     port: number;
     timeout: number;
 };
+```
+
+---
+
+## TypeScript Formatting Rules (code-style)
+
+**Purpose:** Enforce consistent naming and formatting for TypeScript definitions.
+
+| Rule | Setting | Why This Value |
+|------|---------|----------------|
+| `code-style/enum-format` | `error` | Enforces PascalCase + Enum suffix, UPPER_CASE members, no empty lines, commas instead of semicolons |
+| `code-style/interface-format` | `error` | Enforces PascalCase + Interface suffix, camelCase properties, no empty lines, commas instead of semicolons |
+| `code-style/type-format` | `error` | Enforces PascalCase + Type suffix, camelCase properties, no empty lines, commas instead of semicolons |
+| `code-style/typescript-definition-location` | `error` | Enforces interfaces in `interfaces/`, types in `types/`, enums in `enums/` folders |
+
+**Example:**
+```typescript
+// ✅ Good — proper TypeScript formatting and location
+// src/interfaces/user.ts
+export interface UserInterface {
+    email: string,
+    id: string,
+    name: string,
+}
+
+// src/types/config.ts
+export type ApiResponseType<T> = {
+    data: T,
+    status: number,
+};
+
+// src/enums/status.ts
+export enum UserRoleEnum {
+    ADMIN = "admin",
+    GUEST = "guest",
+    USER = "user",
+}
+
+// ❌ Bad — wrong naming and formatting
+export interface User {        // Missing Interface suffix
+    Email: string;             // Should be camelCase, use comma
+}
+
+export enum Status {           // Missing Enum suffix
+    active = "active",         // Should be UPPER_CASE
+}
 ```
 
 ---

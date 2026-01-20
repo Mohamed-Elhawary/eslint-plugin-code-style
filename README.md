@@ -18,7 +18,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*47 auto-fixable rules to keep your codebase clean and consistent*
+*51 auto-fixable rules to keep your codebase clean and consistent*
 
 </div>
 
@@ -26,7 +26,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **47 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **51 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -59,7 +59,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 
 ### 💡 Why Use These Configs?
 
-- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 47 code-style rules
+- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 51 code-style rules
 - **Ready-to-Use** — Copy the config file and start linting immediately
 - **Battle-Tested** — These configurations have been refined through real-world usage
 - **Fully Documented** — Each config includes detailed instructions and explanations
@@ -94,7 +94,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-All **47 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
+All **51 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
 
 </td>
 <td width="50%">
@@ -225,6 +225,10 @@ rules: {
     "code-style/single-argument-on-one-line": "error",
     "code-style/string-property-spacing": "error",
     "code-style/variable-naming-convention": "error",
+    "code-style/enum-format": "error",
+    "code-style/interface-format": "error",
+    "code-style/type-format": "error",
+    "code-style/typescript-definition-location": "error",
 }
 ```
 
@@ -234,34 +238,50 @@ rules: {
 
 ## 📖 Rules Summary
 
-> All **47 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
+> All **51 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
 >
 > Rules marked with ⚙️ support customization options (e.g., extending default folder lists).
 
 | Rule | Description |
 |------|-------------|
+| **Array Rules** | |
 | `array-items-per-line` | Collapse arrays ≤ threshold to one line; expand larger arrays with each item on own line (default: ≤3) ⚙️ |
 | `array-objects-on-new-lines` | Each object in an array starts on its own line for better visual scanning |
+| **Arrow Function Rules** | |
 | `arrow-function-block-body` | Wrap multiline arrow function expressions in parentheses for clear boundaries |
 | `arrow-function-simple-jsx` | Collapse arrow functions returning simple single-element JSX to one line, remove unnecessary parens |
 | `arrow-function-simplify` | Convert block body with single return to implicit return: `() => { return x; }` → `() => x` |
 | `curried-arrow-same-line` | Curried arrow functions start on same line as `=>`, not on new line |
-| `assignment-value-same-line` | Assignment values start on same line as `=`, not on new line |
-| `block-statement-newlines` | Newline after `{` and before `}` in if/for/while/function blocks |
+| **Call Expression Rules** | |
+| `function-arguments-format` | Args ≥ threshold or multiline: first arg on new line, each on own line, closing `)` on new line (default: ≥2) ⚙️ |
+| `nested-call-closing-brackets` | Chain closing brackets on same line: `}));` not scattered across lines |
+| `no-empty-lines-in-function-calls` | No empty lines between arguments or after `(`/before `)` |
+| `opening-brackets-same-line` | Opening `{`, `[`, or `(` on same line as function call, not on new line |
+| `simple-call-single-line` | Collapse simple `fn(() => call())` patterns to single line |
+| `single-argument-on-one-line` | Single simple argument stays on one line: `fn(x)` not expanded |
+| **Comment Rules** | |
 | `comment-format` | Space after `//`, space inside `/* */`, convert single-line blocks to `//`, no blank lines between file-top comments |
+| **Control Flow Rules** | |
+| `block-statement-newlines` | Newline after `{` and before `}` in if/for/while/function blocks |
+| `if-statement-format` | `{` on same line as `if`/`else if`, `else` on same line as `}`, proper spacing |
+| `multiline-if-conditions` | Conditions exceeding threshold get one operand per line with proper indentation (default: >3) ⚙️ |
+| `no-empty-lines-in-switch-cases` | No empty line after `case X:` before code, no empty lines between cases |
+| **Function Rules** | |
 | `function-call-spacing` | No space between function name and `(`: `fn()` not `fn ()` |
 | `function-naming-convention` | Functions use camelCase, start with verb (get/set/handle/is/has), handlers end with Handler |
 | `function-params-per-line` | When multiline, each param on own line with consistent indentation |
+| `no-empty-lines-in-function-params` | No empty lines between parameters or after `(`/before `)` |
+| **Hook Rules** | |
 | `hook-callback-format` | React hooks: callback on new line, deps array on separate line, proper indentation |
 | `hook-deps-per-line` | Collapse deps ≤ threshold to one line; expand larger arrays with each dep on own line (default: >2) ⚙️ |
-| `if-statement-format` | `{` on same line as `if`/`else if`, `else` on same line as `}`, proper spacing |
-| `multiline-if-conditions` | Conditions exceeding threshold get one operand per line with proper indentation (default: >3) ⚙️ |
+| **Import/Export Rules** | |
 | `absolute-imports-only` | Use alias imports from index files only (not deep paths), no relative imports (default: `@/`) ⚙️ |
 | `export-format` | `export {` on same line; collapse ≤ threshold to one line; expand larger with each specifier on own line (default: ≤3) ⚙️ |
 | `import-format` | `import {` and `} from` on same line; collapse ≤ threshold; expand larger with each specifier on own line (default: ≤3) ⚙️ |
 | `import-source-spacing` | No leading/trailing spaces inside import path quotes |
 | `index-export-style` | Index files: no blank lines, enforce shorthand or import-export style; Regular files: require blank lines between exports (default: shorthand) ⚙️ |
 | `module-index-exports` | Index files must export all folder contents (files and subfolders) ⚙️ |
+| **JSX Rules** | |
 | `jsx-children-on-new-line` | Multiple JSX children: each on own line with proper indentation |
 | `jsx-closing-bracket-spacing` | No space before `>` or `/>` in JSX tags |
 | `jsx-element-child-new-line` | Nested JSX elements on new lines; text/expression children can stay inline |
@@ -271,21 +291,22 @@ rules: {
 | `jsx-simple-element-one-line` | Collapse simple JSX with single text/expression child to one line |
 | `jsx-string-value-trim` | No leading/trailing whitespace inside JSX string attribute values |
 | `jsx-ternary-format` | Simple ternaries on one line; complex branches get parens with proper indentation |
-| `member-expression-bracket-spacing` | No spaces inside brackets in computed member expressions: `arr[0]` not `arr[ 0 ]` |
-| `function-arguments-format` | Args ≥ threshold or multiline: first arg on new line, each on own line, closing `)` on new line (default: ≥2) ⚙️ |
-| `nested-call-closing-brackets` | Chain closing brackets on same line: `}));` not scattered across lines |
-| `no-empty-lines-in-function-calls` | No empty lines between arguments or after `(`/before `)` |
-| `no-empty-lines-in-function-params` | No empty lines between parameters or after `(`/before `)` |
 | `no-empty-lines-in-jsx` | No empty lines between children or after opening/before closing tags |
+| **Object Rules** | |
 | `no-empty-lines-in-objects` | No empty lines between properties or after `{`/before `}` |
-| `no-empty-lines-in-switch-cases` | No empty line after `case X:` before code, no empty lines between cases |
 | `object-property-per-line` | Collapse ≤ threshold to one line; expand larger with `{`/`}` on own lines and each property on own line (default: ≥2) ⚙️ |
 | `object-property-value-brace` | Opening `{` of object value on same line as `:`, not on new line |
 | `object-property-value-format` | Simple property values on same line as `:`, not on new line |
-| `opening-brackets-same-line` | Opening `{`, `[`, or `(` on same line as function call, not on new line |
-| `simple-call-single-line` | Collapse simple `fn(() => call())` patterns to single line |
-| `single-argument-on-one-line` | Single simple argument stays on one line: `fn(x)` not expanded |
 | `string-property-spacing` | No leading/trailing spaces inside string property keys |
+| **Spacing Rules** | |
+| `assignment-value-same-line` | Assignment values start on same line as `=`, not on new line |
+| `member-expression-bracket-spacing` | No spaces inside brackets in computed member expressions: `arr[0]` not `arr[ 0 ]` |
+| **TypeScript Rules** | |
+| `enum-format` | Enforce enum naming (PascalCase + Enum suffix), UPPER_CASE members, no empty lines, and trailing commas |
+| `interface-format` | Enforce interface naming (PascalCase + Interface suffix), camelCase properties, no empty lines, and trailing commas |
+| `type-format` | Enforce type naming (PascalCase + Type suffix), camelCase properties, no empty lines, and trailing commas |
+| `typescript-definition-location` | Enforce TypeScript definitions (interfaces, types, enums) to be in designated folders ⚙️ |
+| **Variable Rules** | |
 | `variable-naming-convention` | camelCase for variables, UPPER_CASE for constants, PascalCase for components, `use` prefix for hooks |
 
 <br />
@@ -484,75 +505,277 @@ const mapDispatch = () =>
 
 <br />
 
-## 📐 Spacing & Formatting Rules
+## 📞 Call Expression Rules
 
-### `assignment-value-same-line`
+### `function-arguments-format`
 
-**What it does:** Ensures the assigned value starts on the same line as the `=` sign, not on a new line.
+**What it does:** Enforces consistent formatting for function call arguments:
+- Single simple argument stays on one line
+- 2+ arguments get one per line
+- Multiline arguments trigger full expansion
+- React hooks are skipped by default (they have their own rule)
 
-**Why use it:** Breaking after `=` creates awkward formatting and wastes vertical space. Keeping values on the same line as `=` is more readable.
+**Why use it:** Consistent argument formatting makes function calls scannable and diffs clean when adding/removing arguments.
 
 ```javascript
-// ✅ Good — value starts on same line as =
-const name = "John";
-const config = {
-    host: "localhost",
-    port: 3000,
-};
-const items = [
-    "first",
-    "second",
-];
+// ✅ Good — single argument stays compact
+fetchUser(userId);
+console.log(message);
+dispatch(action);
 
-// ❌ Bad — value on new line after =
-const name =
-    "John";
-const config =
+// ✅ Good — 2+ arguments get one per line
+setValue(
+    "email",
+    "user@example.com",
+);
+
+createUser(
+    name,
+    email,
+    password,
+);
+
+// ✅ Good — multiline argument triggers expansion
+processData(
     {
-        host: "localhost",
-        port: 3000,
-    };
-const items =
-    [
-        "first",
-        "second",
-    ];
-```
+        id: 1,
+        name: "test",
+    },
+);
 
----
+// ✅ Good — callback with body triggers expansion
+items.forEach(
+    (item) => {
+        process(item);
+        save(item);
+    },
+);
 
-### `block-statement-newlines`
-
-**What it does:** Enforces newlines after the opening brace `{` and before the closing brace `}` in block statements (if, for, while, etc.).
-
-**Why use it:** Consistent block formatting improves readability. Single-line blocks are harder to scan and edit.
-
-```javascript
-// ✅ Good — proper block formatting
-if (condition) {
-    doSomething();
-}
-
-for (const item of items) {
-    process(item);
-}
-
-while (running) {
-    tick();
-}
-
-// ❌ Bad — everything on one line
-if (condition) { doSomething(); }
-
-// ❌ Bad — no space after brace
-if (condition) {doSomething();}
+// ❌ Bad — multiple arguments on same line
+setValue("email", "user@example.com");
+createUser(name, email, password);
 
 // ❌ Bad — inconsistent formatting
-for (const item of items) { process(item);
-}
+fn(arg1,
+    arg2, arg3);
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `minArgs` | `integer` | `2` | Minimum arguments to enforce multiline |
+| `skipHooks` | `boolean` | `true` | Skip React hooks (useEffect, etc.) |
+| `skipSingleArg` | `boolean` | `true` | Skip calls with single complex argument |
+
+```javascript
+// Example: Require multiline for 3+ arguments
+"code-style/function-arguments-format": ["error", { minArgs: 3 }]
+
+// Example: Don't skip React hooks
+"code-style/function-arguments-format": ["error", { skipHooks: false }]
 ```
 
 ---
+
+### `nested-call-closing-brackets`
+
+**What it does:** Ensures nested function calls (common in styled-components, HOCs) have closing brackets on the same line: `}));`
+
+**Why use it:** Scattered closing brackets (`}\n);\n` ) waste vertical space and make it harder to see where expressions end.
+
+```javascript
+// ✅ Good — closing brackets together
+const StyledCard = styled(Card)(({ theme }) => ({
+    color: theme.palette.text.primary,
+    padding: theme.spacing(2),
+}));
+
+const StyledButton = styled("button")(({ theme }) => ({
+    backgroundColor: theme.colors.primary,
+}));
+
+// ✅ Good — multiple levels
+const Component = connect(
+    mapStateToProps,
+    mapDispatchToProps,
+)(withRouter(MyComponent));
+
+// ❌ Bad — closing brackets scattered
+const StyledCard = styled(Card)(({ theme }) => ({
+    color: theme.palette.text.primary,
+})
+);
+
+// ❌ Bad — each bracket on its own line
+const StyledCard = styled(Card)(({ theme }) => ({
+    color: theme.colors.primary,
+})
+)
+;
+```
+
+---
+
+### `no-empty-lines-in-function-calls`
+
+**What it does:** Removes empty lines within function call argument lists — between arguments and after opening/before closing parentheses.
+
+**Why use it:** Empty lines between arguments break visual grouping. Arguments should flow as a cohesive list.
+
+```javascript
+// ✅ Good — no empty lines
+createUser(
+    name,
+    email,
+    password,
+    role,
+);
+
+fetchData(
+    url,
+    {
+        method: "POST",
+        body: data,
+    },
+);
+
+// ❌ Bad — empty line between arguments
+createUser(
+    name,
+
+    email,
+
+    password,
+);
+
+// ❌ Bad — empty line after opening paren
+fetchData(
+
+    url,
+    options,
+);
+
+// ❌ Bad — empty line before closing paren
+fetchData(
+    url,
+    options,
+
+);
+```
+
+---
+
+### `opening-brackets-same-line`
+
+**What it does:** Ensures opening brackets (`{`, `[`, `(`) in function arguments stay on the same line as the function call.
+
+**Why use it:** Opening brackets on new lines create unnecessary indentation and vertical space.
+
+```javascript
+// ✅ Good — brackets on same line as call
+fn({ key: value });
+process([1, 2, 3]);
+items.map(({ id }) => id);
+configure({ debug: true });
+
+// ✅ Good — multiline content is fine
+fn({
+    key: value,
+    other: data,
+});
+
+items.map(({ id, name }) => (
+    <Item key={id} name={name} />
+));
+
+// ❌ Bad — opening bracket on new line
+fn(
+    { key: value }
+);
+
+process(
+    [1, 2, 3]
+);
+
+items.map(
+    ({ id }) => id
+);
+```
+
+---
+
+### `simple-call-single-line`
+
+**What it does:** Collapses simple function calls with an arrow function containing a single call expression onto one line.
+
+**Why use it:** Common patterns like `lazy(() => import(...))` don't need multiline formatting. Single line is cleaner.
+
+```javascript
+// ✅ Good — simple patterns on one line
+const Page = lazy(() => import("./Page"));
+const Modal = lazy(() => import("./Modal"));
+setTimeout(() => callback(), 100);
+requestAnimationFrame(() => render());
+items.filter(() => isValid(item));
+
+// ✅ Good — complex callbacks stay multiline
+const Page = lazy(() => {
+    console.log("Loading page");
+    return import("./Page");
+});
+
+// ❌ Bad — unnecessary multiline for simple pattern
+const Page = lazy(
+    () => import("./Page"),
+);
+
+setTimeout(
+    () => callback(),
+    100,
+);
+```
+
+---
+
+### `single-argument-on-one-line`
+
+**What it does:** Ensures function calls with a single simple argument (literal, identifier, member expression) stay on one line.
+
+**Why use it:** Single-argument calls don't need multiline formatting. Expanding them wastes vertical space.
+
+```javascript
+// ✅ Good — single argument on one line
+fetchUser(userId);
+console.log(message);
+process(data.items);
+dispatch(action);
+setValue("key");
+getElement(document.body);
+
+// ✅ Good — complex single argument can be multiline
+processConfig({
+    key: value,
+    other: data,
+});
+
+// ❌ Bad — simple argument expanded unnecessarily
+fetchUser(
+    userId,
+);
+
+console.log(
+    message,
+);
+
+dispatch(
+    action,
+);
+```
+
+<br />
+
+## 💬 Comment Rules
 
 ### `comment-format`
 
@@ -589,293 +812,42 @@ for (const item of items) { process(item);
 /* This should use // syntax */
 ```
 
----
-
-### `member-expression-bracket-spacing`
-
-**What it does:** Removes spaces inside brackets in computed member expressions (array access, dynamic property access).
-
-**Why use it:** Consistent with JavaScript conventions. Spaces inside brackets look inconsistent with array literals and other bracket usage.
-
-```javascript
-// ✅ Good — no spaces inside brackets
-const value = arr[0];
-const name = obj[key];
-const item = data[index];
-const nested = matrix[row][col];
-
-// ❌ Bad — spaces inside brackets
-const value = arr[ 0 ];
-const name = obj[ key ];
-const item = data[ index ];
-```
-
----
-
-### `no-empty-lines-in-function-params`
-
-**What it does:** Removes empty lines within function parameter lists — between parameters and after opening/before closing parentheses.
-
-**Why use it:** Empty lines in parameter lists waste space and make parameters harder to scan as a group.
-
-```javascript
-// ✅ Good — no empty lines
-function createUser(
-    name,
-    email,
-    role,
-) {}
-
-const handler = (
-    event,
-    context,
-) => {};
-
-// ❌ Bad — empty line between params
-function createUser(
-    name,
-
-    email,
-
-    role,
-) {}
-
-// ❌ Bad — empty line after opening paren
-const handler = (
-
-    event,
-    context,
-) => {};
-```
-
----
-
-### `variable-naming-convention`
-
-**What it does:** Enforces naming conventions for variables:
-- **camelCase** for regular variables and functions
-- **UPPER_CASE** for constants (primitive values)
-- **PascalCase** for React components and classes
-- **camelCase with `use` prefix** for hooks
-
-**Why use it:** Consistent naming makes code predictable. You can tell what something is by how it's named.
-
-```javascript
-// ✅ Good — correct conventions
-const userName = "John";           // camelCase for variables
-const itemCount = 42;              // camelCase for variables
-const MAX_RETRIES = 3;             // UPPER_CASE for constants
-const API_BASE_URL = "/api";       // UPPER_CASE for constants
-const UserProfile = () => <div />; // PascalCase for components
-const useAuth = () => {};          // camelCase with use prefix for hooks
-
-// ❌ Bad — wrong conventions
-const user_name = "John";          // snake_case
-const maxretries = 3;              // should be UPPER_CASE
-const userProfile = () => <div />; // should be PascalCase
-const UseAuth = () => {};          // hooks should be camelCase
-```
-
-<br />
-
-## ⚡ Function Rules
-
-### `function-call-spacing`
-
-**What it does:** Removes any space between a function name and its opening parenthesis.
-
-**Why use it:** Standard JavaScript convention. `fn()` is correct, `fn ()` looks like a typo and can cause confusion.
-
-```javascript
-// ✅ Good — no space before parenthesis
-useDispatch();
-myFunction(arg);
-console.log("message");
-array.map((x) => x * 2);
-obj.method();
-
-// ❌ Bad — space before parenthesis
-useDispatch ();
-myFunction (arg);
-console.log ("message");
-array.map ((x) => x * 2);
-```
-
----
-
-### `function-naming-convention`
-
-**What it does:** Enforces naming conventions for functions:
-- **camelCase** required
-- **Verb prefix** recommended (get, set, handle, is, has, can, should, etc.)
-- **Event handlers** can use `handle` prefix or `Handler` suffix
-
-**Why use it:** Function names should describe actions. Verb prefixes make the purpose immediately clear.
-
-```javascript
-// ✅ Good — clear verb prefixes
-function getUserData() {}
-function setUserName(name) {}
-function handleClick() {}
-function handleSubmit() {}
-function isValidEmail(email) {}
-function hasPermission(user) {}
-function canAccess(resource) {}
-function shouldUpdate(props) {}
-const fetchUsers = async () => {};
-const submitHandler = () => {};
-
-// ❌ Bad — no verb, unclear purpose
-function userData() {}
-function userName(name) {}
-function click() {}
-function valid(email) {}
-
-// ❌ Bad — wrong case
-function GetUserData() {}
-function get_user_data() {}
-```
-
----
-
-### `function-params-per-line`
-
-**What it does:** When function parameters span multiple lines, ensures each parameter is on its own line with consistent indentation.
-
-**Why use it:** Mixed formatting (some params on same line, some on different lines) is confusing. One per line is scannable and easy to edit.
-
-```javascript
-// ✅ Good — each param on own line
-function createUser(
-    name,
-    email,
-    password,
-    role,
-) {}
-
-const handler = (
-    event,
-    context,
-    callback,
-) => {};
-
-// ✅ Good — short params can stay on one line
-function add(a, b) {}
-
-// ❌ Bad — mixed formatting
-function createUser(name,
-    email, password,
-    role) {}
-
-// ❌ Bad — some on same line, some not
-const handler = (event, context,
-    callback) => {};
-```
-
-<br />
-
-## 🪝 React Hooks Rules
-
-### `hook-callback-format`
-
-**What it does:** Enforces consistent multi-line formatting for React hooks that take a callback and dependency array (useEffect, useCallback, useMemo, useLayoutEffect).
-
-**Why use it:** Hooks with callbacks and dependencies are complex. Multi-line formatting makes the callback, return cleanup, and dependencies clearly visible.
-
-```javascript
-// ✅ Good — callback and deps clearly separated
-useEffect(
-    () => {
-        fetchData();
-    },
-    [userId],
-);
-
-useCallback(
-    () => {
-        handleSubmit(data);
-    },
-    [data, handleSubmit],
-);
-
-useMemo(
-    () => expensiveCalculation(items),
-    [items],
-);
-
-// ✅ Good — cleanup function visible
-useEffect(
-    () => {
-        const subscription = subscribe();
-
-        return () => subscription.unsubscribe();
-    },
-    [subscribe],
-);
-
-// ❌ Bad — everything crammed on one line
-useEffect(() => { fetchData(); }, [userId]);
-
-// ❌ Bad — hard to see dependencies
-useCallback(() => { handleSubmit(data); }, [data, handleSubmit]);
-```
-
----
-
-### `hook-deps-per-line`
-
-**What it does:** When a hook's dependency array exceeds the threshold (default: 2), each dependency goes on its own line.
-
-**Why use it:** Long dependency arrays are hard to scan and diff. One per line makes it easy to see what changed and catch missing/extra dependencies.
-
-```javascript
-// ✅ Good — 2 or fewer deps stay inline
-useEffect(() => {}, [userId]);
-useEffect(() => {}, [userId, token]);
-
-// ✅ Good — 3+ deps get one per line
-useEffect(
-    () => {},
-    [
-        userId,
-        token,
-        refreshToken,
-    ],
-);
-
-useCallback(
-    () => handleSubmit(data),
-    [
-        data,
-        handleSubmit,
-        validateForm,
-        showError,
-    ],
-);
-
-// ❌ Bad — too many deps on one line
-useEffect(() => {}, [userId, token, refreshToken, apiUrl]);
-
-// ❌ Bad — deps should be one per line when expanded
-useEffect(() => {}, [
-    userId, token, refreshToken,
-]);
-```
-
-**Options:**
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `maxDeps` | `integer` | `2` | Maximum dependencies to keep on single line |
-
-```javascript
-// Example: Allow up to 3 dependencies on single line
-"code-style/hook-deps-per-line": ["error", { maxDeps: 3 }]
-```
-
 <br />
 
 ## 🔀 Control Flow Rules
+
+### `block-statement-newlines`
+
+**What it does:** Enforces newlines after the opening brace `{` and before the closing brace `}` in block statements (if, for, while, etc.).
+
+**Why use it:** Consistent block formatting improves readability. Single-line blocks are harder to scan and edit.
+
+```javascript
+// ✅ Good — proper block formatting
+if (condition) {
+    doSomething();
+}
+
+for (const item of items) {
+    process(item);
+}
+
+while (running) {
+    tick();
+}
+
+// ❌ Bad — everything on one line
+if (condition) { doSomething(); }
+
+// ❌ Bad — no space after brace
+if (condition) {doSomething();}
+
+// ❌ Bad — inconsistent formatting
+for (const item of items) { process(item);
+}
+```
+
+---
 
 ### `if-statement-format`
 
@@ -1059,6 +1031,241 @@ switch (status) {
 
 <br />
 
+## ⚡ Function Rules
+
+### `function-call-spacing`
+
+**What it does:** Removes any space between a function name and its opening parenthesis.
+
+**Why use it:** Standard JavaScript convention. `fn()` is correct, `fn ()` looks like a typo and can cause confusion.
+
+```javascript
+// ✅ Good — no space before parenthesis
+useDispatch();
+myFunction(arg);
+console.log("message");
+array.map((x) => x * 2);
+obj.method();
+
+// ❌ Bad — space before parenthesis
+useDispatch ();
+myFunction (arg);
+console.log ("message");
+array.map ((x) => x * 2);
+```
+
+---
+
+### `function-naming-convention`
+
+**What it does:** Enforces naming conventions for functions:
+- **camelCase** required
+- **Verb prefix** recommended (get, set, handle, is, has, can, should, etc.)
+- **Event handlers** can use `handle` prefix or `Handler` suffix
+
+**Why use it:** Function names should describe actions. Verb prefixes make the purpose immediately clear.
+
+```javascript
+// ✅ Good — clear verb prefixes
+function getUserData() {}
+function setUserName(name) {}
+function handleClick() {}
+function handleSubmit() {}
+function isValidEmail(email) {}
+function hasPermission(user) {}
+function canAccess(resource) {}
+function shouldUpdate(props) {}
+const fetchUsers = async () => {};
+const submitHandler = () => {};
+
+// ❌ Bad — no verb, unclear purpose
+function userData() {}
+function userName(name) {}
+function click() {}
+function valid(email) {}
+
+// ❌ Bad — wrong case
+function GetUserData() {}
+function get_user_data() {}
+```
+
+---
+
+### `function-params-per-line`
+
+**What it does:** When function parameters span multiple lines, ensures each parameter is on its own line with consistent indentation.
+
+**Why use it:** Mixed formatting (some params on same line, some on different lines) is confusing. One per line is scannable and easy to edit.
+
+```javascript
+// ✅ Good — each param on own line
+function createUser(
+    name,
+    email,
+    password,
+    role,
+) {}
+
+const handler = (
+    event,
+    context,
+    callback,
+) => {};
+
+// ✅ Good — short params can stay on one line
+function add(a, b) {}
+
+// ❌ Bad — mixed formatting
+function createUser(name,
+    email, password,
+    role) {}
+
+// ❌ Bad — some on same line, some not
+const handler = (event, context,
+    callback) => {};
+```
+
+---
+
+### `no-empty-lines-in-function-params`
+
+**What it does:** Removes empty lines within function parameter lists — between parameters and after opening/before closing parentheses.
+
+**Why use it:** Empty lines in parameter lists waste space and make parameters harder to scan as a group.
+
+```javascript
+// ✅ Good — no empty lines
+function createUser(
+    name,
+    email,
+    role,
+) {}
+
+const handler = (
+    event,
+    context,
+) => {};
+
+// ❌ Bad — empty line between params
+function createUser(
+    name,
+
+    email,
+
+    role,
+) {}
+
+// ❌ Bad — empty line after opening paren
+const handler = (
+
+    event,
+    context,
+) => {};
+```
+
+<br />
+
+## 🪝 Hook Rules
+
+### `hook-callback-format`
+
+**What it does:** Enforces consistent multi-line formatting for React hooks that take a callback and dependency array (useEffect, useCallback, useMemo, useLayoutEffect).
+
+**Why use it:** Hooks with callbacks and dependencies are complex. Multi-line formatting makes the callback, return cleanup, and dependencies clearly visible.
+
+```javascript
+// ✅ Good — callback and deps clearly separated
+useEffect(
+    () => {
+        fetchData();
+    },
+    [userId],
+);
+
+useCallback(
+    () => {
+        handleSubmit(data);
+    },
+    [data, handleSubmit],
+);
+
+useMemo(
+    () => expensiveCalculation(items),
+    [items],
+);
+
+// ✅ Good — cleanup function visible
+useEffect(
+    () => {
+        const subscription = subscribe();
+
+        return () => subscription.unsubscribe();
+    },
+    [subscribe],
+);
+
+// ❌ Bad — everything crammed on one line
+useEffect(() => { fetchData(); }, [userId]);
+
+// ❌ Bad — hard to see dependencies
+useCallback(() => { handleSubmit(data); }, [data, handleSubmit]);
+```
+
+---
+
+### `hook-deps-per-line`
+
+**What it does:** When a hook's dependency array exceeds the threshold (default: 2), each dependency goes on its own line.
+
+**Why use it:** Long dependency arrays are hard to scan and diff. One per line makes it easy to see what changed and catch missing/extra dependencies.
+
+```javascript
+// ✅ Good — 2 or fewer deps stay inline
+useEffect(() => {}, [userId]);
+useEffect(() => {}, [userId, token]);
+
+// ✅ Good — 3+ deps get one per line
+useEffect(
+    () => {},
+    [
+        userId,
+        token,
+        refreshToken,
+    ],
+);
+
+useCallback(
+    () => handleSubmit(data),
+    [
+        data,
+        handleSubmit,
+        validateForm,
+        showError,
+    ],
+);
+
+// ❌ Bad — too many deps on one line
+useEffect(() => {}, [userId, token, refreshToken, apiUrl]);
+
+// ❌ Bad — deps should be one per line when expanded
+useEffect(() => {}, [
+    userId, token, refreshToken,
+]);
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxDeps` | `integer` | `2` | Maximum dependencies to keep on single line |
+
+```javascript
+// Example: Allow up to 3 dependencies on single line
+"code-style/hook-deps-per-line": ["error", { maxDeps: 3 }]
+```
+
+<br />
+
 ## 📥 Import/Export Rules
 
 ### `absolute-imports-only`
@@ -1092,7 +1299,7 @@ import { fetchUsers } from "@/apis/users/fetchUsers";
 ```
 
 **Default Allowed Folders:**
-`actions`, `apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `hooks`, `layouts`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `utils`, `views`
+`actions`, `apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `enums`, `hooks`, `interfaces`, `layouts`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `utils`, `views`
 
 **Customization Options:**
 
@@ -1336,7 +1543,7 @@ import { Button } from "@/components/Button/Button"; // Avoid this!
 ```
 
 **Default Module Folders:**
-`apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `hooks`, `layouts`, `middlewares`, `providers`, `redux`, `requests`, `routes`, `schemas`, `services`, `styles`, `theme`, `utils`, `views`
+`actions`, `apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `enums`, `hooks`, `interfaces`, `layouts`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `utils`, `views`
 
 **Default Ignore Patterns:**
 `index.js`, `index.jsx`, `index.ts`, `index.tsx`, `.DS_Store`, `__tests__`, `__mocks__`, `*.test.js`, `*.test.jsx`, `*.test.ts`, `*.test.tsx`, `*.spec.js`, `*.spec.jsx`, `*.spec.ts`, `*.spec.tsx`
@@ -1709,276 +1916,6 @@ function Card() {
 
 <br />
 
-## 📞 Call Expression Rules
-
-### `function-arguments-format`
-
-**What it does:** Enforces consistent formatting for function call arguments:
-- Single simple argument stays on one line
-- 2+ arguments get one per line
-- Multiline arguments trigger full expansion
-- React hooks are skipped by default (they have their own rule)
-
-**Why use it:** Consistent argument formatting makes function calls scannable and diffs clean when adding/removing arguments.
-
-```javascript
-// ✅ Good — single argument stays compact
-fetchUser(userId);
-console.log(message);
-dispatch(action);
-
-// ✅ Good — 2+ arguments get one per line
-setValue(
-    "email",
-    "user@example.com",
-);
-
-createUser(
-    name,
-    email,
-    password,
-);
-
-// ✅ Good — multiline argument triggers expansion
-processData(
-    {
-        id: 1,
-        name: "test",
-    },
-);
-
-// ✅ Good — callback with body triggers expansion
-items.forEach(
-    (item) => {
-        process(item);
-        save(item);
-    },
-);
-
-// ❌ Bad — multiple arguments on same line
-setValue("email", "user@example.com");
-createUser(name, email, password);
-
-// ❌ Bad — inconsistent formatting
-fn(arg1,
-    arg2, arg3);
-```
-
-**Options:**
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `minArgs` | `integer` | `2` | Minimum arguments to enforce multiline |
-| `skipHooks` | `boolean` | `true` | Skip React hooks (useEffect, etc.) |
-| `skipSingleArg` | `boolean` | `true` | Skip calls with single complex argument |
-
-```javascript
-// Example: Require multiline for 3+ arguments
-"code-style/function-arguments-format": ["error", { minArgs: 3 }]
-
-// Example: Don't skip React hooks
-"code-style/function-arguments-format": ["error", { skipHooks: false }]
-```
-
----
-
-### `nested-call-closing-brackets`
-
-**What it does:** Ensures nested function calls (common in styled-components, HOCs) have closing brackets on the same line: `}));`
-
-**Why use it:** Scattered closing brackets (`}\n);\n` ) waste vertical space and make it harder to see where expressions end.
-
-```javascript
-// ✅ Good — closing brackets together
-const StyledCard = styled(Card)(({ theme }) => ({
-    color: theme.palette.text.primary,
-    padding: theme.spacing(2),
-}));
-
-const StyledButton = styled("button")(({ theme }) => ({
-    backgroundColor: theme.colors.primary,
-}));
-
-// ✅ Good — multiple levels
-const Component = connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(withRouter(MyComponent));
-
-// ❌ Bad — closing brackets scattered
-const StyledCard = styled(Card)(({ theme }) => ({
-    color: theme.palette.text.primary,
-})
-);
-
-// ❌ Bad — each bracket on its own line
-const StyledCard = styled(Card)(({ theme }) => ({
-    color: theme.colors.primary,
-})
-)
-;
-```
-
----
-
-### `no-empty-lines-in-function-calls`
-
-**What it does:** Removes empty lines within function call argument lists — between arguments and after opening/before closing parentheses.
-
-**Why use it:** Empty lines between arguments break visual grouping. Arguments should flow as a cohesive list.
-
-```javascript
-// ✅ Good — no empty lines
-createUser(
-    name,
-    email,
-    password,
-    role,
-);
-
-fetchData(
-    url,
-    {
-        method: "POST",
-        body: data,
-    },
-);
-
-// ❌ Bad — empty line between arguments
-createUser(
-    name,
-
-    email,
-
-    password,
-);
-
-// ❌ Bad — empty line after opening paren
-fetchData(
-
-    url,
-    options,
-);
-
-// ❌ Bad — empty line before closing paren
-fetchData(
-    url,
-    options,
-
-);
-```
-
----
-
-### `opening-brackets-same-line`
-
-**What it does:** Ensures opening brackets (`{`, `[`, `(`) in function arguments stay on the same line as the function call.
-
-**Why use it:** Opening brackets on new lines create unnecessary indentation and vertical space.
-
-```javascript
-// ✅ Good — brackets on same line as call
-fn({ key: value });
-process([1, 2, 3]);
-items.map(({ id }) => id);
-configure({ debug: true });
-
-// ✅ Good — multiline content is fine
-fn({
-    key: value,
-    other: data,
-});
-
-items.map(({ id, name }) => (
-    <Item key={id} name={name} />
-));
-
-// ❌ Bad — opening bracket on new line
-fn(
-    { key: value }
-);
-
-process(
-    [1, 2, 3]
-);
-
-items.map(
-    ({ id }) => id
-);
-```
-
----
-
-### `simple-call-single-line`
-
-**What it does:** Collapses simple function calls with an arrow function containing a single call expression onto one line.
-
-**Why use it:** Common patterns like `lazy(() => import(...))` don't need multiline formatting. Single line is cleaner.
-
-```javascript
-// ✅ Good — simple patterns on one line
-const Page = lazy(() => import("./Page"));
-const Modal = lazy(() => import("./Modal"));
-setTimeout(() => callback(), 100);
-requestAnimationFrame(() => render());
-items.filter(() => isValid(item));
-
-// ✅ Good — complex callbacks stay multiline
-const Page = lazy(() => {
-    console.log("Loading page");
-    return import("./Page");
-});
-
-// ❌ Bad — unnecessary multiline for simple pattern
-const Page = lazy(
-    () => import("./Page"),
-);
-
-setTimeout(
-    () => callback(),
-    100,
-);
-```
-
----
-
-### `single-argument-on-one-line`
-
-**What it does:** Ensures function calls with a single simple argument (literal, identifier, member expression) stay on one line.
-
-**Why use it:** Single-argument calls don't need multiline formatting. Expanding them wastes vertical space.
-
-```javascript
-// ✅ Good — single argument on one line
-fetchUser(userId);
-console.log(message);
-process(data.items);
-dispatch(action);
-setValue("key");
-getElement(document.body);
-
-// ✅ Good — complex single argument can be multiline
-processConfig({
-    key: value,
-    other: data,
-});
-
-// ❌ Bad — simple argument expanded unnecessarily
-fetchUser(
-    userId,
-);
-
-console.log(
-    message,
-);
-
-dispatch(
-    action,
-);
-```
-
-<br />
-
 ## 📦 Object Rules
 
 ### `no-empty-lines-in-objects`
@@ -2196,6 +2133,267 @@ const obj = {
 const styles = {
     " & a ": { color: "red" },
 };
+```
+
+<br />
+
+## 📐 Spacing Rules
+
+### `assignment-value-same-line`
+
+**What it does:** Ensures the assigned value starts on the same line as the `=` sign, not on a new line.
+
+**Why use it:** Breaking after `=` creates awkward formatting and wastes vertical space. Keeping values on the same line as `=` is more readable.
+
+```javascript
+// ✅ Good — value starts on same line as =
+const name = "John";
+const config = {
+    host: "localhost",
+    port: 3000,
+};
+const items = [
+    "first",
+    "second",
+];
+
+// ❌ Bad — value on new line after =
+const name =
+    "John";
+const config =
+    {
+        host: "localhost",
+        port: 3000,
+    };
+const items =
+    [
+        "first",
+        "second",
+    ];
+```
+
+---
+
+### `member-expression-bracket-spacing`
+
+**What it does:** Removes spaces inside brackets in computed member expressions (array access, dynamic property access).
+
+**Why use it:** Consistent with JavaScript conventions. Spaces inside brackets look inconsistent with array literals and other bracket usage.
+
+```javascript
+// ✅ Good — no spaces inside brackets
+const value = arr[0];
+const name = obj[key];
+const item = data[index];
+const nested = matrix[row][col];
+
+// ❌ Bad — spaces inside brackets
+const value = arr[ 0 ];
+const name = obj[ key ];
+const item = data[ index ];
+```
+
+<br />
+
+## 🔷 TypeScript Rules
+
+### `enum-format`
+
+**What it does:** Enforces consistent formatting for TypeScript enums:
+- Enum names must be PascalCase and end with `Enum` suffix
+- Enum members must be UPPER_CASE (for string enums) or PascalCase (for numeric enums)
+- No empty lines between enum members
+- Members must end with commas, not semicolons
+
+**Why use it:** Consistent enum naming makes enums instantly recognizable. UPPER_CASE members follow common conventions for constants.
+
+```typescript
+// ✅ Good — proper enum format
+export enum StatusEnum {
+    ACTIVE = "active",
+    INACTIVE = "inactive",
+    PENDING = "pending",
+}
+
+export enum HttpMethodEnum {
+    DELETE = "DELETE",
+    GET = "GET",
+    POST = "POST",
+    PUT = "PUT",
+}
+
+// ❌ Bad — wrong naming
+export enum Status {           // Missing Enum suffix
+    active = "active",         // Should be UPPER_CASE
+    inactive = "inactive";     // Should use comma, not semicolon
+}
+
+// ❌ Bad — empty lines between members
+export enum UserStatusEnum {
+    ACTIVE = "active",
+
+    INACTIVE = "inactive",
+}
+```
+
+---
+
+### `interface-format`
+
+**What it does:** Enforces consistent formatting for TypeScript interfaces:
+- Interface names must be PascalCase and end with `Interface` suffix
+- Properties must be camelCase
+- No empty lines between properties
+- Properties must end with commas, not semicolons
+
+**Why use it:** Consistent interface naming makes interfaces instantly recognizable. The suffix clearly distinguishes interfaces from types and classes.
+
+```typescript
+// ✅ Good — proper interface format
+export interface UserInterface {
+    email: string,
+    id: string,
+    isActive: boolean,
+    name: string,
+}
+
+export interface ApiResponseInterface<T> {
+    data: T,
+    error: string | null,
+    status: number,
+    success: boolean,
+}
+
+// ❌ Bad — wrong naming
+export interface User {        // Missing Interface suffix
+    Email: string;             // Should be camelCase
+    ID: string;                // Should be camelCase
+    is_active: boolean;        // Should be camelCase, use comma
+}
+
+// ❌ Bad — semicolons and empty lines
+export interface UserInterface {
+    email: string;             // Should use comma
+
+    name: string;              // Empty line not allowed
+}
+```
+
+---
+
+### `type-format`
+
+**What it does:** Enforces consistent formatting for TypeScript type aliases:
+- Type names must be PascalCase and end with `Type` suffix
+- Properties must be camelCase
+- No empty lines between properties
+- Properties must end with commas, not semicolons
+
+**Why use it:** Consistent type naming makes types instantly recognizable. The suffix clearly distinguishes types from interfaces and classes.
+
+```typescript
+// ✅ Good — proper type format
+export type UserType = {
+    email: string,
+    id: string,
+    name: string,
+};
+
+export type ApiResponseType<T> = {
+    data: T,
+    error: string | null,
+    status: number,
+};
+
+// ❌ Bad — wrong naming
+export type User = {           // Missing Type suffix
+    Email: string;             // Should be camelCase
+    ID: string;                // Should use comma
+};
+
+// ❌ Bad — empty lines
+export type ConfigType = {
+    debug: boolean,
+
+    port: number,              // Empty line not allowed
+};
+```
+
+---
+
+### `typescript-definition-location`
+
+**What it does:** Enforces that TypeScript definitions are placed in their designated folders:
+- Interfaces must be in files inside the `interfaces` folder
+- Types must be in files inside the `types` folder
+- Enums must be in files inside the `enums` folder
+
+**Why use it:** Separating type definitions by category makes them easier to find, maintain, and share across the codebase. It promotes a clean and organized project structure.
+
+```typescript
+// ✅ Good — definitions in correct folders
+// src/interfaces/user.ts
+export interface UserInterface {
+    id: string,
+    name: string,
+}
+
+// src/types/config.ts
+export type ConfigType = {
+    apiUrl: string,
+    timeout: number,
+};
+
+// src/enums/status.ts
+export enum UserRoleEnum {
+    ADMIN = "admin",
+    USER = "user",
+}
+
+// ❌ Bad — definitions in wrong folders
+// src/components/user-card.tsx
+interface UserProps {          // Should be in interfaces folder
+    name: string,
+}
+
+// src/types/user.ts
+export interface UserInterface {   // Should be in interfaces folder, not types
+    id: string,
+}
+
+export enum StatusEnum {           // Should be in enums folder, not types
+    ACTIVE = "active",
+}
+```
+
+<br />
+
+## 📝 Variable Rules
+
+### `variable-naming-convention`
+
+**What it does:** Enforces naming conventions for variables:
+- **camelCase** for regular variables and functions
+- **UPPER_CASE** for constants (primitive values)
+- **PascalCase** for React components and classes
+- **camelCase with `use` prefix** for hooks
+
+**Why use it:** Consistent naming makes code predictable. You can tell what something is by how it's named.
+
+```javascript
+// ✅ Good — correct conventions
+const userName = "John";           // camelCase for variables
+const itemCount = 42;              // camelCase for variables
+const MAX_RETRIES = 3;             // UPPER_CASE for constants
+const API_BASE_URL = "/api";       // UPPER_CASE for constants
+const UserProfile = () => <div />; // PascalCase for components
+const useAuth = () => {};          // camelCase with use prefix for hooks
+
+// ❌ Bad — wrong conventions
+const user_name = "John";          // snake_case
+const maxretries = 3;              // should be UPPER_CASE
+const userProfile = () => <div />; // should be PascalCase
+const UseAuth = () => {};          // hooks should be camelCase
 ```
 
 <br />
