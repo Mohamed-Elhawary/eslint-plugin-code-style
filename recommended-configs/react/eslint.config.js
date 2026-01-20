@@ -277,6 +277,11 @@ export default [ // eslint-disable-line
 
             radix: 0,
 
+            // React hooks rules
+            "react-hooks/exhaustive-deps": "off",
+            "react-hooks/set-state-in-effect": 0,
+            "react-hooks/use-memo": 0,
+
             // React rules
             "react/button-has-type": 0,
             "react/display-name": "off",
@@ -334,11 +339,6 @@ export default [ // eslint-disable-line
             "react/react-in-jsx-scope": "off",
             "react/require-default-props": 0,
             "react/self-closing-comp": "error",
-
-            // React hooks rules
-            "react-hooks/exhaustive-deps": "off",
-            "react-hooks/set-state-in-effect": 0,
-            "react-hooks/use-memo": 0,
 
             // Import sort rules
             "simple-import-sort/exports": "error",

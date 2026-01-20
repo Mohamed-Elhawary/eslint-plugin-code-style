@@ -159,6 +159,7 @@ export default [ // eslint-disable-line
             "code-style/block-statement-newlines": "error",
             "code-style/comment-format": "error",
             "code-style/curried-arrow-same-line": "error",
+            "code-style/enum-format": "error",
             "code-style/export-format": "error",
             "code-style/function-arguments-format": "error",
             "code-style/function-call-spacing": "error",
@@ -170,6 +171,7 @@ export default [ // eslint-disable-line
             "code-style/import-format": "error",
             "code-style/import-source-spacing": "error",
             "code-style/index-export-style": "error",
+            "code-style/interface-format": "error",
             "code-style/jsx-children-on-new-line": "error",
             "code-style/jsx-closing-bracket-spacing": "error",
             "code-style/jsx-element-child-new-line": "error",
@@ -195,6 +197,8 @@ export default [ // eslint-disable-line
             "code-style/simple-call-single-line": "error",
             "code-style/single-argument-on-one-line": "error",
             "code-style/string-property-spacing": "error",
+            "code-style/type-format": "error",
+            "code-style/typescript-definition-location": "error",
             "code-style/variable-naming-convention": "error",
 
             // General rules
@@ -262,7 +266,28 @@ export default [ // eslint-disable-line
                     type: "natural",
                 },
             ],
+            "perfectionist/sort-enums": [
+                "error",
+                {
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
+            "perfectionist/sort-interfaces": [
+                "error",
+                {
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
             "perfectionist/sort-maps": [
+                "error",
+                {
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
+            "perfectionist/sort-object-types": [
                 "error",
                 {
                     order: "asc",
@@ -298,29 +323,13 @@ export default [ // eslint-disable-line
                     type: "natural",
                 },
             ],
-            "perfectionist/sort-enums": [
-                "error",
-                {
-                    order: "asc",
-                    type: "natural",
-                },
-            ],
-            "perfectionist/sort-interfaces": [
-                "error",
-                {
-                    order: "asc",
-                    type: "natural",
-                },
-            ],
-            "perfectionist/sort-object-types": [
-                "error",
-                {
-                    order: "asc",
-                    type: "natural",
-                },
-            ],
             
             radix: 0,
+
+            // React hooks rules
+            "react-hooks/exhaustive-deps": "off",
+            "react-hooks/set-state-in-effect": 0,
+            "react-hooks/use-memo": 0,
 
             // React rules
             "react/button-has-type": 0,
@@ -379,11 +388,6 @@ export default [ // eslint-disable-line
             "react/react-in-jsx-scope": "off",
             "react/require-default-props": 0,
             "react/self-closing-comp": "error",
-
-            // React hooks rules
-            "react-hooks/exhaustive-deps": "off",
-            "react-hooks/set-state-in-effect": 0,
-            "react-hooks/use-memo": 0,
 
             // Import sort rules
             "simple-import-sort/exports": "error",
