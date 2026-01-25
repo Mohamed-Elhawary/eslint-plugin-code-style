@@ -158,6 +158,8 @@ export default [ // eslint-disable-line
             "code-style/assignment-value-same-line": "error",
             "code-style/block-statement-newlines": "error",
             "code-style/comment-format": "error",
+            "code-style/component-props-destructure": "error",
+            "code-style/component-props-inline-type": "error",
             "code-style/curried-arrow-same-line": "error",
             "code-style/enum-format": "error",
             "code-style/export-format": "error",

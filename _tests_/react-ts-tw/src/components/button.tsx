@@ -1,26 +1,25 @@
 /*
 Test Rules:
-- tailwindcss/classnames-order (sorted Tailwind classes)
-- tailwindcss/enforces-shorthand (use shorthand classes)
-- TypeScript props interface
-- code-style/jsx-prop-naming-convention
+- code-style/component-props-destructure (props must be destructured)
+- code-style/component-props-inline-type (inline type annotation)
+- code-style/jsx-prop-naming-convention (camelCase for event handlers, data-* lowercase)
+- code-style/jsx-closing-bracket-spacing (no space before closing bracket)
+- code-style/jsx-simple-element-one-line (simple elements on single line)
+- code-style/jsx-string-value-trim (no leading/trailing whitespace in string values)
+- code-style/no-empty-lines-in-jsx (no empty lines between JSX attributes)
 */
-// Test: TypeScript component with interface props
 
-interface ButtonProps {
-    className?: string;
-    label: string;
-    onClick?: () => void;
-    variant?: "danger" | "primary" | "secondary";
-}
-
-// Test: Tailwind classes - should be ordered correctly
 export const Button = ({
     className = "",
     label,
     onClick,
     variant = "primary",
-}: ButtonProps) => {
+}: {
+    className?: string,
+    label: string,
+    onClick?: () => void,
+    variant?: "danger" | "primary" | "secondary",
+}) => {
     const variantClasses = {
         danger: "bg-red-500 hover:bg-red-600",
         primary: "bg-blue-500 hover:bg-blue-600",

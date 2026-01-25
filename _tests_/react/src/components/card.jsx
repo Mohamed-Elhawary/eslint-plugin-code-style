@@ -16,11 +16,11 @@ const Card = ({
     isLoading,
     title,
 }) => {
+    // Test: jsx-logical-expression-simplify (derived state before handlers)
+    const showDescription = Boolean(description);
+
     // Test: arrow-function-simple-jsx (simple JSX returns)
     const renderTitleHandler = () => <h2>{title}</h2>;
-
-    // Test: jsx-logical-expression-simplify
-    const showDescription = Boolean(description);
 
     // Test: jsx-ternary-format
     return (

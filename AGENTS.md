@@ -4,20 +4,21 @@ Instructions for AI coding agents working with this codebase.
 
 ## Project Overview
 
-**eslint-plugin-code-style** is an ESLint plugin providing 47 custom auto-fixable formatting rules for React/JSX projects. It's designed for ESLint v9+ flat config system.
+**eslint-plugin-code-style** is an ESLint plugin providing 56 custom auto-fixable formatting rules for React/JSX projects. It's designed for ESLint v9+ flat config system.
 
-- **Main entry:** `index.js` - Contains all 47 rules in a single file
+- **Main entry:** `index.js` - Contains all 56 rules in a single file
 - **Type definitions:** `index.d.ts` - TypeScript declarations for IDE support
 - **Recommended configs:** `recommended-configs/` - Ready-to-use ESLint configurations
 - **Test apps:** `_tests_/` - Sample apps for testing rules
 
 ### Available Configurations
 
-| Config | Folder | Status |
-|--------|--------|--------|
-| React (JS) | `react/` | Available |
-| React + TypeScript | `react-ts/` | Coming Soon |
-| React + TS + Tailwind | `react-ts-tw/` | Coming Soon |
+| Config | Recommended Folder | Test Folder | Status |
+|--------|-------------------|-------------|--------|
+| React (JS) | `recommended-configs/react/` | `_tests_/react/` | Available |
+| React + TS + Tailwind | `recommended-configs/react-ts-tw/` | `_tests_/react-ts-tw/` | Available |
+| React + TypeScript | - | - | Coming Soon |
+| React + Tailwind | - | - | Coming Soon |
 
 ## Build & Test Commands
 
@@ -43,7 +44,7 @@ index.js
 ├── imports (fs, path, url)
 ├── Rule 1 definition (const ruleName = { create(), meta: {} })
 ├── Rule 2 definition
-├── ... (47 rules total)
+├── ... (56 rules total)
 └── export default { meta: {}, rules: {} }
 ```
 
@@ -197,26 +198,23 @@ if (node.parent?.type === "CallExpression") return;
 
 ## Rule Categories
 
-Rules are organized in these categories (see default export):
+Rules are organized in these categories (alphabetically sorted in index.js and README.md):
 
-- **Array rules:** `array-*`
-- **Arrow function rules:** `arrow-function-*`, `curried-arrow-*`
-- **Assignment rules:** `assignment-*`
-- **Block statement rules:** `block-statement-*`
-- **Comment rules:** `comment-*`
-- **Function rules:** `function-*`
-- **Hook rules:** `hook-*`
-- **If statement rules:** `if-statement-*`, `multiline-if-*`
-- **Import/Export rules:** `absolute-imports-*`, `export-*`, `import-*`, `index-export-*`, `module-index-*`
-- **JSX rules:** `jsx-*`
-- **Member expression rules:** `member-expression-*`
-- **Nested call rules:** `nested-call-*`
-- **No empty lines rules:** `no-empty-lines-*`
-- **Object property rules:** `object-property-*`
-- **Opening brackets rules:** `opening-brackets-*`
-- **Simple call rules:** `simple-call-*`, `single-argument-*`
-- **String property rules:** `string-property-*`
-- **Variable rules:** `variable-*`
+- **Array Rules:** `array-items-per-line`, `array-objects-on-new-lines`
+- **Arrow Function Rules:** `arrow-function-block-body`, `arrow-function-simple-jsx`, `arrow-function-simplify`, `curried-arrow-same-line`
+- **Call Expression Rules:** `function-arguments-format`, `nested-call-closing-brackets`, `no-empty-lines-in-function-calls`, `opening-brackets-same-line`, `simple-call-single-line`, `single-argument-on-one-line`
+- **Comment Rules:** `comment-format`
+- **Component Rules:** `component-props-destructure`, `component-props-inline-type`
+- **Control Flow Rules:** `block-statement-newlines`, `if-statement-format`, `multiline-if-conditions`, `no-empty-lines-in-switch-cases`
+- **Function Rules:** `function-call-spacing`, `function-naming-convention`, `function-object-destructure`, `function-params-per-line`, `no-empty-lines-in-function-params`
+- **Hook Rules:** `hook-callback-format`, `hook-deps-per-line`
+- **Import/Export Rules:** `absolute-imports-only`, `export-format`, `import-format`, `import-source-spacing`, `index-export-style`, `module-index-exports`
+- **JSX Rules:** `jsx-children-on-new-line`, `jsx-closing-bracket-spacing`, `jsx-element-child-new-line`, `jsx-logical-expression-simplify`, `jsx-parentheses-position`, `jsx-prop-naming-convention`, `jsx-simple-element-one-line`, `jsx-string-value-trim`, `jsx-ternary-format`, `no-empty-lines-in-jsx`
+- **Object Rules:** `no-empty-lines-in-objects`, `object-property-per-line`, `object-property-value-brace`, `object-property-value-format`, `string-property-spacing`
+- **React Rules:** `react-code-order`
+- **Spacing Rules:** `assignment-value-same-line`, `member-expression-bracket-spacing`
+- **TypeScript Rules:** `enum-format`, `interface-format`, `type-annotation-spacing`, `type-format`, `typescript-definition-location`
+- **Variable Rules:** `variable-naming-convention`
 
 ## Naming Conventions
 
@@ -232,7 +230,7 @@ Rules are organized in these categories (see default export):
 
 ## Documentation Files
 
-- `README.md` - Main documentation with all 47 rules
+- `README.md` - Main documentation with all 56 rules
 - `recommended-configs/<config-name>/README.md` - Config-specific documentation (references main README for rule details)
 - `index.d.ts` - TypeScript types for IDE autocomplete
 

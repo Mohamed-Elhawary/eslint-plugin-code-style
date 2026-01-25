@@ -1,27 +1,25 @@
 /*
 Test Rules:
 - tailwindcss/enforces-shorthand
-- TypeScript children prop
+- code-style/component-props-destructure (props must be destructured)
+- code-style/component-props-inline-type (inline type annotation)
 - code-style/jsx-children-on-new-line
+- Test: TypeScript component with inline type annotation
 */
-// Test: TypeScript component with ReactNode children
 
 import type { ReactNode } from "react";
 
-interface CardProps {
-    children: ReactNode;
-    className?: string;
-    description?: string;
-    title: string;
-}
-
-// Test: Tailwind classes with shorthand enforcement
 export const Card = ({
     children,
     className = "",
     description,
     title,
-}: CardProps) => (
+}: {
+    children: ReactNode,
+    className?: string,
+    description?: string,
+    title: string,
+}) => (
     <div className={`rounded-lg border border-gray-200 bg-white p-6 shadow-md ${className}`}>
         <h2 className="mb-2 text-xl font-bold text-gray-800">{title}</h2>
         {description && <p className="mb-4 text-gray-600">{description}</p>}

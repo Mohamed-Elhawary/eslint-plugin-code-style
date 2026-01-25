@@ -6,7 +6,7 @@ Test Rules:
 */
 // Test: type import for TypeScript types
 
-import type { User } from "@/types";
+import type { UserInterface } from "@/interfaces";
 
 // Test: function naming convention with TypeScript return type
 export const formatCurrencyHandler = (amount: number): string => {
@@ -36,7 +36,10 @@ export const formatDateHandler = (date: Date): string => {
 };
 
 // Test: function using imported type
-export const formatUserNameHandler = (user: User): string => `${user.name} (${user.email})`;
+export const formatUserNameHandler = ({
+    email,
+    name,
+}: UserInterface): string => `${name} (${email})`;
 
 // Test: generic function with type parameter
 export const formatListHandler = <T>(items: T[], formatter: (item: T) => string): string => items.map(formatter).join(", ");

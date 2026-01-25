@@ -3,7 +3,6 @@ Test Rules:
 - code-style/type-format (PascalCase + Type suffix, camelCase props, commas)
 - code-style/typescript-definition-location (types in types folder)
 */
-// Test: type-format - proper type naming and formatting
 
 export type UserProfileType = {
     avatar: string,

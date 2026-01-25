@@ -14,7 +14,7 @@ This is the **recommended ESLint flat configuration** for React projects using T
 - **Tailwind CSS Optimization** — Enforces class ordering, shorthand usage, and catches common mistakes
 - **Type-Safe Imports** — Enforces consistent type imports with `import type`
 - **Sorted Interfaces & Enums** — Auto-sortable TypeScript interfaces and string enums
-- **All Base React Rules** — Includes all 51 custom code-style rules plus React best practices
+- **All Base React Rules** — Includes all 53 custom code-style rules plus React best practices
 - **TypeScript Formatting Rules** — Enforce consistent naming and formatting for interfaces, types, and enums
 
 ---
@@ -250,7 +250,7 @@ This configuration includes all rules from the base React configuration:
 - **eslint-plugin-check-file** — File naming conventions
 - **eslint-plugin-perfectionist** — Sorting rules
 - **eslint-plugin-simple-import-sort** — Import sorting
-- **eslint-plugin-code-style** — 47 custom formatting rules
+- **eslint-plugin-code-style** — 53 custom formatting rules
 
 For detailed documentation on these rules, see the [React configuration README](../react/README.md).
 

@@ -13,11 +13,15 @@ export type RuleNames =
     | "code-style/assignment-value-same-line"
     | "code-style/block-statement-newlines"
     | "code-style/comment-format"
+    | "code-style/component-props-destructure"
+    | "code-style/react-code-order"
+    | "code-style/component-props-inline-type"
     | "code-style/curried-arrow-same-line"
     | "code-style/export-format"
     | "code-style/function-arguments-format"
     | "code-style/function-call-spacing"
     | "code-style/function-naming-convention"
+    | "code-style/function-object-destructure"
     | "code-style/function-params-per-line"
     | "code-style/hook-callback-format"
     | "code-style/hook-deps-per-line"
@@ -86,11 +90,15 @@ interface PluginRules {
     "assignment-value-same-line": Rule.RuleModule;
     "block-statement-newlines": Rule.RuleModule;
     "comment-format": Rule.RuleModule;
+    "component-props-destructure": Rule.RuleModule;
+    "react-code-order": Rule.RuleModule;
+    "component-props-inline-type": Rule.RuleModule;
     "curried-arrow-same-line": Rule.RuleModule;
     "export-format": Rule.RuleModule;
     "function-arguments-format": Rule.RuleModule;
     "function-call-spacing": Rule.RuleModule;
     "function-naming-convention": Rule.RuleModule;
+    "function-object-destructure": Rule.RuleModule;
     "function-params-per-line": Rule.RuleModule;
     "hook-callback-format": Rule.RuleModule;
     "hook-deps-per-line": Rule.RuleModule;

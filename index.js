@@ -463,94 +463,127 @@ const arrowFunctionBlockBody = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const isJsxAttributeArrowHandler = (node) => {
+        const isJsxRelatedArrowHandler = (node) => {
+            // Traverse up the tree to check if this arrow function is eventually
+            // inside a JSX attribute (directly or nested in objects/arrays)
+            // OR inside a table column definition (cell/header property in array)
             let parent = node.parent;
+            let depth = 0;
+            const maxDepth = 15;
+            let foundCellProperty = false;
+            let foundArrayExpression = false;
 
-            if (parent && parent.type === "JSXExpressionContainer") {
-                parent = parent.parent;
+            while (parent && depth < maxDepth) {
+                // Found JSX attribute - this is JSX-related
+                if (parent.type === "JSXExpressionContainer") {
+                    const grandParent = parent.parent;
 
-                if (parent && parent.type === "JSXAttribute") return true;
+                    if (grandParent && grandParent.type === "JSXAttribute") return true;
+                }
+
+                // Track if we're inside a "cell" or "header" property (table column pattern)
+                if (parent.type === "Property" && parent.key && parent.key.type === "Identifier") {
+                    const propName = parent.key.name;
+
+                    if (propName === "cell" || propName === "header") {
+                        foundCellProperty = true;
+                    }
+                }
+
+                // Track if we're inside an ArrayExpression
+                if (parent.type === "ArrayExpression") {
+                    foundArrayExpression = true;
+                }
+
+                // If we found both cell property and array, this is a table column definition
+                if (foundCellProperty && foundArrayExpression) return true;
+
+                // Continue traversing through valid container types
+                if (
+                    parent.type === "Property" ||
+                    parent.type === "ObjectExpression" ||
+                    parent.type === "ArrayExpression" ||
+                    parent.type === "CallExpression" ||
+                    parent.type === "ArrowFunctionExpression"
+                ) {
+                    parent = parent.parent;
+                    depth += 1;
+
+                    continue;
+                }
+
+                // Stop at other node types
+                break;
             }
 
             return false;
         };
 
         const checkArrowFunctionHandler = (node) => {
-            if (!isJsxAttributeArrowHandler(node)) return;
+            if (!isJsxRelatedArrowHandler(node)) return;
 
             // Only check expression bodies (not block bodies)
             if (node.body.type === "BlockStatement") return;
 
             const body = node.body;
 
-            // Skip JSX elements wrapped in parentheses - they're fine
-            if (body.type === "JSXElement" || body.type === "JSXFragment") return;
-
-            // Skip ConditionalExpression (ternary) that contains JSX - common pattern
-            if (body.type === "ConditionalExpression") return;
-
             // Skip ObjectExpression - common pattern for sx prop: (theme) => ({...})
             if (body.type === "ObjectExpression") return;
 
-            // Skip single-line CallExpression - common for event handlers: (e) => handler(e, "value")
-            // But wrap multiline CallExpression in parentheses: () => (\n    fn({ multiline })\n)
-            if (body.type === "CallExpression") {
-                const callIsOnSingleLine = body.loc.start.line === body.loc.end.line;
+            // Get the arrow token to check positioning
+            const arrowToken = sourceCode.getTokenBefore(body, (t) => t.value === "=>");
 
-                if (callIsOnSingleLine) return;
+            if (!arrowToken) return;
 
-                // Check if already wrapped in parentheses - skip if so
-                const arrowToken = sourceCode.getTokenBefore(body, (t) => t.value === "=>");
+            // Skip if body starts on the same line as => (already valid implicit return)
+            // This handles cases like: prop={(x) => x.map({\n  ...\n})}
+            if (body.loc.start.line === arrowToken.loc.start.line) return;
 
-                if (arrowToken) {
-                    const tokenAfterArrow = sourceCode.getTokenAfter(arrowToken);
+            // Check if already wrapped in parentheses - skip if so
+            const tokenAfterArrow = sourceCode.getTokenAfter(arrowToken);
 
-                    if (tokenAfterArrow && tokenAfterArrow.value === "(") {
-                        // Already wrapped in parentheses, skip
-                        return;
-                    }
-                }
+            if (tokenAfterArrow && tokenAfterArrow.value === "(") return;
 
-                // Multiline call expression in JSX prop should use parentheses for implicit return
-                const arrowLine = sourceCode.lines[node.loc.start.line - 1];
-                const arrowIndent = arrowLine.match(/^\s*/)[0];
-                const innerIndent = arrowIndent + "    ";
-                const bodyText = sourceCode.getText(body);
+            // Get text between arrow and body (the newline + whitespace)
+            const textBetween = sourceCode.getText().slice(arrowToken.range[1], body.range[0]);
+
+            // Only fix if there's actually a newline between => and body
+            if (!textBetween.includes("\n")) return;
+
+            // For ConditionalExpression (ternary) or multiline bodies:
+            // Just move the START to the same line as =>, don't collapse the whole body
+            if (body.type === "ConditionalExpression" || body.loc.start.line !== body.loc.end.line) {
+                // Get the first token of the body to move just that part
+                const firstBodyToken = sourceCode.getFirstToken(body);
 
                 context.report({
-                    fix: (fixer) => fixer.replaceText(
-                        node.body,
-                        `(\n${innerIndent}${bodyText}\n${arrowIndent})`,
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [arrowToken.range[1], firstBodyToken.range[0]],
+                        " ",
                     ),
-                    message: "Arrow function with multiline call should use parentheses for implicit return",
-                    node: node.body,
+                    message: "Arrow function body should start on same line as =>",
+                    node: body,
                 });
 
                 return;
             }
 
-            // If expression spans multiple lines, wrap in parentheses for implicit return
-            if (body.loc.start.line !== body.loc.end.line) {
-                // Get the indentation of the arrow function
-                const arrowLine = sourceCode.lines[node.loc.start.line - 1];
-                const arrowIndent = arrowLine.match(/^\s*/)[0];
-                const innerIndent = arrowIndent + "    ";
+            // Single-line body that starts on a new line after => - move it to same line
+            // This handles cases like:
+            // cell: ({ row }) =>
+            //     optionsData.account.status.badges?.[row.getValue("status")]
+            // Should become:
+            // cell: ({ row }) => optionsData.account.status.badges?.[row.getValue("status")]
+            const bodyText = sourceCode.getText(body);
 
-                // Get the body text and re-indent it
-                const bodyText = sourceCode.getText(body);
-
-                // Use parentheses for implicit return instead of block body with explicit return
-                const newBody = `(\n${innerIndent}${bodyText}\n${arrowIndent})`;
-
-                context.report({
-                    fix: (fixer) => fixer.replaceText(
-                        body,
-                        newBody,
-                    ),
-                    message: "Arrow function in JSX prop with multiline body should use parentheses",
-                    node: body,
-                });
-            }
+            context.report({
+                fix: (fixer) => fixer.replaceTextRange(
+                    [arrowToken.range[1], body.range[1]],
+                    ` ${bodyText}`,
+                ),
+                message: "Arrow function body should start on same line as =>",
+                node: body,
+            });
         };
 
         return { ArrowFunctionExpression: checkArrowFunctionHandler };
@@ -837,7 +870,7 @@ const arrowFunctionSimplify = {
                 return;
             }
 
-            // Check if multi-line expression can be simplified
+            // Check if multi-line expression can be simplified to one line
             if (canSimplifyToOneLineHandler(expression)) {
                 const simplifiedText = buildSimplifiedTextHandler(expression);
 
@@ -849,10 +882,69 @@ const arrowFunctionSimplify = {
                     message: "Arrow function with simple nested call should be simplified to one line",
                     node: node.body,
                 });
+
+                return;
+            }
+
+            // Check for call expression with multiline object/array argument
+            // e.g., setSorting({ by: "", number: 0, order: "" })
+            // This should become expression body but keep the multiline format
+            if (expression.type === "CallExpression") {
+                const expressionText = sourceCode.getText(expression);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(
+                        node.body,
+                        expressionText,
+                    ),
+                    message: "Arrow function with single statement should use expression body",
+                    node: node.body,
+                });
             }
         };
 
-        return { ArrowFunctionExpression: checkArrowFunctionHandler };
+        // Check for JSX expression closing brace on wrong line
+        const checkJsxExpressionClosingHandler = (node) => {
+            const expression = node.expression;
+
+            // Only check arrow functions with call expression body
+            if (expression.type !== "ArrowFunctionExpression") return;
+            if (expression.body.type === "BlockStatement") return;
+            if (expression.body.type !== "CallExpression") return;
+
+            const callExpr = expression.body;
+            const lastArg = callExpr.arguments[callExpr.arguments.length - 1];
+
+            if (!lastArg) return;
+
+            // Check if last argument is multiline object/array
+            if (lastArg.type !== "ObjectExpression" && lastArg.type !== "ArrayExpression") return;
+            if (lastArg.loc.start.line === lastArg.loc.end.line) return;
+
+            // Get the closing tokens: ) of call, } of JSX expression
+            const callCloseParen = sourceCode.getLastToken(callExpr);
+            const jsxCloseBrace = sourceCode.getLastToken(node);
+
+            if (!callCloseParen || !jsxCloseBrace) return;
+            if (callCloseParen.value !== ")" || jsxCloseBrace.value !== "}") return;
+
+            // Check if ) and } are on different lines
+            if (callCloseParen.loc.end.line !== jsxCloseBrace.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [callCloseParen.range[1], jsxCloseBrace.range[0]],
+                        "",
+                    ),
+                    message: "JSX expression closing brace should be on same line as function call: )}",
+                    node: jsxCloseBrace,
+                });
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkArrowFunctionHandler,
+            JSXExpressionContainer: checkJsxExpressionClosingHandler,
+        };
     },
     meta: {
         docs: { description: "Simplify arrow functions in JSX props with single statement block body" },
@@ -1477,13 +1569,28 @@ const functionParamsPerLine = {
             if (param.type === "ObjectPattern") {
                 const props = param.properties.map((prop) => {
                     if (prop.type === "RestElement") {
-                        return `...${prop.argument.name}`;
+                        return `...${getCleanParamTextHandler(prop.argument)}`;
                     }
 
                     const key = sourceCode.getText(prop.key);
-                    const value = prop.value ? sourceCode.getText(prop.value) : key;
 
-                    return prop.shorthand ? key : `${key}: ${value}`;
+                    // Recursively clean nested patterns
+                    let value;
+
+                    if (prop.value) {
+                        if (prop.value.type === "ObjectPattern" || prop.value.type === "ArrayPattern" || prop.value.type === "AssignmentPattern") {
+                            value = getCleanParamTextHandler(prop.value);
+                        } else {
+                            value = sourceCode.getText(prop.value).replace(/\s+/g, " ").trim();
+                        }
+                    } else {
+                        value = key;
+                    }
+
+                    // Check if shorthand (key and value are the same identifier)
+                    const isShorthand = prop.shorthand || (prop.value && prop.value.type === "Identifier" && prop.value.name === prop.key.name);
+
+                    return isShorthand ? key : `${key}: ${value}`;
                 });
 
                 return `{ ${props.join(", ")} }`;
@@ -1501,38 +1608,54 @@ const functionParamsPerLine = {
 
             if (param.type === "AssignmentPattern") {
                 const leftText = getCleanParamTextHandler(param.left);
-                const rightText = sourceCode.getText(param.right);
+                const rightText = sourceCode.getText(param.right).replace(/\s+/g, " ").trim();
 
                 return `${leftText} = ${rightText}`;
             }
 
             if (param.type === "RestElement") {
-                return `...${param.argument.name}`;
+                return `...${getCleanParamTextHandler(param.argument)}`;
             }
 
-            return sourceCode.getText(param);
+            return sourceCode.getText(param).replace(/\s+/g, " ").trim();
         };
 
-        // Returns true only if any param has 2+ destructured properties
-        const hasComplexDestructuredParamHandler = (params) => params.some((param) => {
-            let pattern = param;
+        // Check if a pattern (or any nested pattern) has 2+ properties
+        const hasComplexPatternHandler = (pattern) => {
+            if (!pattern) return false;
 
-            if (param.type === "AssignmentPattern") {
-                pattern = param.left;
+            if (pattern.type === "AssignmentPattern") {
+                return hasComplexPatternHandler(pattern.left);
             }
 
             if (pattern.type === "ObjectPattern") {
-                return pattern.properties.length >= 2;
+                // Check if this pattern has 2+ properties
+                if (pattern.properties.length >= 2) return true;
+
+                // Check nested patterns
+                for (const prop of pattern.properties) {
+                    if (prop.type === "Property" && prop.value) {
+                        if (hasComplexPatternHandler(prop.value)) return true;
+                    }
+                }
             }
 
             if (pattern.type === "ArrayPattern") {
                 const elements = pattern.elements.filter((el) => el !== null);
 
-                return elements.length >= 2;
+                if (elements.length >= 2) return true;
+
+                // Check nested patterns
+                for (const el of elements) {
+                    if (hasComplexPatternHandler(el)) return true;
+                }
             }
 
             return false;
-        });
+        };
+
+        // Returns true only if any param has 2+ destructured properties (including nested)
+        const hasComplexDestructuredParamHandler = (params) => params.some((param) => hasComplexPatternHandler(param));
 
         const checkDestructuredParamHandler = (param, baseIndent) => {
             let pattern = param;
@@ -1545,10 +1668,42 @@ const functionParamsPerLine = {
             if (pattern.type === "ObjectPattern") {
                 const properties = pattern.properties;
 
-                if (properties.length < 2) return;
+                // Check if this pattern needs multiline:
+                // - Has 2+ properties itself, OR
+                // - Any nested pattern has 2+ properties (is complex)
+                const hasComplexNested = properties.some((prop) => {
+                    if (prop.type === "Property" && prop.value) {
+                        return hasComplexPatternHandler(prop.value);
+                    }
+
+                    return false;
+                });
+
+                const needsMultiline = properties.length >= 2 || hasComplexNested;
+
+                // Check nested patterns first (regardless of this pattern's property count)
+                for (const prop of properties) {
+                    if (prop.type === "Property" && prop.value) {
+                        // Calculate indent for nested pattern
+                        const nestedIndent = baseIndent + 4;
+
+                        checkDestructuredParamHandler(prop.value, nestedIndent);
+                    }
+                }
+
+                if (!needsMultiline) return;
 
                 const openBrace = sourceCode.getFirstToken(pattern);
-                const closeBrace = sourceCode.getLastToken(pattern);
+                // Don't use getLastToken(pattern) - for ObjectPattern with typeAnnotation,
+                // the pattern's range includes the type annotation, so getLastToken would
+                // return the last token of the type, not the closing brace.
+                // Instead, find the "}" token after the last property.
+                const lastProp = properties[properties.length - 1];
+                let closeBrace = sourceCode.getTokenAfter(lastProp);
+
+                while (closeBrace && closeBrace.value !== "}") {
+                    closeBrace = sourceCode.getTokenAfter(closeBrace);
+                }
                 const propIndent = " ".repeat(baseIndent + 4);
                 const braceIndent = " ".repeat(baseIndent);
 
@@ -1558,18 +1713,32 @@ const functionParamsPerLine = {
                             [openBrace.range[1], properties[0].range[0]],
                             "\n" + propIndent,
                         ),
-                        message: "First destructured property should be on its own line when 2+ properties",
+                        message: "First destructured property should be on its own line when complex destructuring",
                         node: properties[0],
                     });
                 }
 
                 if (closeBrace.loc.start.line === properties[properties.length - 1].loc.end.line) {
+                    // Check if pattern has a type annotation (it's on pattern, not param for AssignmentPattern)
+                    const hasTypeAnnotation = pattern.typeAnnotation;
+
                     context.report({
-                        fix: (fixer) => fixer.replaceTextRange(
-                            [properties[properties.length - 1].range[1], closeBrace.range[0]],
-                            ",\n" + braceIndent,
-                        ),
-                        message: "Closing brace should be on its own line when 2+ properties",
+                        fix: (fixer) => {
+                            if (hasTypeAnnotation) {
+                                // Include the closing brace in the replacement to avoid conflicts
+                                // with componentPropsInlineType rule
+                                return fixer.replaceTextRange(
+                                    [properties[properties.length - 1].range[1], closeBrace.range[1]],
+                                    ",\n" + braceIndent + "}",
+                                );
+                            }
+
+                            return fixer.replaceTextRange(
+                                [properties[properties.length - 1].range[1], closeBrace.range[0]],
+                                ",\n" + braceIndent,
+                            );
+                        },
+                        message: "Closing brace should be on its own line when complex destructuring",
                         node: closeBrace,
                     });
                 }
@@ -1590,7 +1759,7 @@ const functionParamsPerLine = {
                                 [commaToken.range[1], next.range[0]],
                                 "\n" + propIndent,
                             ),
-                            message: "Each destructured property should be on its own line when 2+ properties",
+                            message: "Each destructured property should be on its own line when complex destructuring",
                             node: next,
                         });
                     }
@@ -1600,6 +1769,15 @@ const functionParamsPerLine = {
             // Only enforce multi-line for 2+ destructured array elements
             if (pattern.type === "ArrayPattern") {
                 const elements = pattern.elements.filter((el) => el !== null);
+
+                // Check nested patterns first
+                for (const el of elements) {
+                    if (el) {
+                        const nestedIndent = baseIndent + 4;
+
+                        checkDestructuredParamHandler(el, nestedIndent);
+                    }
+                }
 
                 if (elements.length < 2) return;
 
@@ -1823,6 +2001,13 @@ const functionParamsPerLine = {
                         node: next,
                     });
                 }
+            }
+
+            // Check nested destructuring inside each param
+            for (const p of params) {
+                const pIndent = p.loc.start.column;
+
+                checkDestructuredParamHandler(p, pIndent);
             }
         };
 
@@ -2156,8 +2341,8 @@ const ifStatementFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        // Simple conditions that should be on single line (no logical expressions)
-        const isSimpleConditionHandler = (testNode) => {
+        // Conditions that should be on single line
+        const isSimpleConditionHandler = (testNode, testText) => {
             const simpleTypes = [
                 "Identifier",
                 "MemberExpression",
@@ -2172,8 +2357,14 @@ const ifStatementFormat = {
                 return true;
             }
 
-            // LogicalExpression with multiple conditions should NOT be collapsed
-            // They are intentionally multi-line for readability
+            // LogicalExpression - collapse if it's short enough to fit on one line
+            // "Short enough" means under 80 characters for the condition itself
+            if (testNode.type === "LogicalExpression") {
+                const conditionLength = testText.replace(/\s+/g, " ").trim().length;
+
+                return conditionLength <= 80;
+            }
+
             return false;
         };
 
@@ -2218,18 +2409,20 @@ const ifStatementFormat = {
                 return;
             }
 
-            // Check for simple conditions that span multiple lines - collapse to single line
+            // Check for conditions that span multiple lines - collapse to single line if short enough
             const conditionSpansMultipleLines = openParen.loc.end.line !== closeParen.loc.start.line;
+            const testText = sourceCode.getText(test);
 
-            if (conditionSpansMultipleLines && isSimpleConditionHandler(test)) {
-                const testText = sourceCode.getText(test);
+            if (conditionSpansMultipleLines && isSimpleConditionHandler(test, testText)) {
+                // Normalize whitespace in condition text
+                const normalizedText = testText.replace(/\s+/g, " ").trim();
 
                 context.report({
                     fix: (fixer) => fixer.replaceTextRange(
                         [openParen.range[1], closeParen.range[0]],
-                        testText,
+                        normalizedText,
                     ),
-                    message: "Simple if condition should be on a single line",
+                    message: "If condition should be on a single line",
                     node: test,
                 });
 
@@ -2360,17 +2553,61 @@ const multilineIfConditions = {
 
             const isMultiLine = openParen.loc.start.line !== closeParen.loc.end.line;
 
-            // maxOperands or fewer operands: keep on single line
+            // Check if a BinaryExpression is split across lines (left/operator/right not on same line)
+            const isBinaryExpressionSplitHandler = (n) => {
+                if (n.type !== "BinaryExpression") return false;
+
+                const { left, right } = n;
+
+                // Check if left ends on different line than right starts
+                if (left.loc.end.line !== right.loc.start.line) return true;
+
+                // Recursively check nested binary expressions
+                if (isBinaryExpressionSplitHandler(left)) return true;
+                if (isBinaryExpressionSplitHandler(right)) return true;
+
+                return false;
+            };
+
+            // Collapse a BinaryExpression to single line
+            const buildBinaryExpressionSingleLineHandler = (n) => {
+                if (n.type === "BinaryExpression") {
+                    const leftText = buildBinaryExpressionSingleLineHandler(n.left);
+                    const rightText = buildBinaryExpressionSingleLineHandler(n.right);
+
+                    return `${leftText} ${n.operator} ${rightText}`;
+                }
+
+                return sourceCode.getText(n);
+            };
+
+            // maxOperands or fewer operands: keep on single line (operand starts on same line)
             if (operands.length <= maxOperands) {
-                if (isMultiLine) {
+                // Check if all operands START on the same line
+                const firstOperandStartLine = operands[0].loc.start.line;
+                const allOperandsStartOnSameLine = operands.every(
+                    (op) => op.loc.start.line === firstOperandStartLine,
+                );
+
+                // Check if any BinaryExpression operand is split across lines
+                const hasSplitBinaryExpression = operands.some(
+                    (op) => isBinaryExpressionSplitHandler(op),
+                );
+
+                if (!allOperandsStartOnSameLine || hasSplitBinaryExpression) {
                     context.report({
                         fix: (fixer) => {
-                            const buildSingleLineHandler = (n) => {
+                            const buildSameLineHandler = (n) => {
                                 if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
-                                    const leftText = buildSingleLineHandler(n.left);
-                                    const rightText = buildSingleLineHandler(n.right);
+                                    const leftText = buildSameLineHandler(n.left);
+                                    const rightText = buildSameLineHandler(n.right);
 
                                     return `${leftText} ${n.operator} ${rightText}`;
+                                }
+
+                                // Handle split BinaryExpressions
+                                if (n.type === "BinaryExpression" && isBinaryExpressionSplitHandler(n)) {
+                                    return buildBinaryExpressionSingleLineHandler(n);
                                 }
 
                                 return getSourceTextWithGroupsHandler(n);
@@ -2378,16 +2615,42 @@ const multilineIfConditions = {
 
                             return fixer.replaceTextRange(
                                 [openParen.range[0], closeParen.range[1]],
-                                `(${buildSingleLineHandler(test)})`,
+                                `(${buildSameLineHandler(test)})`,
                             );
                         },
-                        message: `If conditions with ${maxOperands} or fewer operands should be on a single line`,
+                        message: `If conditions with ${maxOperands} or fewer operands should have all operands start on the same line`,
                         node: test,
                     });
                 }
 
                 return;
             }
+
+            // Helper to check if any operator is at end of line (wrong position)
+            const hasOperatorAtEndOfLineHandler = (n) => {
+                if (n.type !== "LogicalExpression") return false;
+
+                const operatorToken = sourceCode.getTokenAfter(
+                    n.left,
+                    (t) => t.value === "||" || t.value === "&&",
+                );
+
+                if (operatorToken) {
+                    // Check if there's a newline after the operator
+                    const tokenAfterOperator = sourceCode.getTokenAfter(operatorToken);
+
+                    if (tokenAfterOperator && operatorToken.loc.end.line < tokenAfterOperator.loc.start.line) {
+                        // Operator is at end of line - this is wrong
+                        return true;
+                    }
+                }
+
+                // Recursively check nested logical expressions
+                if (hasOperatorAtEndOfLineHandler(n.left)) return true;
+                if (hasOperatorAtEndOfLineHandler(n.right)) return true;
+
+                return false;
+            };
 
             // More than maxOperands: each on its own line
             let isCorrectionNeeded = !isMultiLine;
@@ -2401,6 +2664,11 @@ const multilineIfConditions = {
                 }
 
                 if (openParen.loc.end.line === operands[0].loc.start.line) {
+                    isCorrectionNeeded = true;
+                }
+
+                // Check if any operator is at end of line (should be at beginning)
+                if (!isCorrectionNeeded && hasOperatorAtEndOfLineHandler(test)) {
                     isCorrectionNeeded = true;
                 }
             }
@@ -2433,10 +2701,137 @@ const multilineIfConditions = {
             }
         };
 
-        return { IfStatement: checkIfStatementHandler };
+        const checkPropertyHandler = (node) => {
+            const { value } = node;
+
+            // Only handle Property nodes where value is a LogicalExpression
+            if (!value || value.type !== "LogicalExpression") return;
+
+            const operands = collectOperandsHandler(value);
+
+            // Need at least 2 operands to apply formatting
+            if (operands.length < 2) return;
+
+            const valueStartLine = value.loc.start.line;
+            const valueEndLine = value.loc.end.line;
+            const isMultiLine = valueStartLine !== valueEndLine;
+
+            // Check if a BinaryExpression is split across lines (left/operator/right not on same line)
+            const isBinaryExpressionSplitHandler = (n) => {
+                if (n.type !== "BinaryExpression") return false;
+
+                const { left, right } = n;
+
+                // Check if left ends on different line than right starts
+                if (left.loc.end.line !== right.loc.start.line) return true;
+
+                // Recursively check nested binary expressions
+                if (isBinaryExpressionSplitHandler(left)) return true;
+                if (isBinaryExpressionSplitHandler(right)) return true;
+
+                return false;
+            };
+
+            // Collapse a BinaryExpression to single line
+            const buildBinaryExpressionSingleLineHandler = (n) => {
+                if (n.type === "BinaryExpression") {
+                    const leftText = buildBinaryExpressionSingleLineHandler(n.left);
+                    const rightText = buildBinaryExpressionSingleLineHandler(n.right);
+
+                    return `${leftText} ${n.operator} ${rightText}`;
+                }
+
+                return sourceCode.getText(n);
+            };
+
+            // maxOperands or fewer operands: keep on single line (operand starts on same line)
+            if (operands.length <= maxOperands) {
+                // Check if all operands START on the same line
+                const firstOperandStartLine = operands[0].loc.start.line;
+                const allOperandsStartOnSameLine = operands.every(
+                    (op) => op.loc.start.line === firstOperandStartLine,
+                );
+
+                // Check if any BinaryExpression operand is split across lines
+                const hasSplitBinaryExpression = operands.some(
+                    (op) => isBinaryExpressionSplitHandler(op),
+                );
+
+                if (!allOperandsStartOnSameLine || hasSplitBinaryExpression) {
+                    context.report({
+                        fix: (fixer) => {
+                            const buildSameLineHandler = (n) => {
+                                if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                                    const leftText = buildSameLineHandler(n.left);
+                                    const rightText = buildSameLineHandler(n.right);
+
+                                    return `${leftText} ${n.operator} ${rightText}`;
+                                }
+
+                                // Handle split BinaryExpressions
+                                if (n.type === "BinaryExpression" && isBinaryExpressionSplitHandler(n)) {
+                                    return buildBinaryExpressionSingleLineHandler(n);
+                                }
+
+                                return getSourceTextWithGroupsHandler(n);
+                            };
+
+                            return fixer.replaceText(value, buildSameLineHandler(value));
+                        },
+                        message: `Property conditions with ${maxOperands} or fewer operands should have all operands start on the same line`,
+                        node: value,
+                    });
+                }
+
+                return;
+            }
+
+            // More than maxOperands: each on its own line
+            let isCorrectionNeeded = !isMultiLine;
+
+            if (isMultiLine) {
+                for (let i = 0; i < operands.length - 1; i += 1) {
+                    if (operands[i].loc.end.line === operands[i + 1].loc.start.line) {
+                        isCorrectionNeeded = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isCorrectionNeeded) {
+                context.report({
+                    fix: (fixer) => {
+                        // Get the indentation of the property
+                        const propertyLine = sourceCode.lines[node.loc.start.line - 1];
+                        const propertyIndent = propertyLine.match(/^\s*/)[0];
+                        const indent = propertyIndent + "    ";
+
+                        const buildMultilineHandler = (n) => {
+                            if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                                const leftText = buildMultilineHandler(n.left);
+                                const rightText = buildMultilineHandler(n.right);
+
+                                return `${leftText}\n${indent}${n.operator} ${rightText}`;
+                            }
+
+                            return getSourceTextWithGroupsHandler(n);
+                        };
+
+                        return fixer.replaceText(value, buildMultilineHandler(value));
+                    },
+                    message: `Property conditions with more than ${maxOperands} operands should be multiline, with each operand on its own line`,
+                    node: value,
+                });
+            }
+        };
+
+        return {
+            IfStatement: checkIfStatementHandler,
+            Property: checkPropertyHandler,
+        };
     },
     meta: {
-        docs: { description: "Enforce multiline if conditions when exceeding threshold (default: >3 operands)" },
+        docs: { description: "Enforce multiline if/property conditions when exceeding threshold (default: >3 operands)" },
         fixable: "whitespace",
         schema: [
             {
@@ -2512,13 +2907,17 @@ const absoluteImportsOnly = {
             "assets",
             "atoms",
             "components",
+            "config",
+            "configs",
             "constants",
             "contexts",
             "data",
             "enums",
+            "helpers",
             "hooks",
             "interfaces",
             "layouts",
+            "lib",
             "middlewares",
             "providers",
             "reducers",
@@ -2532,7 +2931,9 @@ const absoluteImportsOnly = {
             "theme",
             "thunks",
             "types",
+            "ui",
             "utils",
+            "utilities",
             "views",
         ];
 
@@ -2743,11 +3144,30 @@ const exportFormat = {
         const maxSpecifiers = options.maxSpecifiers !== undefined ? options.maxSpecifiers : 3;
 
         const checkExportHandler = (node) => {
+            const exportToken = sourceCode.getFirstToken(node);
+
+            // Check for export with declaration (export interface, export enum, export type, export const, etc.)
+            if (node.declaration) {
+                const declarationFirstToken = sourceCode.getFirstToken(node.declaration);
+
+                if (declarationFirstToken && exportToken.loc.end.line !== declarationFirstToken.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [exportToken.range[1], declarationFirstToken.range[0]],
+                            " ",
+                        ),
+                        message: "Declaration keyword must be on the same line as 'export'",
+                        node: declarationFirstToken,
+                    });
+                }
+
+                return;
+            }
+
             const specifiers = node.specifiers;
 
             if (specifiers.length === 0) return;
 
-            const exportToken = sourceCode.getFirstToken(node);
             const openBrace = sourceCode.getTokenAfter(exportToken, (t) => t.value === "{");
             const closeBrace = sourceCode.getLastToken(node, (t) => t.value === "}");
 
@@ -3146,13 +3566,17 @@ const moduleIndexExports = {
             "assets",
             "atoms",
             "components",
+            "config",
+            "configs",
             "constants",
             "contexts",
             "data",
             "enums",
+            "helpers",
             "hooks",
             "interfaces",
             "layouts",
+            "lib",
             "middlewares",
             "providers",
             "reducers",
@@ -3166,7 +3590,9 @@ const moduleIndexExports = {
             "theme",
             "thunks",
             "types",
+            "ui",
             "utils",
+            "utilities",
             "views",
         ];
 
@@ -3880,14 +4306,30 @@ const jsxChildrenOnNewLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        // Check if expression is simple (identifier, literal, or simple member expression)
+        // Check if expression is simple (identifier, literal, or member expression chain)
         const isSimpleExpressionHandler = (expr) => {
             if (!expr) return true;
 
             if (expr.type === "Identifier") return true;
             if (expr.type === "Literal") return true;
             if (expr.type === "MemberExpression") {
-                return expr.object.type === "Identifier" && expr.property.type === "Identifier";
+                // Allow nested member expressions like row.original.currency or row[field]
+                let current = expr;
+
+                while (current.type === "MemberExpression") {
+                    // Allow computed access only if property is simple (identifier or literal)
+                    if (current.computed) {
+                        if (current.property.type !== "Identifier" && current.property.type !== "Literal") {
+                            return false;
+                        }
+                    } else if (current.property.type !== "Identifier") {
+                        return false;
+                    }
+
+                    current = current.object;
+                }
+
+                return current.type === "Identifier";
             }
 
             return false;
@@ -4097,14 +4539,30 @@ const jsxElementChildNewLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        // Check if expression is simple (identifier, literal, or simple member expression)
+        // Check if expression is simple (identifier, literal, or member expression chain)
         const isSimpleExpressionHandler = (expr) => {
             if (!expr) return true;
 
             if (expr.type === "Identifier") return true;
             if (expr.type === "Literal") return true;
             if (expr.type === "MemberExpression") {
-                return expr.object.type === "Identifier" && expr.property.type === "Identifier";
+                // Allow nested member expressions like row.original.currency or row[field]
+                let current = expr;
+
+                while (current.type === "MemberExpression") {
+                    // Allow computed access only if property is simple (identifier or literal)
+                    if (current.computed) {
+                        if (current.property.type !== "Identifier" && current.property.type !== "Literal") {
+                            return false;
+                        }
+                    } else if (current.property.type !== "Identifier") {
+                        return false;
+                    }
+
+                    current = current.object;
+                }
+
+                return current.type === "Identifier";
             }
 
             return false;
@@ -4202,39 +4660,116 @@ const jsxLogicalExpressionSimplify = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
+        // Check if a node is wrapped in parentheses
+        const isWrappedInParensHandler = (exprNode) => {
+            const tokenBefore = sourceCode.getTokenBefore(exprNode);
+            const tokenAfter = sourceCode.getTokenAfter(exprNode);
+
+            return tokenBefore && tokenAfter && tokenBefore.value === "(" && tokenAfter.value === ")";
+        };
+
+        // Get the text including surrounding parentheses if present
+        const getTextWithParensHandler = (exprNode) => {
+            const text = sourceCode.getText(exprNode);
+
+            if (isWrappedInParensHandler(exprNode)) {
+                return `(${text})`;
+            }
+
+            return text;
+        };
+
         const checkLogicalExpressionHandler = (node) => {
-            if (node.operator !== "&&" && node.operator !== "||") return;
+            if (node.operator !== "&&") return;
 
             const {
                 left,
                 right,
             } = node;
 
+            // Right side must be JSX
             if (right.type !== "JSXElement" && right.type !== "JSXFragment") return;
 
-            const leftText = sourceCode.getText(left);
-            const rightText = sourceCode.getText(right);
+            // Get base indentation
+            const baseIndent = sourceCode.lines[node.loc.start.line - 1].match(/^\s*/)[0];
+            const contentIndent = baseIndent + "    ";
 
             // Check if right side is single-line
-            if (right.loc.start.line !== right.loc.end.line) return;
+            const rightIsSimple = right.loc.start.line === right.loc.end.line;
 
-            // Check if currently multiline
-            if (node.loc.start.line === node.loc.end.line) return;
+            // Get text preserving parentheses
+            const leftText = getTextWithParensHandler(left);
+            const rightText = sourceCode.getText(right);
 
-            context.report({
-                fix: (fixer) => fixer.replaceText(
-                    node,
-                    `${leftText} ${node.operator} ${rightText}`,
-                ),
-                message: "Simple logical expression with single-line JSX should be on one line",
-                node,
-            });
+            // Case 1: Both simple - entire expression on one line
+            if (rightIsSimple && left.loc.start.line === left.loc.end.line) {
+                if (node.loc.start.line !== node.loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(
+                            node,
+                            `${leftText} && ${rightText}`,
+                        ),
+                        message: "Simple logical expression with single-line JSX should be on one line",
+                        node,
+                    });
+                }
+
+                return;
+            }
+
+            // Case 2: Complex JSX - check formatting
+            // Format should be: {condition && (
+            //     <Complex />
+            // )}
+            if (!rightIsSimple) {
+                const andToken = sourceCode.getTokenAfter(
+                    left,
+                    (token) => token.value === "&&",
+                );
+
+                if (!andToken) return;
+
+                const tokenAfterAnd = sourceCode.getTokenAfter(andToken);
+
+                // && ( should be on same line as condition
+                if (tokenAfterAnd && tokenAfterAnd.value === "(") {
+                    // Check for empty lines after (
+                    const jsxStart = sourceCode.getTokenAfter(tokenAfterAnd);
+
+                    if (jsxStart && jsxStart.loc.start.line - tokenAfterAnd.loc.end.line > 1) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [tokenAfterAnd.range[1], jsxStart.range[0]],
+                                "\n" + contentIndent,
+                            ),
+                            message: "No empty lines after '(' in logical expression",
+                            node: jsxStart,
+                        });
+                    }
+
+                    // Check for empty lines before )
+                    const closeParen = sourceCode.getTokenAfter(right);
+
+                    if (closeParen && closeParen.value === ")") {
+                        if (closeParen.loc.start.line - right.loc.end.line > 1) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [right.range[1], closeParen.range[0]],
+                                    "\n" + baseIndent,
+                                ),
+                                message: "No empty lines before ')' in logical expression",
+                                node: closeParen,
+                            });
+                        }
+                    }
+                }
+            }
         };
 
         return { LogicalExpression: checkLogicalExpressionHandler };
     },
     meta: {
-        docs: { description: "Simplify logical expressions in JSX when right side is single-line" },
+        docs: { description: "Simplify logical expressions in JSX when right side is single-line, and check formatting for complex JSX" },
         fixable: "code",
         schema: [],
         type: "layout",
@@ -4776,11 +5311,12 @@ const jsxTernaryFormat = {
             ConditionalExpression(node) {
                 const parent = node.parent;
 
-                // Handle ternaries in JSX context or return statements
+                // Handle ternaries in JSX context, return statements, or arrow function bodies
                 const isJsxContext = parent && parent.type === "JSXExpressionContainer";
                 const isReturnContext = parent && parent.type === "ReturnStatement";
+                const isArrowBodyContext = parent && parent.type === "ArrowFunctionExpression" && parent.body === node;
 
-                if (!isJsxContext && !isReturnContext) return;
+                if (!isJsxContext && !isReturnContext && !isArrowBodyContext) return;
 
                 const {
                     alternate,
@@ -5184,6 +5720,123 @@ const jsxTernaryFormat = {
                             ),
                             message: "'}' should be on same line as simple JSX",
                             node: closeBrace,
+                        });
+                    }
+
+                    return;
+                }
+
+                // CASE 3b: Consequent is complex JSX, alternate is simple non-JSX (null, undefined, false, etc.)
+                // Format: return condition ? (
+                //     <Complex />
+                // ) : null;
+                const isSimpleNonJsxAlternate = !isAlternateJsx && (
+                    alternate.type === "Literal" ||
+                    alternate.type === "Identifier" ||
+                    (alternate.type === "MemberExpression" && alternate.loc.start.line === alternate.loc.end.line)
+                );
+
+                if (!consequentSimple && isConsequentJsx && isSimpleNonJsxAlternate) {
+                    const tokenAfterQuestion = sourceCode.getTokenAfter(questionToken);
+
+                    // ? ( should be on same line as condition
+                    if (tokenAfterQuestion && tokenAfterQuestion.value === "(") {
+                        if (node.test.loc.end.line !== questionToken.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [node.test.range[1], questionToken.range[0]],
+                                    " ",
+                                ),
+                                message: "'?' should be on same line as condition",
+                                node: questionToken,
+                            });
+                        }
+
+                        if (questionToken.loc.end.line !== tokenAfterQuestion.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [questionToken.range[1], tokenAfterQuestion.range[0]],
+                                    " ",
+                                ),
+                                message: "'(' should be on same line as '?'",
+                                node: tokenAfterQuestion,
+                            });
+                        }
+
+                        // JSX after ( should start on new line (no empty lines)
+                        const jsxStart = sourceCode.getTokenAfter(tokenAfterQuestion);
+
+                        if (jsxStart && tokenAfterQuestion.loc.end.line === jsxStart.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [tokenAfterQuestion.range[1], jsxStart.range[0]],
+                                    "\n" + contentIndent,
+                                ),
+                                message: "Complex JSX should start on new line after '('",
+                                node: consequent,
+                            });
+                        } else if (jsxStart && jsxStart.loc.start.line - tokenAfterQuestion.loc.end.line > 1) {
+                            // Check for empty lines after (
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [tokenAfterQuestion.range[1], jsxStart.range[0]],
+                                    "\n" + contentIndent,
+                                ),
+                                message: "No empty lines after '(' in ternary",
+                                node: jsxStart,
+                            });
+                        }
+                    }
+
+                    // ) before : should be on new line
+                    const tokenBeforeColon = sourceCode.getTokenBefore(colonToken);
+
+                    if (tokenBeforeColon && tokenBeforeColon.value === ")") {
+                        const jsxEnd = sourceCode.getTokenBefore(tokenBeforeColon);
+
+                        if (jsxEnd && jsxEnd.loc.end.line === tokenBeforeColon.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [jsxEnd.range[1], tokenBeforeColon.range[0]],
+                                    "\n" + baseIndent,
+                                ),
+                                message: "Closing ')' should be on new line after complex JSX",
+                                node: tokenBeforeColon,
+                            });
+                        } else if (tokenBeforeColon.loc.start.line - jsxEnd.loc.end.line > 1) {
+                            // Check for empty lines before )
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [jsxEnd.range[1], tokenBeforeColon.range[0]],
+                                    "\n" + baseIndent,
+                                ),
+                                message: "No empty lines before ')' in ternary",
+                                node: tokenBeforeColon,
+                            });
+                        }
+
+                        // ) : should be on same line
+                        if (tokenBeforeColon.loc.end.line !== colonToken.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [tokenBeforeColon.range[1], colonToken.range[0]],
+                                    " ",
+                                ),
+                                message: "':' should be on same line as ')'",
+                                node: colonToken,
+                            });
+                        }
+                    }
+
+                    // Simple alternate should be on same line as :
+                    if (colonToken.loc.end.line !== alternate.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [colonToken.range[1], alternate.range[0]],
+                                " ",
+                            ),
+                            message: "Simple expression should be on same line as ':'",
+                            node: alternate,
                         });
                     }
 
@@ -5672,68 +6325,151 @@ const nestedCallClosingBrackets = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
+        // Helper to check and fix closing brackets pattern for arrow returning object
+        const checkArrowReturningObjectHandler = (node, objectBody) => {
+            // Find closing tokens: } ) ) (may have comma)
+            const closeBrace = sourceCode.getLastToken(objectBody);
+            const closeParenAfterObject = sourceCode.getTokenAfter(objectBody);
+
+            if (!closeParenAfterObject || closeParenAfterObject.value !== ")") return;
+
+            // Get next token - might be comma or second close paren
+            let nextToken = sourceCode.getTokenAfter(closeParenAfterObject);
+
+            // Skip trailing comma if present: }),) or })\n),\n)
+            if (nextToken && nextToken.value === ",") {
+                nextToken = sourceCode.getTokenAfter(nextToken);
+            }
+
+            const closeParenOuter = nextToken;
+
+            if (!closeParenOuter || closeParenOuter.value !== ")") return;
+
+            // Check if } and first ) are on different lines
+            if (closeBrace.loc.end.line !== closeParenAfterObject.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [closeBrace.range[1], closeParenAfterObject.range[0]],
+                        "",
+                    ),
+                    message: "Closing brace and parenthesis should be on the same line: })",
+                    node: closeParenAfterObject,
+                });
+
+                return;
+            }
+
+            // Check if first ) and second ) are on different lines (account for comma)
+            if (closeParenAfterObject.loc.end.line !== closeParenOuter.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [closeParenAfterObject.range[1], closeParenOuter.range[0]],
+                        "",
+                    ),
+                    message: "Closing parentheses should be on the same line: ))",
+                    node: closeParenOuter,
+                });
+
+                return;
+            }
+
+            // Check for || [] pattern after })) - should be on same line
+            const tokenAfterOuterParen = sourceCode.getTokenAfter(closeParenOuter);
+
+            if (tokenAfterOuterParen && tokenAfterOuterParen.value === "||") {
+                if (closeParenOuter.loc.end.line !== tokenAfterOuterParen.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [closeParenOuter.range[1], tokenAfterOuterParen.range[0]],
+                            " ",
+                        ),
+                        message: "Logical operator || should be on the same line as closing ))",
+                        node: tokenAfterOuterParen,
+                    });
+                }
+            }
+        };
+
+        // Helper to check },\n); pattern - ONLY for single object/array argument calls
+        // This should NOT apply to multi-argument calls like useEffect, useMemo, etc.
+        const checkClosingBraceParenPatternHandler = (node) => {
+            const { arguments: args } = node;
+
+            // Only apply to single argument calls
+            if (args.length !== 1) return;
+
+            const lastArg = args[0];
+
+            // Find the actual closing brace - could be from object, array, or TSAsExpression with type literal
+            let closingBrace = null;
+
+            if (lastArg.type === "ObjectExpression" || lastArg.type === "ArrayExpression") {
+                closingBrace = sourceCode.getLastToken(lastArg);
+            } else if (lastArg.type === "ArrowFunctionExpression") {
+                const body = lastArg.body;
+
+                if (body.type === "TSAsExpression" && body.typeAnnotation && body.typeAnnotation.type === "TSTypeLiteral") {
+                    closingBrace = sourceCode.getLastToken(body.typeAnnotation);
+                } else if (body.type === "ObjectExpression" || body.type === "ArrayExpression") {
+                    closingBrace = sourceCode.getLastToken(body);
+                }
+            }
+
+            if (!closingBrace || (closingBrace.value !== "}" && closingBrace.value !== "]")) return;
+
+            // Get the close paren of the function call
+            const closeParen = sourceCode.getLastToken(node);
+
+            if (!closeParen || closeParen.value !== ")") return;
+
+            // Check if there's a newline between the closing brace/type and the close paren
+            const tokenAfterBrace = sourceCode.getTokenAfter(closingBrace);
+
+            // Handle trailing comma case: }, or ],
+            let lastTokenBeforeParen = closingBrace;
+
+            if (tokenAfterBrace && tokenAfterBrace.value === ",") {
+                lastTokenBeforeParen = tokenAfterBrace;
+            }
+
+            if (lastTokenBeforeParen.loc.end.line !== closeParen.loc.start.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastTokenBeforeParen.range[1], closeParen.range[0]],
+                        "",
+                    ),
+                    message: "Closing parenthesis should be on same line as closing brace: });",
+                    node: closeParen,
+                });
+            }
+        };
+
         return {
             CallExpression(node) {
-                // Check for pattern: fn()(arg) where fn() is also a CallExpression
-                // e.g., styled(Card)(({ theme }) => ({...}))
-                const { callee } = node;
+                const { callee, arguments: args } = node;
 
-                if (callee.type !== "CallExpression") return;
-
-                const args = node.arguments;
+                // Check for },\n); pattern - only for single argument calls
+                checkClosingBraceParenPatternHandler(node);
 
                 if (args.length !== 1) return;
 
                 const arg = args[0];
 
                 // Check for arrow function with object expression body
-                // styled(Card)(({ theme }) => ({...}))
-                if (arg.type === "ArrowFunctionExpression" && arg.body.type === "ObjectExpression") {
-                    const objectBody = arg.body;
+                if (arg.type !== "ArrowFunctionExpression" || arg.body.type !== "ObjectExpression") return;
 
-                    // Find closing tokens: } ) ) ; (may have comma between parens)
-                    const closeBrace = sourceCode.getLastToken(objectBody);
-                    const closeParenAfterObject = sourceCode.getTokenAfter(objectBody);
+                // Pattern 1: fn()(arg) where fn() is also a CallExpression
+                // e.g., styled(Card)(({ theme }) => ({...}))
+                if (callee.type === "CallExpression") {
+                    checkArrowReturningObjectHandler(node, arg.body);
 
-                    if (!closeParenAfterObject || closeParenAfterObject.value !== ")") return;
+                    return;
+                }
 
-                    // Get next token - might be comma or second close paren
-                    let nextToken = sourceCode.getTokenAfter(closeParenAfterObject);
-
-                    // Skip trailing comma if present: }),) or })\n),\n)
-                    if (nextToken && nextToken.value === ",") {
-                        nextToken = sourceCode.getTokenAfter(nextToken);
-                    }
-
-                    const closeParenOuter = nextToken;
-
-                    if (!closeParenOuter || closeParenOuter.value !== ")") return;
-
-                    // Check if } and first ) are on different lines
-                    if (closeBrace.loc.end.line !== closeParenAfterObject.loc.start.line) {
-                        context.report({
-                            fix: (fixer) => fixer.replaceTextRange(
-                                [closeBrace.range[1], closeParenAfterObject.range[0]],
-                                "",
-                            ),
-                            message: "Closing brace and parenthesis should be on the same line: })",
-                            node: closeParenAfterObject,
-                        });
-
-                        return;
-                    }
-
-                    // Check if first ) and second ) are on different lines (account for comma)
-                    if (closeParenAfterObject.loc.end.line !== closeParenOuter.loc.start.line) {
-                        context.report({
-                            fix: (fixer) => fixer.replaceTextRange(
-                                [closeParenAfterObject.range[1], closeParenOuter.range[0]],
-                                "",
-                            ),
-                            message: "Closing parentheses should be on the same line: ))",
-                            node: closeParenOuter,
-                        });
-                    }
+                // Pattern 2: obj.method(arg) where method is like .map()
+                // e.g., array.map(item => ({...})) || []
+                if (callee.type === "MemberExpression") {
+                    checkArrowReturningObjectHandler(node, arg.body);
                 }
             },
         };
@@ -6109,12 +6845,8 @@ const noEmptyLinesInJsx = {
                     let closingText = "";
 
                     if (isSelfClosing) {
-                        const slashToken = sourceCode.getTokenBefore(closingBracket);
-
-                        if (slashToken && slashToken.value === "/") {
-                            endRange = slashToken.range[0];
-                            closingText = " /";
-                        }
+                        // Keep endRange as closingBracket.range[0] to include the "/" in the replaced range
+                        closingText = " /";
                     }
 
                     context.report({
@@ -6325,10 +7057,14 @@ const noEmptyLinesInObjects = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        const checkObjectHandler = (node) => {
+        const checkObjectHandler = (node, isObjectPattern = false) => {
             const { properties } = node;
 
             if (properties.length === 0) return;
+
+            // Skip ObjectPatterns with type annotations (component props with inline types)
+            // These are handled by the component-props-inline-type rule
+            if (isObjectPattern && node.typeAnnotation) return;
 
             const openBrace = sourceCode.getFirstToken(node);
             const closeBrace = sourceCode.getLastToken(node);
@@ -6371,11 +7107,28 @@ const noEmptyLinesInObjects = {
                         commaToken = sourceCode.getTokenAfter(commaToken);
                     }
 
+                    // Check if comma is on a different line than the property value end
+                    // If so, move the comma to be directly after the property value
+                    const commaOnDifferentLine = commaToken && commaToken.value === "," &&
+                        commaToken.loc.start.line !== current.loc.end.line;
+
                     context.report({
-                        fix: (fixer) => fixer.replaceTextRange(
-                            [commaToken && commaToken.value === "," ? commaToken.range[1] : current.range[1], next.range[0]],
-                            "\n" + " ".repeat(next.loc.start.column),
-                        ),
+                        fix: (fixer) => {
+                            if (commaOnDifferentLine) {
+                                // Replace from end of property value to start of next property
+                                // This moves the comma to be right after the value
+                                return fixer.replaceTextRange(
+                                    [current.range[1], next.range[0]],
+                                    ",\n" + " ".repeat(next.loc.start.column),
+                                );
+                            }
+
+                            // Normal case: comma is on same line, just remove empty line after
+                            return fixer.replaceTextRange(
+                                [commaToken && commaToken.value === "," ? commaToken.range[1] : current.range[1], next.range[0]],
+                                "\n" + " ".repeat(next.loc.start.column),
+                            );
+                        },
                         message: "No empty line between object properties",
                         node: next,
                     });
@@ -6384,8 +7137,8 @@ const noEmptyLinesInObjects = {
         };
 
         return {
-            ObjectExpression: checkObjectHandler,
-            ObjectPattern: checkObjectHandler,
+            ObjectExpression: (node) => checkObjectHandler(node, false),
+            ObjectPattern: (node) => checkObjectHandler(node, true),
         };
     },
     meta: {
@@ -6569,6 +7322,27 @@ const objectPropertyPerLine = {
                 return valueNode.loc.start.line === valueNode.loc.end.line;
             }
 
+            // Conditional expressions (ternary): can collapse if short enough
+            if (valueNode.type === "ConditionalExpression") {
+                const text = sourceCode.getText(valueNode).replace(/\s*\n\s*/g, " ").trim();
+
+                return text.length <= 80;
+            }
+
+            // Logical expressions: can collapse if short enough
+            if (valueNode.type === "LogicalExpression") {
+                const text = sourceCode.getText(valueNode).replace(/\s*\n\s*/g, " ").trim();
+
+                return text.length <= 80;
+            }
+
+            // Binary expressions: can collapse if short enough
+            if (valueNode.type === "BinaryExpression") {
+                const text = sourceCode.getText(valueNode).replace(/\s*\n\s*/g, " ").trim();
+
+                return text.length <= 80;
+            }
+
             // Spread elements: check if the argument can be collapsed
             if (valueNode.type === "SpreadElement") {
                 return canCollapse(valueNode.argument);
@@ -6638,6 +7412,70 @@ const objectPropertyPerLine = {
 
             // Skip empty objects
             if (properties.length === 0) return;
+
+            // Skip ObjectPatterns that are function parameters or inside function parameters
+            // These are handled by function-params-per-line rule
+            if (node.type === "ObjectPattern") {
+                let parent = node.parent;
+
+                while (parent) {
+                    // Direct function parameter
+                    if (
+                        (parent.type === "FunctionDeclaration"
+                        || parent.type === "FunctionExpression"
+                        || parent.type === "ArrowFunctionExpression")
+                        && parent.params && parent.params.includes(node)
+                    ) {
+                        return;
+                    }
+
+                    // Nested inside another ObjectPattern that's a function param
+                    if (parent.type === "Property" && parent.parent && parent.parent.type === "ObjectPattern") {
+                        // Continue up to check if the root ObjectPattern is a function param
+                        parent = parent.parent;
+
+                        continue;
+                    }
+
+                    // ObjectPattern inside function params array
+                    if (
+                        (parent.type === "FunctionDeclaration"
+                        || parent.type === "FunctionExpression"
+                        || parent.type === "ArrowFunctionExpression")
+                    ) {
+                        // Check if we came from params
+                        let current = node;
+                        let isInParams = false;
+
+                        while (current && current !== parent) {
+                            if (parent.params && parent.params.some((p) => p === current || isDescendant(p, current))) {
+                                isInParams = true;
+
+                                break;
+                            }
+
+                            current = current.parent;
+                        }
+
+                        if (isInParams) return;
+                    }
+
+                    parent = parent.parent;
+                }
+            }
+
+            // Helper to check if node is descendant of another
+            function isDescendant(ancestor, node) {
+                let current = node;
+
+                while (current) {
+                    if (current === ancestor) return true;
+
+                    current = current.parent;
+                }
+
+                return false;
+            }
 
             const openBrace = sourceCode.getFirstToken(node);
             const closeBrace = sourceCode.getLastToken(node);
@@ -6788,6 +7626,56 @@ const objectPropertyPerLine = {
                         message: "Each property should be on its own line",
                         node: next,
                     });
+                }
+            }
+
+            // Check SpreadElements with LogicalExpression - they should be on one line
+            // e.g., ...subAccounts && { subAccounts } should NOT be split across lines
+            for (const prop of properties) {
+                if (prop.type === "SpreadElement" && prop.argument) {
+                    const arg = prop.argument;
+
+                    // Check if ... is on a different line than the argument (e.g., "...\n    arg")
+                    const spreadOnDifferentLine = prop.loc.start.line !== arg.loc.start.line;
+
+                    // Check if it's a LogicalExpression that spans multiple lines
+                    const logicalExpressionSpansLines = arg.type === "LogicalExpression"
+                        && arg.loc.start.line !== arg.loc.end.line;
+
+                    if (spreadOnDifferentLine || logicalExpressionSpansLines) {
+                        // For LogicalExpression, check if it can be collapsed
+                        if (arg.type === "LogicalExpression") {
+                            const rightIsSimpleObject = arg.right.type === "ObjectExpression"
+                                && arg.right.properties.length === 1
+                                && arg.right.properties[0].type !== "SpreadElement";
+
+                            if (rightIsSimpleObject || arg.right.type === "Identifier") {
+                                // Collapse to single line and ensure no space after ...
+                                const spreadText = sourceCode.getText(prop)
+                                    .replace(/\s*\n\s*/g, " ")
+                                    .replace(/\.\.\.\s+/, "...")
+                                    .trim();
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceText(prop, spreadText),
+                                    message: "Spread element with logical expression should be on a single line",
+                                    node: prop,
+                                });
+                            }
+                        } else if (spreadOnDifferentLine) {
+                            // For non-LogicalExpression, just collapse the ... and argument to same line
+                            const spreadText = sourceCode.getText(prop)
+                                .replace(/\s*\n\s*/g, " ")
+                                .replace(/\.\.\.\s+/, "...")
+                                .trim();
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceText(prop, spreadText),
+                                message: "Spread operator should be on the same line as its argument",
+                                node: prop,
+                            });
+                        }
+                    }
                 }
             }
         };
@@ -7062,6 +7950,70 @@ const objectPropertyValueFormat = {
                 return;
             }
 
+            // Handle ternary expressions - short ones should be on single line
+            if (valueNode.type === "ConditionalExpression") {
+                const ternaryText = sourceCode.getText(valueNode);
+                const collapsedText = ternaryText.replace(/\s*\n\s*/g, " ").trim();
+                const isMultiLine = valueNode.loc.start.line !== valueNode.loc.end.line;
+
+                // If it's short enough (under 80 chars) and multiline, collapse it
+                if (isMultiLine && collapsedText.length <= 80) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(valueNode, collapsedText),
+                        message: "Short ternary expression should be on a single line",
+                        node: valueNode,
+                    });
+
+                    return;
+                }
+
+                // Check if ? or : is at the end of a line (wrong position)
+                const questionToken = sourceCode.getTokenAfter(
+                    valueNode.test,
+                    (t) => t.value === "?",
+                );
+                const colonTernaryToken = sourceCode.getTokenAfter(
+                    valueNode.consequent,
+                    (t) => t.value === ":",
+                );
+
+                if (questionToken) {
+                    const tokenAfterQuestion = sourceCode.getTokenAfter(questionToken);
+
+                    if (tokenAfterQuestion && questionToken.loc.end.line < tokenAfterQuestion.loc.start.line) {
+                        // ? is at end of line, but only report if it's short enough to fit
+                        if (collapsedText.length <= 80) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceText(valueNode, collapsedText),
+                                message: "Ternary operator '?' should not be at end of line",
+                                node: questionToken,
+                            });
+
+                            return;
+                        }
+                    }
+                }
+
+                if (colonTernaryToken) {
+                    const tokenAfterColonTernary = sourceCode.getTokenAfter(colonTernaryToken);
+
+                    if (tokenAfterColonTernary && colonTernaryToken.loc.end.line < tokenAfterColonTernary.loc.start.line) {
+                        // : is at end of line, but only report if it's short enough to fit
+                        if (collapsedText.length <= 80) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceText(valueNode, collapsedText),
+                                message: "Ternary operator ':' should not be at end of line",
+                                node: colonTernaryToken,
+                            });
+
+                            return;
+                        }
+                    }
+                }
+
+                return;
+            }
+
             // Check if value is on the same line as the colon (skip multiline objects/arrays)
             if (valueNode.loc.start.line > colonToken.loc.end.line) {
                 // Skip if value is a multiline object or array
@@ -7125,14 +8077,60 @@ const openingBracketsSameLine = {
             const { callee } = node;
 
             // Case 0: Function call with opening paren on different line - fn\n( should be fn(
+            // For TypeScript, preserve type arguments: fn\n<T>( should become fn<T>(
             const calleeLastToken = sourceCode.getLastToken(callee);
-            const openParenToken = sourceCode.getTokenAfter(callee);
 
-            if (openParenToken && openParenToken.value === "(" && calleeLastToken.loc.end.line !== openParenToken.loc.start.line) {
+            // Get type arguments if they exist (TypeScript generics)
+            const typeArgs = node.typeArguments || node.typeParameters;
+
+            // Find the opening paren - it comes after type arguments if they exist
+            let openParenToken;
+
+            if (typeArgs) {
+                openParenToken = sourceCode.getTokenAfter(typeArgs);
+            } else {
+                openParenToken = sourceCode.getTokenAfter(callee);
+            }
+
+            // Make sure we found the opening paren
+            if (!openParenToken || openParenToken.value !== "(") {
+                // Search for it
+                let searchToken = sourceCode.getTokenAfter(callee);
+
+                while (searchToken && searchToken.range[0] < node.range[1]) {
+                    if (searchToken.value === "(") {
+                        openParenToken = searchToken;
+
+                        break;
+                    }
+
+                    searchToken = sourceCode.getTokenAfter(searchToken);
+                }
+            }
+
+            if (!openParenToken || openParenToken.value !== "(") return;
+
+            // Check if callee and opening paren are on different lines
+            if (calleeLastToken.loc.end.line !== openParenToken.loc.start.line) {
+                // If type arguments exist and are multiline, this is expected - don't report
+                if (typeArgs && typeArgs.loc.start.line !== typeArgs.loc.end.line) {
+                    return;
+                }
+
+                // Build the replacement text: type arguments (if any) + opening paren
+                let replacement = "";
+
+                if (typeArgs) {
+                    // Get the type arguments text directly from source
+                    replacement = sourceCode.getText(typeArgs);
+                }
+
+                replacement += "(";
+
                 context.report({
                     fix: (fixer) => fixer.replaceTextRange(
                         [calleeLastToken.range[1], openParenToken.range[1]],
-                        "(",
+                        replacement,
                     ),
                     message: "Opening parenthesis should be on the same line as function name",
                     node: openParenToken,
@@ -7331,9 +8329,21 @@ const openingBracketsSameLine = {
 
                     if (!arrowOpenParen || arrowOpenParen.value !== "(") return;
 
-                    if (arrowOpenParen.loc.end.line !== firstParam.loc.start.line) {
-                        const paramText = sourceCode.getText(firstParam);
+                    // First, ensure fn( and (( are on same line: useSelector(\n(state) => fn((state)
+                    if (openParen.loc.end.line !== arrowOpenParen.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openParen.range[1], arrowOpenParen.range[1]],
+                                "(",
+                            ),
+                            message: "Callback opening parenthesis should be on the same line as function call",
+                            node: arrowOpenParen,
+                        });
 
+                        return;
+                    }
+
+                    if (arrowOpenParen.loc.end.line !== firstParam.loc.start.line) {
                         context.report({
                             fix: (fixer) => fixer.replaceTextRange(
                                 [arrowOpenParen.range[1], firstParam.range[0]],
@@ -7437,6 +8447,66 @@ const openingBracketsSameLine = {
                         message: "Opening brace and expression should be on the same line",
                         node: expression,
                     });
+                }
+
+                // For simple single-line call expressions, closing } should be on same line
+                const isSingleLineCall = expression.loc.start.line === expression.loc.end.line;
+
+                if (isSingleLineCall && expression.loc.end.line !== closeBrace.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [expression.range[1], closeBrace.range[0]],
+                            "",
+                        ),
+                        message: "Closing brace should be on the same line as simple call expression",
+                        node: closeBrace,
+                    });
+                }
+
+                return;
+            }
+
+            // Case 2b: TemplateLiteral - collapse to single line if simple enough
+            if (expression.type === "TemplateLiteral") {
+                // Check if all expressions in template are simple (Identifier or MemberExpression)
+                const allSimpleExpressions = expression.expressions.every(
+                    (expr) => expr.type === "Identifier" || expr.type === "MemberExpression",
+                );
+
+                if (allSimpleExpressions) {
+                    // Build the collapsed template literal
+                    const quasis = expression.quasis;
+                    const expressions = expression.expressions;
+                    let collapsedText = "`";
+
+                    for (let i = 0; i < quasis.length; i += 1) {
+                        // Collapse whitespace in quasi (template string parts)
+                        const quasiText = quasis[i].value.raw.replace(/\s*\n\s*/g, "").trim();
+
+                        collapsedText += quasiText;
+
+                        if (i < expressions.length) {
+                            collapsedText += "${" + sourceCode.getText(expressions[i]) + "}";
+                        }
+                    }
+
+                    collapsedText += "`";
+
+                    // Only fix if the result is reasonable length and different from original
+                    const isMultiLine = expression.loc.start.line !== expression.loc.end.line;
+                    const openingBraceOnDifferentLine = openBrace.loc.end.line !== expression.loc.start.line;
+                    const closingBraceOnDifferentLine = expression.loc.end.line !== closeBrace.loc.start.line;
+
+                    if ((isMultiLine || openingBraceOnDifferentLine || closingBraceOnDifferentLine) && collapsedText.length <= 80) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBrace.range[1], closeBrace.range[0]],
+                                collapsedText,
+                            ),
+                            message: "Simple template literal should be on a single line",
+                            node: expression,
+                        });
+                    }
                 }
 
                 return;
@@ -7613,6 +8683,71 @@ const openingBracketsSameLine = {
                     return;
                 }
 
+                // Check if a condition expression is split incorrectly across lines
+                // (operator and operands should be on the same line)
+                const checkConditionSplitHandler = (conditionNode) => {
+                    // Handle LogicalExpression (&&, ||) and BinaryExpression (===, !==, etc.)
+                    if (conditionNode.type !== "LogicalExpression" && conditionNode.type !== "BinaryExpression") {
+                        return false;
+                    }
+
+                    const { left, right } = conditionNode;
+
+                    // Check if this expression spans multiple lines
+                    if (conditionNode.loc.start.line !== conditionNode.loc.end.line) {
+                        // For BinaryExpression, always collapse if split
+                        // For LogicalExpression, check if operator is on different line
+                        const condOperator = sourceCode.getTokenAfter(
+                            left,
+                            (t) => ["&&", "||", "===", "!==", "==", "!=", ">", "<", ">=", "<="].includes(t.value),
+                        );
+
+                        if (condOperator) {
+                            const leftEndLine = left.loc.end.line;
+                            const operatorLine = condOperator.loc.start.line;
+                            const rightStartLine = right.loc.start.line;
+
+                            // Bad: operator or operands on different lines
+                            if (leftEndLine !== operatorLine || operatorLine !== rightStartLine) {
+                                const tokenBefore = sourceCode.getTokenBefore(conditionNode);
+                                const tokenAfter = sourceCode.getTokenAfter(conditionNode);
+                                const hasParens = tokenBefore?.value === "(" && tokenAfter?.value === ")";
+
+                                const collapsedText = sourceCode.getText(conditionNode).replace(/\s*\n\s*/g, " ").trim();
+
+                                context.report({
+                                    fix: (fixer) => {
+                                        if (hasParens) {
+                                            return fixer.replaceTextRange(
+                                                [tokenBefore.range[0], tokenAfter.range[1]],
+                                                `(${collapsedText})`,
+                                            );
+                                        }
+
+                                        return fixer.replaceText(conditionNode, collapsedText);
+                                    },
+                                    message: "Condition operands should be on the same line",
+                                    node: conditionNode,
+                                });
+
+                                return true;
+                            }
+                        }
+                    }
+
+                    // Recursively check nested expressions
+                    if (conditionNode.type === "LogicalExpression") {
+                        return checkConditionSplitHandler(left) || checkConditionSplitHandler(right);
+                    }
+
+                    return false;
+                };
+
+                // Check the left side of && for split conditions
+                if (expression.operator === "&&" && checkConditionSplitHandler(expression.left)) {
+                    return;
+                }
+
                 const operatorToken = sourceCode.getTokenAfter(
                     expression.left,
                     (t) => t.value === "&&" || t.value === "||",
@@ -7624,13 +8759,22 @@ const openingBracketsSameLine = {
                     // Skip complex multiline logical expressions (e.g., disabled={a || b || c})
                     const isSimplePattern = expression.right.type === "JSXElement"
                         || expression.right.type === "JSXFragment"
-                        || (expression.right.type === "ConditionalExpression")
+                        || expression.right.type === "ConditionalExpression"
+                        || expression.right.type === "ObjectExpression"
                         || (sourceCode.getTokenBefore(expression.right)?.value === "(");
 
-                    if (isSimplePattern && expression.left.loc.end.line !== operatorToken.loc.start.line) {
+                    // Check if left expression is wrapped in parentheses
+                    const tokenAfterLeft = sourceCode.getTokenAfter(expression.left);
+                    const leftEndsWithParen = tokenAfterLeft && tokenAfterLeft.value === ")";
+
+                    // Get the actual end position (including closing paren if present)
+                    const leftEndPos = leftEndsWithParen ? tokenAfterLeft.range[1] : expression.left.range[1];
+                    const leftEndLine = leftEndsWithParen ? tokenAfterLeft.loc.end.line : expression.left.loc.end.line;
+
+                    if (isSimplePattern && leftEndLine !== operatorToken.loc.start.line) {
                         context.report({
                             fix: (fixer) => fixer.replaceTextRange(
-                                [expression.left.range[1], operatorToken.range[1]],
+                                [leftEndPos, operatorToken.range[1]],
                                 " " + operatorToken.value,
                             ),
                             message: "Logical operator should be on the same line as the left operand",
@@ -7789,7 +8933,36 @@ const openingBracketsSameLine = {
                 }
             }
 
-            // Check 1d: Ensure space before => in arrow functions
+            // Check 1d: Arrow function with TSAsExpression or other expression body
+            // e.g., (state) => state as { user: Type } should be on same line
+            if (node.body.type === "TSAsExpression" || node.body.type === "Identifier" || node.body.type === "MemberExpression") {
+                const arrowToken = sourceCode.getTokenBefore(
+                    node.body,
+                    (t) => t.value === "=>",
+                );
+
+                if (arrowToken) {
+                    const tokenAfterArrow = sourceCode.getTokenAfter(arrowToken);
+
+                    // If not wrapped in parentheses, body should be on same line
+                    if (tokenAfterArrow && tokenAfterArrow.value !== "(") {
+                        const textAfterArrow = sourceCode.text.slice(arrowToken.range[1], node.body.range[0]);
+
+                        if (textAfterArrow !== " ") {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [arrowToken.range[1], node.body.range[0]],
+                                    " ",
+                                ),
+                                message: "Expression body should be on the same line as arrow with single space",
+                                node: node.body,
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Check 1e: Ensure space before => in arrow functions
             const arrowToken = sourceCode.getFirstToken(
                 node,
                 (t) => t.value === "=>",
@@ -7892,11 +9065,82 @@ const openingBracketsSameLine = {
             }
         };
 
+        // Handle LogicalExpression chains in variable declarations
+        // e.g., func() || func() - the operator should be on the same line as ) and the start of next call
+        const checkLogicalExpressionHandler = (node) => {
+            // Skip if inside JSXExpressionContainer (handled separately)
+            if (node.parent && node.parent.type === "JSXExpressionContainer") return;
+
+            // Only handle top-level logical expressions in variable declarations
+            // Skip nested ones (they'll be handled when processing the parent)
+            if (node.parent && node.parent.type === "LogicalExpression") return;
+
+            // Skip if this is the test of an IfStatement - those are handled by multiline-if-conditions
+            if (node.parent && node.parent.type === "IfStatement" && node.parent.test === node) return;
+
+            // Check if operands are valid for same-line formatting
+            const isValidOperand = (n) => n.type === "CallExpression"
+                || n.type === "LogicalExpression"
+                || n.type === "MemberExpression"
+                || n.type === "Identifier"
+                || n.type === "TSAsExpression"
+                || n.type === "ObjectExpression"
+                || n.type === "ArrayExpression";
+
+            if (!isValidOperand(node.left) || !isValidOperand(node.right)) return;
+
+            // Recursively check and fix all operators in the chain
+            const checkOperator = (expr) => {
+                if (expr.type !== "LogicalExpression") return;
+
+                const { left, right, operator } = expr;
+
+                // First, recursively check nested logical expressions
+                checkOperator(left);
+                checkOperator(right);
+
+                // Find the operator token
+                const operatorToken = sourceCode.getTokenAfter(
+                    left,
+                    (t) => t.value === "||" || t.value === "&&",
+                );
+
+                if (!operatorToken) return;
+
+                const leftEndLine = left.loc.end.line;
+                const operatorLine = operatorToken.loc.start.line;
+                const rightStartLine = right.loc.start.line;
+
+                // Check if operator is split from left or right operand
+                // Correct: ) || canDoHandler(  (all on same line)
+                // Wrong: ) ||\n    canDoHandler(  or  )\n    || canDoHandler(
+                if (leftEndLine !== operatorLine || operatorLine !== rightStartLine) {
+                    // Get the end of left operand (might end with closing paren)
+                    const leftEndToken = sourceCode.getLastToken(left);
+
+                    // Get the start of right operand
+                    const rightStartToken = sourceCode.getFirstToken(right);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [leftEndToken.range[1], rightStartToken.range[0]],
+                            ` ${operator} `,
+                        ),
+                        message: "Logical operator should be on the same line as both operands: ) || func(",
+                        node: operatorToken,
+                    });
+                }
+            };
+
+            checkOperator(node);
+        };
+
         return {
             ArrowFunctionExpression: checkArrowFunctionHandler,
             CallExpression: checkCallExpressionHandler,
             JSXExpressionContainer: checkJSXExpressionContainerHandler,
             JSXSpreadAttribute: checkJSXSpreadAttributeHandler,
+            LogicalExpression: checkLogicalExpressionHandler,
         };
     },
     meta: {
@@ -8094,7 +9338,14 @@ const singleArgumentOnOneLine = {
                 if (!openParen || !closeParen || closeParen.value !== ")") return;
 
                 // Build the fixed version
-                const calleeText = sourceCode.getText(callee);
+                // Include type arguments if they exist (TypeScript generics)
+                const typeArgs = node.typeArguments || node.typeParameters;
+                let calleeText = sourceCode.getText(callee);
+
+                if (typeArgs) {
+                    calleeText += sourceCode.getText(typeArgs);
+                }
+
                 const argText = sourceCode.getText(arg);
                 const fixedCall = `${calleeText}(${argText})`;
 
@@ -8559,6 +9810,1183 @@ const variableNamingConvention = {
  *       Get = "get";                   // PascalCase, empty line, semicolon
  *   }
  */
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Function Object Destructure
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforces that when a function parameter (object) is accessed via dot notation
+ *   in the function body, it should be destructured at the top of the function.
+ *   Also enforces that non-component functions should NOT destructure params in
+ *   the function signature - use simple typed params instead.
+ *
+ * ✓ Good (Non-component function):
+ *   const createHandler = async (data: FormInterface) => {
+ *       const { firstName, lastName, email } = data;
+ *       console.log(firstName, lastName);
+ *   }
+ *
+ * ✗ Bad (Non-component function):
+ *   const createHandler = async (data: FormInterface) => {
+ *       console.log(data.firstName);  // Should destructure
+ *   }
+ *
+ * ✗ Bad (Non-component function):
+ *   const createHandler = async ({ firstName }: FormInterface) => {  // No destructure in signature
+ *       ...
+ *   }
+ */
+const functionObjectDestructure = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Track imports from data-related paths (should use dot notation, not destructure)
+        const dataImports = new Set();
+
+        const isDataImportPath = (importPath) => {
+            // Match paths like @/data, ./data, ../data, or any path containing /data/
+            return importPath === "@/data"
+                || importPath.endsWith("/data")
+                || importPath.includes("/data/")
+                || /^\.\.?\/data$/.test(importPath);
+        };
+
+        const checkImportHandler = (node) => {
+            if (!node.source || !node.source.value) return;
+
+            const importPath = node.source.value;
+
+            if (isDataImportPath(importPath)) {
+                // Track all imported specifiers from data paths
+                node.specifiers.forEach((spec) => {
+                    if (spec.type === "ImportSpecifier" && spec.local && spec.local.name) {
+                        dataImports.add(spec.local.name);
+                    } else if (spec.type === "ImportDefaultSpecifier" && spec.local && spec.local.name) {
+                        dataImports.add(spec.local.name);
+                    }
+                });
+            }
+        };
+
+        // Check for destructuring of data imports (not allowed)
+        const checkVariableDeclarationHandler = (node) => {
+            for (const decl of node.declarations) {
+                // Check for ObjectPattern destructuring
+                if (decl.id.type === "ObjectPattern" && decl.init) {
+                    let sourceVarName = null;
+
+                    // Direct destructuring: const { x } = dataImport
+                    if (decl.init.type === "Identifier") {
+                        sourceVarName = decl.init.name;
+                    }
+
+                    // Nested destructuring: const { x } = dataImport.nested
+                    if (decl.init.type === "MemberExpression") {
+                        let obj = decl.init;
+
+                        while (obj.type === "MemberExpression") {
+                            obj = obj.object;
+                        }
+
+                        if (obj.type === "Identifier") {
+                            sourceVarName = obj.name;
+                        }
+                    }
+
+                    if (sourceVarName && dataImports.has(sourceVarName)) {
+                        const destructuredProps = decl.id.properties
+                            .filter((p) => p.type === "Property" && p.key && p.key.name)
+                            .map((p) => p.key.name);
+
+                        const sourceText = sourceCode.getText(decl.init);
+
+                        context.report({
+                            message: `Do not destructure data imports. Use dot notation for searchability: "${sourceText}.${destructuredProps[0]}" instead of destructuring`,
+                            node: decl.id,
+                        });
+                    }
+                }
+            }
+        };
+
+        const containsJsxHandler = (node) => {
+            if (!node) return false;
+
+            if (node.type === "JSXElement" || node.type === "JSXFragment") return true;
+
+            if (node.type === "BlockStatement") {
+                for (const statement of node.body) {
+                    if (statement.type === "ReturnStatement" && statement.argument) {
+                        if (containsJsxHandler(statement.argument)) return true;
+                    }
+                }
+            }
+
+            if (node.type === "ConditionalExpression") {
+                return containsJsxHandler(node.consequent) || containsJsxHandler(node.alternate);
+            }
+
+            if (node.type === "LogicalExpression") {
+                return containsJsxHandler(node.left) || containsJsxHandler(node.right);
+            }
+
+            if (node.type === "ParenthesizedExpression") {
+                return containsJsxHandler(node.expression);
+            }
+
+            return false;
+        };
+
+        const isReactComponentHandler = (node) => {
+            let componentName = null;
+
+            if (node.parent) {
+                if (node.parent.type === "VariableDeclarator" && node.parent.id && node.parent.id.type === "Identifier") {
+                    componentName = node.parent.id.name;
+                } else if (node.id && node.id.type === "Identifier") {
+                    componentName = node.id.name;
+                }
+            }
+
+            if (componentName && /^[A-Z]/.test(componentName)) {
+                const body = node.body;
+
+                return containsJsxHandler(body);
+            }
+
+            return false;
+        };
+
+        // Common array/object methods that should NOT trigger destructuring
+        const SKIP_METHODS = new Set([
+            "map", "filter", "reduce", "forEach", "find", "findIndex", "some", "every",
+            "flat", "flatMap", "sort", "reverse", "slice", "splice", "concat", "join",
+            "includes", "indexOf", "lastIndexOf", "push", "pop", "shift", "unshift",
+            "keys", "values", "entries", "toString", "toLocaleString", "length",
+        ]);
+
+        // Find all member expressions accessing a specific object in a function body
+        const findObjectAccessesHandler = (body, paramName) => {
+            const accesses = [];
+            const methodCallees = new Set();
+
+            // First pass: collect all MemberExpressions that are method callees
+            const collectMethodCallees = (node) => {
+                if (!node || typeof node !== "object") return;
+
+                // If this is a CallExpression and callee is a MemberExpression, mark it
+                if (node.type === "CallExpression" && node.callee && node.callee.type === "MemberExpression") {
+                    methodCallees.add(node.callee);
+                }
+
+                for (const key of Object.keys(node)) {
+                    if (key === "parent") continue;
+
+                    const child = node[key];
+
+                    if (Array.isArray(child)) {
+                        child.forEach(collectMethodCallees);
+                    } else if (child && typeof child === "object" && child.type) {
+                        collectMethodCallees(child);
+                    }
+                }
+            };
+
+            collectMethodCallees(body);
+
+            const visitNode = (node) => {
+                if (!node || typeof node !== "object") return;
+
+                // Check for member expression like param.prop
+                if (node.type === "MemberExpression" && !node.computed) {
+                    if (node.object.type === "Identifier" && node.object.name === paramName) {
+                        const propName = node.property.name;
+
+                        // Skip if this is a method call (callee of CallExpression)
+                        if (methodCallees.has(node)) return;
+
+                        // Skip known array/object methods (as backup)
+                        if (!SKIP_METHODS.has(propName)) {
+                            accesses.push({
+                                node,
+                                property: propName,
+                            });
+                        }
+                    }
+                }
+
+                // Recurse into child nodes
+                for (const key of Object.keys(node)) {
+                    if (key === "parent") continue;
+
+                    const child = node[key];
+
+                    if (Array.isArray(child)) {
+                        child.forEach(visitNode);
+                    } else if (child && typeof child === "object" && child.type) {
+                        visitNode(child);
+                    }
+                }
+            };
+
+            visitNode(body);
+
+            return accesses;
+        };
+
+        // Check if block body only contains destructuring/assignments + return (no other logic)
+        const isDestructureAndReturnOnlyHandler = (blockBody, paramName) => {
+            if (blockBody.type !== "BlockStatement") return null;
+
+            const statements = blockBody.body;
+
+            if (statements.length === 0) return null;
+
+            // Last statement must be return
+            const lastStatement = statements[statements.length - 1];
+
+            if (lastStatement.type !== "ReturnStatement" || !lastStatement.argument) return null;
+
+            // Track destructured variables and their sources
+            const destructuredProps = [];
+            const knownVars = new Set([paramName]);
+
+            for (let i = 0; i < statements.length - 1; i += 1) {
+                const stmt = statements[i];
+
+                // Must be variable declaration
+                if (stmt.type !== "VariableDeclaration") return null;
+
+                for (const decl of stmt.declarations) {
+                    if (!decl.init) return null;
+
+                    // Case 1: ObjectPattern destructuring - const { row } = data
+                    if (decl.id.type === "ObjectPattern") {
+                        // Must be destructuring from known variable
+                        if (decl.init.type !== "Identifier" || !knownVars.has(decl.init.name)) {
+                            return null;
+                        }
+
+                        for (const prop of decl.id.properties) {
+                            if (prop.type === "Property" && prop.key.type === "Identifier") {
+                                // Only allow simple destructuring, not nested patterns
+                                if (prop.value.type === "ObjectPattern" || prop.value.type === "ArrayPattern") {
+                                    return null;
+                                }
+
+                                const varName = prop.value.type === "Identifier" ? prop.value.name : prop.key.name;
+
+                                knownVars.add(varName);
+
+                                if (decl.init.name === paramName) {
+                                    destructuredProps.push(prop.key.name);
+                                }
+                            }
+                        }
+                    } else if (decl.id.type === "Identifier") {
+                        // Case 2: Simple assignment from member expression - const account = row.original
+                        if (decl.init.type === "MemberExpression" && !decl.init.computed) {
+                            if (decl.init.object.type === "Identifier" && knownVars.has(decl.init.object.name)) {
+                                // This is just extracting a property, still "destructuring-like"
+                                knownVars.add(decl.id.name);
+                            } else {
+                                return null;
+                            }
+                        } else {
+                            // Some other assignment - this is logic
+                            return null;
+                        }
+                    } else {
+                        return null;
+                    }
+                }
+            }
+
+            if (destructuredProps.length === 0) return null;
+
+            return { destructuredProps, returnStatement: lastStatement };
+        };
+
+        // Check if block body has actual logic (not just destructuring + return)
+        const hasActualLogicHandler = (blockBody, paramName) => {
+            if (blockBody.type !== "BlockStatement") return false;
+
+            const statements = blockBody.body;
+            const knownVars = new Set([paramName]);
+
+            for (const stmt of statements) {
+                // Return statement at end is not logic
+                if (stmt.type === "ReturnStatement") continue;
+
+                // Variable declarations
+                if (stmt.type === "VariableDeclaration") {
+                    for (const decl of stmt.declarations) {
+                        if (!decl.init) return true; // No init = logic
+
+                        // ObjectPattern destructuring is not logic
+                        if (decl.id.type === "ObjectPattern" && decl.init.type === "Identifier" && knownVars.has(decl.init.name)) {
+                            for (const prop of decl.id.properties) {
+                                if (prop.type === "Property" && prop.value.type === "Identifier") {
+                                    knownVars.add(prop.value.name);
+                                } else if (prop.type === "Property" && prop.key.type === "Identifier") {
+                                    knownVars.add(prop.key.name);
+                                }
+                            }
+
+                            continue;
+                        }
+
+                        // Simple assignment from known var's property is not logic
+                        if (decl.id.type === "Identifier" && decl.init.type === "MemberExpression") {
+                            if (decl.init.object.type === "Identifier" && knownVars.has(decl.init.object.name)) {
+                                knownVars.add(decl.id.name);
+
+                                continue;
+                            }
+                        }
+
+                        // Anything else is logic
+                        return true;
+                    }
+                } else {
+                    // Any other statement type is logic
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        // Find all member expressions accessing a destructured variable
+        const findNestedAccessesHandler = (body, destructuredVarName, originalParamName) => {
+            const accesses = [];
+            const methodCallees = new Set();
+
+            // First pass: collect all MemberExpressions that are method callees
+            const collectMethodCallees = (node) => {
+                if (!node || typeof node !== "object") return;
+
+                if (node.type === "CallExpression" && node.callee && node.callee.type === "MemberExpression") {
+                    methodCallees.add(node.callee);
+                }
+
+                for (const key of Object.keys(node)) {
+                    if (key === "parent") continue;
+
+                    const child = node[key];
+
+                    if (Array.isArray(child)) {
+                        child.forEach(collectMethodCallees);
+                    } else if (child && typeof child === "object" && child.type) {
+                        collectMethodCallees(child);
+                    }
+                }
+            };
+
+            collectMethodCallees(body);
+
+            const visitNode = (n) => {
+                if (!n || typeof n !== "object") return;
+
+                // Check for member expression like destructuredVar.prop
+                if (n.type === "MemberExpression" && !n.computed) {
+                    if (n.object.type === "Identifier" && n.object.name === destructuredVarName) {
+                        const propName = n.property.name;
+
+                        // Skip if this is a method call (callee of CallExpression)
+                        if (methodCallees.has(n)) return;
+
+                        if (!SKIP_METHODS.has(propName)) {
+                            accesses.push({
+                                node: n,
+                                property: propName,
+                            });
+                        }
+                    }
+                }
+
+                for (const key of Object.keys(n)) {
+                    if (key === "parent") continue;
+
+                    const child = n[key];
+
+                    if (Array.isArray(child)) {
+                        child.forEach(visitNode);
+                    } else if (child && typeof child === "object" && child.type) {
+                        visitNode(child);
+                    }
+                }
+            };
+
+            visitNode(body);
+
+            return accesses;
+        };
+
+        // Get all destructured variables from block body
+        const getDestructuredVariablesHandler = (blockBody, paramName) => {
+            const destructured = new Map(); // varName -> { fromParam: boolean, fromVar: string|null, properties: string[] }
+
+            if (blockBody.type !== "BlockStatement") return destructured;
+
+            for (const stmt of blockBody.body) {
+                if (stmt.type !== "VariableDeclaration") continue;
+
+                for (const decl of stmt.declarations) {
+                    if (decl.id.type === "ObjectPattern" && decl.init) {
+                        // Direct destructuring from param: const { row } = data
+                        if (decl.init.type === "Identifier" && decl.init.name === paramName) {
+                            for (const prop of decl.id.properties) {
+                                if (prop.type === "Property" && prop.key.type === "Identifier") {
+                                    const varName = prop.value.type === "Identifier" ? prop.value.name : prop.key.name;
+
+                                    destructured.set(varName, {
+                                        fromParam: true,
+                                        fromVar: null,
+                                        originalProp: prop.key.name,
+                                    });
+                                }
+                            }
+                        }
+
+                        // Destructuring from previously destructured variable
+                        // const { original } = row (where row was destructured from param)
+                        if (decl.init.type === "Identifier" && destructured.has(decl.init.name)) {
+                            for (const prop of decl.id.properties) {
+                                if (prop.type === "Property" && prop.key.type === "Identifier") {
+                                    const varName = prop.value.type === "Identifier" ? prop.value.name : prop.key.name;
+
+                                    destructured.set(varName, {
+                                        fromParam: false,
+                                        fromVar: decl.init.name,
+                                        originalProp: prop.key.name,
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    // Simple assignment from destructured var: const account = row.original
+                    if (decl.id.type === "Identifier" && decl.init && decl.init.type === "MemberExpression") {
+                        const memberExpr = decl.init;
+
+                        if (memberExpr.object.type === "Identifier" && destructured.has(memberExpr.object.name)) {
+                            if (!memberExpr.computed && memberExpr.property.type === "Identifier") {
+                                destructured.set(decl.id.name, {
+                                    fromParam: false,
+                                    fromVar: memberExpr.object.name,
+                                    originalProp: memberExpr.property.name,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            return destructured;
+        };
+
+        const checkFunctionHandler = (node) => {
+            const isComponent = isReactComponentHandler(node);
+            const params = node.params;
+            const body = node.body;
+
+            if (params.length === 0 || !body) return;
+
+            // Arrow functions with expression body (direct return, no block)
+            // For these, destructuring in params IS allowed/encouraged since there's no body
+            if (node.type === "ArrowFunctionExpression" && body.type !== "BlockStatement") {
+                // Check if any Identifier param is accessed via dot notation
+                // If so, suggest destructuring in params
+                params.forEach((param) => {
+                    if (param.type !== "Identifier") return;
+
+                    const paramName = param.name;
+                    const accesses = findObjectAccessesHandler(body, paramName);
+
+                    if (accesses.length > 0) {
+                        const accessedProps = [...new Set(accesses.map((a) => a.property))];
+
+                        context.report({
+                            message: `Parameter "${paramName}" is accessed via dot notation. For arrow functions with direct returns, destructure in the parameter: "({ ${accessedProps.join(", ")} })"`,
+                            node: accesses[0].node,
+                        });
+                    }
+                });
+
+                return;
+            }
+
+            // For non-components with block body: check if first param is destructured in signature (not allowed)
+            if (!isComponent) {
+                const firstParam = params[0];
+
+                if (firstParam.type === "ObjectPattern") {
+                    context.report({
+                        message: "Non-component functions should not destructure parameters in the signature. Use a typed parameter (e.g., \"data: InterfaceType\") and destructure in the function body instead.",
+                        node: firstParam,
+                    });
+
+                    return;
+                }
+            }
+
+            // Check for block body that only contains destructuring + return (can be converted to expression)
+            if (node.type === "ArrowFunctionExpression" && body.type === "BlockStatement") {
+                const firstParam = params[0];
+
+                if (firstParam && firstParam.type === "Identifier") {
+                    const result = isDestructureAndReturnOnlyHandler(body, firstParam.name);
+
+                    if (result) {
+                        context.report({
+                            message: `This function only destructures and returns. Convert to expression body with destructured param: "({ ${result.destructuredProps.join(", ")} }) => ..."`,
+                            node: body,
+                        });
+
+                        return;
+                    }
+                }
+            }
+
+            // Check for nested property access from destructured variables
+            // e.g., const { row } = data; then row.original should be nested destructured
+            // ONLY when there's actual logic in the function (not just destructuring + return)
+            if (body.type === "BlockStatement") {
+                const firstParam = params[0];
+
+                if (firstParam && firstParam.type === "Identifier") {
+                    // Only enforce nested destructuring when there's actual logic
+                    if (hasActualLogicHandler(body, firstParam.name)) {
+                        const destructuredVars = getDestructuredVariablesHandler(body, firstParam.name);
+
+                        for (const [varName, info] of destructuredVars) {
+                            const accesses = findNestedAccessesHandler(body, varName, firstParam.name);
+
+                            if (accesses.length > 0) {
+                                const accessedProps = [...new Set(accesses.map((a) => a.property))];
+
+                                context.report({
+                                    message: `Variable "${varName}" is accessed via dot notation (${accessedProps.join(", ")}). Use nested destructuring instead: "const { ${info.originalProp}: { ${accessedProps.join(", ")} } } = ..."`,
+                                    node: accesses[0].node,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            // For all functions with block body: check if any identifier param is accessed via dot notation
+            params.forEach((param) => {
+                if (param.type !== "Identifier") return;
+
+                const paramName = param.name;
+                const accesses = findObjectAccessesHandler(body, paramName);
+
+                if (accesses.length > 0) {
+                    const accessedProps = [...new Set(accesses.map((a) => a.property))];
+
+                    context.report({
+                        message: `Parameter "${paramName}" is accessed via dot notation. Destructure it at the top of the function body: "const { ${accessedProps.join(", ")} } = ${paramName};"`,
+                        node: accesses[0].node,
+                    });
+                }
+            });
+
+            // For components: check if destructured props from signature are accessed via dot notation
+            // e.g., ({ accountsData }) => { accountsData.items } should destructure accountsData at top
+            if (isComponent && body.type === "BlockStatement") {
+                const firstParam = params[0];
+
+                if (firstParam && firstParam.type === "ObjectPattern") {
+                    // Get all destructured prop names from the signature
+                    const destructuredProps = firstParam.properties
+                        .filter((prop) => prop.type === "Property" && prop.key.type === "Identifier")
+                        .map((prop) => prop.value.type === "Identifier" ? prop.value.name : prop.key.name);
+
+                    // Check each destructured prop for dot notation access in body
+                    destructuredProps.forEach((propName) => {
+                        const accesses = findObjectAccessesHandler(body, propName);
+
+                        if (accesses.length > 0) {
+                            const accessedProps = [...new Set(accesses.map((a) => a.property))];
+
+                            context.report({
+                                message: `Prop "${propName}" is accessed via dot notation. Destructure it at the top of the component: "const { ${accessedProps.join(", ")} } = ${propName};"`,
+                                node: accesses[0].node,
+                            });
+                        }
+                    });
+                }
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkFunctionHandler,
+            FunctionDeclaration: checkFunctionHandler,
+            FunctionExpression: checkFunctionHandler,
+            ImportDeclaration: checkImportHandler,
+            VariableDeclaration: checkVariableDeclarationHandler,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce object parameters to be destructured in function body, not accessed via dot notation. Also prevent destructuring of data imports." },
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Component Props Destructure
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforces that React component props must be destructured
+ *   in the function parameter, not received as a single 'props' object.
+ *
+ * ✓ Good:
+ *   export const Button = ({ label, onClick }) => { ... }
+ *   export const Card = ({ title, children, className = "" }) => { ... }
+ *   export function Header({ title }: { title: string }) { ... }
+ *
+ * ✗ Bad:
+ *   export const Button = (props) => { ... }  // Should destructure props
+ *   export function Header(props) { ... }      // Should destructure props
+ */
+const componentPropsDestructure = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const containsJsxHandler = (node) => {
+            if (!node) return false;
+
+            if (node.type === "JSXElement" || node.type === "JSXFragment") return true;
+
+            if (node.type === "BlockStatement") {
+                for (const statement of node.body) {
+                    if (statement.type === "ReturnStatement" && statement.argument) {
+                        if (containsJsxHandler(statement.argument)) return true;
+                    }
+                }
+            }
+
+            if (node.type === "ConditionalExpression") {
+                return containsJsxHandler(node.consequent) || containsJsxHandler(node.alternate);
+            }
+
+            if (node.type === "LogicalExpression") {
+                return containsJsxHandler(node.left) || containsJsxHandler(node.right);
+            }
+
+            if (node.type === "ParenthesizedExpression") {
+                return containsJsxHandler(node.expression);
+            }
+
+            return false;
+        };
+
+        const isReactComponentHandler = (node) => {
+            // Check if it's a named export or variable declarator with PascalCase name
+            let componentName = null;
+
+            if (node.parent) {
+                if (node.parent.type === "VariableDeclarator" && node.parent.id && node.parent.id.type === "Identifier") {
+                    componentName = node.parent.id.name;
+                } else if (node.id && node.id.type === "Identifier") {
+                    componentName = node.id.name;
+                }
+            }
+
+            // Check if name starts with uppercase (PascalCase convention for React components)
+            if (componentName && /^[A-Z]/.test(componentName)) {
+                // Check if function returns JSX
+                const body = node.body;
+
+                return containsJsxHandler(body);
+            }
+
+            return false;
+        };
+
+        const checkComponentPropsHandler = (node) => {
+            if (!isReactComponentHandler(node)) return;
+
+            const params = node.params;
+
+            // Component with no params is fine
+            if (params.length === 0) return;
+
+            // Check if first param is not destructured (is an Identifier instead of ObjectPattern)
+            const firstParam = params[0];
+
+            if (firstParam.type === "Identifier") {
+                context.report({
+                    message: `Component props should be destructured. Use "({ ...props })" instead of "${firstParam.name}"`,
+                    node: firstParam,
+                });
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkComponentPropsHandler,
+            FunctionDeclaration: checkComponentPropsHandler,
+            FunctionExpression: checkComponentPropsHandler,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce that React component props must be destructured in the function parameter" },
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Component Props Inline Type
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforces that React component props must use inline type annotation,
+ *   not a reference to an interface or type alias. Also enforces:
+ *   - Spacing: "}: {" with one space between colon and opening brace
+ *   - Each prop type on its own line if more than one prop
+ *   - Trailing commas (not semicolons) for each prop type
+ *   - If single prop type, can be on single line
+ *
+ * ✓ Good:
+ *   export const Button = ({ label }: { label: string }) => { ... }
+ *   export const Card = ({
+ *       className = "",
+ *       title,
+ *   }: {
+ *       className?: string,
+ *       title: string,
+ *   }) => { ... }
+ *
+ * ✗ Bad:
+ *   export const Button = ({ label }: ButtonPropsInterface) => { ... }
+ *   export const Card = ({ title }:{ title: string }) => { ... }  // Missing space
+ *   export const Card = ({ a, b }: { a: string; b: string }) => { ... }  // Semicolons
+ */
+const componentPropsInlineType = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const containsJsxHandler = (node) => {
+            if (!node) return false;
+
+            if (node.type === "JSXElement" || node.type === "JSXFragment") return true;
+
+            if (node.type === "BlockStatement") {
+                for (const statement of node.body) {
+                    if (statement.type === "ReturnStatement" && statement.argument) {
+                        if (containsJsxHandler(statement.argument)) return true;
+                    }
+                }
+            }
+
+            if (node.type === "ConditionalExpression") {
+                return containsJsxHandler(node.consequent) || containsJsxHandler(node.alternate);
+            }
+
+            if (node.type === "LogicalExpression") {
+                return containsJsxHandler(node.left) || containsJsxHandler(node.right);
+            }
+
+            if (node.type === "ParenthesizedExpression") {
+                return containsJsxHandler(node.expression);
+            }
+
+            return false;
+        };
+
+        const isReactComponentHandler = (node) => {
+            let componentName = null;
+
+            if (node.parent) {
+                if (node.parent.type === "VariableDeclarator" && node.parent.id && node.parent.id.type === "Identifier") {
+                    componentName = node.parent.id.name;
+                } else if (node.id && node.id.type === "Identifier") {
+                    componentName = node.id.name;
+                }
+            }
+
+            if (componentName && /^[A-Z]/.test(componentName)) {
+                const body = node.body;
+
+                return containsJsxHandler(body);
+            }
+
+            return false;
+        };
+
+        const checkComponentPropsTypeHandler = (node) => {
+            const params = node.params;
+
+            if (params.length === 0) return;
+
+            const isComponent = isReactComponentHandler(node);
+
+            // For non-components: check ALL parameters for inline object types (not allowed)
+            if (!isComponent) {
+                params.forEach((param) => {
+                    // Check Identifier params with type annotations (e.g., data: { email: string })
+                    if (param.type === "Identifier" && param.typeAnnotation && param.typeAnnotation.typeAnnotation) {
+                        const typeAnnotation = param.typeAnnotation.typeAnnotation;
+
+                        if (typeAnnotation.type === "TSTypeLiteral") {
+                            context.report({
+                                message: `Parameter "${param.name}" must use a type reference (interface or type alias), not an inline object type. Define the type separately.`,
+                                node: typeAnnotation,
+                            });
+                        }
+                    }
+                });
+            }
+
+            const firstParam = params[0];
+
+            // Only check destructured params (ObjectPattern) for the rest of the checks
+            if (firstParam.type !== "ObjectPattern") return;
+
+            // Check if there's a type annotation
+            if (!firstParam.typeAnnotation || !firstParam.typeAnnotation.typeAnnotation) {
+                // For React components in TypeScript files: destructured props MUST have type annotation
+                const filename = context.getFilename ? context.getFilename() : context.filename || "";
+                const isTypeScriptFile = filename.endsWith(".ts") || filename.endsWith(".tsx");
+
+                if (isTypeScriptFile && isComponent) {
+                    context.report({
+                        message: "Component props must have a type annotation. Add inline type: \"({ prop }: { prop: Type })\"",
+                        node: firstParam,
+                    });
+                }
+
+                return;
+            }
+
+            const typeAnnotation = firstParam.typeAnnotation.typeAnnotation;
+
+            // Check spacing for ALL destructured params with type annotations
+            // This applies to both React components and regular functions: }: TypeName
+            const colonToken = sourceCode.getFirstToken(firstParam.typeAnnotation);
+            const closingBraceToken = colonToken ? sourceCode.getTokenBefore(colonToken) : null;
+            const typeFirstToken = sourceCode.getFirstToken(typeAnnotation);
+
+            if (closingBraceToken && colonToken && typeFirstToken && closingBraceToken.value === "}") {
+                const textBeforeColon = sourceCode.getText().slice(closingBraceToken.range[1], colonToken.range[0]);
+                const textAfterColon = sourceCode.getText().slice(colonToken.range[1], typeFirstToken.range[0]);
+
+                if (textBeforeColon !== "" || textAfterColon !== " ") {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [closingBraceToken.range[1], typeFirstToken.range[0]],
+                            ": ",
+                        ),
+                        message: "Type annotation must have no space before colon and one space after: \"}: TypeName\"",
+                        node: typeAnnotation,
+                    });
+                }
+            }
+
+            // Check if type is a reference (TSTypeReference) instead of inline (TSTypeLiteral)
+            // Only enforce inline types for React components - regular functions can use interface/type references
+            if (typeAnnotation.type === "TSTypeReference") {
+                if (isComponent) {
+                    const typeName = typeAnnotation.typeName && typeAnnotation.typeName.name
+                        ? typeAnnotation.typeName.name
+                        : sourceCode.getText(typeAnnotation.typeName);
+
+                    context.report({
+                        message: `Component props should use inline type annotation instead of referencing "${typeName}". Define the type inline as "{ prop: type, ... }"`,
+                        node: typeAnnotation,
+                    });
+                }
+
+                // Regular functions with interface references are allowed - no error
+                return;
+            }
+
+            // If it's a TSTypeLiteral, check formatting (only for React components)
+            if (typeAnnotation.type === "TSTypeLiteral" && isComponent) {
+                const members = typeAnnotation.members;
+
+                // Get the base indentation from the component declaration
+                const componentLine = sourceCode.lines[node.loc.start.line - 1];
+                const baseIndent = componentLine.match(/^\s*/)[0];
+                const propIndent = baseIndent + "    ";
+
+                // Get opening brace token
+                const openBraceToken = sourceCode.getFirstToken(typeAnnotation);
+
+                // Check that props and type props are identical
+                const destructuredProps = firstParam.properties
+                    .filter((prop) => prop.type === "Property" || prop.type === "RestElement")
+                    .map((prop) => {
+                        if (prop.type === "RestElement") return null;
+
+                        return prop.key && prop.key.name ? prop.key.name : null;
+                    })
+                    .filter(Boolean)
+                    .sort();
+
+                const typeProps = members
+                    .filter((member) => member.type === "TSPropertySignature")
+                    .map((member) => member.key && member.key.name ? member.key.name : null)
+                    .filter(Boolean)
+                    .sort();
+
+                const missingInType = destructuredProps.filter((prop) => !typeProps.includes(prop));
+                const extraInType = typeProps.filter((prop) => !destructuredProps.includes(prop));
+
+                if (missingInType.length > 0) {
+                    context.report({
+                        message: `Props type is missing properties that are destructured: ${missingInType.join(", ")}`,
+                        node: typeAnnotation,
+                    });
+                }
+
+                if (extraInType.length > 0) {
+                    context.report({
+                        message: `Props type has extra properties not in destructured props: ${extraInType.join(", ")}`,
+                        node: typeAnnotation,
+                    });
+                }
+
+                // Get closing brace of type literal
+                const closeBraceToken = sourceCode.getLastToken(typeAnnotation);
+
+                // Check for empty line after opening brace
+                if (members.length > 0) {
+                    const firstMember = members[0];
+
+                    if (firstMember.loc.start.line - openBraceToken.loc.end.line > 1) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBraceToken.range[1], firstMember.range[0]],
+                                "\n" + propIndent,
+                            ),
+                            message: "No empty line after opening brace in props type",
+                            node: firstMember,
+                        });
+                    }
+                }
+
+                // Check for empty line before closing brace
+                if (members.length > 0 && closeBraceToken) {
+                    const lastMember = members[members.length - 1];
+
+                    if (closeBraceToken.loc.start.line - lastMember.loc.end.line > 1) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [lastMember.range[1], closeBraceToken.range[0]],
+                                "\n" + baseIndent,
+                            ),
+                            message: "No empty line before closing brace in props type",
+                            node: lastMember,
+                        });
+                    }
+                }
+
+                // For multiple members, first member should be on new line after opening brace
+                if (members.length > 1 && members[0]) {
+                    const firstMember = members[0];
+
+                    if (firstMember.loc.start.line === openBraceToken.loc.end.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBraceToken.range[1], firstMember.range[0]],
+                                "\n" + propIndent,
+                            ),
+                            message: "First props type property must be on a new line when there are multiple properties",
+                            node: firstMember,
+                        });
+                    }
+                }
+
+                // Check each member for semicolons vs commas and line formatting
+                members.forEach((member, index) => {
+                    const memberText = sourceCode.getText(member);
+
+                    // Check for space before ? in optional properties (e.g., "prop ?: type" should be "prop?: type")
+                    if (member.type === "TSPropertySignature" && member.optional) {
+                        const keyToken = sourceCode.getFirstToken(member);
+                        const questionToken = sourceCode.getTokenAfter(keyToken);
+
+                        if (questionToken && questionToken.value === "?") {
+                            const textBetween = sourceCode.getText().slice(keyToken.range[1], questionToken.range[0]);
+
+                            if (textBetween !== "") {
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange(
+                                        [keyToken.range[1], questionToken.range[0]],
+                                        "",
+                                    ),
+                                    message: "No space allowed before \"?\" in optional property",
+                                    node: member,
+                                });
+                            }
+                        }
+                    }
+
+                    // Check property ends with comma, not semicolon
+                    if (memberText.trimEnd().endsWith(";")) {
+                        context.report({
+                            fix: (fixer) => {
+                                const lastChar = memberText.lastIndexOf(";");
+                                const absolutePos = member.range[0] + lastChar;
+
+                                return fixer.replaceTextRange([absolutePos, absolutePos + 1], ",");
+                            },
+                            message: "Props type properties must end with comma (,) not semicolon (;)",
+                            node: member,
+                        });
+                    }
+
+                    // If more than one member, check formatting
+                    if (members.length > 1 && index > 0) {
+                        const prevMember = members[index - 1];
+
+                        // Check each is on its own line - with auto-fix
+                        if (member.loc.start.line === prevMember.loc.end.line) {
+                            context.report({
+                                fix: (fixer) => {
+                                    // Find the comma after prev member
+                                    let commaToken = sourceCode.getTokenAfter(prevMember);
+
+                                    while (commaToken && commaToken.value !== "," && commaToken.range[0] < member.range[0]) {
+                                        commaToken = sourceCode.getTokenAfter(commaToken);
+                                    }
+
+                                    const insertPoint = commaToken && commaToken.value === "," ? commaToken.range[1] : prevMember.range[1];
+
+                                    return fixer.replaceTextRange(
+                                        [insertPoint, member.range[0]],
+                                        "\n" + propIndent,
+                                    );
+                                },
+                                message: "Each props type property must be on its own line when there are multiple properties",
+                                node: member,
+                            });
+                        }
+
+                        // Check for empty lines between properties
+                        if (member.loc.start.line - prevMember.loc.end.line > 1) {
+                            context.report({
+                                fix: (fixer) => {
+                                    const textBetween = sourceCode.getText().slice(
+                                        prevMember.range[1],
+                                        member.range[0],
+                                    );
+                                    const newText = textBetween.replace(/\n\s*\n/g, "\n");
+
+                                    return fixer.replaceTextRange(
+                                        [prevMember.range[1], member.range[0]],
+                                        newText,
+                                    );
+                                },
+                                message: "No empty lines allowed between props type properties",
+                                node: member,
+                            });
+                        }
+                    }
+                });
+            }
+        };
+
+        // Check return type annotation spacing and type reference requirement
+        const checkReturnTypeSpacingHandler = (node) => {
+            // Check if function has a return type annotation
+            if (!node.returnType || !node.returnType.typeAnnotation) return;
+
+            const returnType = node.returnType;
+            const typeAnnotation = returnType.typeAnnotation;
+            const isComponent = isReactComponentHandler(node);
+
+            // For non-components: return type must be a type reference, not inline object type
+            if (!isComponent && typeAnnotation.type === "TSTypeLiteral") {
+                context.report({
+                    message: "Function return type must be a type reference (interface, type, or built-in type), not an inline object type. Define the return type separately.",
+                    node: typeAnnotation,
+                });
+
+                return;
+            }
+
+            // Get the closing paren of the params
+            let closeParenToken;
+
+            if (node.params.length > 0) {
+                const lastParam = node.params[node.params.length - 1];
+
+                closeParenToken = sourceCode.getTokenAfter(lastParam, (token) => token.value === ")");
+            } else {
+                // No params - find the () after the function name or the opening (
+                const firstToken = sourceCode.getFirstToken(node);
+                let searchToken = firstToken;
+
+                while (searchToken && searchToken.value !== "(") {
+                    searchToken = sourceCode.getTokenAfter(searchToken);
+                }
+
+                if (searchToken) {
+                    closeParenToken = sourceCode.getTokenAfter(searchToken, (token) => token.value === ")");
+                }
+            }
+
+            if (!closeParenToken) return;
+
+            // Get the colon token
+            const colonToken = sourceCode.getFirstToken(returnType);
+
+            if (!colonToken || colonToken.value !== ":") return;
+
+            // Get the first token of the type annotation
+            const typeFirstToken = sourceCode.getFirstToken(typeAnnotation);
+
+            if (!typeFirstToken) return;
+
+            // Check spacing: ): TypeName (no space before colon, one space after)
+            const textBeforeColon = sourceCode.getText().slice(closeParenToken.range[1], colonToken.range[0]);
+            const textAfterColon = sourceCode.getText().slice(colonToken.range[1], typeFirstToken.range[0]);
+
+            if (textBeforeColon !== "" || textAfterColon !== " ") {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [closeParenToken.range[1], typeFirstToken.range[0]],
+                        ": ",
+                    ),
+                    message: "Return type annotation must have no space before colon and one space after: \"): TypeName\"",
+                    node: returnType,
+                });
+            }
+        };
+
+        return {
+            ArrowFunctionExpression(node) {
+                checkComponentPropsTypeHandler(node);
+                checkReturnTypeSpacingHandler(node);
+            },
+            FunctionDeclaration(node) {
+                checkComponentPropsTypeHandler(node);
+                checkReturnTypeSpacingHandler(node);
+            },
+            FunctionExpression(node) {
+                checkComponentPropsTypeHandler(node);
+                checkReturnTypeSpacingHandler(node);
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce inline type annotation for React component props and return types with proper formatting" },
+        fixable: "code",
+        schema: [],
+        type: "suggestion",
+    },
+};
+
 /*
  * type-format
  *
@@ -8588,7 +11016,58 @@ const typeFormat = {
         const pascalCaseRegex = /^[A-Z][a-zA-Z0-9]*$/;
         const camelCaseRegex = /^[a-z][a-zA-Z0-9]*$/;
 
-        const checkTypeLiteralHandler = (node, members) => {
+        const checkTypeLiteralHandler = (declarationNode, typeLiteralNode, members) => {
+            if (members.length === 0) return;
+
+            // Get indentation
+            const typeLine = sourceCode.lines[declarationNode.loc.start.line - 1];
+            const baseIndent = typeLine.match(/^\s*/)[0];
+            const propIndent = baseIndent + "    ";
+
+            // Get opening and closing braces
+            const openBraceToken = sourceCode.getFirstToken(typeLiteralNode);
+            const closeBraceToken = sourceCode.getLastToken(typeLiteralNode);
+
+            // Check for empty line after opening brace
+            const firstMember = members[0];
+
+            if (firstMember.loc.start.line - openBraceToken.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openBraceToken.range[1], firstMember.range[0]],
+                        "\n" + propIndent,
+                    ),
+                    message: "No empty line after opening brace in type",
+                    node: firstMember,
+                });
+            }
+
+            // Check for empty line before closing brace
+            const lastMember = members[members.length - 1];
+
+            if (closeBraceToken.loc.start.line - lastMember.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastMember.range[1], closeBraceToken.range[0]],
+                        "\n" + baseIndent,
+                    ),
+                    message: "No empty line before closing brace in type",
+                    node: lastMember,
+                });
+            }
+
+            // For multiple members, first member should be on new line after opening brace
+            if (members.length > 1 && firstMember.loc.start.line === openBraceToken.loc.end.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openBraceToken.range[1], firstMember.range[0]],
+                        "\n" + propIndent,
+                    ),
+                    message: "First type property must be on a new line when there are multiple properties",
+                    node: firstMember,
+                });
+            }
+
             members.forEach((member, index) => {
                 // Check property name is camelCase
                 if (member.type === "TSPropertySignature" && member.key && member.key.type === "Identifier") {
@@ -8602,29 +11081,24 @@ const typeFormat = {
                     }
                 }
 
-                // Check for empty lines between properties
-                if (index > 0) {
-                    const prevMember = members[index - 1];
-                    const currentLine = member.loc.start.line;
-                    const prevLine = prevMember.loc.end.line;
+                // Check for space before ? in optional properties
+                if (member.type === "TSPropertySignature" && member.optional) {
+                    const keyToken = sourceCode.getFirstToken(member);
+                    const questionToken = sourceCode.getTokenAfter(keyToken);
 
-                    if (currentLine - prevLine > 1) {
-                        context.report({
-                            fix(fixer) {
-                                const textBetween = sourceCode.getText().slice(
-                                    prevMember.range[1],
-                                    member.range[0],
-                                );
-                                const newText = textBetween.replace(/\n\s*\n/g, "\n");
+                    if (questionToken && questionToken.value === "?") {
+                        const textBetween = sourceCode.getText().slice(keyToken.range[1], questionToken.range[0]);
 
-                                return fixer.replaceTextRange(
-                                    [prevMember.range[1], member.range[0]],
-                                    newText,
-                                );
-                            },
-                            message: "No empty lines allowed between type properties",
-                            node: member,
-                        });
+                        if (textBetween !== "") {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [keyToken.range[1], questionToken.range[0]],
+                                    "",
+                                ),
+                                message: "No space allowed before \"?\" in optional property",
+                                node: member,
+                            });
+                        }
                     }
                 }
 
@@ -8643,10 +11117,286 @@ const typeFormat = {
                         node: member,
                     });
                 }
+
+                // Check formatting for multiple members
+                if (members.length > 1 && index > 0) {
+                    const prevMember = members[index - 1];
+
+                    // Check each is on its own line - with auto-fix
+                    if (member.loc.start.line === prevMember.loc.end.line) {
+                        context.report({
+                            fix: (fixer) => {
+                                let commaToken = sourceCode.getTokenAfter(prevMember);
+
+                                while (commaToken && commaToken.value !== "," && commaToken.range[0] < member.range[0]) {
+                                    commaToken = sourceCode.getTokenAfter(commaToken);
+                                }
+
+                                const insertPoint = commaToken && commaToken.value === "," ? commaToken.range[1] : prevMember.range[1];
+
+                                return fixer.replaceTextRange(
+                                    [insertPoint, member.range[0]],
+                                    "\n" + propIndent,
+                                );
+                            },
+                            message: "Each type property must be on its own line when there are multiple properties",
+                            node: member,
+                        });
+                    }
+
+                    // Check for empty lines between properties
+                    if (member.loc.start.line - prevMember.loc.end.line > 1) {
+                        context.report({
+                            fix(fixer) {
+                                const textBetween = sourceCode.getText().slice(
+                                    prevMember.range[1],
+                                    member.range[0],
+                                );
+                                const newText = textBetween.replace(/\n\s*\n/g, "\n");
+
+                                return fixer.replaceTextRange(
+                                    [prevMember.range[1], member.range[0]],
+                                    newText,
+                                );
+                            },
+                            message: "No empty lines allowed between type properties",
+                            node: member,
+                        });
+                    }
+                }
             });
         };
 
+        // Handle inline type literals (in TSAsExpression) - single prop on one line, 2+ multiline
+        const checkInlineTypeLiteralHandler = (typeLiteral, parentNode) => {
+            const { members } = typeLiteral;
+
+            if (members.length === 0) return;
+
+            const openBrace = sourceCode.getFirstToken(typeLiteral);
+            const closeBrace = sourceCode.getLastToken(typeLiteral);
+            const isMultiLine = openBrace.loc.start.line !== closeBrace.loc.end.line;
+
+            // Single property: should be on one line without trailing comma
+            if (members.length === 1) {
+                const member = members[0];
+                const memberText = sourceCode.getText(member);
+
+                // Check for trailing comma in single property
+                if (memberText.trimEnd().endsWith(",")) {
+                    context.report({
+                        fix: (fixer) => {
+                            const lastComma = member.range[1] - 1;
+                            const textBefore = sourceCode.getText().slice(member.range[0], member.range[1]);
+                            const commaIndex = textBefore.lastIndexOf(",");
+
+                            if (commaIndex !== -1) {
+                                return fixer.removeRange([member.range[0] + commaIndex, member.range[0] + commaIndex + 1]);
+                            }
+
+                            return null;
+                        },
+                        message: "Single property inline type should not have trailing comma",
+                        node: member,
+                    });
+
+                    return;
+                }
+
+                // If multiline with single property, collapse to single line
+                if (isMultiLine) {
+                    const typeText = `{ ${memberText.trim().replace(/,$/, "")} }`;
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(typeLiteral, typeText),
+                        message: "Single property inline type should be on one line",
+                        node: typeLiteral,
+                    });
+                }
+
+                return;
+            }
+
+            // 2+ properties: should be multiline with trailing comma
+            if (!isMultiLine) {
+                // Get proper indentation from the line where the type assertion starts
+                const asKeyword = sourceCode.getTokenBefore(typeLiteral);
+                const lineStart = sourceCode.getText().lastIndexOf("\n", asKeyword.range[0]) + 1;
+                const lineText = sourceCode.getText().slice(lineStart, asKeyword.range[0]);
+                const baseIndent = lineText.match(/^\s*/)[0];
+                const propIndent = baseIndent + "        "; // 8 spaces for nested content
+
+                const formattedMembers = members.map((m) => {
+                    let text = sourceCode.getText(m).trim();
+
+                    // Replace semicolon with comma
+                    if (text.endsWith(";")) {
+                        text = text.slice(0, -1) + ",";
+                    } else if (!text.endsWith(",")) {
+                        text += ",";
+                    }
+
+                    return propIndent + text;
+                }).join("\n");
+
+                const newText = `{\n${formattedMembers}\n${baseIndent}    }`;
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(typeLiteral, newText),
+                    message: "Inline type with 2+ properties should be multiline with trailing commas",
+                    node: typeLiteral,
+                });
+
+                return;
+            }
+
+            // Already multiline - check for semicolons, missing trailing commas, and empty lines between members
+            members.forEach((member, index) => {
+                const memberText = sourceCode.getText(member);
+
+                // Check for semicolon (should be comma)
+                if (memberText.trimEnd().endsWith(";")) {
+                    const semicolonIndex = memberText.lastIndexOf(";");
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [member.range[0] + semicolonIndex, member.range[0] + semicolonIndex + 1],
+                            ",",
+                        ),
+                        message: "Type properties must end with comma (,) not semicolon (;)",
+                        node: member,
+                    });
+                } else if (index === members.length - 1 && !memberText.trimEnd().endsWith(",")) {
+                    // Last member needs trailing comma
+                    context.report({
+                        fix: (fixer) => fixer.insertTextAfter(member, ","),
+                        message: "Last property in multiline inline type should have trailing comma",
+                        node: member,
+                    });
+                }
+
+                // Check for empty lines between members
+                if (index < members.length - 1) {
+                    const nextMember = members[index + 1];
+
+                    if (nextMember.loc.start.line - member.loc.end.line > 1) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [member.range[1], nextMember.range[0]],
+                                "\n" + " ".repeat(nextMember.loc.start.column),
+                            ),
+                            message: "No empty lines between type properties",
+                            node: nextMember,
+                        });
+                    }
+                }
+            });
+
+            // Check for empty lines after opening brace
+            const firstMember = members[0];
+
+            if (firstMember.loc.start.line - openBrace.loc.end.line > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openBrace.range[1], firstMember.range[0]],
+                        "\n" + " ".repeat(firstMember.loc.start.column),
+                    ),
+                    message: "No empty line after opening brace in inline type",
+                    node: firstMember,
+                });
+            }
+
+            // For 2+ members: first member should be on its own line (not on same line as opening brace)
+            if (members.length >= 2 && openBrace.loc.end.line === firstMember.loc.start.line) {
+                // Calculate indentation based on the closing brace position or parent
+                const lastMember = members[members.length - 1];
+                const propIndent = " ".repeat(lastMember.loc.start.column);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openBrace.range[1], firstMember.range[0]],
+                        "\n" + propIndent,
+                    ),
+                    message: "First property of multiline inline type should be on its own line",
+                    node: firstMember,
+                });
+            }
+
+            // Check for empty lines before closing brace
+            const lastMember = members[members.length - 1];
+
+            if (closeBrace.loc.start.line - lastMember.loc.end.line > 1) {
+                const indent = " ".repeat(closeBrace.loc.start.column);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastMember.range[1], closeBrace.range[0]],
+                        "\n" + indent,
+                    ),
+                    message: "No empty line before closing brace in inline type",
+                    node: closeBrace,
+                });
+            }
+
+            // Check if closing brace is on same line as last member - should be on its own line for 2+ properties
+            if (members.length >= 2 && closeBrace.loc.start.line === lastMember.loc.end.line) {
+                // Get proper indentation - should match the opening brace's line
+                const asToken = sourceCode.getTokenBefore(typeLiteral, (t) => t.value === "as");
+
+                if (asToken) {
+                    const lineStart = sourceCode.getText().lastIndexOf("\n", asToken.range[0]) + 1;
+                    const lineText = sourceCode.getText().slice(lineStart, asToken.range[0]);
+                    const baseIndent = lineText.match(/^\s*/)[0];
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [lastMember.range[1], closeBrace.range[0]],
+                            "\n" + baseIndent + "    ",
+                        ),
+                        message: "Closing brace should be on its own line in multiline type literal",
+                        node: closeBrace,
+                    });
+                }
+            }
+        };
+
         return {
+            TSAsExpression(node) {
+                // Handle type assertions like: state as { user: Type }
+                const { typeAnnotation } = node;
+
+                // Find the 'as' keyword token
+                const asToken = sourceCode.getTokenBefore(typeAnnotation, (t) => t.value === "as");
+
+                if (asToken && typeAnnotation) {
+                    const firstTypeToken = sourceCode.getFirstToken(typeAnnotation);
+                    const textAfterAs = sourceCode.text.slice(asToken.range[1], firstTypeToken.range[0]);
+
+                    // Check for proper spacing: should be exactly " " (single space)
+                    // Also check that opening brace is on same line as "as"
+                    if (firstTypeToken.value === "{") {
+                        // For object type literal: as {
+                        if (textAfterAs !== " ") {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange([asToken.range[1], firstTypeToken.range[0]], " "),
+                                message: "Type assertion should have exactly one space after 'as' and opening brace on same line",
+                                node: firstTypeToken,
+                            });
+                        }
+                    } else if (asToken.loc.end.line !== firstTypeToken.loc.start.line) {
+                        // For other types, ensure same line
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange([asToken.range[1], firstTypeToken.range[0]], " "),
+                            message: "Type should be on same line as 'as' keyword",
+                            node: firstTypeToken,
+                        });
+                    }
+                }
+
+                if (typeAnnotation && typeAnnotation.type === "TSTypeLiteral") {
+                    checkInlineTypeLiteralHandler(typeAnnotation, node);
+                }
+            },
             TSTypeAliasDeclaration(node) {
                 const typeName = node.id.name;
 
@@ -8668,14 +11418,33 @@ const typeFormat = {
 
                 // Check if it's an object type (TSTypeLiteral)
                 if (node.typeAnnotation && node.typeAnnotation.type === "TSTypeLiteral") {
-                    checkTypeLiteralHandler(node, node.typeAnnotation.members);
+                    // Get opening brace of the type literal
+                    const openBraceToken = sourceCode.getFirstToken(node.typeAnnotation);
+
+                    // Check opening brace is on same line as type name (or = sign)
+                    if (openBraceToken && openBraceToken.loc.start.line !== node.id.loc.end.line) {
+                        context.report({
+                            fix: (fixer) => {
+                                const equalToken = sourceCode.getTokenAfter(node.id);
+
+                                return fixer.replaceTextRange(
+                                    [equalToken.range[1], openBraceToken.range[0]],
+                                    " ",
+                                );
+                            },
+                            message: "Opening brace must be on the same line as type name",
+                            node: openBraceToken,
+                        });
+                    }
+
+                    checkTypeLiteralHandler(node, node.typeAnnotation, node.typeAnnotation.members);
                 }
 
                 // Also check intersection types that contain object types
                 if (node.typeAnnotation && node.typeAnnotation.type === "TSIntersectionType") {
                     node.typeAnnotation.types.forEach((type) => {
                         if (type.type === "TSTypeLiteral") {
-                            checkTypeLiteralHandler(node, type.members);
+                            checkTypeLiteralHandler(node, type, type.members);
                         }
                     });
                 }
@@ -8683,8 +11452,936 @@ const typeFormat = {
         };
     },
     meta: {
-        docs: { description: "Enforce type naming (PascalCase + Type suffix), camelCase properties, no empty lines, and trailing commas" },
+        docs: { description: "Enforce type naming (PascalCase + Type suffix), camelCase properties, proper formatting, and trailing commas" },
         fixable: "code",
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Type Annotation Spacing
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforces proper spacing in TypeScript type annotations:
+ *   - No space before colon in type annotations
+ *   - Type should be on same line as colon
+ *   - No spaces inside generic type parameters
+ *
+ * ✓ Good:
+ *   const x: Type = value;
+ *   const arr: ColumnDef<T>[] = [];
+ *
+ * ✗ Bad:
+ *   const x : Type = value;
+ *   const x:
+ *       Type = value;
+ *   const arr: ColumnDef< T >[] = [];
+ */
+const typeAnnotationSpacing = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            TSArrayType(node) {
+                // Check for space before [] like: Type []
+                const elementType = node.elementType;
+                const openBracket = sourceCode.getTokenAfter(elementType, (t) => t.value === "[");
+
+                if (openBracket) {
+                    const textBetween = sourceCode.text.slice(elementType.range[1], openBracket.range[0]);
+
+                    if (textBetween !== "") {
+                        context.report({
+                            fix: (fixer) => fixer.removeRange([elementType.range[1], openBracket.range[0]]),
+                            message: "No space allowed before [] in array type",
+                            node: openBracket,
+                        });
+                    }
+                }
+            },
+            TSTypeReference(node) {
+                // Check for space before generic < like: ColumnDef <T>
+                if (node.typeArguments || node.typeParameters) {
+                    const typeArgs = node.typeArguments || node.typeParameters;
+                    const openAngle = sourceCode.getFirstToken(typeArgs);
+
+                    if (openAngle && openAngle.value === "<") {
+                        const tokenBefore = sourceCode.getTokenBefore(openAngle);
+
+                        if (tokenBefore) {
+                            const textBetween = sourceCode.text.slice(tokenBefore.range[1], openAngle.range[0]);
+
+                            if (textBetween !== "") {
+                                context.report({
+                                    fix: (fixer) => fixer.removeRange([tokenBefore.range[1], openAngle.range[0]]),
+                                    message: "No space allowed before < in generic type",
+                                    node: openAngle,
+                                });
+                            }
+                        }
+                    }
+                }
+            },
+            TSTypeAnnotation(node) {
+                const colonToken = sourceCode.getFirstToken(node);
+
+                if (!colonToken || colonToken.value !== ":") return;
+
+                // Check for space before colon
+                const tokenBeforeColon = sourceCode.getTokenBefore(colonToken);
+
+                if (tokenBeforeColon) {
+                    const textBetween = sourceCode.getText().slice(
+                        tokenBeforeColon.range[1],
+                        colonToken.range[0],
+                    );
+
+                    if (textBetween !== "") {
+                        context.report({
+                            fix: (fixer) => fixer.removeRange([tokenBeforeColon.range[1], colonToken.range[0]]),
+                            message: "No space allowed before colon in type annotation",
+                            node: colonToken,
+                        });
+
+                        return;
+                    }
+                }
+
+                // Check for missing space after colon
+                const typeNode = node.typeAnnotation;
+
+                if (typeNode) {
+                    const textAfterColon = sourceCode.text.slice(colonToken.range[1], typeNode.range[0]);
+
+                    // Should have exactly one space after colon
+                    if (textAfterColon === "") {
+                        context.report({
+                            fix: (fixer) => fixer.insertTextAfter(colonToken, " "),
+                            message: "Missing space after colon in type annotation",
+                            node: colonToken,
+                        });
+
+                        return;
+                    }
+                }
+
+                // Check if type is on same line as colon
+                if (typeNode && colonToken.loc.end.line !== typeNode.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [colonToken.range[1], typeNode.range[0]],
+                            " ",
+                        ),
+                        message: "Type should be on the same line as colon in type annotation",
+                        node: typeNode,
+                    });
+                }
+            },
+            TSTypeParameterInstantiation(node) {
+                // Check for spaces inside generics like ColumnDef< T >
+                const openBracket = sourceCode.getFirstToken(node);
+                const closeBracket = sourceCode.getLastToken(node);
+
+                if (!openBracket || !closeBracket) return;
+
+                if (openBracket.value !== "<" || closeBracket.value !== ">") return;
+
+                // Check for space after <
+                const firstParam = node.params[0];
+
+                if (firstParam) {
+                    const textAfterOpen = sourceCode.getText().slice(
+                        openBracket.range[1],
+                        firstParam.range[0],
+                    );
+
+                    if (textAfterOpen.trim() === "" && textAfterOpen !== "") {
+                        context.report({
+                            fix: (fixer) => fixer.removeRange([openBracket.range[1], firstParam.range[0]]),
+                            message: "No space allowed after < in generic type",
+                            node: openBracket,
+                        });
+                    }
+                }
+
+                // Check for space before >
+                const lastParam = node.params[node.params.length - 1];
+
+                if (lastParam) {
+                    const textBeforeClose = sourceCode.getText().slice(
+                        lastParam.range[1],
+                        closeBracket.range[0],
+                    );
+
+                    if (textBeforeClose.trim() === "" && textBeforeClose !== "") {
+                        context.report({
+                            fix: (fixer) => fixer.removeRange([lastParam.range[1], closeBracket.range[0]]),
+                            message: "No space allowed before > in generic type",
+                            node: closeBracket,
+                        });
+                    }
+                }
+
+                // Check for formatting inside type literal params
+                node.params.forEach((param) => {
+                    if (param.type === "TSTypeLiteral" && param.members && param.members.length > 0) {
+                        const typeOpenBrace = sourceCode.getFirstToken(param);
+                        const typeCloseBrace = sourceCode.getLastToken(param);
+
+                        if (!typeOpenBrace || !typeCloseBrace) return;
+                        if (typeOpenBrace.value !== "{" || typeCloseBrace.value !== "}") return;
+
+                        const members = param.members;
+                        const isMultiLine = typeOpenBrace.loc.start.line !== typeCloseBrace.loc.end.line;
+
+                        // Single property type literal should be on one line without trailing punctuation
+                        if (members.length === 1) {
+                            const member = members[0];
+                            let memberText = sourceCode.getText(member).trim();
+                            const originalText = memberText;
+
+                            // Remove trailing comma or semicolon for single property
+                            if (memberText.endsWith(",") || memberText.endsWith(";")) {
+                                memberText = memberText.slice(0, -1);
+                            }
+
+                            if (isMultiLine) {
+                                const newText = `{ ${memberText} }`;
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceText(param, newText),
+                                    message: "Single property generic type literal should be on one line",
+                                    node: param,
+                                });
+
+                                return;
+                            }
+
+                            // Single line but has trailing comma - remove it
+                            if (originalText.endsWith(",") || originalText.endsWith(";")) {
+                                const newText = `{ ${memberText} }`;
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceText(param, newText),
+                                    message: "Single property generic type literal should not have trailing punctuation",
+                                    node: param,
+                                });
+                            }
+
+                            return; // Skip other checks for single property
+                        }
+
+                        // 2+ properties: should be multiline
+                        if (!isMultiLine) {
+                            // Get indentation from the line where the generic starts
+                            const lineStart = sourceCode.getText().lastIndexOf("\n", node.range[0]) + 1;
+                            const lineText = sourceCode.getText().slice(lineStart, node.range[0]);
+                            const baseIndent = lineText.match(/^\s*/)[0];
+                            const propIndent = baseIndent + "    ";
+
+                            const formattedMembers = members.map((m) => {
+                                let text = sourceCode.getText(m).trim();
+
+                                // Replace semicolon with comma
+                                if (text.endsWith(";")) {
+                                    text = text.slice(0, -1) + ",";
+                                } else if (!text.endsWith(",")) {
+                                    text += ",";
+                                }
+
+                                return propIndent + text;
+                            }).join("\n");
+
+                            const newText = `{\n${formattedMembers}\n${baseIndent}}`;
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceText(param, newText),
+                                message: "Generic type literal with 2+ properties should be multiline",
+                                node: param,
+                            });
+
+                            return;
+                        }
+
+                        const firstMember = members[0];
+                        const lastMember = members[members.length - 1];
+
+                        // Check for empty line after opening brace
+                        if (firstMember && typeOpenBrace.loc.end.line < firstMember.loc.start.line - 1) {
+                            context.report({
+                                fix: (fixer) => {
+                                    const textAfterBrace = sourceCode.text.slice(typeOpenBrace.range[1], firstMember.range[0]);
+                                    const newText = textAfterBrace.replace(/\n\s*\n/, "\n");
+
+                                    return fixer.replaceTextRange([typeOpenBrace.range[1], firstMember.range[0]], newText);
+                                },
+                                message: "No empty line allowed after opening brace in generic type literal",
+                                node: typeOpenBrace,
+                            });
+                        }
+
+                        // Check for empty line before closing brace
+                        if (lastMember && lastMember.loc.end.line < typeCloseBrace.loc.start.line - 1) {
+                            context.report({
+                                fix: (fixer) => {
+                                    const textBeforeBrace = sourceCode.text.slice(lastMember.range[1], typeCloseBrace.range[0]);
+                                    const newText = textBeforeBrace.replace(/\n\s*\n/, "\n");
+
+                                    return fixer.replaceTextRange([lastMember.range[1], typeCloseBrace.range[0]], newText);
+                                },
+                                message: "No empty line allowed before closing brace in generic type literal",
+                                node: typeCloseBrace,
+                            });
+                        }
+
+                        // Check for semicolons, missing trailing commas, and empty lines between members
+                        members.forEach((member, index) => {
+                            const memberText = sourceCode.getText(member);
+
+                            // Check for semicolon (should be comma)
+                            if (memberText.trimEnd().endsWith(";")) {
+                                const semicolonIndex = memberText.lastIndexOf(";");
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange(
+                                        [member.range[0] + semicolonIndex, member.range[0] + semicolonIndex + 1],
+                                        ",",
+                                    ),
+                                    message: "Type properties must end with comma (,) not semicolon (;)",
+                                    node: member,
+                                });
+                            } else if (index === members.length - 1 && !memberText.trimEnd().endsWith(",")) {
+                                // Last member needs trailing comma
+                                context.report({
+                                    fix: (fixer) => fixer.insertTextAfter(member, ","),
+                                    message: "Last property in generic type literal should have trailing comma",
+                                    node: member,
+                                });
+                            }
+
+                            // Check for empty lines between members
+                            if (index < members.length - 1) {
+                                const nextMember = members[index + 1];
+
+                                if (nextMember.loc.start.line - member.loc.end.line > 1) {
+                                    context.report({
+                                        fix: (fixer) => fixer.replaceTextRange(
+                                            [member.range[1], nextMember.range[0]],
+                                            "\n" + " ".repeat(nextMember.loc.start.column),
+                                        ),
+                                        message: "No empty lines between type properties in generic",
+                                        node: nextMember,
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+
+                // Check for }>( pattern - closing > should be followed by ( on same line with no space
+                const parent = node.parent;
+
+                if (parent && parent.type === "CallExpression" && parent.typeArguments === node) {
+                    const args = parent.arguments;
+
+                    if (args && args.length > 0) {
+                        const openParen = sourceCode.getTokenAfter(closeBracket, (t) => t.value === "(");
+
+                        if (openParen) {
+                            // Check if > and ( are on same line
+                            if (closeBracket.loc.end.line !== openParen.loc.start.line) {
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange([closeBracket.range[1], openParen.range[0]], ""),
+                                    message: "Opening parenthesis should be on same line as closing > in generic call",
+                                    node: openParen,
+                                });
+                            }
+
+                            // Check for >({ pattern with first argument - ONLY for single argument calls
+                            // Multi-argument calls (like hooks) should have ) on its own line
+                            if (args.length === 1) {
+                                const firstArg = args[0];
+
+                                if (firstArg && (firstArg.type === "ObjectExpression" || firstArg.type === "ArrayExpression")) {
+                                    const firstArgFirstToken = sourceCode.getFirstToken(firstArg);
+
+                                    if (firstArgFirstToken && openParen.loc.end.line !== firstArgFirstToken.loc.start.line) {
+                                        context.report({
+                                            fix: (fixer) => fixer.replaceTextRange([openParen.range[1], firstArgFirstToken.range[0]], ""),
+                                            message: "First argument should be on same line as opening parenthesis in generic call",
+                                            node: firstArg,
+                                        });
+                                    }
+
+                                    // Check for },\n); pattern - closing } should be followed by ); on same line
+                                    const lastArgLastToken = sourceCode.getLastToken(firstArg);
+                                    const closeParen = sourceCode.getTokenAfter(firstArg, (t) => t.value === ")");
+
+                                    if (lastArgLastToken && closeParen) {
+                                        const textBetween = sourceCode.text.slice(lastArgLastToken.range[1], closeParen.range[0]);
+
+                                        // Check if there's a newline between } and )
+                                        if (textBetween.includes("\n")) {
+                                            // Should be }); or }, with ) on same line
+                                            const hasTrailingComma = textBetween.trim() === ",";
+
+                                            context.report({
+                                                fix: (fixer) => {
+                                                    if (hasTrailingComma) {
+                                                        // Remove the trailing comma and newline: },\n) -> )
+                                                        return fixer.replaceTextRange([lastArgLastToken.range[1], closeParen.range[0]], "");
+                                                    }
+
+                                                    // Just remove the newline
+                                                    return fixer.replaceTextRange([lastArgLastToken.range[1], closeParen.range[0]], "");
+
+                                                },
+                                                message: "Closing parenthesis should be on same line as closing brace in generic call",
+                                                node: closeParen,
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            VariableDeclaration(node) {
+                // Check for semicolon on next line: const x = fn()\n;
+                const lastToken = sourceCode.getLastToken(node);
+
+                if (lastToken && lastToken.value === ";") {
+                    // Get the token before the semicolon
+                    const tokenBeforeSemi = sourceCode.getTokenBefore(lastToken);
+
+                    if (tokenBeforeSemi && lastToken.loc.start.line > tokenBeforeSemi.loc.end.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [tokenBeforeSemi.range[1], lastToken.range[1]],
+                                ";",
+                            ),
+                            message: "Semicolon should be on the same line as statement",
+                            node: lastToken,
+                        });
+                    }
+                }
+            },
+            VariableDeclarator(node) {
+                // Check for space before generic like: ColumnDef <T>
+                if (node.id && node.id.typeAnnotation) {
+                    const typeNode = node.id.typeAnnotation.typeAnnotation;
+
+                    if (typeNode && typeNode.type === "TSTypeReference" && typeNode.typeArguments) {
+                        const typeName = typeNode.typeName;
+                        const typeArgs = typeNode.typeArguments;
+                        const textBetween = sourceCode.getText().slice(
+                            typeName.range[1],
+                            typeArgs.range[0],
+                        );
+
+                        if (textBetween !== "") {
+                            context.report({
+                                fix: (fixer) => fixer.removeRange([typeName.range[1], typeArgs.range[0]]),
+                                message: "No space allowed between type name and generic parameters",
+                                node: typeArgs,
+                            });
+                        }
+                    }
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce proper spacing in TypeScript type annotations" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: React Code Order
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforces a consistent ordering of code blocks in React components
+ *   and custom hooks. The order follows a logical dependency chain
+ *   where declarations appear before their usage.
+ *
+ * Order (top to bottom):
+ *   1. Props/params destructure (from function parameters)
+ *   2. Destructured variables from props (const { x } = propValue)
+ *   3. useRef declarations
+ *   4. useState declarations
+ *   5. useReducer declarations
+ *   6. useSelector / useDispatch (Redux)
+ *   7. Router hooks (useNavigate, useLocation, useParams, useSearchParams)
+ *   8. Context hooks (useContext, useToast, etc.)
+ *   9. Custom hooks (use* pattern)
+ *   10. Derived state / computed variables (const x = hookValue.something)
+ *   11. useMemo declarations
+ *   12. useCallback declarations
+ *   13. Handler functions (const x = () => {} or function declarations)
+ *   14. useEffect / useLayoutEffect
+ *   15. Return statement
+ *
+ * ✓ Good (Component):
+ *   const MyComponent = ({ name }) => {
+ *       const inputRef = useRef(null);
+ *       const [count, setCount] = useState(0);
+ *       const dispatch = useDispatch();
+ *       const navigate = useNavigate();
+ *       const { data } = useCustomHook();
+ *       const computedValue = data?.value ?? 0;
+ *       const memoizedValue = useMemo(() => ..., []);
+ *       const handleClick = useCallback(() => ..., []);
+ *       const submitHandler = () => { ... };
+ *       useEffect(() => { ... }, []);
+ *       return <div>...</div>;
+ *   };
+ *
+ * ✓ Good (Custom Hook):
+ *   const useCreateAccount = () => {
+ *       const [loading, setLoading] = useState(false);
+ *       const [created, setCreated] = useState(false);
+ *       const dispatch = useDispatch();
+ *       const { toast } = useToast();
+ *       const createAccountHandler = async (data) => { ... };
+ *       useEffect(() => { ... }, []);
+ *       return { createAccountHandler, created, loading };
+ *   };
+ *
+ * ✗ Bad:
+ *   const useCreateAccount = () => {
+ *       const { toast } = useToast();          // context hook before useState
+ *       const [loading, setLoading] = useState(false);
+ *       return { loading };
+ *   };
+ */
+const reactCodeOrder = {
+    create(context) {
+        // Define the order categories
+        const ORDER = {
+            CALLBACK: 12,
+            CONTEXT_HOOK: 8,
+            CUSTOM_HOOK: 9,
+            DERIVED_STATE: 10,
+            EFFECT: 14,
+            HANDLER_FUNCTION: 13,
+            MEMO: 11,
+            PROPS_DESTRUCTURE: 1,
+            PROPS_DESTRUCTURE_BODY: 2,
+            REDUCER: 5,
+            REF: 3,
+            RETURN: 15,
+            ROUTER_HOOK: 7,
+            SELECTOR_DISPATCH: 6,
+            STATE: 4,
+            UNKNOWN: 99,
+        };
+
+        const ORDER_NAMES = {
+            1: "props destructure",
+            2: "destructured variables from props",
+            3: "useRef",
+            4: "useState",
+            5: "useReducer",
+            6: "useSelector/useDispatch",
+            7: "router hooks",
+            8: "context hooks",
+            9: "custom hooks",
+            10: "derived state/computed variables",
+            11: "useMemo",
+            12: "useCallback",
+            13: "handler functions",
+            14: "useEffect/useLayoutEffect",
+            15: "return statement",
+            99: "unknown",
+        };
+
+        // Built-in React hooks
+        const STATE_HOOKS = new Set(["useState"]);
+        const REF_HOOKS = new Set(["useRef"]);
+        const REDUCER_HOOKS = new Set(["useReducer"]);
+        const EFFECT_HOOKS = new Set(["useEffect", "useLayoutEffect"]);
+        const MEMO_HOOKS = new Set(["useMemo"]);
+        const CALLBACK_HOOKS = new Set(["useCallback"]);
+
+        // Redux hooks
+        const REDUX_HOOKS = new Set(["useSelector", "useDispatch", "useStore"]);
+
+        // Router hooks (react-router, next/navigation, etc.)
+        const ROUTER_HOOKS = new Set([
+            "useNavigate",
+            "useLocation",
+            "useParams",
+            "useSearchParams",
+            "useRouter",
+            "usePathname",
+            "useMatch",
+            "useMatches",
+            "useRouteLoaderData",
+            "useNavigation",
+            "useResolvedPath",
+            "useHref",
+            "useInRouterContext",
+            "useNavigationType",
+            "useOutlet",
+            "useOutletContext",
+            "useRouteError",
+            "useRoutes",
+            "useBlocker",
+        ]);
+
+        // Common context hooks
+        const CONTEXT_HOOKS = new Set([
+            "useContext",
+            "useToast",
+            "useTheme",
+            "useAuth",
+            "useModal",
+            "useDialog",
+            "useNotification",
+            "useI18n",
+            "useTranslation",
+            "useIntl",
+            "useForm",
+            "useFormContext",
+        ]);
+
+        const containsJsxHandler = (node) => {
+            if (!node) return false;
+
+            if (node.type === "JSXElement" || node.type === "JSXFragment") return true;
+
+            if (node.type === "BlockStatement") {
+                for (const statement of node.body) {
+                    if (statement.type === "ReturnStatement" && statement.argument) {
+                        if (containsJsxHandler(statement.argument)) return true;
+                    }
+                }
+            }
+
+            if (node.type === "ConditionalExpression") {
+                return containsJsxHandler(node.consequent) || containsJsxHandler(node.alternate);
+            }
+
+            if (node.type === "LogicalExpression") {
+                return containsJsxHandler(node.left) || containsJsxHandler(node.right);
+            }
+
+            if (node.type === "ParenthesizedExpression") {
+                return containsJsxHandler(node.expression);
+            }
+
+            return false;
+        };
+
+        // Get the function name from a node
+        const getFunctionNameHandler = (node) => {
+            if (node.parent) {
+                if (node.parent.type === "VariableDeclarator" && node.parent.id && node.parent.id.type === "Identifier") {
+                    return node.parent.id.name;
+                }
+
+                if (node.id && node.id.type === "Identifier") {
+                    return node.id.name;
+                }
+            }
+
+            return null;
+        };
+
+        const isReactComponentHandler = (node) => {
+            const componentName = getFunctionNameHandler(node);
+
+            if (componentName && /^[A-Z]/.test(componentName)) {
+                const body = node.body;
+
+                return containsJsxHandler(body);
+            }
+
+            return false;
+        };
+
+        // Check if function is a custom hook (starts with "use" followed by uppercase)
+        const isCustomHookHandler = (node) => {
+            const hookName = getFunctionNameHandler(node);
+
+            if (hookName && /^use[A-Z]/.test(hookName)) {
+                // Must have a block body (not implicit return)
+                if (node.body.type !== "BlockStatement") return false;
+
+                // Should not return JSX (that would make it a component)
+                if (containsJsxHandler(node.body)) return false;
+
+                return true;
+            }
+
+            return false;
+        };
+
+        // Get the hook name from a call expression
+        const getHookNameHandler = (node) => {
+            if (node.type !== "CallExpression") return null;
+
+            if (node.callee.type === "Identifier") {
+                return node.callee.name;
+            }
+
+            // Handle cases like React.useState
+            if (node.callee.type === "MemberExpression" && node.callee.property.type === "Identifier") {
+                return node.callee.property.name;
+            }
+
+            return null;
+        };
+
+        // Check if a call expression is a hook call (starts with "use")
+        const isHookCallHandler = (node) => {
+            const name = getHookNameHandler(node);
+
+            return name && /^use[A-Z]/.test(name);
+        };
+
+        // Check if expression is a function (arrow or regular)
+        const isFunctionExpressionHandler = (node) => node
+            && (node.type === "ArrowFunctionExpression"
+            || node.type === "FunctionExpression");
+
+        // Check if a statement is a handler function declaration
+        const isHandlerFunctionHandler = (statement) => {
+            // Arrow function assigned to variable: const x = () => {}
+            if (statement.type === "VariableDeclaration") {
+                const decl = statement.declarations[0];
+
+                if (decl && decl.init && isFunctionExpressionHandler(decl.init)) {
+                    // Make sure it's not a hook-assigned function
+                    if (decl.init.type === "CallExpression") return false;
+
+                    return true;
+                }
+            }
+
+            // Function declaration: function x() {}
+            if (statement.type === "FunctionDeclaration") {
+                return true;
+            }
+
+            return false;
+        };
+
+        // Get the category of a statement
+        const getStatementCategoryHandler = (statement, propNames = new Set()) => {
+            // Return statement
+            if (statement.type === "ReturnStatement") {
+                return ORDER.RETURN;
+            }
+
+            // Expression statements (mostly hook calls like useEffect)
+            if (statement.type === "ExpressionStatement" && statement.expression.type === "CallExpression") {
+                const hookName = getHookNameHandler(statement.expression);
+
+                if (hookName) {
+                    if (EFFECT_HOOKS.has(hookName)) return ORDER.EFFECT;
+
+                    // Other standalone hook calls (rare but possible)
+                    if (isHookCallHandler(statement.expression)) return ORDER.CUSTOM_HOOK;
+                }
+
+                return ORDER.UNKNOWN;
+            }
+
+            // Variable declarations
+            if (statement.type === "VariableDeclaration") {
+                const declarations = statement.declarations;
+
+                // Check if any declaration is a hook call
+                for (const decl of declarations) {
+                    if (!decl.init) continue;
+
+                    // Direct hook call: const x = useHook()
+                    if (decl.init.type === "CallExpression") {
+                        const hookName = getHookNameHandler(decl.init);
+
+                        if (hookName) {
+                            if (STATE_HOOKS.has(hookName)) return ORDER.STATE;
+                            if (REF_HOOKS.has(hookName)) return ORDER.REF;
+                            if (REDUCER_HOOKS.has(hookName)) return ORDER.REDUCER;
+                            if (REDUX_HOOKS.has(hookName)) return ORDER.SELECTOR_DISPATCH;
+                            if (ROUTER_HOOKS.has(hookName)) return ORDER.ROUTER_HOOK;
+                            if (CONTEXT_HOOKS.has(hookName)) return ORDER.CONTEXT_HOOK;
+                            if (MEMO_HOOKS.has(hookName)) return ORDER.MEMO;
+                            if (CALLBACK_HOOKS.has(hookName)) return ORDER.CALLBACK;
+
+                            // Custom hooks (any use* pattern not in the above lists)
+                            if (isHookCallHandler(decl.init)) return ORDER.CUSTOM_HOOK;
+                        }
+                    }
+
+                    // Handler function
+                    if (isFunctionExpressionHandler(decl.init)) {
+                        return ORDER.HANDLER_FUNCTION;
+                    }
+                }
+
+                // Check for destructuring from props (const { x } = propValue)
+                for (const decl of declarations) {
+                    if (decl.id.type === "ObjectPattern" && decl.init) {
+                        // Direct prop destructure: const { x } = propValue
+                        if (decl.init.type === "Identifier" && propNames.has(decl.init.name)) {
+                            return ORDER.PROPS_DESTRUCTURE_BODY;
+                        }
+
+                        // Nested prop destructure: const { x } = propValue.nested
+                        if (decl.init.type === "MemberExpression") {
+                            let obj = decl.init;
+
+                            while (obj.type === "MemberExpression") {
+                                obj = obj.object;
+                            }
+
+                            if (obj.type === "Identifier" && propNames.has(obj.name)) {
+                                return ORDER.PROPS_DESTRUCTURE_BODY;
+                            }
+                        }
+
+                        // Legacy: const { x } = props
+                        if (decl.init.type === "Identifier" && decl.init.name === "props") {
+                            return ORDER.PROPS_DESTRUCTURE;
+                        }
+                    }
+                }
+
+                // Otherwise it's derived state / computed values
+                return ORDER.DERIVED_STATE;
+            }
+
+            // Function declaration
+            if (statement.type === "FunctionDeclaration") {
+                return ORDER.HANDLER_FUNCTION;
+            }
+
+            return ORDER.UNKNOWN;
+        };
+
+        const checkCodeOrderHandler = (node, isHook) => {
+            const body = node.body;
+
+            // Only check block statements (not implicit returns)
+            if (body.type !== "BlockStatement") return;
+
+            const statements = body.body;
+
+            if (statements.length === 0) return;
+
+            // Extract prop names from function parameters
+            const propNames = new Set();
+
+            for (const param of node.params) {
+                if (param.type === "Identifier") {
+                    // Single param like (props) or (initialData)
+                    propNames.add(param.name);
+                } else if (param.type === "ObjectPattern") {
+                    // Destructured props like ({ initialCount, title })
+                    for (const prop of param.properties) {
+                        if (prop.type === "Property" && prop.value) {
+                            if (prop.value.type === "Identifier") {
+                                propNames.add(prop.value.name);
+                            } else if (prop.value.type === "AssignmentPattern" && prop.value.left.type === "Identifier") {
+                                // Handle default values: ({ initialCount = 0 })
+                                propNames.add(prop.value.left.name);
+                            }
+                        } else if (prop.type === "RestElement" && prop.argument.type === "Identifier") {
+                            // Handle rest: ({ ...rest })
+                            propNames.add(prop.argument.name);
+                        }
+                    }
+                } else if (param.type === "AssignmentPattern" && param.left) {
+                    // Default param value like (props = {})
+                    if (param.left.type === "Identifier") {
+                        propNames.add(param.left.name);
+                    } else if (param.left.type === "ObjectPattern") {
+                        for (const prop of param.left.properties) {
+                            if (prop.type === "Property" && prop.value) {
+                                if (prop.value.type === "Identifier") {
+                                    propNames.add(prop.value.name);
+                                } else if (prop.value.type === "AssignmentPattern" && prop.value.left.type === "Identifier") {
+                                    propNames.add(prop.value.left.name);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Filter to only relevant statements (skip comments, empty statements)
+            const relevantStatements = statements.filter((s) => s.type === "VariableDeclaration"
+                    || s.type === "FunctionDeclaration"
+                    || s.type === "ExpressionStatement"
+                    || s.type === "ReturnStatement");
+
+            if (relevantStatements.length < 2) return;
+
+            // Track the categories and their order
+            let lastCategory = 0;
+            let lastCategoryStatement = null;
+
+            for (const statement of relevantStatements) {
+                const category = getStatementCategoryHandler(statement, propNames);
+
+                // Skip unknown statements - they could be anything
+                if (category === ORDER.UNKNOWN) continue;
+
+                // Check if current category comes before the last one
+                if (category < lastCategory) {
+                    // Find what it should come after
+                    context.report({
+                        data: {
+                            current: ORDER_NAMES[category],
+                            previous: ORDER_NAMES[lastCategory],
+                            type: isHook ? "hook" : "component",
+                        },
+                        message: "\"{{current}}\" should come before \"{{previous}}\" in {{type}} code order",
+                        node: statement,
+                    });
+
+                    // Only report first violation to avoid noise
+                    return;
+                }
+
+                lastCategory = category;
+                lastCategoryStatement = statement;
+            }
+        };
+
+        const checkFunctionHandler = (node) => {
+            // Check if it's a React component
+            if (isReactComponentHandler(node)) {
+                checkCodeOrderHandler(node, false);
+
+                return;
+            }
+
+            // Check if it's a custom hook
+            if (isCustomHookHandler(node)) {
+                checkCodeOrderHandler(node, true);
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkFunctionHandler,
+            FunctionDeclaration: checkFunctionHandler,
+            FunctionExpression: checkFunctionHandler,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce consistent ordering of code blocks in React components and custom hooks" },
         schema: [],
         type: "suggestion",
     },
@@ -8717,8 +12414,113 @@ const enumFormat = {
                     });
                 }
 
+                // Get opening brace
+                const openBraceToken = sourceCode.getTokenAfter(node.id, { filter: (token) => token.value === "{" });
+
+                // Check opening brace is on same line as enum name
+                if (openBraceToken && openBraceToken.loc.start.line !== node.id.loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [node.id.range[1], openBraceToken.range[0]],
+                            " ",
+                        ),
+                        message: "Opening brace must be on the same line as enum name",
+                        node: openBraceToken,
+                    });
+                }
+
                 // Check members
                 const members = node.members;
+
+                if (members.length === 0) return;
+
+                // Get indentation
+                const enumLine = sourceCode.lines[node.loc.start.line - 1];
+                const baseIndent = enumLine.match(/^\s*/)[0];
+                const memberIndent = baseIndent + "    ";
+
+                // Get closing brace
+                const closeBraceToken = sourceCode.getLastToken(node);
+
+                // Check for empty line after opening brace
+                const firstMember = members[0];
+
+                if (openBraceToken && firstMember.loc.start.line - openBraceToken.loc.end.line > 1) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBraceToken.range[1], firstMember.range[0]],
+                            "\n" + memberIndent,
+                        ),
+                        message: "No empty line after opening brace in enum",
+                        node: firstMember,
+                    });
+                }
+
+                // Check for empty line before closing brace
+                const lastMember = members[members.length - 1];
+
+                if (closeBraceToken && closeBraceToken.loc.start.line - lastMember.loc.end.line > 1) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [lastMember.range[1], closeBraceToken.range[0]],
+                            "\n" + baseIndent,
+                        ),
+                        message: "No empty line before closing brace in enum",
+                        node: lastMember,
+                    });
+                }
+
+                // For single member, should be on one line without trailing comma
+                if (members.length === 1) {
+                    const member = members[0];
+                    const memberText = sourceCode.getText(member);
+                    const isMultiLine = openBraceToken.loc.end.line !== closeBraceToken.loc.start.line;
+
+                    if (isMultiLine) {
+                        // Collapse to single line without trailing comma
+                        let cleanText = memberText.trim();
+
+                        if (cleanText.endsWith(",")) cleanText = cleanText.slice(0, -1);
+
+                        const newEnumText = `{ ${cleanText} }`;
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBraceToken.range[0], closeBraceToken.range[1]],
+                                newEnumText,
+                            ),
+                            message: "Single member enum should be on one line without trailing comma",
+                            node,
+                        });
+
+                        return;
+                    }
+
+                    // Check for trailing comma in single-line single member
+                    if (memberText.trimEnd().endsWith(",")) {
+                        const commaIndex = memberText.lastIndexOf(",");
+
+                        context.report({
+                            fix: (fixer) => fixer.removeRange([member.range[0] + commaIndex, member.range[0] + commaIndex + 1]),
+                            message: "Single member enum should not have trailing comma",
+                            node: member,
+                        });
+                    }
+
+                    return;
+                }
+
+                // For multiple members, first member should be on new line after opening brace
+                if (openBraceToken && firstMember.loc.start.line === openBraceToken.loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBraceToken.range[1], firstMember.range[0]],
+                            "\n" + memberIndent,
+                        ),
+                        message: "First enum member must be on a new line when there are multiple members",
+                        node: firstMember,
+                    });
+                }
 
                 members.forEach((member, index) => {
                     // Check member name is UPPER_CASE
@@ -8729,32 +12531,6 @@ const enumFormat = {
                             context.report({
                                 message: `Enum member "${memberName}" must be UPPER_CASE (e.g., ${memberName.toUpperCase()})`,
                                 node: member.id,
-                            });
-                        }
-                    }
-
-                    // Check for empty lines between members
-                    if (index > 0) {
-                        const prevMember = members[index - 1];
-                        const currentLine = member.loc.start.line;
-                        const prevLine = prevMember.loc.end.line;
-
-                        if (currentLine - prevLine > 1) {
-                            context.report({
-                                fix(fixer) {
-                                    const textBetween = sourceCode.getText().slice(
-                                        prevMember.range[1],
-                                        member.range[0],
-                                    );
-                                    const newText = textBetween.replace(/\n\s*\n/g, "\n");
-
-                                    return fixer.replaceTextRange(
-                                        [prevMember.range[1], member.range[0]],
-                                        newText,
-                                    );
-                                },
-                                message: "No empty lines allowed between enum members",
-                                node: member,
                             });
                         }
                     }
@@ -8774,12 +12550,59 @@ const enumFormat = {
                             node: member,
                         });
                     }
+
+                    // Check formatting for multiple members
+                    if (members.length > 1 && index > 0) {
+                        const prevMember = members[index - 1];
+
+                        // Check each is on its own line - with auto-fix
+                        if (member.loc.start.line === prevMember.loc.end.line) {
+                            context.report({
+                                fix: (fixer) => {
+                                    let commaToken = sourceCode.getTokenAfter(prevMember);
+
+                                    while (commaToken && commaToken.value !== "," && commaToken.range[0] < member.range[0]) {
+                                        commaToken = sourceCode.getTokenAfter(commaToken);
+                                    }
+
+                                    const insertPoint = commaToken && commaToken.value === "," ? commaToken.range[1] : prevMember.range[1];
+
+                                    return fixer.replaceTextRange(
+                                        [insertPoint, member.range[0]],
+                                        "\n" + memberIndent,
+                                    );
+                                },
+                                message: "Each enum member must be on its own line when there are multiple members",
+                                node: member,
+                            });
+                        }
+
+                        // Check for empty lines between members
+                        if (member.loc.start.line - prevMember.loc.end.line > 1) {
+                            context.report({
+                                fix(fixer) {
+                                    const textBetween = sourceCode.getText().slice(
+                                        prevMember.range[1],
+                                        member.range[0],
+                                    );
+                                    const newText = textBetween.replace(/\n\s*\n/g, "\n");
+
+                                    return fixer.replaceTextRange(
+                                        [prevMember.range[1], member.range[0]],
+                                        newText,
+                                    );
+                                },
+                                message: "No empty lines allowed between enum members",
+                                node: member,
+                            });
+                        }
+                    }
                 });
             },
         };
     },
     meta: {
-        docs: { description: "Enforce enum naming (PascalCase + Enum suffix), UPPER_CASE members, no empty lines, and trailing commas" },
+        docs: { description: "Enforce enum naming (PascalCase + Enum suffix), UPPER_CASE members, proper formatting, and trailing commas" },
         fixable: "code",
         schema: [],
         type: "suggestion",
@@ -8813,8 +12636,115 @@ const interfaceFormat = {
                     });
                 }
 
+                // Get opening brace
+                const openBraceToken = sourceCode.getFirstToken(node.body);
+
+                // Check opening brace is on same line as interface name
+                if (openBraceToken && openBraceToken.loc.start.line !== node.id.loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [node.id.range[1], openBraceToken.range[0]],
+                            " ",
+                        ),
+                        message: "Opening brace must be on the same line as interface name",
+                        node: openBraceToken,
+                    });
+                }
+
                 // Check properties
                 const members = node.body.body;
+
+                if (members.length === 0) return;
+
+                // Get indentation
+                const interfaceLine = sourceCode.lines[node.loc.start.line - 1];
+                const baseIndent = interfaceLine.match(/^\s*/)[0];
+                const propIndent = baseIndent + "    ";
+
+                // Get closing brace
+                const closeBraceToken = sourceCode.getLastToken(node.body);
+
+                // Check for empty line after opening brace
+                const firstMember = members[0];
+
+                if (firstMember.loc.start.line - openBraceToken.loc.end.line > 1) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBraceToken.range[1], firstMember.range[0]],
+                            "\n" + propIndent,
+                        ),
+                        message: "No empty line after opening brace in interface",
+                        node: firstMember,
+                    });
+                }
+
+                // Check for empty line before closing brace
+                const lastMember = members[members.length - 1];
+
+                if (closeBraceToken.loc.start.line - lastMember.loc.end.line > 1) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [lastMember.range[1], closeBraceToken.range[0]],
+                            "\n" + baseIndent,
+                        ),
+                        message: "No empty line before closing brace in interface",
+                        node: lastMember,
+                    });
+                }
+
+                // For single member, should be on one line without trailing punctuation
+                if (members.length === 1) {
+                    const member = members[0];
+                    const memberText = sourceCode.getText(member);
+                    const isMultiLine = openBraceToken.loc.end.line !== closeBraceToken.loc.start.line;
+
+                    if (isMultiLine) {
+                        // Collapse to single line without trailing punctuation
+                        let cleanText = memberText.trim();
+
+                        if (cleanText.endsWith(",") || cleanText.endsWith(";")) {
+                            cleanText = cleanText.slice(0, -1);
+                        }
+
+                        const newInterfaceText = `{ ${cleanText} }`;
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBraceToken.range[0], closeBraceToken.range[1]],
+                                newInterfaceText,
+                            ),
+                            message: "Single property interface should be on one line without trailing punctuation",
+                            node,
+                        });
+
+                        return;
+                    }
+
+                    // Check for trailing comma/semicolon in single-line single member
+                    if (memberText.trimEnd().endsWith(",") || memberText.trimEnd().endsWith(";")) {
+                        const punctIndex = Math.max(memberText.lastIndexOf(","), memberText.lastIndexOf(";"));
+
+                        context.report({
+                            fix: (fixer) => fixer.removeRange([member.range[0] + punctIndex, member.range[0] + punctIndex + 1]),
+                            message: "Single property interface should not have trailing punctuation",
+                            node: member,
+                        });
+                    }
+
+                    return;
+                }
+
+                // For multiple members, first member should be on new line after opening brace
+                if (firstMember.loc.start.line === openBraceToken.loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBraceToken.range[1], firstMember.range[0]],
+                            "\n" + propIndent,
+                        ),
+                        message: "First interface property must be on a new line when there are multiple properties",
+                        node: firstMember,
+                    });
+                }
 
                 members.forEach((member, index) => {
                     // Check property name is camelCase
@@ -8829,29 +12759,24 @@ const interfaceFormat = {
                         }
                     }
 
-                    // Check for empty lines between properties
-                    if (index > 0) {
-                        const prevMember = members[index - 1];
-                        const currentLine = member.loc.start.line;
-                        const prevLine = prevMember.loc.end.line;
+                    // Check for space before ? in optional properties
+                    if (member.type === "TSPropertySignature" && member.optional) {
+                        const keyToken = sourceCode.getFirstToken(member);
+                        const questionToken = sourceCode.getTokenAfter(keyToken);
 
-                        if (currentLine - prevLine > 1) {
-                            context.report({
-                                fix(fixer) {
-                                    const textBetween = sourceCode.getText().slice(
-                                        prevMember.range[1],
-                                        member.range[0],
-                                    );
-                                    const newText = textBetween.replace(/\n\s*\n/g, "\n");
+                        if (questionToken && questionToken.value === "?") {
+                            const textBetween = sourceCode.getText().slice(keyToken.range[1], questionToken.range[0]);
 
-                                    return fixer.replaceTextRange(
-                                        [prevMember.range[1], member.range[0]],
-                                        newText,
-                                    );
-                                },
-                                message: "No empty lines allowed between interface properties",
-                                node: member,
-                            });
+                            if (textBetween !== "") {
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange(
+                                        [keyToken.range[1], questionToken.range[0]],
+                                        "",
+                                    ),
+                                    message: "No space allowed before \"?\" in optional property",
+                                    node: member,
+                                });
+                            }
                         }
                     }
 
@@ -8870,12 +12795,59 @@ const interfaceFormat = {
                             node: member,
                         });
                     }
+
+                    // Check formatting for multiple members
+                    if (members.length > 1 && index > 0) {
+                        const prevMember = members[index - 1];
+
+                        // Check each is on its own line - with auto-fix
+                        if (member.loc.start.line === prevMember.loc.end.line) {
+                            context.report({
+                                fix: (fixer) => {
+                                    let commaToken = sourceCode.getTokenAfter(prevMember);
+
+                                    while (commaToken && commaToken.value !== "," && commaToken.range[0] < member.range[0]) {
+                                        commaToken = sourceCode.getTokenAfter(commaToken);
+                                    }
+
+                                    const insertPoint = commaToken && commaToken.value === "," ? commaToken.range[1] : prevMember.range[1];
+
+                                    return fixer.replaceTextRange(
+                                        [insertPoint, member.range[0]],
+                                        "\n" + propIndent,
+                                    );
+                                },
+                                message: "Each interface property must be on its own line when there are multiple properties",
+                                node: member,
+                            });
+                        }
+
+                        // Check for empty lines between properties
+                        if (member.loc.start.line - prevMember.loc.end.line > 1) {
+                            context.report({
+                                fix(fixer) {
+                                    const textBetween = sourceCode.getText().slice(
+                                        prevMember.range[1],
+                                        member.range[0],
+                                    );
+                                    const newText = textBetween.replace(/\n\s*\n/g, "\n");
+
+                                    return fixer.replaceTextRange(
+                                        [prevMember.range[1], member.range[0]],
+                                        newText,
+                                    );
+                                },
+                                message: "No empty lines allowed between interface properties",
+                                node: member,
+                            });
+                        }
+                    }
                 });
             },
         };
     },
     meta: {
-        docs: { description: "Enforce interface naming (PascalCase + Interface suffix), camelCase properties, no empty lines, and trailing commas" },
+        docs: { description: "Enforce interface naming (PascalCase + Interface suffix), camelCase properties, proper formatting, and trailing commas" },
         fixable: "code",
         schema: [],
         type: "suggestion",
@@ -8962,6 +12934,13 @@ export default {
         // Comment rules
         "comment-format": commentFormat,
 
+        // Component rules
+        "component-props-destructure": componentPropsDestructure,
+        "component-props-inline-type": componentPropsInlineType,
+
+        // React rules
+        "react-code-order": reactCodeOrder,
+
         // Control flow rules
         "block-statement-newlines": blockStatementNewlines,
         "if-statement-format": ifStatementFormat,
@@ -8971,6 +12950,7 @@ export default {
         // Function rules
         "function-call-spacing": functionCallSpacing,
         "function-naming-convention": functionNamingConvention,
+        "function-object-destructure": functionObjectDestructure,
         "function-params-per-line": functionParamsPerLine,
         "no-empty-lines-in-function-params": noEmptyLinesInFunctionParams,
 
@@ -9012,6 +12992,7 @@ export default {
         // TypeScript rules
         "enum-format": enumFormat,
         "interface-format": interfaceFormat,
+        "type-annotation-spacing": typeAnnotationSpacing,
         "type-format": typeFormat,
         "typescript-definition-location": typescriptDefinitionLocation,
 

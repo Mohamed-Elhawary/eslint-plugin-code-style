@@ -26,17 +26,17 @@ const Button = ({
     onClick,
     variant,
 }) => {
-    // Test: variable-naming-convention
+    // Test: variable-naming-convention (derived state comes before handlers)
     const buttonClass = buttonVariants[variant] || buttonVariants.primary;
-
-    // Test: arrow-function-simplify (implicit return for simple expressions)
-    const getLabelHandler = () => label.toUpperCase();
 
     // Test: object-property-per-line (each property on own line when >= 2)
     const buttonStyle = {
         backgroundColor: buttonClass,
         padding: "10px",
     };
+
+    // Test: arrow-function-simplify (implicit return for simple expressions)
+    const getLabelHandler = () => label.toUpperCase();
 
     // Test: jsx-simple-element-one-line, jsx-closing-bracket-spacing
     return (

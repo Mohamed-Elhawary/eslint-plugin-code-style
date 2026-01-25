@@ -7,4 +7,4 @@ export type {
     ReadonlyUserType,
     UserProfileType,
     UserWithMetaType,
-} from "./typescript-rules";
+} from "./user";

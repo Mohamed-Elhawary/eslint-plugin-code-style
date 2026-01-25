@@ -127,6 +127,7 @@ export default [ // eslint-disable-line
             "code-style/block-statement-newlines": "error",
             "code-style/comment-format": "error",
             "code-style/curried-arrow-same-line": "error",
+            "code-style/react-code-order": "error",
             "code-style/export-format": "error",
             "code-style/function-arguments-format": "error",
             "code-style/function-call-spacing": "error",

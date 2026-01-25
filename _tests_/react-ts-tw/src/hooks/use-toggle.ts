@@ -2,19 +2,15 @@
 Test Rules:
 - TypeScript generics in hooks
 - code-style/function-params-per-line
+- code-style/component-props-inline-type (return type must be interface reference)
 */
-// Test: hook with TypeScript types
+// Test: hook with TypeScript types and interface return type
 
 import { useCallback, useState } from "react";
 
-interface UseToggleReturn {
-    setFalse: () => void;
-    setTrue: () => void;
-    toggle: () => void;
-    value: boolean;
-}
+import type { UseToggleReturnInterface } from "@/interfaces";
 
-export const useToggle = (initialValue: boolean = false): UseToggleReturn => {
+export const useToggle = (initialValue: boolean = false): UseToggleReturnInterface => {
     const [value, setValue] = useState<boolean>(initialValue);
 
     const toggleHandler = useCallback(

@@ -18,7 +18,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*51 auto-fixable rules to keep your codebase clean and consistent*
+*56 auto-fixable rules to keep your codebase clean and consistent*
 
 </div>
 
@@ -26,7 +26,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **51 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **56 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -35,7 +35,7 @@ This plugin provides **51 custom auto-fixable rules** for code formatting. Built
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Fully automated** — All 47 rules support auto-fix, eliminating manual style reviews
+- **Fully automated** — All 56 rules support auto-fix, eliminating manual style reviews
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -59,17 +59,19 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 
 ### 💡 Why Use These Configs?
 
-- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 51 code-style rules
+- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 56 code-style rules
 - **Ready-to-Use** — Copy the config file and start linting immediately
 - **Battle-Tested** — These configurations have been refined through real-world usage
 - **Fully Documented** — Each config includes detailed instructions and explanations
 
 ### 📋 Available Configurations
 
-| Configuration | Description | Link |
-|---------------|-------------|------|
+| Configuration | Description | Status |
+|---------------|-------------|--------|
 | **React** | React.js projects (JavaScript, JSX) | [View Config](./recommended-configs/react/) |
 | **React + TS + Tailwind** | React + TypeScript + Tailwind CSS | [View Config](./recommended-configs/react-ts-tw/) |
+| **React + TypeScript** | React + TypeScript projects | Coming Soon |
+| **React + Tailwind** | React + Tailwind CSS projects | Coming Soon |
 
 ### ⚡ Quick Start with Recommended Config
 
@@ -94,7 +96,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-All **51 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
+All **56 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
 
 </td>
 <td width="50%">
@@ -187,8 +189,12 @@ rules: {
     "code-style/assignment-value-same-line": "error",
     "code-style/block-statement-newlines": "error",
     "code-style/comment-format": "error",
+    "code-style/component-props-destructure": "error",
+    "code-style/react-code-order": "error",
+    "code-style/component-props-inline-type": "error",
     "code-style/function-call-spacing": "error",
     "code-style/function-naming-convention": "error",
+    "code-style/function-object-destructure": "error",
     "code-style/function-params-per-line": "error",
     "code-style/hook-callback-format": "error",
     "code-style/hook-deps-per-line": "error",
@@ -227,6 +233,7 @@ rules: {
     "code-style/variable-naming-convention": "error",
     "code-style/enum-format": "error",
     "code-style/interface-format": "error",
+    "code-style/type-annotation-spacing": "error",
     "code-style/type-format": "error",
     "code-style/typescript-definition-location": "error",
 }
@@ -238,7 +245,7 @@ rules: {
 
 ## 📖 Rules Summary
 
-> All **51 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
+> All **56 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
 >
 > Rules marked with ⚙️ support customization options (e.g., extending default folder lists).
 
@@ -261,6 +268,9 @@ rules: {
 | `single-argument-on-one-line` | Single simple argument stays on one line: `fn(x)` not expanded |
 | **Comment Rules** | |
 | `comment-format` | Space after `//`, space inside `/* */`, convert single-line blocks to `//`, no blank lines between file-top comments |
+| **Component Rules** | |
+| `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` |
+| `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference |
 | **Control Flow Rules** | |
 | `block-statement-newlines` | Newline after `{` and before `}` in if/for/while/function blocks |
 | `if-statement-format` | `{` on same line as `if`/`else if`, `else` on same line as `}`, proper spacing |
@@ -269,6 +279,7 @@ rules: {
 | **Function Rules** | |
 | `function-call-spacing` | No space between function name and `(`: `fn()` not `fn ()` |
 | `function-naming-convention` | Functions use camelCase, start with verb (get/set/handle/is/has), handlers end with Handler |
+| `function-object-destructure` | Non-component functions: use typed params (not destructured), destructure in body; report dot notation access |
 | `function-params-per-line` | When multiline, each param on own line with consistent indentation |
 | `no-empty-lines-in-function-params` | No empty lines between parameters or after `(`/before `)` |
 | **Hook Rules** | |
@@ -304,8 +315,11 @@ rules: {
 | **TypeScript Rules** | |
 | `enum-format` | Enforce enum naming (PascalCase + Enum suffix), UPPER_CASE members, no empty lines, and trailing commas |
 | `interface-format` | Enforce interface naming (PascalCase + Interface suffix), camelCase properties, no empty lines, and trailing commas |
+| `type-annotation-spacing` | Enforce consistent spacing in type annotations: no space before colon/generic/array brackets, one space after colon |
 | `type-format` | Enforce type naming (PascalCase + Type suffix), camelCase properties, no empty lines, and trailing commas |
 | `typescript-definition-location` | Enforce TypeScript definitions (interfaces, types, enums) to be in designated folders ⚙️ |
+| **React Rules** | |
+| `react-code-order` | Enforce consistent ordering in components and hooks: props destructure → refs → state → redux → router → context → custom hooks → derived → memo → callback → handlers → effects → return |
 | **Variable Rules** | |
 | `variable-naming-convention` | camelCase for variables, UPPER_CASE for constants, PascalCase for components, `use` prefix for hooks |
 
@@ -1091,6 +1105,57 @@ function get_user_data() {}
 
 ---
 
+### `function-object-destructure`
+
+**What it does:** Enforces that non-component functions should not destructure parameters in the function signature. Instead, use a typed parameter and destructure at the top of the function body. Also reports when parameters are accessed via dot notation (suggesting destructuring).
+
+**Why use it:** Keeping function signatures clean and short improves readability. Destructuring in the body makes it clear what properties are being used. For React components, this rule does NOT apply — components should destructure props in the signature.
+
+```typescript
+// ✅ Good — typed param with destructuring in body
+const createUserHandler = async (data: CreateUserParamsInterface) => {
+    const { age, email, isActive, name } = data;
+
+    // Use age, email, isActive, name...
+};
+
+const updateUserHandler = (params: UpdateParamsInterface) => {
+    const { id, updates } = params;
+
+    // Use id, updates...
+};
+
+// ✅ Good — React components CAN destructure in signature
+const UserCard = ({
+    name,
+    email,
+} : {
+    name: string,
+    email: string,
+}) => (
+    <div>{name} - {email}</div>
+);
+
+// ❌ Bad — non-component function destructures in signature
+const createUserHandler = async ({
+    age,
+    email,
+    isActive,
+    name,
+}: CreateUserParamsInterface) => {
+    // ...
+};
+
+// ❌ Bad — accessing param via dot notation (should destructure)
+const processDataHandler = (data: DataInterface) => {
+    console.log(data.id);      // Bad: use destructuring
+    console.log(data.name);    // Bad: use destructuring
+    return data.value * 2;     // Bad: use destructuring
+};
+```
+
+---
+
 ### `function-params-per-line`
 
 **What it does:** When function parameters span multiple lines, ensures each parameter is on its own line with consistent indentation.
@@ -1299,7 +1364,7 @@ import { fetchUsers } from "@/apis/users/fetchUsers";
 ```
 
 **Default Allowed Folders:**
-`actions`, `apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `enums`, `hooks`, `interfaces`, `layouts`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `utils`, `views`
+`actions`, `apis`, `assets`, `atoms`, `components`, `config`, `configs`, `constants`, `contexts`, `data`, `enums`, `helpers`, `hooks`, `interfaces`, `layouts`, `lib`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `ui`, `utils`, `utilities`, `views`
 
 **Customization Options:**
 
@@ -1543,7 +1608,7 @@ import { Button } from "@/components/Button/Button"; // Avoid this!
 ```
 
 **Default Module Folders:**
-`actions`, `apis`, `assets`, `atoms`, `components`, `constants`, `contexts`, `data`, `enums`, `hooks`, `interfaces`, `layouts`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `utils`, `views`
+`actions`, `apis`, `assets`, `atoms`, `components`, `config`, `configs`, `constants`, `contexts`, `data`, `enums`, `helpers`, `hooks`, `interfaces`, `layouts`, `lib`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `ui`, `utils`, `utilities`, `views`
 
 **Default Ignore Patterns:**
 `index.js`, `index.jsx`, `index.ts`, `index.tsx`, `.DS_Store`, `__tests__`, `__mocks__`, `*.test.js`, `*.test.jsx`, `*.test.ts`, `*.test.tsx`, `*.spec.js`, `*.spec.jsx`, `*.spec.ts`, `*.spec.tsx`
@@ -2195,6 +2260,139 @@ const item = data[ index ];
 
 <br />
 
+## 🧩 Component Rules
+
+### `component-props-destructure`
+
+**What it does:** Enforces that React component props must be destructured in the function parameter, not received as a single `props` object.
+
+**Why use it:** Destructured props make it immediately clear what props a component uses. It improves readability and helps catch unused props.
+
+```typescript
+// ✅ Good — props are destructured
+export const Button = ({ label, onClick, variant = "primary" }) => (
+    <button onClick={onClick} type="button">
+        {label}
+    </button>
+);
+
+export const Card = ({
+    children,
+    className = "",
+    title,
+} : {
+    children: ReactNode,
+    className?: string,
+    title: string,
+}) => (
+    <div className={className}>
+        <h2>{title}</h2>
+        {children}
+    </div>
+);
+
+// ❌ Bad — props received as single object
+export const Button = (props) => (
+    <button onClick={props.onClick} type="button">
+        {props.label}
+    </button>
+);
+
+export const Card = (props: CardPropsInterface) => (
+    <div className={props.className}>
+        <h2>{props.title}</h2>
+        {props.children}
+    </div>
+);
+```
+
+---
+
+### `component-props-inline-type`
+
+**What it does:** Enforces that React component props must use inline type annotation instead of referencing an interface or type alias. Also enforces:
+- Exactly one space before and after colon: `} : {`
+- Props in type must match exactly with destructured props (no missing or extra)
+- Each prop type on its own line when there are multiple props
+- First prop type must be on new line after `{` when multiple props
+- No empty lines after opening brace or before closing brace
+- No space before `?` in optional properties (`prop?: type` not `prop ?: type`)
+- Trailing commas (not semicolons) for each prop type
+- No empty lines between prop types
+
+**Why use it:** Inline types keep the prop definitions colocated with the component, making it easier to understand and modify the component without jumping to separate interface definitions. Enforcing prop matching ensures type safety and prevents unused type properties.
+
+```typescript
+// ✅ Good — inline type annotation with matching props
+export const Button = ({ label } : { label: string }) => (
+    <button type="button">{label}</button>
+);
+
+export const Card = ({
+    className = "",
+    description,
+    title,
+} : {
+    className?: string,
+    description?: string,
+    title: string,
+}) => (
+    <div className={className}>
+        <h1>{title}</h1>
+        {description && <p>{description}</p>}
+    </div>
+);
+
+// ❌ Bad — interface reference instead of inline type
+interface ButtonPropsInterface {
+    label: string,
+}
+export const Button = ({ label }: ButtonPropsInterface) => (
+    <button type="button">{label}</button>
+);
+
+// ❌ Bad — missing space before and after colon
+export const Button = ({ label }:{ label: string }) => (
+    <button type="button">{label}</button>
+);
+
+// ❌ Bad — props don't match (extra 'flag' in type, missing in destructured)
+export const Card = ({
+    title,
+} : {
+    flag: boolean,
+    title: string,
+}) => (
+    <div>{title}</div>
+);
+
+// ❌ Bad — semicolons instead of commas
+export const Card = ({ title } : { title: string; }) => (
+    <div>{title}</div>
+);
+
+// ❌ Bad — first prop on same line as opening brace
+export const Card = ({
+    title,
+} : { title: string,
+    className?: string,
+}) => (
+    <div>{title}</div>
+);
+
+// ❌ Bad — space before ? in optional property
+export const Card = ({ title } : { title ?: string }) => (
+    <div>{title}</div>
+);
+
+// ❌ Bad — props on same line when multiple
+export const Card = ({ a, b } : { a: string, b: string }) => (
+    <div>{a}{b}</div>
+);
+```
+
+<br />
+
 ## 🔷 TypeScript Rules
 
 ### `enum-format`
@@ -2321,6 +2519,45 @@ export type ConfigType = {
 
 ---
 
+### `type-annotation-spacing`
+
+**What it does:** Enforces consistent spacing in TypeScript type annotations:
+- No space before the colon in type annotations: `name: string` not `name : string`
+- One space after the colon: `name: string` not `name:string`
+- No space before generic type parameters: `Array<T>` not `Array <T>`
+- No space before array brackets: `string[]` not `string []`
+
+**Why use it:** Consistent type annotation spacing follows TypeScript conventions and improves code readability.
+
+```typescript
+// ✅ Good — proper spacing
+const name: string = "John";
+const items: string[] = [];
+const data: Array<number> = [];
+const handler = (value: string): boolean => true;
+
+function getData<T>(id: string): Promise<T> {
+    return fetch(id);
+}
+
+// ❌ Bad — space before colon
+const name : string = "John";
+const handler = (value : string) : boolean => true;
+
+// ❌ Bad — no space after colon
+const name:string = "John";
+const handler = (value:string):boolean => true;
+
+// ❌ Bad — space before generic
+const data: Array <number> = [];
+function getData <T>(id: string): Promise <T> {}
+
+// ❌ Bad — space before array brackets
+const items: string [] = [];
+```
+
+---
+
 ### `typescript-definition-location`
 
 **What it does:** Enforces that TypeScript definitions are placed in their designated folders:
@@ -2364,6 +2601,178 @@ export interface UserInterface {   // Should be in interfaces folder, not types
 export enum StatusEnum {           // Should be in enums folder, not types
     ACTIVE = "active",
 }
+```
+
+<br />
+
+## ⚛️ React Rules
+
+### `react-code-order`
+
+**What it does:** Enforces a consistent ordering of code blocks within React components and custom hooks. The order follows a logical dependency chain where declarations appear before their usage.
+
+**Order (top to bottom):**
+1. Props/params destructure (in function signature: `({ prop1, prop2 })`)
+2. Props/params destructure in body (`const { x } = propValue` where propValue is a prop)
+3. `useRef` declarations
+4. `useState` declarations
+5. `useReducer` declarations
+6. `useSelector` / `useDispatch` (Redux hooks)
+7. Router hooks (`useNavigate`, `useLocation`, `useParams`, `useSearchParams`)
+8. Context hooks (`useContext`, `useToast`, etc.)
+9. Custom hooks (`use*` pattern)
+10. Derived state / variables (computed from hooks above, e.g., `const isSearching = term.length > 0`)
+11. `useMemo` declarations
+12. `useCallback` declarations
+13. Handler functions (`const handleX = () => {}`)
+14. `useEffect` / `useLayoutEffect`
+15. Return statement
+
+**Why use it:** A consistent code structure makes components and hooks predictable and easier to navigate. Placing hooks before derived values ensures dependencies are defined before use. Effects come last because they typically depend on everything else.
+
+```typescript
+// ✅ Good — Component follows the correct order
+const UserDashboard = ({ title }) => {
+    // 1. useRef
+    const inputRef = useRef(null);
+
+    // 2. useState
+    const [count, setCount] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // 3. Redux hooks
+    const dispatch = useDispatch();
+    const user = useSelector((state) => state.user);
+
+    // 4. Router hooks
+    const navigate = useNavigate();
+    const { id } = useParams();
+
+    // 5. Custom hooks
+    const { data, loading } = useFetchData(id);
+
+    // 6. Derived state
+    const isReady = !loading && data !== null;
+    const displayName = user?.name ?? "Guest";
+
+    // 7. useMemo
+    const filteredItems = useMemo(
+        () => data?.filter((item) => item.active),
+        [data],
+    );
+
+    // 8. useCallback
+    const handleSubmit = useCallback(
+        () => {
+            dispatch(submitAction());
+        },
+        [dispatch],
+    );
+
+    // 9. Handler functions
+    const resetHandler = () => {
+        setCount(0);
+        setIsLoading(false);
+    };
+
+    // 10. useEffect
+    useEffect(
+        () => {
+            inputRef.current?.focus();
+        },
+        [],
+    );
+
+    // 11. Return
+    return (
+        <div>
+            <h1>{title}</h1>
+            <span>{displayName}</span>
+        </div>
+    );
+};
+
+// ✅ Good — Custom hook follows the correct order
+const useCreateAccount = () => {
+    // 1. useState
+    const [loading, setLoading] = useState(false);
+    const [created, setCreated] = useState(false);
+
+    // 2. Redux hooks
+    const dispatch = useDispatch();
+
+    // 3. Context hooks
+    const { toast } = useToast();
+
+    // 4. Handler functions
+    const createAccountHandler = async (data: AccountData) => {
+        setLoading(true);
+        try {
+            await api.createAccount(data);
+            setCreated(true);
+        } catch (error) {
+            toast({ description: "Failed to create account" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 5. useEffect
+    useEffect(
+        () => {
+            if (created) {
+                setTimeout(() => setCreated(false), 50);
+            }
+        },
+        [created],
+    );
+
+    // 6. Return
+    return { createAccountHandler, created, loading };
+};
+
+// ❌ Bad — useEffect before useState
+const BadComponent = ({ title }) => {
+    useEffect(() => {
+        console.log("mounted");
+    }, []);
+
+    const [count, setCount] = useState(0);
+
+    return <div>{title}</div>;
+};
+
+// ❌ Bad — context hook before useState in custom hook
+const useBadHook = () => {
+    const { toast } = useToast();          // Should come after useState
+    const [loading, setLoading] = useState(false);
+    return { loading };
+};
+
+// ❌ Bad — handler before hooks
+const AnotherBadComponent = ({ title }) => {
+    const handleClick = () => {
+        console.log("clicked");
+    };
+
+    const dispatch = useDispatch();
+    const [count, setCount] = useState(0);
+
+    return <div onClick={handleClick}>{title}</div>;
+};
+
+// ❌ Bad — derived state after handler
+const YetAnotherBad = ({ title }) => {
+    const [items, setItems] = useState([]);
+
+    const handleAdd = () => {
+        setItems([...items, "new"]);
+    };
+
+    const itemCount = items.length; // Should come before handleAdd
+
+    return <div>{itemCount}</div>;
+};
 ```
 
 <br />
