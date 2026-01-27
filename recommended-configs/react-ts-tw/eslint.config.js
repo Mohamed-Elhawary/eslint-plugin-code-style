@@ -115,6 +115,7 @@ export default [ // eslint-disable-line
             "@stylistic/quotes": "error",
             "@stylistic/semi": "error",
             "@stylistic/semi-spacing": "error",
+            "@stylistic/semi-style": "error",
             "@stylistic/space-in-parens": "error",
             "@stylistic/space-infix-ops": "error",
 

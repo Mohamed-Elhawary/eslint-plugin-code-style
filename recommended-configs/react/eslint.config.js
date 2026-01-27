@@ -104,6 +104,7 @@ export default [ // eslint-disable-line
             "@stylistic/quotes": "error",
             "@stylistic/semi": "error",
             "@stylistic/semi-spacing": "error",
+            "@stylistic/semi-style": "error",
             "@stylistic/space-in-parens": "error",
             "@stylistic/space-infix-ops": "error",
 
@@ -138,6 +139,7 @@ export default [ // eslint-disable-line
             "code-style/classname-no-extra-spaces": "error",
             "code-style/classname-order": "error",
             "code-style/comment-format": "error",
+            "code-style/component-props-destructure": "error",
             "code-style/curried-arrow-same-line": "error",
             "code-style/export-format": "error",
             "code-style/function-arguments-format": "error",
