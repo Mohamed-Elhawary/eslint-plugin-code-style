@@ -7,6 +7,257 @@ const __dirname = nodePath.dirname(__filename);
 const packageJson = JSON.parse(fs.readFileSync(nodePath.join(__dirname, "package.json"), "utf8"));
 
 /**
+ * ═══════════════════════════════════════════════════════════════
+ * Tailwind CSS Class Utilities
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * Shared utilities for detecting and ordering Tailwind CSS classes.
+ * Used by classname-* rules for smart detection and auto-ordering.
+ */
+
+// Tailwind class order priority (lower = earlier in output)
+// Based on Tailwind's recommended class order
+const TAILWIND_ORDER = {
+    // Layout
+    "absolute": 10, "block": 10, "contents": 10, "fixed": 10, "flex": 10,
+    "grid": 10, "hidden": 10, "inline": 10, "inline-block": 10, "inline-flex": 10,
+    "inline-grid": 10, "relative": 10, "static": 10, "sticky": 10,
+
+    // Positioning
+    "bottom-": 20, "inset-": 20, "left-": 20, "right-": 20, "top-": 20,
+
+    // Z-index
+    "z-": 25,
+
+    // Flexbox/Grid container
+    "basis-": 30, "flex-": 30, "grid-cols-": 30, "grid-rows-": 30,
+
+    // Flexbox/Grid alignment
+    "content-": 40, "items-": 40, "justify-": 40, "place-": 40, "self-": 40,
+
+    // Flexbox/Grid children
+    "col-": 45, "grow": 45, "order-": 45, "row-": 45, "shrink": 45,
+
+    // Gap
+    "gap-": 50,
+
+    // Spacing - margin
+    "-m-": 60, "-mx-": 60, "-my-": 60, "m-": 60, "mb-": 60, "ml-": 60,
+    "mr-": 60, "mt-": 60, "mx-": 60, "my-": 60,
+
+    // Spacing - padding
+    "p-": 70, "pb-": 70, "pl-": 70, "pr-": 70, "pt-": 70, "px-": 70, "py-": 70,
+
+    // Sizing
+    "h-": 80, "max-h-": 80, "max-w-": 80, "min-h-": 80, "min-w-": 80,
+    "size-": 80, "w-": 80,
+
+    // Typography
+    "align-": 90, "antialiased": 90, "break-": 90, "capitalize": 90, "decoration-": 90,
+    "font-": 90, "hyphens-": 90, "italic": 90, "leading-": 90, "line-clamp-": 90,
+    "list-": 90, "lowercase": 90, "normal-case": 90, "not-italic": 90,
+    "ordinal": 90, "text-": 90, "tracking-": 90, "truncate": 90,
+    "underline": 90, "uppercase": 90, "whitespace-": 90,
+
+    // Backgrounds
+    "bg-": 100,
+
+    // Borders
+    "border": 110, "border-": 110, "divide-": 110, "outline-": 110,
+    "ring-": 110, "rounded": 110, "rounded-": 110,
+
+    // Effects
+    "blur": 120, "blur-": 120, "brightness-": 120, "contrast-": 120, "drop-shadow": 120,
+    "grayscale": 120, "hue-rotate-": 120, "invert": 120, "opacity-": 120,
+    "saturate-": 120, "sepia": 120, "shadow": 120, "shadow-": 120,
+
+    // Transitions
+    "animate-": 130, "delay-": 130, "duration-": 130, "ease-": 130,
+    "transition": 130, "transition-": 130,
+
+    // Transforms
+    "-rotate-": 140, "-scale-": 140, "-skew-": 140, "-translate-": 140,
+    "origin-": 140, "rotate-": 140, "scale-": 140, "skew-": 140,
+    "transform": 140, "translate-": 140,
+
+    // Interactivity
+    "accent-": 150, "appearance-": 150, "caret-": 150, "cursor-": 150,
+    "pointer-events-": 150, "resize": 150, "scroll-": 150, "select-": 150,
+    "snap-": 150, "touch-": 150, "will-change-": 150,
+
+    // SVG
+    "fill-": 160, "stroke-": 160,
+
+    // Accessibility
+    "sr-only": 170,
+};
+
+// Common Tailwind class patterns for detection
+const TAILWIND_PATTERNS = [
+    // Layout
+    /^(flex|grid|block|inline|hidden|absolute|relative|fixed|sticky)$/,
+    // Flexbox/Grid
+    /^(items|justify|content|self|place)-(start|end|center|between|around|evenly|stretch|baseline)$/,
+    /^(flex|grid)-(row|col|wrap|nowrap|grow|shrink)/, /^(col|row)-span-/,
+    /^gap-/, /^order-/,
+    // Spacing
+    /^-?[mp][xytblr]?-\d/, /^-?[mp][xytblr]?-\[/,
+    // Sizing
+    /^[wh]-/, /^(min|max)-[wh]-/, /^size-/,
+    // Typography
+    /^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)$/,
+    /^text-(left|center|right|justify)$/, /^text-\w+-\d{2,3}$/,
+    /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/,
+    /^font-(sans|serif|mono)$/, /^leading-/, /^tracking-/,
+    /^(uppercase|lowercase|capitalize|normal-case)$/,
+    /^(truncate|line-clamp-)/,
+    // Colors
+    /^(bg|text|border|ring|divide|outline|fill|stroke)-(transparent|current|inherit)$/,
+    /^(bg|text|border|ring|divide|outline|fill|stroke)-\w+-\d{2,3}$/,
+    /^(bg|text|border|ring|divide|outline|fill|stroke)-(white|black)$/,
+    // Borders
+    /^rounded(-|$)/, /^border(-|$)/, /^ring(-|$)/, /^outline(-|$)/,
+    // Effects
+    /^shadow(-|$)/, /^opacity-/, /^blur(-|$)/,
+    // Transitions
+    /^transition(-|$)/, /^duration-/, /^ease-/, /^delay-/, /^animate-/,
+    // Transforms
+    /^-?(rotate|scale|skew|translate)-/, /^origin-/, /^transform$/,
+    // Filters
+    /^(grayscale|sepia|invert|brightness|contrast|saturate|hue-rotate)(-|$)/,
+    // Interactivity
+    /^cursor-/, /^select-/, /^pointer-events-/,
+    // Responsive/State prefixes (these come at the end)
+    /^(sm|md|lg|xl|2xl):/, /^(hover|focus|active|disabled|group-hover):/,
+    /^(dark|light):/,
+];
+
+// Minimum number of Tailwind-like classes to consider a string as class-related
+const MIN_TAILWIND_MATCHES = 2;
+
+// Default thresholds for classname-multiline rule (shared across rules)
+const DEFAULT_MAX_CLASS_COUNT = 3;
+const DEFAULT_MAX_CLASS_LENGTH = 80;
+
+/**
+ * Check if a class string looks like Tailwind CSS classes
+ * @param {string} classString - The string to check
+ * @returns {boolean} - True if the string appears to contain Tailwind classes
+ */
+const looksLikeTailwindClasses = (classString) => {
+    if (!classString || typeof classString !== "string") return false;
+
+    const classes = classString.trim().split(/\s+/).filter(Boolean);
+
+    if (classes.length === 0) return false;
+
+    let tailwindMatches = 0;
+
+    for (const cls of classes) {
+        // Check against Tailwind patterns
+        for (const pattern of TAILWIND_PATTERNS) {
+            if (pattern.test(cls)) {
+                tailwindMatches += 1;
+                break;
+            }
+        }
+
+        // Check against known order prefixes
+        for (const prefix of Object.keys(TAILWIND_ORDER)) {
+            if (cls === prefix.replace("-", "") || cls.startsWith(prefix)) {
+                tailwindMatches += 1;
+                break;
+            }
+        }
+    }
+
+    // Consider it Tailwind if at least MIN_TAILWIND_MATCHES classes match
+    // or if more than 50% of classes match Tailwind patterns
+    return tailwindMatches >= MIN_TAILWIND_MATCHES
+        || (classes.length > 0 && tailwindMatches / classes.length > 0.5);
+};
+
+/**
+ * Check if a variable name or context suggests class-related content
+ * @param {string} name - Variable or property name
+ * @returns {boolean} - True if the name suggests class content
+ */
+const isClassRelatedName = (name) => /class/i.test(name);
+
+/**
+ * Smart check: either name suggests classes OR content looks like Tailwind
+ * @param {string} name - Variable name (can be null)
+ * @param {string} content - String content to check
+ * @returns {boolean} - True if this appears to be class-related
+ */
+const isClassRelated = (name, content) => isClassRelatedName(name || "") || looksLikeTailwindClasses(content);
+
+/**
+ * Get the order priority for a Tailwind class
+ * @param {string} cls - The class name
+ * @returns {number} - The order priority (lower = earlier)
+ */
+const getClassOrder = (cls) => {
+    // Check for responsive/state variants - they go at the end
+    if (/^(sm|md|lg|xl|2xl):/.test(cls)) return 200;
+
+    if (/^(hover|focus|active|disabled|visited|first|last|odd|even|group-):/.test(cls)) return 210;
+
+    if (/^dark:/.test(cls)) return 220;
+
+    // Check exact matches first
+    if (TAILWIND_ORDER[cls] !== undefined) return TAILWIND_ORDER[cls];
+
+    // Check prefix matches
+    for (const [prefix, order] of Object.entries(TAILWIND_ORDER)) {
+        if (prefix.endsWith("-") && cls.startsWith(prefix)) return order;
+    }
+
+    // Unknown classes go before variants but after known classes
+    return 180;
+};
+
+/**
+ * Sort Tailwind classes according to recommended order
+ * @param {string} classString - Space-separated class string
+ * @returns {string} - Sorted class string
+ */
+const sortTailwindClasses = (classString) => {
+    if (!classString || typeof classString !== "string") return classString;
+
+    const classes = classString.trim().split(/\s+/).filter(Boolean);
+
+    if (classes.length <= 1) return classString;
+
+    const sorted = [...classes].sort((a, b) => {
+        const orderA = getClassOrder(a);
+        const orderB = getClassOrder(b);
+
+        if (orderA !== orderB) return orderA - orderB;
+
+        // Same priority - sort alphabetically for consistency
+        return a.localeCompare(b);
+    });
+
+    return sorted.join(" ");
+};
+
+/**
+ * Check if classes need reordering
+ * @param {string} classString - Space-separated class string
+ * @returns {boolean} - True if classes are not in correct order
+ */
+const needsReordering = (classString) => {
+    if (!classString || typeof classString !== "string") return false;
+
+    // Normalize whitespace (newlines, multiple spaces) to single spaces for comparison
+    const normalized = classString.trim().split(/\s+/).filter(Boolean).join(" ");
+    const sorted = sortTailwindClasses(normalized);
+
+    return normalized !== sorted;
+};
+
+/**
  * ───────────────────────────────────────────────────────────────
  * Rule: Array Items Per Line
  * ───────────────────────────────────────────────────────────────
@@ -5176,6 +5427,824 @@ const jsxSimpleElementOneLine = {
 
 /**
  * ───────────────────────────────────────────────────────────────
+ * Rule: className Dynamic At End
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforce that dynamic expressions in className template literals
+ *   are placed at the end, after all static class names.
+ *   Uses smart detection: triggers for className attributes, variables
+ *   with "class" in name, or any string that looks like Tailwind classes.
+ *
+ * ✓ Good:
+ *   className={`flex items-center ${className}`}
+ *   const buttonClasses = `flex items-center ${className}`;
+ *
+ * ✗ Bad:
+ *   className={`${className} flex items-center`}
+ *   const buttonClasses = `${className} flex items-center`;
+ */
+const classNameDynamicAtEnd = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Get static content from template literal for detection
+        const getStaticContent = (templateLiteral) => templateLiteral.quasis
+            .map((q) => q.value.raw)
+            .join(" ")
+            .trim();
+
+        // Check and report template literal with dynamic expressions not at end
+        const checkTemplateLiteralHandler = (templateLiteral, reportNode, varName) => {
+            const { expressions, quasis } = templateLiteral;
+
+            if (expressions.length === 0) return;
+
+            // Smart detection: check if this looks like class content
+            const staticContent = getStaticContent(templateLiteral);
+
+            if (!isClassRelated(varName, staticContent)) return;
+
+            // Check if there are static classes after any expression
+            for (let i = 0; i < expressions.length; i += 1) {
+                const quasiAfter = quasis[i + 1];
+
+                if (quasiAfter) {
+                    const textAfter = quasiAfter.value.raw.trim();
+
+                    if (textAfter.length > 0) {
+                        context.report({
+                            fix: (fixer) => {
+                                const staticClasses = [];
+                                const dynamicExprs = [];
+
+                                quasis.forEach((quasi) => {
+                                    const classes = quasi.value.raw.trim();
+
+                                    if (classes) staticClasses.push(classes);
+                                });
+
+                                expressions.forEach((expr) => {
+                                    dynamicExprs.push(sourceCode.getText(expr));
+                                });
+
+                                // Sort static classes using Tailwind order
+                                const sortedStatic = sortTailwindClasses(staticClasses.join(" "));
+                                const dynamicPart = dynamicExprs.map((expr) => `\${${expr}}`).join(" ");
+                                const newValue = sortedStatic
+                                    ? `\`${sortedStatic} ${dynamicPart}\``
+                                    : `\`${dynamicPart}\``;
+
+                                return fixer.replaceText(templateLiteral, newValue);
+                            },
+                            message: "Dynamic expressions in class string should be at the end, after static classes",
+                            node: reportNode || expressions[i],
+                        });
+
+                        return;
+                    }
+                }
+            }
+        };
+
+        return {
+            // Check className JSX attribute
+            JSXAttribute(node) {
+                if (!node.name || node.name.name !== "className") return;
+
+                if (node.value
+                    && node.value.type === "JSXExpressionContainer"
+                    && node.value.expression.type === "TemplateLiteral") {
+                    checkTemplateLiteralHandler(node.value.expression, null, "className");
+                }
+            },
+
+            // Check variable declarations
+            VariableDeclarator(node) {
+                if (!node.id || node.id.type !== "Identifier") return;
+
+                if (node.init && node.init.type === "TemplateLiteral") {
+                    checkTemplateLiteralHandler(node.init, node.init, node.id.name);
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce dynamic expressions in className are placed at the end" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: className No Extra Spaces
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Disallow multiple consecutive spaces and leading/trailing spaces
+ *   in className values. Uses smart detection to identify class strings.
+ *
+ * ✓ Good:
+ *   className="flex items-center gap-4"
+ *   const buttonClasses = `flex items-center ${className}`;
+ *   const variantClasses = { primary: "bg-blue-500 text-white" };
+ *
+ * ✗ Bad:
+ *   className="flex  items-center   gap-4"
+ *   const buttonClasses = ` flex items-center ${className} `;
+ *   const variantClasses = { primary: "bg-blue-500  text-white" };
+ */
+const classNameNoExtraSpaces = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Check and fix string literal
+        const checkStringLiteralHandler = (node, value, varName) => {
+            // Smart detection
+            if (!isClassRelated(varName, value)) return;
+
+            // Skip multiline format (newline at start = intentional multiline)
+            if (/^\n/.test(value)) return;
+
+            if (/  +/.test(value)) {
+                const raw = sourceCode.getText(node);
+                const quote = raw[0];
+                const fixed = value.replace(/  +/g, " ");
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(node, `${quote}${fixed}${quote}`),
+                    message: "Class string should not have multiple consecutive spaces",
+                    node,
+                });
+            }
+        };
+
+        // Check and fix template literal
+        const checkTemplateLiteralHandler = (templateLiteral, varName) => {
+            const { quasis } = templateLiteral;
+
+            // Smart detection: get static content for checking
+            const staticContent = quasis.map((q) => q.value.raw).join(" ").trim();
+
+            if (!isClassRelated(varName, staticContent)) return;
+
+            // Check first quasi for leading space
+            const firstQuasi = quasis[0];
+
+            // Skip multiline format (newline after backtick = intentional multiline)
+            const isMultilineFormat = firstQuasi && /^\n/.test(firstQuasi.value.raw);
+
+            if (!isMultilineFormat && firstQuasi && /^\s+/.test(firstQuasi.value.raw)) {
+                context.report({
+                    fix: (fixer) => {
+                        const fullText = sourceCode.getText(templateLiteral);
+                        const fixedText = fullText.replace(/^`\s+/, "`");
+
+                        return fixer.replaceText(templateLiteral, fixedText);
+                    },
+                    message: "Class string should not have leading whitespace in template literal",
+                    node: firstQuasi,
+                });
+
+                return;
+            }
+
+            // Check last quasi for trailing space
+            const lastQuasi = quasis[quasis.length - 1];
+
+            if (!isMultilineFormat && lastQuasi && /\s+$/.test(lastQuasi.value.raw)) {
+                context.report({
+                    fix: (fixer) => {
+                        const fullText = sourceCode.getText(templateLiteral);
+                        const fixedText = fullText.replace(/\s+`$/, "`");
+
+                        return fixer.replaceText(templateLiteral, fixedText);
+                    },
+                    message: "Class string should not have trailing whitespace in template literal",
+                    node: lastQuasi,
+                });
+
+                return;
+            }
+
+            // Check for multiple consecutive spaces in any quasi (skip multiline format)
+            if (!isMultilineFormat) {
+                quasis.forEach((quasi) => {
+                    const value = quasi.value.raw;
+
+                    if (/  +/.test(value)) {
+                        context.report({
+                            fix: (fixer) => {
+                                const fullText = sourceCode.getText(templateLiteral);
+                                const fixedText = fullText.replace(/  +/g, " ");
+
+                                return fixer.replaceText(templateLiteral, fixedText);
+                            },
+                            message: "Class string should not have multiple consecutive spaces",
+                            node: quasi,
+                        });
+                    }
+                });
+            }
+        };
+
+        return {
+            // Check className JSX attribute
+            JSXAttribute(node) {
+                if (!node.name || node.name.name !== "className") return;
+
+                if (node.value && node.value.type === "Literal" && typeof node.value.value === "string") {
+                    checkStringLiteralHandler(node.value, node.value.value, "className");
+                }
+
+                if (node.value
+                    && node.value.type === "JSXExpressionContainer"
+                    && node.value.expression.type === "TemplateLiteral") {
+                    checkTemplateLiteralHandler(node.value.expression, "className");
+                }
+            },
+
+            // Check variable declarations
+            VariableDeclarator(node) {
+                if (!node.id || node.id.type !== "Identifier") return;
+
+                const varName = node.id.name;
+
+                // Check string literal
+                if (node.init && node.init.type === "Literal" && typeof node.init.value === "string") {
+                    checkStringLiteralHandler(node.init, node.init.value, varName);
+                }
+
+                // Check template literal
+                if (node.init && node.init.type === "TemplateLiteral") {
+                    checkTemplateLiteralHandler(node.init, varName);
+                }
+
+                // Check object with class values
+                if (node.init && node.init.type === "ObjectExpression") {
+                    // Only check objects if variable name suggests classes
+                    if (!isClassRelatedName(varName)) return;
+
+                    node.init.properties.forEach((prop) => {
+                        if (prop.type !== "Property") return;
+
+                        if (prop.value && prop.value.type === "Literal" && typeof prop.value.value === "string") {
+                            // For object properties, always check since parent is class-related
+                            const value = prop.value.value;
+                            const raw = sourceCode.getText(prop.value);
+                            const quote = raw[0];
+
+                            // Check for leading whitespace
+                            if (/^\s+/.test(value)) {
+                                const fixed = value.trimStart();
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceText(prop.value, `${quote}${fixed}${quote}`),
+                                    message: "Class string should not have leading whitespace",
+                                    node: prop.value,
+                                });
+
+                                return;
+                            }
+
+                            // Check for trailing whitespace
+                            if (/\s+$/.test(value)) {
+                                const fixed = value.trimEnd();
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceText(prop.value, `${quote}${fixed}${quote}`),
+                                    message: "Class string should not have trailing whitespace",
+                                    node: prop.value,
+                                });
+
+                                return;
+                            }
+
+                            // Check for multiple consecutive spaces
+                            if (/  +/.test(value)) {
+                                const fixed = value.replace(/  +/g, " ");
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceText(prop.value, `${quote}${fixed}${quote}`),
+                                    message: "Class string should not have multiple consecutive spaces",
+                                    node: prop.value,
+                                });
+                            }
+                        }
+
+                        if (prop.value && prop.value.type === "TemplateLiteral") {
+                            checkTemplateLiteralHandler(prop.value, varName);
+                        }
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Disallow extra/leading/trailing spaces in className values" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: className Order
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforce Tailwind CSS class ordering in class string variables
+ *   and object properties. This rule complements tailwindcss/classnames-order
+ *   by handling cases it doesn't cover (variables and objects).
+ *   Uses smart detection to identify class strings by name or content.
+ *
+ * Note: This rule does NOT check JSX className attributes directly,
+ *       as those should be handled by tailwindcss/classnames-order.
+ *
+ * ✓ Good:
+ *   const classes = "flex items-center p-4 text-white";
+ *   const variantClasses = { primary: "bg-blue-500 hover:bg-blue-600" };
+ *
+ * ✗ Bad:
+ *   const classes = "text-white p-4 flex items-center";
+ *   const variantClasses = { primary: "hover:bg-blue-600 bg-blue-500" };
+ */
+const classNameOrder = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Check and fix string literal ordering
+        const checkStringOrderHandler = (node, value, varName) => {
+            // Smart detection
+            if (!isClassRelated(varName, value)) return;
+
+            if (!needsReordering(value)) return;
+
+            const sorted = sortTailwindClasses(value);
+            const raw = sourceCode.getText(node);
+            const quote = raw[0];
+
+            context.report({
+                fix: (fixer) => fixer.replaceText(node, `${quote}${sorted}${quote}`),
+                message: "Tailwind classes should be ordered according to recommended order",
+                node,
+            });
+        };
+
+        // Check template literal ordering (only static parts)
+        const checkTemplateLiteralOrderHandler = (templateLiteral, varName) => {
+            const { expressions, quasis } = templateLiteral;
+
+            // Get static content for detection
+            const staticContent = quasis.map((q) => q.value.raw).join(" ").trim();
+
+            if (!isClassRelated(varName, staticContent)) return;
+
+            // Check if any quasi needs reordering
+            let needsFix = false;
+
+            for (const quasi of quasis) {
+                const value = quasi.value.raw.trim();
+
+                if (value && needsReordering(value)) {
+                    needsFix = true;
+                    break;
+                }
+            }
+
+            if (!needsFix) return;
+
+            context.report({
+                fix: (fixer) => {
+                    // Rebuild the template literal with sorted classes
+                    let result = "`";
+
+                    for (let i = 0; i < quasis.length; i += 1) {
+                        const quasi = quasis[i];
+                        const raw = quasi.value.raw;
+
+                        // Sort the static part while preserving leading/trailing whitespace
+                        const leadingSpace = raw.match(/^\s*/)[0];
+                        const trailingSpace = raw.match(/\s*$/)[0];
+                        const trimmed = raw.trim();
+                        const isMultilineQuasi = /\n/.test(trimmed);
+                        let sorted;
+
+                        if (isMultilineQuasi && trimmed) {
+                            // Preserve multiline format: sort classes, rejoin without empty lines
+                            const lines = raw.split("\n");
+                            const classesFromLines = lines.map((l) => l.trim()).filter(Boolean);
+                            const sortedClasses = [...classesFromLines].sort((a, b) => {
+                                const orderA = getClassOrder(a);
+                                const orderB = getClassOrder(b);
+
+                                if (orderA !== orderB) return orderA - orderB;
+
+                                return a.localeCompare(b);
+                            });
+
+                            // Detect indent from first non-empty line
+                            const indentLine = lines.find((l) => l.trim().length > 0);
+                            const lineIndent = indentLine ? indentLine.match(/^\s*/)[0] : "";
+
+                            // Rebuild: newline + sorted classes + trailing newline with base indent only
+                            const lastLine = lines[lines.length - 1];
+                            const baseIndentMatch = lastLine.match(/^\s*/);
+                            const trailingIndent = baseIndentMatch ? baseIndentMatch[0] : "";
+
+                            result += "\n" + sortedClasses.map((cls) => lineIndent + cls).join("\n") + "\n" + trailingIndent;
+                        } else {
+                            sorted = trimmed ? sortTailwindClasses(trimmed) : "";
+                            result += leadingSpace + sorted + trailingSpace;
+                        }
+
+                        // Add expression if not the last quasi
+                        if (i < expressions.length) {
+                            result += "${" + sourceCode.getText(expressions[i]) + "}";
+                        }
+                    }
+
+                    result += "`";
+
+                    return fixer.replaceText(templateLiteral, result);
+                },
+                message: "Tailwind classes should be ordered according to recommended order",
+                node: templateLiteral,
+            });
+        };
+
+        return {
+            // Note: JSX className attributes are NOT checked here
+            // They should be handled by tailwindcss/classnames-order
+
+            // Check variable declarations
+            VariableDeclarator(node) {
+                if (!node.id || node.id.type !== "Identifier") return;
+
+                const varName = node.id.name;
+
+                // Check string literal
+                if (node.init && node.init.type === "Literal" && typeof node.init.value === "string") {
+                    checkStringOrderHandler(node.init, node.init.value, varName);
+                }
+
+                // Check template literal
+                if (node.init && node.init.type === "TemplateLiteral") {
+                    checkTemplateLiteralOrderHandler(node.init, varName);
+                }
+
+                // Check object with class values
+                if (node.init && node.init.type === "ObjectExpression") {
+                    if (!isClassRelatedName(varName)) return;
+
+                    node.init.properties.forEach((prop) => {
+                        if (prop.type !== "Property") return;
+
+                        if (prop.value && prop.value.type === "Literal" && typeof prop.value.value === "string") {
+                            const value = prop.value.value;
+
+                            if (needsReordering(value)) {
+                                const sorted = sortTailwindClasses(value);
+                                const raw = sourceCode.getText(prop.value);
+                                const quote = raw[0];
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceText(prop.value, `${quote}${sorted}${quote}`),
+                                    message: "Tailwind classes should be ordered according to recommended order",
+                                    node: prop.value,
+                                });
+                            }
+                        }
+
+                        if (prop.value && prop.value.type === "TemplateLiteral") {
+                            checkTemplateLiteralOrderHandler(prop.value, varName);
+                        }
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce Tailwind CSS class ordering in class strings" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: className Multiline
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforce that long className strings are broken into multiple
+ *   lines, with each class on its own line. Triggers when either
+ *   the class count or string length exceeds the threshold.
+ *   Dynamic expressions must remain at the end.
+ *
+ * ✓ Good:
+ *   className={`
+ *       flex
+ *       items-center
+ *       justify-center
+ *       rounded-lg
+ *       ${className}
+ *   `}
+ *
+ * ✗ Bad:
+ *   className="flex items-center justify-center rounded-lg"
+ *   className={`flex items-center justify-center rounded-lg ${className}`}
+ */
+const classNameMultiline = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+        const options = context.options[0] || {};
+        const maxClassCount = options.maxClassCount ?? DEFAULT_MAX_CLASS_COUNT;
+        const maxLength = options.maxLength ?? DEFAULT_MAX_CLASS_LENGTH;
+
+        // Get the leading whitespace of the line where a node starts
+        const getLineIndent = (node) => {
+            const allText = sourceCode.getText();
+            const lines = allText.split("\n");
+            const line = lines[node.loc.start.line - 1];
+
+            if (!line) return "";
+
+            const match = line.match(/^(\s*)/);
+
+            return match ? match[1] : "";
+        };
+
+        // Build multiline template literal from classes and dynamic expressions
+        const buildMultilineTemplate = (classes, dynamicExprs, baseIndent) => {
+            const indent = baseIndent + "    ";
+            const lines = classes.map((cls) => `${indent}${cls}`);
+
+            dynamicExprs.forEach((expr) => {
+                lines.push(`${indent}\${${expr}}`);
+            });
+
+            return `\`\n${lines.join("\n")}\n${baseIndent}\``;
+        };
+
+        // Build multiline string literal (no dynamic expressions)
+        const buildMultilineString = (classes, baseIndent) => {
+            const indent = baseIndent + "    ";
+            const lines = classes.map((cls) => `${indent}${cls}`);
+
+            return `"\n${lines.join("\n")}\n${baseIndent}"`;
+        };
+
+        // Check if a string value needs multiline formatting
+        const needsMultiline = (classes, dynamicCount, totalLength) =>
+            classes.length + dynamicCount > maxClassCount || totalLength > maxLength;
+
+        // Check if already correctly formatted multiline
+        const isCorrectlyMultiline = (rawContent, baseIndent) => {
+            if (!/\n/.test(rawContent)) return false;
+
+            const indent = baseIndent + "    ";
+            const lines = rawContent.split("\n");
+
+            // First line should be empty (backtick then newline)
+            if (lines[0].trim() !== "") return false;
+
+            // Last line should be just baseIndent
+            if (lines[lines.length - 1] !== baseIndent) return false;
+
+            // Middle lines should each have exactly one class/expression at correct indent, no empty lines
+            for (let i = 1; i < lines.length - 1; i += 1) {
+                if (lines[i].trim() === "") return false;
+
+                if (!lines[i].startsWith(indent)) return false;
+
+                const content = lines[i].slice(indent.length);
+
+                if (content.includes(" ") && !content.startsWith("${")) return false;
+            }
+
+            return true;
+        };
+
+        // Get base indent for the node that owns the class string
+        const getBaseIndent = (node) => {
+            let current = node;
+
+            while (current) {
+                if (current.type === "JSXAttribute"
+                    || current.type === "VariableDeclarator"
+                    || current.type === "Property") {
+                    return getLineIndent(current);
+                }
+
+                current = current.parent;
+            }
+
+            return getLineIndent(node);
+        };
+
+        // Handle string literal className
+        const checkStringLiteralHandler = (node, value, varName) => {
+            if (!isClassRelated(varName, value)) return;
+
+            const classes = value.trim().split(/\s+/).filter(Boolean);
+            const classesOnly = classes.join(" ");
+            const isMultiline = /\n/.test(value);
+
+            // Under threshold: if multiline, collapse to single line
+            if (!needsMultiline(classes, 0, classesOnly.length)) {
+                if (isMultiline) {
+                    const raw = sourceCode.getText(node);
+                    const quote = raw[0];
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(node, `${quote}${classesOnly}${quote}`),
+                        message: "Class string under threshold should be on a single line",
+                        node,
+                    });
+                }
+
+                return;
+            }
+
+            const baseIndent = getBaseIndent(node);
+
+            // Already correctly formatted multiline
+            if (isCorrectlyMultiline(value, baseIndent)) return;
+
+            context.report({
+                fix: (fixer) => {
+                    const parent = node.parent;
+
+                    if (parent && parent.type === "JSXAttribute") {
+                        return fixer.replaceText(node, buildMultilineString(classes, baseIndent));
+                    }
+
+                    // Variables/objects: multiline "..." is invalid JS, use template literal
+                    return fixer.replaceText(node, buildMultilineTemplate(classes, [], baseIndent));
+                },
+                message: "Class string with many classes should be broken into multiple lines",
+                node,
+            });
+        };
+
+        // Handle template literal className
+        const checkTemplateLiteralHandler = (templateLiteral, varName) => {
+            const { expressions, quasis } = templateLiteral;
+            const staticContent = quasis.map((q) => q.value.raw).join(" ").trim();
+
+            if (!isClassRelated(varName, staticContent)) return;
+
+            const allClasses = staticContent.split(/\s+/).filter(Boolean);
+            const dynamicExprs = expressions.map((expr) => sourceCode.getText(expr));
+            const fullLength = staticContent.length + dynamicExprs.reduce((sum, e) => sum + e.length + 3, 0);
+
+            // Determine if this is a JSX className attribute
+            const jsxContainer = templateLiteral.parent;
+            const isJSXAttr = jsxContainer
+                && jsxContainer.type === "JSXExpressionContainer"
+                && jsxContainer.parent
+                && jsxContainer.parent.type === "JSXAttribute";
+
+            if (!needsMultiline(allClasses, dynamicExprs.length, fullLength)) {
+                // Under threshold: if multiline, collapse to single line
+                const rawContent = quasis.map((q, i) =>
+                    q.value.raw + (i < expressions.length ? `\${${dynamicExprs[i]}}` : ""),
+                ).join("");
+
+                if (/\n/.test(rawContent)) {
+                    const collapsed = allClasses.join(" ");
+
+                    if (isJSXAttr && dynamicExprs.length === 0) {
+                        // JSX no expressions → use "..."
+                        context.report({
+                            fix: (fixer) => fixer.replaceText(jsxContainer, `"${collapsed}"`),
+                            message: "Class string under threshold should be on a single line",
+                            node: templateLiteral,
+                        });
+                    } else if (dynamicExprs.length === 0) {
+                        // Variable no expressions → use `...` single line
+                        context.report({
+                            fix: (fixer) => fixer.replaceText(templateLiteral, `\`${collapsed}\``),
+                            message: "Class string under threshold should be on a single line",
+                            node: templateLiteral,
+                        });
+                    } else {
+                        const parts = [collapsed, ...dynamicExprs.map((e) => `\${${e}}`)];
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceText(templateLiteral, `\`${parts.join(" ")}\``),
+                            message: "Class string under threshold should be on a single line",
+                            node: templateLiteral,
+                        });
+                    }
+                }
+
+                return;
+            }
+
+            const baseIndent = getBaseIndent(templateLiteral);
+
+            // JSX with no expressions → must use "..." format, not {`...`}
+            if (isJSXAttr && dynamicExprs.length === 0) {
+                const multiline = buildMultilineString(allClasses, baseIndent);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(jsxContainer, multiline),
+                    message: "Use string literal instead of template literal for className with no dynamic expressions",
+                    node: templateLiteral,
+                });
+
+                return;
+            }
+
+            // Template literal (variable/object or JSX with expressions)
+            const rawContent = quasis.map((q, i) =>
+                q.value.raw + (i < expressions.length ? `\${${dynamicExprs[i]}}` : ""),
+            ).join("");
+
+            if (isCorrectlyMultiline(rawContent, baseIndent)) return;
+
+            const multiline = buildMultilineTemplate(allClasses, dynamicExprs, baseIndent);
+
+            context.report({
+                fix: (fixer) => fixer.replaceText(templateLiteral, multiline),
+                message: "Class string with many classes should be broken into multiple lines",
+                node: templateLiteral,
+            });
+        };
+
+        return {
+            // Check className JSX attribute
+            JSXAttribute(node) {
+                if (!node.name || node.name.name !== "className") return;
+
+                if (node.value && node.value.type === "Literal" && typeof node.value.value === "string") {
+                    checkStringLiteralHandler(node.value, node.value.value, "className");
+                }
+
+                if (node.value
+                    && node.value.type === "JSXExpressionContainer"
+                    && node.value.expression.type === "TemplateLiteral") {
+                    checkTemplateLiteralHandler(node.value.expression, "className");
+                }
+            },
+
+            // Check variable declarations
+            VariableDeclarator(node) {
+                if (!node.id || node.id.type !== "Identifier") return;
+
+                const varName = node.id.name;
+
+                if (node.init && node.init.type === "Literal" && typeof node.init.value === "string") {
+                    checkStringLiteralHandler(node.init, node.init.value, varName);
+                }
+
+                if (node.init && node.init.type === "TemplateLiteral") {
+                    checkTemplateLiteralHandler(node.init, varName);
+                }
+
+                if (node.init && node.init.type === "ObjectExpression") {
+                    if (!isClassRelatedName(varName)) return;
+
+                    node.init.properties.forEach((prop) => {
+                        if (prop.type !== "Property") return;
+
+                        if (prop.value && prop.value.type === "Literal" && typeof prop.value.value === "string") {
+                            checkStringLiteralHandler(prop.value, prop.value.value, varName);
+                        }
+
+                        if (prop.value && prop.value.type === "TemplateLiteral") {
+                            checkTemplateLiteralHandler(prop.value, varName);
+                        }
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce multiline formatting for long className strings" },
+        fixable: "code",
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    maxClassCount: { default: 3, minimum: 1, type: "integer" },
+                    maxLength: { default: 80, minimum: 1, type: "integer" },
+                },
+                type: "object",
+            },
+        ],
+        type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
  * Rule: JSX String Value Trim
  * ───────────────────────────────────────────────────────────────
  *
@@ -5199,6 +6268,10 @@ const jsxStringValueTrim = {
             if (!node.value || node.value.type !== "Literal" || typeof node.value.value !== "string") return;
 
             const value = node.value.value;
+
+            // Skip multiline className format (intentional whitespace)
+            if (node.name && node.name.name === "className" && /^\n/.test(value)) return;
+
             const trimmed = value.trim();
 
             if (value !== trimmed) {
@@ -8479,18 +9552,62 @@ const openingBracketsSameLine = {
                     const expressions = expression.expressions;
                     let collapsedText = "`";
 
-                    for (let i = 0; i < quasis.length; i += 1) {
-                        // Collapse whitespace in quasi (template string parts)
-                        const quasiText = quasis[i].value.raw.replace(/\s*\n\s*/g, "").trim();
+                    const collapsedParts = [];
 
-                        collapsedText += quasiText;
+                    for (let i = 0; i < quasis.length; i += 1) {
+                        // Collapse whitespace in quasi (newlines → spaces)
+                        const quasiText = quasis[i].value.raw.replace(/\s*\n\s*/g, " ").trim();
+
+                        if (quasiText) collapsedParts.push(quasiText);
 
                         if (i < expressions.length) {
-                            collapsedText += "${" + sourceCode.getText(expressions[i]) + "}";
+                            collapsedParts.push("${" + sourceCode.getText(expressions[i]) + "}");
                         }
                     }
 
-                    collapsedText += "`";
+                    collapsedText = "`" + collapsedParts.join(" ") + "`";
+
+                    // For className attributes, check if collapsed result exceeds multiline thresholds
+                    // If so, keep the multiline format (classname-multiline will enforce it)
+                    const parentAttr = node.parent;
+                    const isClassNameAttr = parentAttr && parentAttr.type === "JSXAttribute"
+                        && parentAttr.name && parentAttr.name.name === "className";
+
+                    if (isClassNameAttr) {
+                        const innerContent = collapsedText.slice(1, -1); // strip backticks
+                        const staticParts = innerContent.replace(/\$\{[^}]+\}/g, "").trim();
+                        const classes = staticParts.split(/\s+/).filter(Boolean);
+                        const dynamicCount = expressions.length;
+                        const maxClassCount = DEFAULT_MAX_CLASS_COUNT;
+                        const maxLen = DEFAULT_MAX_CLASS_LENGTH;
+
+                        // If exceeds thresholds, skip collapsing — keep multiline
+                        if (classes.length + dynamicCount > maxClassCount || innerContent.length > maxLen) {
+                            return;
+                        }
+
+                        // Under thresholds: collapse and convert to string literal if no expressions
+                        if (expressions.length === 0) {
+                            const classString = staticParts;
+                            const collapsedAttrValue = `"${classString}"`;
+
+                            const isMultiLine = expression.loc.start.line !== expression.loc.end.line;
+                            const openingBraceOnDifferentLine = openBrace.loc.end.line !== expression.loc.start.line;
+
+                            if (isMultiLine || openingBraceOnDifferentLine) {
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange(
+                                        [openBrace.range[0], closeBrace.range[1]],
+                                        collapsedAttrValue,
+                                    ),
+                                    message: "Short className should use a string literal on a single line",
+                                    node: expression,
+                                });
+                            }
+
+                            return;
+                        }
+                    }
 
                     // Only fix if the result is reasonable length and different from original
                     const isMultiLine = expression.loc.start.line !== expression.loc.end.line;
@@ -9629,6 +10746,12 @@ const variableNamingConvention = {
             }
 
             if (name.startsWith("_") || constantRegex.test(name) || isComponentByNamingHandler(node)) return;
+
+            // Allow PascalCase for variables that reference components by naming convention
+            // e.g., const IconComponent = icons[variant], const ActiveIcon = getIcon()
+            const componentSuffixes = ["Component", "Icon", "Layout", "Wrapper", "Container", "Provider", "View", "Screen", "Page"];
+
+            if (pascalCaseRegex.test(name) && componentSuffixes.some((suffix) => name.endsWith(suffix))) return;
 
             if (isHookFunctionHandler(node)) {
                 if (!hookRegex.test(name)) {
@@ -12258,6 +13381,19 @@ const reactCodeOrder = {
                     }
                 }
 
+                // Check if the variable calls a local handler function defined in this scope
+                // e.g., const stateStyles = getStateStylesHandler();
+                // These must appear after the handler they call, so treat them as handler-level
+                for (const decl of declarations) {
+                    if (decl.init && decl.init.type === "CallExpression") {
+                        const callee = decl.init.callee;
+
+                        if (callee && callee.type === "Identifier" && !isHookCallHandler(decl.init)) {
+                            return ORDER.HANDLER_FUNCTION;
+                        }
+                    }
+                }
+
                 // Otherwise it's derived state / computed values
                 return ORDER.DERIVED_STATE;
             }
@@ -12967,6 +14103,10 @@ export default {
         "module-index-exports": moduleIndexExports,
 
         // JSX rules
+        "classname-dynamic-at-end": classNameDynamicAtEnd,
+        "classname-multiline": classNameMultiline,
+        "classname-no-extra-spaces": classNameNoExtraSpaces,
+        "classname-order": classNameOrder,
         "jsx-children-on-new-line": jsxChildrenOnNewLine,
         "jsx-closing-bracket-spacing": jsxClosingBracketSpacing,
         "jsx-element-child-new-line": jsxElementChildNewLine,

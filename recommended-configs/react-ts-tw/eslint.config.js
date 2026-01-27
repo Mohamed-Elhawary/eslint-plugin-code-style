@@ -12,6 +12,10 @@ import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import tailwind from "eslint-plugin-tailwindcss";
 import globals from "globals";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default [ // eslint-disable-line
     {
@@ -157,6 +161,10 @@ export default [ // eslint-disable-line
             "code-style/arrow-function-simplify": "error",
             "code-style/assignment-value-same-line": "error",
             "code-style/block-statement-newlines": "error",
+            "code-style/classname-dynamic-at-end": "error",
+            "code-style/classname-multiline": "error",
+            "code-style/classname-no-extra-spaces": "error",
+            "code-style/classname-order": "error",
             "code-style/comment-format": "error",
             "code-style/component-props-destructure": "error",
             "code-style/component-props-inline-type": "error",
@@ -166,6 +174,7 @@ export default [ // eslint-disable-line
             "code-style/function-arguments-format": "error",
             "code-style/function-call-spacing": "error",
             "code-style/function-naming-convention": "error",
+            "code-style/function-object-destructure": "error",
             "code-style/function-params-per-line": "error",
             "code-style/hook-callback-format": "error",
             "code-style/hook-deps-per-line": "error",
@@ -196,9 +205,11 @@ export default [ // eslint-disable-line
             "code-style/object-property-value-brace": "error",
             "code-style/object-property-value-format": "error",
             "code-style/opening-brackets-same-line": "error",
+            "code-style/react-code-order": "error",
             "code-style/simple-call-single-line": "error",
             "code-style/single-argument-on-one-line": "error",
             "code-style/string-property-spacing": "error",
+            "code-style/type-annotation-spacing": "error",
             "code-style/type-format": "error",
             "code-style/typescript-definition-location": "error",
             "code-style/variable-naming-convention": "error",
@@ -399,8 +410,9 @@ export default [ // eslint-disable-line
 
             // Tailwind rules
             "tailwindcss/classnames-order": "error",
+            "tailwindcss/enforces-negative-arbitrary-values": "error",
             "tailwindcss/enforces-shorthand": "error",
-            "tailwindcss/no-custom-classname": "off",
+            "tailwindcss/no-custom-classname": "error",
             "tailwindcss/no-unnecessary-arbitrary-value": "error",
 
             "valid-typeof": "error",
@@ -418,6 +430,7 @@ export default [ // eslint-disable-line
                 },
             },
             react: { version: "detect" },
+            tailwindcss: { config: __dirname + "/src/index.css" },
         },
     },
 ];

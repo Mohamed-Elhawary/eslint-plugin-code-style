@@ -29,6 +29,10 @@ export type RuleNames =
     | "code-style/import-format"
     | "code-style/import-source-spacing"
     | "code-style/index-export-style"
+    | "code-style/classname-dynamic-at-end"
+    | "code-style/classname-multiline"
+    | "code-style/classname-no-extra-spaces"
+    | "code-style/classname-order"
     | "code-style/jsx-children-on-new-line"
     | "code-style/jsx-closing-bracket-spacing"
     | "code-style/jsx-element-child-new-line"
@@ -106,6 +110,10 @@ interface PluginRules {
     "import-format": Rule.RuleModule;
     "import-source-spacing": Rule.RuleModule;
     "index-export-style": Rule.RuleModule;
+    "classname-dynamic-at-end": Rule.RuleModule;
+    "classname-multiline": Rule.RuleModule;
+    "classname-no-extra-spaces": Rule.RuleModule;
+    "classname-order": Rule.RuleModule;
     "jsx-children-on-new-line": Rule.RuleModule;
     "jsx-closing-bracket-spacing": Rule.RuleModule;
     "jsx-element-child-new-line": Rule.RuleModule;

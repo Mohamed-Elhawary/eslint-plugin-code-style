@@ -12,6 +12,10 @@ import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import tailwind from "eslint-plugin-tailwindcss";
 import globals from "globals";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default [ // eslint-disable-line
     {
@@ -147,9 +151,12 @@ export default [ // eslint-disable-line
             "code-style/arrow-function-simplify": "error",
             "code-style/assignment-value-same-line": "error",
             "code-style/block-statement-newlines": "error",
+            "code-style/classname-dynamic-at-end": "error",
+            "code-style/classname-multiline": "error",
+            "code-style/classname-no-extra-spaces": "error",
+            "code-style/classname-order": "error",
             "code-style/comment-format": "error",
             "code-style/component-props-destructure": "error",
-            "code-style/react-code-order": "error",
             "code-style/component-props-inline-type": "error",
             "code-style/curried-arrow-same-line": "error",
             "code-style/enum-format": "error",
@@ -188,6 +195,7 @@ export default [ // eslint-disable-line
             "code-style/object-property-value-brace": "error",
             "code-style/object-property-value-format": "error",
             "code-style/opening-brackets-same-line": "error",
+            "code-style/react-code-order": "error",
             "code-style/simple-call-single-line": "error",
             "code-style/single-argument-on-one-line": "error",
             "code-style/string-property-spacing": "error",
@@ -370,8 +378,9 @@ export default [ // eslint-disable-line
             "simple-import-sort/imports": "error",
             "sort-keys": "off",
             "tailwindcss/classnames-order": "error",
+            "tailwindcss/enforces-negative-arbitrary-values": "error",
             "tailwindcss/enforces-shorthand": "error",
-            "tailwindcss/no-custom-classname": "off",
+            "tailwindcss/no-custom-classname": "error",
             "tailwindcss/no-unnecessary-arbitrary-value": "error",
             "valid-typeof": "error",
             "vars-on-top": "error",
@@ -396,6 +405,7 @@ export default [ // eslint-disable-line
                 },
             },
             react: { version: "detect" },
+            tailwindcss: { config: __dirname + "/src/index.css" },
         },
     },
 ];

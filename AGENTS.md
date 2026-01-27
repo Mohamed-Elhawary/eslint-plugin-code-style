@@ -4,9 +4,9 @@ Instructions for AI coding agents working with this codebase.
 
 ## Project Overview
 
-**eslint-plugin-code-style** is an ESLint plugin providing 56 custom auto-fixable formatting rules for React/JSX projects. It's designed for ESLint v9+ flat config system.
+**eslint-plugin-code-style** is an ESLint plugin providing 60 custom auto-fixable formatting rules for React/JSX projects. It's designed for ESLint v9+ flat config system.
 
-- **Main entry:** `index.js` - Contains all 56 rules in a single file
+- **Main entry:** `index.js` - Contains all 60 rules in a single file
 - **Type definitions:** `index.d.ts` - TypeScript declarations for IDE support
 - **Recommended configs:** `recommended-configs/` - Ready-to-use ESLint configurations
 - **Test apps:** `_tests_/` - Sample apps for testing rules
@@ -44,7 +44,7 @@ index.js
 ├── imports (fs, path, url)
 ├── Rule 1 definition (const ruleName = { create(), meta: {} })
 ├── Rule 2 definition
-├── ... (56 rules total)
+├── ... (60 rules total)
 └── export default { meta: {}, rules: {} }
 ```
 
@@ -209,7 +209,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 - **Function Rules:** `function-call-spacing`, `function-naming-convention`, `function-object-destructure`, `function-params-per-line`, `no-empty-lines-in-function-params`
 - **Hook Rules:** `hook-callback-format`, `hook-deps-per-line`
 - **Import/Export Rules:** `absolute-imports-only`, `export-format`, `import-format`, `import-source-spacing`, `index-export-style`, `module-index-exports`
-- **JSX Rules:** `jsx-children-on-new-line`, `jsx-closing-bracket-spacing`, `jsx-element-child-new-line`, `jsx-logical-expression-simplify`, `jsx-parentheses-position`, `jsx-prop-naming-convention`, `jsx-simple-element-one-line`, `jsx-string-value-trim`, `jsx-ternary-format`, `no-empty-lines-in-jsx`
+- **JSX Rules:** `classname-dynamic-at-end`, `classname-multiline`, `classname-no-extra-spaces`, `classname-order`, `jsx-children-on-new-line`, `jsx-closing-bracket-spacing`, `jsx-element-child-new-line`, `jsx-logical-expression-simplify`, `jsx-parentheses-position`, `jsx-prop-naming-convention`, `jsx-simple-element-one-line`, `jsx-string-value-trim`, `jsx-ternary-format`, `no-empty-lines-in-jsx`
 - **Object Rules:** `no-empty-lines-in-objects`, `object-property-per-line`, `object-property-value-brace`, `object-property-value-format`, `string-property-spacing`
 - **React Rules:** `react-code-order`
 - **Spacing Rules:** `assignment-value-same-line`, `member-expression-bracket-spacing`
@@ -230,7 +230,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 ## Documentation Files
 
-- `README.md` - Main documentation with all 56 rules
+- `README.md` - Main documentation with all 60 rules
 - `recommended-configs/<config-name>/README.md` - Config-specific documentation (references main README for rule details)
 - `index.d.ts` - TypeScript types for IDE autocomplete
 

@@ -18,7 +18,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*56 auto-fixable rules to keep your codebase clean and consistent*
+*60 auto-fixable rules to keep your codebase clean and consistent*
 
 </div>
 
@@ -26,7 +26,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **56 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **60 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -35,7 +35,7 @@ This plugin provides **56 custom auto-fixable rules** for code formatting. Built
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Fully automated** — All 56 rules support auto-fix, eliminating manual style reviews
+- **Fully automated** — All 60 rules support auto-fix, eliminating manual style reviews
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -59,7 +59,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 
 ### 💡 Why Use These Configs?
 
-- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 56 code-style rules
+- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 60 code-style rules
 - **Ready-to-Use** — Copy the config file and start linting immediately
 - **Battle-Tested** — These configurations have been refined through real-world usage
 - **Fully Documented** — Each config includes detailed instructions and explanations
@@ -96,7 +96,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-All **56 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
+All **60 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
 
 </td>
 <td width="50%">
@@ -180,18 +180,24 @@ eslint src/ --fix
 
 ```javascript
 rules: {
+    "code-style/absolute-imports-only": "error",
     "code-style/array-items-per-line": "error",
     "code-style/array-objects-on-new-lines": "error",
     "code-style/arrow-function-block-body": "error",
     "code-style/arrow-function-simple-jsx": "error",
     "code-style/arrow-function-simplify": "error",
-    "code-style/curried-arrow-same-line": "error",
     "code-style/assignment-value-same-line": "error",
     "code-style/block-statement-newlines": "error",
+    "code-style/classname-dynamic-at-end": "error",
+    "code-style/classname-multiline": "error",
+    "code-style/classname-no-extra-spaces": "error",
     "code-style/comment-format": "error",
     "code-style/component-props-destructure": "error",
-    "code-style/react-code-order": "error",
     "code-style/component-props-inline-type": "error",
+    "code-style/curried-arrow-same-line": "error",
+    "code-style/enum-format": "error",
+    "code-style/export-format": "error",
+    "code-style/function-arguments-format": "error",
     "code-style/function-call-spacing": "error",
     "code-style/function-naming-convention": "error",
     "code-style/function-object-destructure": "error",
@@ -199,13 +205,10 @@ rules: {
     "code-style/hook-callback-format": "error",
     "code-style/hook-deps-per-line": "error",
     "code-style/if-statement-format": "error",
-    "code-style/multiline-if-conditions": "error",
-    "code-style/absolute-imports-only": "error",
-    "code-style/export-format": "error",
     "code-style/import-format": "error",
     "code-style/import-source-spacing": "error",
     "code-style/index-export-style": "error",
-    "code-style/module-index-exports": "error",
+    "code-style/interface-format": "error",
     "code-style/jsx-children-on-new-line": "error",
     "code-style/jsx-closing-bracket-spacing": "error",
     "code-style/jsx-element-child-new-line": "error",
@@ -216,7 +219,8 @@ rules: {
     "code-style/jsx-string-value-trim": "error",
     "code-style/jsx-ternary-format": "error",
     "code-style/member-expression-bracket-spacing": "error",
-    "code-style/function-arguments-format": "error",
+    "code-style/module-index-exports": "error",
+    "code-style/multiline-if-conditions": "error",
     "code-style/nested-call-closing-brackets": "error",
     "code-style/no-empty-lines-in-function-calls": "error",
     "code-style/no-empty-lines-in-function-params": "error",
@@ -227,15 +231,14 @@ rules: {
     "code-style/object-property-value-brace": "error",
     "code-style/object-property-value-format": "error",
     "code-style/opening-brackets-same-line": "error",
+    "code-style/react-code-order": "error",
     "code-style/simple-call-single-line": "error",
     "code-style/single-argument-on-one-line": "error",
     "code-style/string-property-spacing": "error",
-    "code-style/variable-naming-convention": "error",
-    "code-style/enum-format": "error",
-    "code-style/interface-format": "error",
     "code-style/type-annotation-spacing": "error",
     "code-style/type-format": "error",
     "code-style/typescript-definition-location": "error",
+    "code-style/variable-naming-convention": "error",
 }
 ```
 
@@ -245,7 +248,7 @@ rules: {
 
 ## 📖 Rules Summary
 
-> All **56 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
+> All **60 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
 >
 > Rules marked with ⚙️ support customization options (e.g., extending default folder lists).
 
@@ -293,6 +296,9 @@ rules: {
 | `index-export-style` | Index files: no blank lines, enforce shorthand or import-export style; Regular files: require blank lines between exports (default: shorthand) ⚙️ |
 | `module-index-exports` | Index files must export all folder contents (files and subfolders) ⚙️ |
 | **JSX Rules** | |
+| `classname-dynamic-at-end` | Dynamic expressions (`${className}`) must be at the end of class strings (JSX and variables) |
+| `classname-multiline` | Long className strings broken into multiple lines, one class per line; uses `"..."` in JSX (no expressions) or `` `...` `` (with expressions/variables) ⚙️ |
+| `classname-no-extra-spaces` | No extra/leading/trailing spaces in class strings (JSX, variables, and objects) |
 | `jsx-children-on-new-line` | Multiple JSX children: each on own line with proper indentation |
 | `jsx-closing-bracket-spacing` | No space before `>` or `/>` in JSX tags |
 | `jsx-element-child-new-line` | Nested JSX elements on new lines; text/expression children can stay inline |
@@ -1636,6 +1642,132 @@ import { Button } from "@/components/Button/Button"; // Avoid this!
 <br />
 
 ## ⚛️ JSX Rules
+
+### `classname-dynamic-at-end`
+
+**What it does:** Enforces that dynamic expressions in className template literals are placed at the end, after all static class names. Also applies to variables with names containing "class" or "Class".
+
+**Why use it:** When using Tailwind CSS with `tailwindcss/classnames-order`, static classes are automatically sorted. However, dynamic expressions like `${className}` or `${styles.button}` can break the visual order if placed in the middle. This rule ensures dynamic parts come last for consistent, readable class strings.
+
+```javascript
+// ✅ Good — dynamic expressions at the end (JSX)
+<div className={`flex items-center gap-4 ${className}`} />
+
+// ✅ Good — dynamic expressions at the end (variable)
+const buttonClasses = `flex items-center ${className} ${styles.button}`;
+
+// ❌ Bad — dynamic expression at the beginning
+<div className={`${className} flex items-center gap-4`} />
+
+// ❌ Bad — dynamic expression in the middle (variable)
+const buttonClasses = `flex ${className} items-center gap-4`;
+```
+
+---
+
+### `classname-multiline`
+
+**What it does:** Enforces that long className strings are broken into multiple lines, with each class on its own line. Triggers when either the class count exceeds `maxClassCount` (default: 3) or the string length exceeds `maxLength` (default: 80). Also enforces:
+- JSX `className` with no dynamic expressions uses `"..."` string literal format
+- JSX `className` with dynamic expressions uses `` {`...`} `` template literal format
+- Variables/object properties use `` `...` `` template literal for multiline (JS requires it)
+- No empty lines between classes or before/after the quotes
+- Under-threshold multiline classes are collapsed back to a single line
+
+Applies to JSX `className` attributes, variables with class-related names, and object properties within class-related objects.
+
+**Why use it:** Long single-line class strings are hard to read and review. Breaking them into one class per line makes diffs cleaner and classes easier to scan. Using string literals when no expressions are needed keeps the code simpler.
+
+```javascript
+// ✅ Good — JSX with no expressions uses "..." format
+<div
+    className="
+        flex
+        items-center
+        justify-center
+        rounded-lg
+        p-4
+    "
+/>
+
+// ✅ Good — JSX with expressions uses {`...`} format
+<div
+    className={`
+        flex
+        items-center
+        justify-center
+        ${className}
+    `}
+/>
+
+// ✅ Good — variable multiline uses template literal
+const buttonClasses = `
+    flex
+    items-center
+    justify-center
+    ${className}
+`;
+
+// ✅ Good — object property multiline uses template literal
+const variantClasses = {
+    danger: `
+        flex
+        items-center
+        justify-center
+        bg-red-500
+    `,
+};
+
+// ✅ Good — short class strings stay on one line
+<div className="flex items-center" />
+
+// ❌ Bad — too many classes on one line
+<div className="flex items-center justify-center rounded-lg p-4 font-bold" />
+
+// ❌ Bad — using template literal in JSX when no expressions
+<div className={`
+    flex
+    items-center
+    justify-center
+    rounded-lg
+`} />
+
+// ❌ Bad — empty lines between classes
+<div className="
+    flex
+
+    items-center
+    justify-center
+" />
+```
+
+---
+
+### `classname-no-extra-spaces`
+
+**What it does:** Removes multiple consecutive spaces and leading/trailing spaces inside className values. Applies to:
+- JSX `className` attributes (string literals and template literals)
+- Variables with names containing "class" (e.g., `buttonClasses`, `variantClasses`)
+- Object properties within class-related objects
+
+**Why use it:** Extra spaces between class names are usually unintentional and can cause issues. This rule normalizes spacing and removes unnecessary whitespace.
+
+```javascript
+// ✅ Good — single space between classes
+<div className="flex items-center gap-4 rounded-lg" />
+const buttonClasses = `flex items-center ${className}`;
+const variantClasses = { primary: "bg-blue-500 text-white" };
+
+// ❌ Bad — multiple consecutive spaces
+<div className="flex  items-center   gap-4" />
+const buttonClasses = `flex  items-center`;
+const variantClasses = { primary: "bg-blue-500  text-white" };
+
+// ❌ Bad — leading/trailing spaces in template literal
+const buttonClasses = ` flex items-center ${className} `;
+```
+
+---
 
 ### `jsx-children-on-new-line`
 

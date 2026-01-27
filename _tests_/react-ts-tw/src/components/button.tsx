@@ -1,5 +1,6 @@
 /*
 Test Rules:
+- code-style/classname-multiline (multiline classes: "..." in JSX, `...` in variables/objects)
 - code-style/component-props-destructure (props must be destructured)
 - code-style/component-props-inline-type (inline type annotation)
 - code-style/jsx-prop-naming-convention (camelCase for event handlers, data-* lowercase)
@@ -27,7 +28,17 @@ export const Button = ({
     };
 
     // Test: tailwindcss/classnames-order - classes should be in recommended order
-    const buttonClasses = `flex items-center justify-center rounded-lg p-4 text-white font-bold ${variantClasses[variant]} ${className}`;
+    const buttonClasses = `
+        flex
+        items-center
+        justify-center
+        p-4
+        font-bold
+        text-white
+        rounded-lg
+        ${variantClasses[variant]}
+        ${className}
+    `;
 
     return (
         <button
