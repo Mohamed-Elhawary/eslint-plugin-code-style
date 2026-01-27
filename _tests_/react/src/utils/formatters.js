@@ -18,13 +18,13 @@ Test Rules:
 
 import { isNumber } from "@/utils";
 
-// Test: variable-naming-convention (SCREAMING_SNAKE_CASE for constants)
-const DEFAULT_LOCALE = "en-US";
+// Test: variable-naming-convention (camelCase for constants)
+const defaultLocale = "en-US";
 
-const DEFAULT_CURRENCY = "USD";
+const defaultCurrency = "USD";
 
 // Test: array-objects-on-new-lines
-const CURRENCY_FORMATS = [
+const currencyFormats = [
     {
         code: "EUR",
         symbol: "€",
@@ -41,23 +41,21 @@ const CURRENCY_FORMATS = [
 
 // Test: object-property-value-format, string-property-spacing
 const formatOptions = {
-    currency: DEFAULT_CURRENCY,
-    locale: DEFAULT_LOCALE,
+    currency: defaultCurrency,
+    locale: defaultLocale,
 };
 
 // Test: arrow-function-simplify
 const formatCurrencyHandler = (amount) => {
     // Test: member-expression-bracket-spacing
-    const symbol = CURRENCY_FORMATS.find(
-        (f) => f.code === formatOptions.currency,
-    )?.symbol;
+    const symbol = currencyFormats.find(({ code }) => code === formatOptions.currency)?.symbol;
 
     return `${symbol}${amount.toFixed(2)}`;
 };
 
 // Test: assignment-value-same-line
 const formatDateHandler = (date) => {
-    const formatted = new Date(date).toLocaleDateString(DEFAULT_LOCALE);
+    const formatted = new Date(date).toLocaleDateString(defaultLocale);
 
     return formatted;
 };
@@ -66,7 +64,7 @@ const formatDateHandler = (date) => {
 const formatNumberHandler = (value) => {
     if (!isNumber(value)) return "NaN";
 
-    return value.toLocaleString(DEFAULT_LOCALE);
+    return value.toLocaleString(defaultLocale);
 };
 
 export { formatCurrencyHandler as formatCurrency, formatDateHandler as formatDate, formatNumberHandler as formatNumber };

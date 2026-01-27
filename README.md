@@ -267,7 +267,7 @@ rules: {
 | `nested-call-closing-brackets` | Chain closing brackets on same line: `}));` not scattered across lines |
 | `no-empty-lines-in-function-calls` | No empty lines between arguments or after `(`/before `)` |
 | `opening-brackets-same-line` | Opening `{`, `[`, or `(` on same line as function call, not on new line |
-| `simple-call-single-line` | Collapse simple `fn(() => call())` patterns to single line |
+| `simple-call-single-line` | Collapse simple arrow function calls to single line (including callbacks with params and optional chaining) |
 | `single-argument-on-one-line` | Single simple argument stays on one line: `fn(x)` not expanded |
 | **Comment Rules** | |
 | `comment-format` | Space after `//`, space inside `/* */`, convert single-line blocks to `//`, no blank lines between file-top comments |
@@ -327,7 +327,7 @@ rules: {
 | **React Rules** | |
 | `react-code-order` | Enforce consistent ordering in components and hooks: props destructure → refs → state → redux → router → context → custom hooks → derived → memo → callback → handlers → effects → return |
 | **Variable Rules** | |
-| `variable-naming-convention` | camelCase for variables, UPPER_CASE for constants, PascalCase for components, `use` prefix for hooks |
+| `variable-naming-convention` | camelCase for all variables and constants, PascalCase for components, `use` prefix for hooks |
 
 <br />
 
@@ -727,17 +727,18 @@ items.map(
 
 ### `simple-call-single-line`
 
-**What it does:** Collapses simple function calls with an arrow function containing a single call expression onto one line.
+**What it does:** Collapses simple function calls with an arrow function onto one line when the result fits within 120 characters. Handles:
+- Zero-param callbacks: `lazy(() => import("./Page"))`
+- Callbacks with params and simple expression bodies: `.find((f) => f.code === x)`
+- Optional chaining: `.find(...)?.symbol`
 
-**Why use it:** Common patterns like `lazy(() => import(...))` don't need multiline formatting. Single line is cleaner.
+**Why use it:** Common patterns like `lazy(() => import(...))` and `.find((item) => item.id === id)` don't need multiline formatting. Single line is cleaner.
 
 ```javascript
 // ✅ Good — simple patterns on one line
 const Page = lazy(() => import("./Page"));
-const Modal = lazy(() => import("./Modal"));
 setTimeout(() => callback(), 100);
-requestAnimationFrame(() => render());
-items.filter(() => isValid(item));
+const symbol = items.find(({ code }) => code === currency)?.symbol;
 
 // ✅ Good — complex callbacks stay multiline
 const Page = lazy(() => {
@@ -750,10 +751,11 @@ const Page = lazy(
     () => import("./Page"),
 );
 
-setTimeout(
-    () => callback(),
-    100,
-);
+const symbol = items.find(({ code }) =>
+    code === currency)?.symbol;
+
+const symbol = items.find(({ code }) => code === currency)?.
+    symbol;
 ```
 
 ---
@@ -2914,8 +2916,7 @@ const YetAnotherBad = ({ title }) => {
 ### `variable-naming-convention`
 
 **What it does:** Enforces naming conventions for variables:
-- **camelCase** for regular variables and functions
-- **UPPER_CASE** for constants (primitive values)
+- **camelCase** for all variables and constants
 - **PascalCase** for React components and classes
 - **camelCase with `use` prefix** for hooks
 
@@ -2925,14 +2926,14 @@ const YetAnotherBad = ({ title }) => {
 // ✅ Good — correct conventions
 const userName = "John";           // camelCase for variables
 const itemCount = 42;              // camelCase for variables
-const MAX_RETRIES = 3;             // UPPER_CASE for constants
-const API_BASE_URL = "/api";       // UPPER_CASE for constants
+const maxRetries = 3;              // camelCase for constants
+const apiBaseUrl = "/api";         // camelCase for constants
 const UserProfile = () => <div />; // PascalCase for components
 const useAuth = () => {};          // camelCase with use prefix for hooks
 
 // ❌ Bad — wrong conventions
 const user_name = "John";          // snake_case
-const maxretries = 3;              // should be UPPER_CASE
+const MAX_RETRIES = 3;             // should be camelCase
 const userProfile = () => <div />; // should be PascalCase
 const UseAuth = () => {};          // hooks should be camelCase
 ```

@@ -143,6 +143,7 @@ export default [ // eslint-disable-line
             "code-style/function-arguments-format": "error",
             "code-style/function-call-spacing": "error",
             "code-style/function-naming-convention": "error",
+            "code-style/function-object-destructure": "error",
             "code-style/function-params-per-line": "error",
             "code-style/hook-callback-format": "error",
             "code-style/hook-deps-per-line": "error",

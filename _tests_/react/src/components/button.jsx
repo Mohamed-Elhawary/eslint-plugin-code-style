@@ -2,6 +2,7 @@
 Test Rules:
 - arrow-function-simplify
 - arrow-function-block-body
+- classname-no-extra-spaces
 - jsx-simple-element-one-line
 - jsx-closing-bracket-spacing
 - jsx-prop-naming-convention
@@ -38,17 +39,19 @@ const Button = ({
     // Test: arrow-function-simplify (implicit return for simple expressions)
     const getLabelHandler = () => label.toUpperCase();
 
-    // Test: jsx-simple-element-one-line, jsx-closing-bracket-spacing
+    // Test: jsx-simple-element-one-line, jsx-closing-bracket-spacing, classname-no-extra-spaces
     return (
-        <button
-            className={className}
-            disabled={disabled}
-            style={buttonStyle}
-            type="button"
-            onClick={onClick}
-        >
-            {getLabelHandler()}
-        </button>
+        <div className="flex items-center gap-4">
+            <button
+                className={className}
+                disabled={disabled}
+                style={buttonStyle}
+                type="button"
+                onClick={onClick}
+            >
+                {getLabelHandler()}
+            </button>
+        </div>
     );
 };
 

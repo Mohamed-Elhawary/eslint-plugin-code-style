@@ -10330,6 +10330,31 @@ const simpleCallSingleLine = {
             return false;
         };
 
+        // Check if an expression body is simple enough for single line
+        const isSimpleExpressionHandler = (bodyNode) => {
+            if (!bodyNode) return false;
+
+            // Simple literals, identifiers
+            if (bodyNode.type === "Literal" || bodyNode.type === "Identifier") return true;
+
+            // Template literals without expressions
+            if (bodyNode.type === "TemplateLiteral" && bodyNode.expressions.length === 0) return true;
+
+            // Simple call/import expressions
+            if (isSimpleBodyHandler(bodyNode)) return true;
+
+            // Binary/logical expressions (comparisons like code === x)
+            if (bodyNode.type === "BinaryExpression" || bodyNode.type === "LogicalExpression") return true;
+
+            // Member expressions (a.b, a?.b)
+            if (bodyNode.type === "MemberExpression") return true;
+
+            // Unary expressions (!x, -x)
+            if (bodyNode.type === "UnaryExpression") return true;
+
+            return false;
+        };
+
         return {
             CallExpression(node) {
                 const { callee, arguments: args } = node;
@@ -10345,27 +10370,68 @@ const simpleCallSingleLine = {
                 // Argument must be arrow function
                 if (arg.type !== "ArrowFunctionExpression") return;
 
-                // Arrow function must have no params
-                if (arg.params.length !== 0) return;
-
                 const { body } = arg;
 
-                // Body must be a simple call expression or import
-                if (!isSimpleBodyHandler(body)) return;
+                // Zero params: body must be a simple call/import
+                if (arg.params.length === 0 && !isSimpleBodyHandler(body)) return;
 
-                // Check if the call spans multiple lines
-                if (node.loc.start.line === node.loc.end.line) return;
+                // With params: body must be expression (not block) and simple
+                if (arg.params.length > 0) {
+                    if (body.type === "BlockStatement") return;
+                    if (!isSimpleExpressionHandler(body)) return;
+                }
 
-                // Get the text and check if it would be reasonably short on one line
-                const calleeText = sourceCode.getText(callee);
-                const bodyText = sourceCode.getText(body);
-                const simplified = `${calleeText}(() => ${bodyText})`;
+                // For optional chaining like .find(...)?.symbol, include the full chain
+                let replaceNode = node;
 
-                // Only simplify if the result is not too long (max ~120 chars)
-                if (simplified.length > 120) return;
+                // Walk up through chain/member expressions to get full chain text
+                let chainParent = node.parent;
+
+                while (chainParent && (chainParent.type === "MemberExpression" || chainParent.type === "ChainExpression")) {
+                    replaceNode = chainParent;
+                    chainParent = chainParent.parent;
+                }
+
+                // Check if the full chain spans multiple lines
+                if (replaceNode.loc.start.line === replaceNode.loc.end.line) return;
+
+                // Build the collapsed single-line version from source text, normalizing whitespace
+                const fullText = sourceCode.getText(replaceNode);
+                const fullCollapsed = fullText.replace(/\s*\n\s*/g, " ").replace(/\s+/g, " ").replace(/\( \)/, "()").replace(/,\s*\)/, ")").replace(/\?\.\s+/g, "?.");
+
+                // Account for surrounding context (indentation + variable declaration)
+                const line = sourceCode.lines[replaceNode.loc.start.line - 1];
+                const indent = line.match(/^(\s*)/)[1].length;
+
+                // Check parent chain for variable declarator to account for "const x = " prefix
+                let prefixLength = 0;
+                let current = replaceNode.parent;
+
+                while (current) {
+                    if (current.type === "VariableDeclarator") {
+                        const declText = sourceCode.getText(current.id);
+
+                        prefixLength = `const ${declText} = `.length;
+
+                        break;
+                    }
+
+                    if (current.type === "MemberExpression" || current.type === "ChainExpression") {
+                        current = current.parent;
+
+                        continue;
+                    }
+
+                    break;
+                }
+
+                const totalLength = indent + prefixLength + fullCollapsed.length;
+
+                // Only simplify if the result fits on one line (max ~120 chars)
+                if (totalLength > 120) return;
 
                 context.report({
-                    fix: (fixer) => fixer.replaceText(node, simplified),
+                    fix: (fixer) => fixer.replaceText(replaceNode, fullCollapsed),
                     message: "Simple function call with arrow function should be on a single line",
                     node,
                 });
@@ -10745,7 +10811,7 @@ const variableNamingConvention = {
                 return;
             }
 
-            if (name.startsWith("_") || constantRegex.test(name) || isComponentByNamingHandler(node)) return;
+            if (name.startsWith("_") || isComponentByNamingHandler(node)) return;
 
             // Allow PascalCase for variables that reference components by naming convention
             // e.g., const IconComponent = icons[variant], const ActiveIcon = getIcon()
@@ -11431,7 +11497,39 @@ const functionObjectDestructure = {
                     if (accesses.length > 0) {
                         const accessedProps = [...new Set(accesses.map((a) => a.property))];
 
+                        // Count all references to paramName in the body to check if it's used beyond dot notation
+                        const allRefs = [];
+                        const countRefs = (n) => {
+                            if (!n || typeof n !== "object") return;
+                            if (n.type === "Identifier" && n.name === paramName) allRefs.push(n);
+                            for (const key of Object.keys(n)) {
+                                if (key === "parent") continue;
+                                const child = n[key];
+                                if (Array.isArray(child)) child.forEach(countRefs);
+                                else if (child && typeof child === "object" && child.type) countRefs(child);
+                            }
+                        };
+                        countRefs(body);
+
+                        // Only auto-fix if all references are covered by the detected dot notation accesses
+                        const canAutoFix = allRefs.length === accesses.length;
+
                         context.report({
+                            fix: canAutoFix
+                                ? (fixer) => {
+                                    const fixes = [];
+
+                                    // Replace param with destructured pattern
+                                    fixes.push(fixer.replaceText(param, `{ ${accessedProps.join(", ")} }`));
+
+                                    // Replace all param.prop with just prop
+                                    accesses.forEach((access) => {
+                                        fixes.push(fixer.replaceText(access.node, access.property));
+                                    });
+
+                                    return fixes;
+                                }
+                                : undefined,
                             message: `Parameter "${paramName}" is accessed via dot notation. For arrow functions with direct returns, destructure in the parameter: "({ ${accessedProps.join(", ")} })"`,
                             node: accesses[0].node,
                         });
@@ -11555,6 +11653,7 @@ const functionObjectDestructure = {
     },
     meta: {
         docs: { description: "Enforce object parameters to be destructured in function body, not accessed via dot notation. Also prevent destructuring of data imports." },
+        fixable: "code",
         schema: [],
         type: "suggestion",
     },

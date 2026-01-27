@@ -38,7 +38,17 @@ export const App = () => {
 
     // Test: Tailwind classes in main container
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-8">
+        <div
+            className="
+                flex
+                min-h-screen
+                flex-col
+                items-center
+                justify-center
+                bg-gray-100
+                p-8
+            "
+        >
             <Card
                 className="w-full max-w-md"
                 description={`Welcome, ${user.name}`}
@@ -73,7 +83,15 @@ export const App = () => {
                 onClick={toggle}
             />
             {isModalOpen && (
-                <div className="mt-4 rounded-lg bg-white p-4 shadow-lg">
+                <div
+                    className="
+                        mt-4
+                        rounded-lg
+                        bg-white
+                        p-4
+                        shadow-lg
+                    "
+                >
                     <p>Modal Content</p>
                 </div>
             )}

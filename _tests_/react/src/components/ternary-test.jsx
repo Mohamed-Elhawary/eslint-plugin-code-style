@@ -11,14 +11,17 @@ const TernaryTest = ({
     moduleName,
 }) => {
     // Test: complex consequent, simple alternate - correct format
-    const renderCellHandler = (row) => moduleName === eventsModule && field === "title" ? (
+    const renderCellHandler = ({
+        id,
+        title,
+    }) => moduleName === eventsModule && field === "title" ? (
         <a
             className="link"
-            href={`/events/${row.id}`}
+            href={`/events/${id}`}
         >
-            {row[field]}
+            {title}
         </a>
-    ) : <span>{row[field]}</span>;
+    ) : <span>{title}</span>;
 
     // Test: ternary with JSX in return - correct format
     return isComplex ? (

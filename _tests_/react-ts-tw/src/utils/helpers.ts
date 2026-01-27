@@ -15,10 +15,10 @@ export const formatValueHandler = (value: string): string => value.trim();
 // Test: variable-naming-convention - camelCase for variables
 const defaultTimeout = 5000;
 
-// Test: variable-naming-convention - UPPER_CASE for constants
-const MAX_RETRIES = 3;
+// Test: variable-naming-convention - camelCase for constants
+const maxRetries = 3;
 
-const API_BASE_URL = "https://api.example.com";
+const apiBaseUrl = "https://api.example.com";
 
 // Test: type-annotation-spacing with generics - no space before <
 export const createArrayHandler = <T>(item: T, count: number): T[] => Array.from(
@@ -76,4 +76,4 @@ export const getItemHandler = (arr: string[], index: number): string | undefined
 export const filterNumbersHandler = (values: Array<string | number>): number[] => values.filter((v): v is number => typeof v === "number");
 
 // Export constants for use in tests
-export { API_BASE_URL, defaultTimeout, MAX_RETRIES };
+export { apiBaseUrl, defaultTimeout, maxRetries };

@@ -18,14 +18,20 @@ const Modal = ({
 }) => {
     // Test: function-arguments-format (2+ args on separate lines)
     const handleKeyDownHandler = (event) => {
-        // Test: if-statement-format
+        const { key } = event;
 
-        if (event.key === "Escape") onClose();
+        // Test: if-statement-format
+        if (key === "Escape") onClose();
     };
 
     // Test: block-statement-newlines
     const handleBackdropClickHandler = (event) => {
-        if (event.target === event.currentTarget) onClose();
+        const {
+            currentTarget,
+            target,
+        } = event;
+
+        if (target === currentTarget) onClose();
     };
 
     if (!isOpen) return null;

@@ -20,8 +20,27 @@ export const Card = ({
     description?: string,
     title: string,
 }) => (
-    <div className={`rounded-lg border border-gray-200 bg-white p-6 shadow-md ${className}`}>
-        <h2 className="mb-2 text-xl font-bold text-gray-800">{title}</h2>
+    <div
+        className={`
+            rounded-lg
+            border
+            border-gray-200
+            bg-white
+            p-6
+            shadow-md
+            ${className}
+        `}
+    >
+        <h2
+            className="
+                mb-2
+                text-xl
+                font-bold
+                text-gray-800
+            "
+        >
+            {title}
+        </h2>
         {description && <p className="mb-4 text-gray-600">{description}</p>}
         <div className="mt-4">{children}</div>
     </div>

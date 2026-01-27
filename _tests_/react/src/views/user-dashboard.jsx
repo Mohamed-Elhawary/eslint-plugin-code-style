@@ -128,7 +128,7 @@ export const UserDashboard = ({
                     placeholder="Search..."
                     ref={inputRef}
                     type="text"
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={({ target }) => setSearchTerm(target.value)}
                 />
             </div>
             <div>

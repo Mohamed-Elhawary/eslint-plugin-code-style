@@ -50,8 +50,8 @@ const htmlTemplate = {
 };
 
 // Test: helper function for spread test
-const getLinkColorSxHandler = (color, themeParam) => ({
-    color: themeParam.palette[color],
+const getLinkColorSxHandler = (color, { palette }) => ({
+    color: palette[color],
     textDecoration: "none",
 });
 

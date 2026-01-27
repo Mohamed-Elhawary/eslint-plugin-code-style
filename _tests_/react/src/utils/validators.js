@@ -10,10 +10,10 @@ Test Rules:
 */
 // Test: variable-naming-convention
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Test: arrow-function-simplify
-const isEmailHandler = (value) => EMAIL_REGEX.test(value);
+const isEmailHandler = (value) => emailRegex.test(value);
 
 // Test: arrow-function-block-body
 const isEmptyHandler = (value) => {
