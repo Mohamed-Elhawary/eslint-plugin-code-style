@@ -10397,7 +10397,7 @@ const simpleCallSingleLine = {
 
                 // Build the collapsed single-line version from source text, normalizing whitespace
                 const fullText = sourceCode.getText(replaceNode);
-                const fullCollapsed = fullText.replace(/\s*\n\s*/g, " ").replace(/\s+/g, " ").replace(/\( \)/, "()").replace(/,\s*\)/, ")").replace(/\?\.\s+/g, "?.");
+                const fullCollapsed = fullText.replace(/\s*\n\s*/g, " ").replace(/\s+/g, " ").replace(/\( \)/, "()").replace(/,\s*\)/, ")").replace(/\s+\?\./g, "?.").replace(/\?\.\s+/g, "?.");
 
                 // Account for surrounding context (indentation + variable declaration)
                 const line = sourceCode.lines[replaceNode.loc.start.line - 1];
