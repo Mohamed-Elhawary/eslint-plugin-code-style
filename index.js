@@ -410,7 +410,7 @@ const arrayItemsPerLine = {
                                 node,
                                 singleLine,
                             ),
-                            message: `Array with ${maxItems} or fewer items should be on one line`,
+                            message: `Array with ≤${maxItems} simple items should be single line: [a, b, c]. Multi-line only for >${maxItems} items or complex values`,
                             node,
                         });
                     }
@@ -1114,7 +1114,7 @@ const arrowFunctionSimplify = {
                         node.body,
                         expressionText,
                     ),
-                    message: "Arrow function with single simple statement should use expression body",
+                    message: "Arrow function with single return should use expression body: () => value instead of () => { return value }",
                     node: node.body,
                 });
 
@@ -1148,7 +1148,7 @@ const arrowFunctionSimplify = {
                         node.body,
                         expressionText,
                     ),
-                    message: "Arrow function with single statement should use expression body",
+                    message: "Arrow function with single statement should use expression body: () => expression instead of () => { return expression }",
                     node: node.body,
                 });
             }
@@ -2604,7 +2604,7 @@ const hookDepsPerLine = {
                             [openBracket.range[1], closeBracket.range[0]],
                             elementsText,
                         ),
-                        message: `Dependencies should be on same line when ${maxDeps} or fewer`,
+                        message: `Hook dependencies with ≤${maxDeps} items should be single line: [dep1, dep2]. Multi-line only for >${maxDeps} dependencies`,
                         node: depsArg,
                     });
                 }
@@ -2995,7 +2995,7 @@ const multilineIfConditions = {
                                 `(${buildSameLineHandler(test)})`,
                             );
                         },
-                        message: `If conditions with ${maxOperands} or fewer operands should have all operands start on the same line`,
+                        message: `If conditions with ≤${maxOperands} operands should be single line: if (a && b && c). Multi-line only for >${maxOperands} operands`,
                         node: test,
                     });
                 }
@@ -3155,7 +3155,7 @@ const multilineIfConditions = {
 
                             return fixer.replaceText(value, buildSameLineHandler(value));
                         },
-                        message: `Property conditions with ${maxOperands} or fewer operands should have all operands start on the same line`,
+                        message: `Property conditions with ≤${maxOperands} operands should be single line: condition: a && b && c. Multi-line only for >${maxOperands} operands`,
                         node: value,
                     });
                 }
@@ -3585,7 +3585,7 @@ const exportFormat = {
                             [openBrace.range[0], closeBrace.range[1]],
                             `{ ${specifiersText} }`,
                         ),
-                        message: `Exports with ${maxSpecifiers} or fewer specifiers should be on a single line`,
+                        message: `Exports with ≤${maxSpecifiers} specifiers should be single line: export { a, b, c }`,
                         node,
                     });
                 }
@@ -3779,7 +3779,7 @@ const importFormat = {
                             [openBrace.range[0], closeBrace.range[1]],
                             `{ ${specifiersText} }`,
                         ),
-                        message: `Imports with ${maxSpecifiers} or fewer specifiers should be on a single line`,
+                        message: `Imports with ≤${maxSpecifiers} specifiers should be single line: import { a, b, c } from "module"`,
                         node,
                     });
                 }
@@ -5629,7 +5629,7 @@ const classNameDynamicAtEnd = {
 
                                 return fixer.replaceText(templateLiteral, newValue);
                             },
-                            message: "Dynamic expressions in class string should be at the end, after static classes",
+                            message: "Dynamic expressions (${...}) must be at the end of class strings. Use: `static-class ${dynamic}` not `${dynamic} static-class`",
                             node: reportNode || expressions[i],
                         });
 
@@ -5940,7 +5940,7 @@ const classNameOrder = {
 
             context.report({
                 fix: (fixer) => fixer.replaceText(node, `${quote}${sorted}${quote}`),
-                message: "Tailwind classes should be ordered according to recommended order",
+                message: "Tailwind classes should follow recommended order: layout (flex, grid) → sizing (w, h) → spacing (p, m) → typography (text, font) → colors (bg, text) → effects (shadow, opacity) → states (hover, focus)",
                 node,
             });
         };
@@ -6022,7 +6022,7 @@ const classNameOrder = {
 
                     return fixer.replaceText(templateLiteral, result);
                 },
-                message: "Tailwind classes should be ordered according to recommended order",
+                message: "Tailwind classes should follow recommended order: layout (flex, grid) → sizing (w, h) → spacing (p, m) → typography (text, font) → colors (bg, text) → effects (shadow, opacity) → states (hover, focus)",
                 node: templateLiteral,
             });
         };
@@ -6065,7 +6065,7 @@ const classNameOrder = {
 
                                 context.report({
                                     fix: (fixer) => fixer.replaceText(prop.value, `${quote}${sorted}${quote}`),
-                                    message: "Tailwind classes should be ordered according to recommended order",
+                                    message: "Tailwind classes should follow recommended order: layout (flex, grid) → sizing (w, h) → spacing (p, m) → typography (text, font) → colors (bg, text) → effects (shadow, opacity) → states (hover, focus)",
                                     node: prop.value,
                                 });
                             }
@@ -6097,7 +6097,7 @@ const classNameOrder = {
 
                         context.report({
                             fix: (fixer) => fixer.replaceText(node.argument, `${quote}${sorted}${quote}`),
-                            message: "Tailwind classes should be ordered according to recommended order",
+                            message: "Tailwind classes should follow recommended order: layout (flex, grid) → sizing (w, h) → spacing (p, m) → typography (text, font) → colors (bg, text) → effects (shadow, opacity) → states (hover, focus)",
                             node: node.argument,
                         });
                     }
@@ -6275,7 +6275,7 @@ const classNameMultiline = {
                     // Variables/objects: multiline "..." is invalid JS, use template literal
                     return fixer.replaceText(node, buildMultilineTemplate(classes, [], baseIndent));
                 },
-                message: "Class string with many classes should be broken into multiple lines",
+                message: `Class strings with >${maxClassCount} classes or >${maxLength} chars should be multiline with one class per line. Example: className="\\n    flex\\n    items-center\\n"`,
                 node,
             });
         };
@@ -6361,7 +6361,7 @@ const classNameMultiline = {
 
             context.report({
                 fix: (fixer) => fixer.replaceText(templateLiteral, multiline),
-                message: "Class string with many classes should be broken into multiple lines",
+                message: `Class strings with >${maxClassCount} classes or >${maxLength} chars should be multiline with one class per line. Example: className="\\n    flex\\n    items-center\\n"`,
                 node: templateLiteral,
             });
         };
@@ -7503,7 +7503,7 @@ const functionArgumentsFormat = {
                         [openParen.range[1], firstArg.range[0]],
                         "\n" + argIndent,
                     ),
-                    message: "First argument should be on its own line",
+                    message: "With multiple arguments, first argument should be on its own line: fn(\\n    arg1,\\n    arg2,\\n)",
                     node: firstArg,
                 });
             }
@@ -8803,7 +8803,7 @@ const objectPropertyPerLine = {
                             [openBrace.range[0], closeBrace.range[1]],
                             `{ ${propertiesText} }`,
                         ),
-                        message: `Objects with fewer than ${minProperties} properties should be on a single line`,
+                        message: `Objects with <${minProperties} properties should be single line: { key: value }. Multi-line only for ${minProperties}+ properties`,
                         node,
                     });
 
@@ -12896,7 +12896,7 @@ const typeFormat = {
                         fix(fixer) {
                             return fixer.replaceText(node.id, `${typeName}Type`);
                         },
-                        message: `Type name "${typeName}" must end with "Type" suffix`,
+                        message: `Type name "${typeName}" must end with "Type" suffix. Use "${typeName}Type" instead of "${typeName}"`,
                         node: node.id,
                     });
                 }
@@ -13845,7 +13845,7 @@ const reactCodeOrder = {
                             previous: ORDER_NAMES[lastCategory],
                             type: isHook ? "hook" : "component",
                         },
-                        message: "\"{{current}}\" should come before \"{{previous}}\" in {{type}} code order",
+                        message: "\"{{current}}\" should come before \"{{previous}}\" in {{type}}. Order: refs → state → redux → router → context → custom hooks → derived → useMemo → useCallback → handlers → useEffect → return",
                         node: statement,
                     });
 
@@ -13907,7 +13907,7 @@ const enumFormat = {
                         fix(fixer) {
                             return fixer.replaceText(node.id, `${enumName}Enum`);
                         },
-                        message: `Enum name "${enumName}" must end with "Enum" suffix`,
+                        message: `Enum name "${enumName}" must end with "Enum" suffix. Use "${enumName}Enum" instead of "${enumName}"`,
                         node: node.id,
                     });
                 }
@@ -14129,7 +14129,7 @@ const interfaceFormat = {
                         fix(fixer) {
                             return fixer.replaceText(node.id, `${interfaceName}Interface`);
                         },
-                        message: `Interface name "${interfaceName}" must end with "Interface" suffix`,
+                        message: `Interface name "${interfaceName}" must end with "Interface" suffix. Use "${interfaceName}Interface" instead of "${interfaceName}"`,
                         node: node.id,
                     });
                 }
