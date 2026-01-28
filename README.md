@@ -248,7 +248,7 @@ rules: {
 
 ---
 
-## 📖 Rules Summary
+## 📖 Rules Categories
 
 > All **61 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
 >
