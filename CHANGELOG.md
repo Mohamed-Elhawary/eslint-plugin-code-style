@@ -53,6 +53,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) principles.
 - Total Rules: 61 (was 56)
 - All rules are auto-fixable with `eslint --fix`
 
+**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.2.1...v1.3.0
+
 ---
 
 ## [1.2.0] - 2025-01-25
@@ -100,34 +102,62 @@ The `react-code-order` rule enforces a logical dependency chain:
 - Total Rules: 56 (was 51)
 - All rules are auto-fixable with `eslint --fix`
 
+**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.1.10...v1.2.0
+
 ---
 
 ## [1.1.0] - 2025-01-19
 
 **Release Title:** TypeScript + Tailwind Support & Configurable Rules
 
-**Version Range:** v1.0.16 → v1.1.0
+**Version Range:** v1.0.17 → v1.1.0
 
 ### Added
 
-- **New Configuration**
-  - `react-ts-tw` - Recommended ESLint configuration for React + TypeScript + Tailwind projects
+- **New Configuration: React + TypeScript + Tailwind**
+  - `react-ts-tw` - Recommended ESLint config for TS + Tailwind projects (`recommended-configs/react-ts-tw/`)
+  - Includes TypeScript parser, TypeScript ESLint plugin, and Tailwind CSS plugin
+  - Perfectionist rules for sorting interfaces, enums, and object types
+  - Full documentation with installation instructions
 
 - **New Rule**
-  - `index-export-style` - Enforce consistent export patterns in index files
+  - `index-export-style` - Enforce consistent export formatting in index files (shorthand vs import-export style)
 
-### Enhanced
+- **Configurable Rules**
+  - `array-items-per-line` - Added `maxItems` option (default: 3)
+  - `hook-deps-per-line` - Added `maxDeps` option (default: 2)
+  - `multiline-if-conditions` - Added `maxOperands` option (default: 3)
+  - `function-arguments-format` - New rule merging `multiline-argument-newline` and `multiple-arguments-per-line`
 
-- `array-items-per-line` - Added configurable `maxItems` threshold
-- `hook-deps-per-line` - Added configurable options
-- `multiline-if-conditions` - Added configurable options
-- Enhanced TypeScript support across all rules
+- **Documentation**
+  - Added `AGENTS.md` for AI coding agents (Claude Code, Cursor, etc.)
+  - Added React test application for validating plugin rules
+  - Migration guide to `@stylistic/eslint-plugin` for deprecated formatting rules
+
+### Changed
+
+- **Self-Sufficient Rules**
+  - `export-format` and `import-format` now handle all formatting independently
+  - `object-property-per-line` now handles all object formatting independently
+
+- **TypeScript Support**
+  - `module-index-exports` rule now recognizes `index.ts` and `index.tsx` files
+  - Added TypeScript test file patterns (`*.test.ts`, `*.spec.ts`, etc.) to ignore list
+
+### Fixed
+
+- `object-property-per-line` - Fixed handling of multi-line template literals and spread elements
+- `jsx-ternary-format` - Fixed handling of return statements and broken conditions
+- `comment-spacing` - Renamed to `comment-format` to better reflect functionality
+- Fixed rule count sync between README and index.d.ts
 
 ### Stats
 
 - Total Rules: 51 (was 48)
 - All changes are backward compatible
 - All rules are auto-fixable with `eslint --fix`
+
+**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.0.17...v1.1.0
 
 ---
 
@@ -151,6 +181,8 @@ The `react-code-order` rule enforces a logical dependency chain:
 - Total Rules: 48 (was 47)
 - All rules are auto-fixable with `eslint --fix`
 
+**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.0.15...v1.0.16
+
 ---
 
 ## [1.0.14] - 2025-01-06
@@ -161,25 +193,40 @@ The `react-code-order` rule enforces a logical dependency chain:
 
 ### Added
 
-- **Recommended Configurations**
-  - `react` - Ready-to-use ESLint configuration for React projects
-  - Includes nine third-party plugins pre-configured
+- **Customizable Folder Options**
+  - `absolute-imports-only` - Added `extraAllowedFolders` and `extraDeepImportFolders` options
+  - `module-index-exports` - Added `extraModuleFolders`, `extraLazyLoadFolders`, and `extraIgnorePatterns` options
 
-### Enhanced
+- **Recommended ESLint Configurations**
+  - Added `recommended-configs/react/` folder with battle-tested ESLint flat config
+  - Includes comprehensive setup with 9 third-party plugins + all 47 code-style rules
+  - Complete documentation with installation commands and plugin explanations
 
-- `absolute-imports-only` - Added customizable folder options
-- `module-index-exports` - Added customizable folder options
+- **Documentation**
+  - Comprehensive README rewrite with examples for all 47 rules
+  - Rules Summary table with descriptions for quick reference
+  - "Why This Plugin?" section explaining the unique value proposition
+  - Block comments added to all rules in source code with Good/Bad examples
+  - Emojis added to all major section titles for better visual hierarchy
 
-### Documentation
+### Changed
 
-- Comprehensive documentation rewrite
-- Added examples for all 47 rules
-- Visual improvements and better organization
+- **Internal Refactoring**
+  - Standardized all internal helper function names with `Handler` suffix
+  - Ensures codebase follows the same conventions enforced by the plugin
+  - Made plugin version and name dynamic (reads from package.json)
+
+### Fixed
+
+- Fixed rule naming: `singleArgumentOneLine` → `singleArgumentOnOneLine`
+- Removed orphaned/duplicate block comments
 
 ### Stats
 
 - Total Rules: 47
 - All rules are auto-fixable with `eslint --fix`
+
+**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.0.8...v1.0.14
 
 ---
 
@@ -200,6 +247,8 @@ The `react-code-order` rule enforces a logical dependency chain:
 
 - Total Rules: 47
 - All rules are auto-fixable with `eslint --fix`
+
+**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.0.6...v1.0.7
 
 ---
 

@@ -515,6 +515,21 @@ npm install eslint-plugin-code-style@Y.Y.Y
 
 All releases are documented in `CHANGELOG.md` at the project root. Update this file whenever creating a GitHub Release.
 
+Each release entry in CHANGELOG.md must include a **Full Changelog** link at the end:
+
+```markdown
+**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/vFIRST...vLAST
+```
+
+Where:
+- `vFIRST` = First version tag in the release range (the tag after the last tag of the previous release)
+- `vLAST` = Last version tag in the release range (current release)
+
+Example: For release 1.2.0 with version range v1.1.10 → v1.2.0:
+```markdown
+**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.1.10...v1.2.0
+```
+
 ## Skills
 
 This project includes reusable skills in the `.skills/` directory following the [Agent Skills](https://agentskills.io) open standard. These work with Claude Code, Cursor, VS Code, GitHub Copilot, Gemini CLI, and other compatible agents.
