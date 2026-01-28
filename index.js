@@ -1803,7 +1803,7 @@ const functionNamingConvention = {
             "render", "display", "show", "hide", "toggle", "enable", "disable",
             "open", "close", "start", "stop", "init", "setup", "reset", "clear",
             "connect", "disconnect", "subscribe", "unsubscribe", "listen", "emit",
-            "send", "receive", "request", "respond", "submit", "cancel", "abort",
+            "send", "receive", "request", "respond", "submit", "cancel", "abort", "poll",
             "read", "write", "copy", "move", "clone", "extract", "insert", "append", "prepend",
             "build", "make", "generate", "compute", "calculate", "process", "execute", "run",
             "apply", "call", "invoke", "trigger", "fire", "dispatch",
