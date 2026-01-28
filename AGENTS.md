@@ -435,6 +435,86 @@ Format: `MAJOR.MINOR.PATCH` (e.g., `1.2.8`)
 4. **Push (requires explicit approval):** `git push origin HEAD && git push origin v1.2.9`
 5. **Publish (requires explicit approval):** `npm publish`
 
+---
+
+### GitHub Releases (Grouped Tags)
+
+GitHub Releases group multiple version tags into a single release announcement. Create a release when a significant milestone is reached (new features, major enhancements).
+
+**When to create a GitHub Release:**
+- After multiple PATCH/MINOR versions accumulate significant changes
+- When a new major feature is complete
+- At logical milestones (e.g., v1.2.0 → v1.3.0)
+
+**Release format:**
+
+```markdown
+## Release Title
+<Short, descriptive title summarizing the main changes>
+
+## Version Range
+vX.X.X → vY.Y.Y
+
+---
+
+## What's New
+
+<Brief intro paragraph mentioning key highlights and rule count change>
+
+### New Rules
+
+| Rule | Description |
+|------|-------------|
+| `rule-name` | What it does |
+
+### Enhancements
+
+| Rule | Enhancement |
+|------|-------------|
+| `rule-name` | What was improved |
+
+### New Features
+
+- Feature 1 description
+- Feature 2 description
+
+### Bug Fixes
+
+- Fix 1 description
+- Fix 2 description
+
+### Documentation
+
+- Doc change 1
+- Doc change 2
+
+## Installation
+
+\`\`\`bash
+npm install eslint-plugin-code-style@Y.Y.Y
+\`\`\`
+
+## Stats
+
+- Total Rules: X (was Y)
+- All rules are auto-fixable with `eslint --fix`
+
+**Full Changelog**: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/vX.X.X...vY.Y.Y
+```
+
+**Steps to create a GitHub Release:**
+
+1. Go to repository → Releases → "Draft a new release"
+2. Choose the latest tag (e.g., `v1.3.0`)
+3. Set release title (short, descriptive)
+4. Paste the release description following the format above
+5. Update `CHANGELOG.md` with the same information
+6. Publish release
+
+**CHANGELOG.md:**
+
+All releases are documented in `CHANGELOG.md` at the project root. Update this file whenever creating a GitHub Release.
+
 ## Skills
 
 This project includes reusable skills in the `.skills/` directory following the [Agent Skills](https://agentskills.io) open standard. These work with Claude Code, Cursor, VS Code, GitHub Copilot, Gemini CLI, and other compatible agents.
