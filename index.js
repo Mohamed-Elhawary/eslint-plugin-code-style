@@ -1874,15 +1874,26 @@ const functionNamingConvention = {
                         if (!variable) return fixer.replaceText(identifierNode, newName);
 
                         const fixes = [];
+                        const fixedRanges = new Set();
+
+                        // Helper to add fix only if not already fixed (avoid overlapping fixes)
+                        const addFixHandler = (nodeToFix) => {
+                            const rangeKey = `${nodeToFix.range[0]}-${nodeToFix.range[1]}`;
+
+                            if (!fixedRanges.has(rangeKey)) {
+                                fixedRanges.add(rangeKey);
+                                fixes.push(fixer.replaceText(nodeToFix, newName));
+                            }
+                        };
 
                         // Fix the definition
                         variable.defs.forEach((def) => {
-                            fixes.push(fixer.replaceText(def.name, newName));
+                            addFixHandler(def.name);
                         });
 
                         // Fix all references
                         variable.references.forEach((ref) => {
-                            fixes.push(fixer.replaceText(ref.identifier, newName));
+                            addFixHandler(ref.identifier);
                         });
 
                         return fixes;
