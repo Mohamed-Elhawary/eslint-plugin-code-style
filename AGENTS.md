@@ -434,3 +434,149 @@ Format: `MAJOR.MINOR.PATCH` (e.g., `1.2.8`)
    ```
 4. **Push (requires explicit approval):** `git push origin HEAD && git push origin v1.2.9`
 5. **Publish (requires explicit approval):** `npm publish`
+
+## Skills
+
+This project includes reusable skills in the `.skills/` directory following the [Agent Skills](https://agentskills.io) open standard. These work with Claude Code, Cursor, VS Code, GitHub Copilot, Gemini CLI, and other compatible agents.
+
+| Skill | Description |
+|-------|-------------|
+| `test-rule` | Test an ESLint rule after creating or modifying it |
+| `validate-types` | Verify TypeScript definitions match rules in index.js |
+| `review-config` | Review a recommended ESLint configuration |
+| `audit-docs` | Verify documentation accuracy across all files |
+
+See `.skills/*/SKILL.md` for detailed instructions.
+
+---
+
+## Workflows
+
+Reusable workflows for common tasks. Any AI agent should follow these when performing the specified task.
+
+---
+
+### Workflow: Test Rule
+
+Test an ESLint rule to verify it works correctly.
+
+**When to use:** After creating or modifying a rule.
+
+**Steps:**
+
+1. **Find the rule** in `index.js` and understand what it checks
+2. **Identify test app** — Use `_tests_/react/` for JS rules or `_tests_/react-ts-tw/` for TS rules
+3. **Create test cases** in the test app:
+   - Add code that should PASS (no violations)
+   - Add code that should FAIL (triggers violations)
+4. **Run the linter:**
+   ```bash
+   cd _tests_/<config-name>
+   npm run lint        # Check for violations
+   npm run lint:fix    # Verify auto-fix works
+   ```
+5. **Verify results:**
+   - Valid code produces no errors
+   - Invalid code triggers the expected error message
+   - Auto-fix transforms code correctly
+
+---
+
+### Workflow: Validate Types
+
+Verify TypeScript definitions match the rules in `index.js`.
+
+**When to use:** After adding new rules or before releases.
+
+**Steps:**
+
+1. **Count rules in index.js:**
+   ```bash
+   grep -c "^const .* = {$" index.js
+   ```
+   Or count entries in the `rules` export object.
+
+2. **Check index.d.ts:**
+   - Verify `RuleNames` type includes all rule names (alphabetically sorted)
+   - Verify `PluginRules` interface includes all rules
+
+3. **Look for mismatches:**
+   - Rules in `index.js` missing from `index.d.ts`?
+   - Rules in `index.d.ts` that don't exist in `index.js`?
+
+4. **Report:**
+   - Total rules: X
+   - Types match: Yes/No
+   - Missing types: [list]
+   - Extra types: [list]
+
+---
+
+### Workflow: Review Config
+
+Review a recommended ESLint configuration for consistency.
+
+**When to use:** After adding rules or modifying configs.
+
+**Arguments:** `<config-name>` (e.g., `react`, `react-ts-tw`)
+
+**Steps:**
+
+1. **Check config file:** `recommended-configs/<config-name>/eslint.config.js`
+   - Does it import the plugin correctly?
+   - Are rules set to `"error"` (not `"off"`)?
+   - Are rule options valid per the rule's schema?
+
+2. **Compare with test config:** `_tests_/<config-name>/eslint.config.js`
+   - Should have the same rules enabled
+   - Test config may have additional test-specific settings
+
+3. **Test the config:**
+   ```bash
+   cd _tests_/<config-name>
+   npm run lint
+   ```
+
+4. **Check README:** `recommended-configs/<config-name>/README.md`
+   - Does it list all enabled rules?
+   - Are rule counts accurate?
+
+5. **Report:**
+   - Config valid: Yes/No
+   - Rules enabled: X
+   - Issues found: [list]
+
+---
+
+### Workflow: Audit Docs
+
+Verify documentation accuracy across all files.
+
+**When to use:** Before releases or after adding rules.
+
+**Steps:**
+
+1. **Count actual rules:**
+   ```bash
+   grep -c "^const .* = {$" index.js
+   ```
+
+2. **Check rule count references:**
+   - `AGENTS.md`: "61 custom auto-fixable formatting rules"
+   - `README.md`: Multiple mentions of rule count
+   - `recommended-configs/*/README.md`: Any rule count mentions
+
+3. **Verify version consistency:**
+   - `package.json` version matches latest tag
+   - No outdated version references in docs
+
+4. **Check links:**
+   - Config paths in README exist
+   - Test app paths exist
+   - Internal markdown links work
+
+5. **Report:**
+   - Actual rule count: X
+   - Documented counts match: Yes/No
+   - Outdated references: [list]
+   - Broken links: [list]
