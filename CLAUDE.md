@@ -1,9 +1,12 @@
 # Claude Code Configuration
 
-## Commit Guidelines
+> For general project instructions, see [AGENTS.md](./AGENTS.md).
 
-When creating git commits:
-- Do NOT include `Co-Authored-By` lines
-- Do NOT include the Claude Code signature/footer
-- Keep commit messages clean and standard
-- Do NOT commit or add a tag unless having approval for the changes made
+## Claude-Specific Behavior
+
+When working on this codebase, Claude Code should:
+
+- Do NOT include `Co-Authored-By` lines in commits
+- Do NOT include Claude Code signature/footer in commits
+- Do NOT commit or create tags without explicit user approval
+- Keep commit messages clean and standard (no AI attribution)
