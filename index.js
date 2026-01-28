@@ -1681,6 +1681,92 @@ const functionCallSpacing = {
 
 /**
  * ───────────────────────────────────────────────────────────────
+ * Rule: Function Declaration Style
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforce function expressions (arrow functions) instead of
+ *   function declarations. Auto-fixes by converting to const
+ *   arrow function expressions.
+ *
+ * ✓ Good:
+ *   const getToken = (): string | null => getCookie(tokenKey);
+ *   const clearAuth = (): void => {
+ *       removeToken();
+ *       clearStorage();
+ *   };
+ *
+ * ✗ Bad:
+ *   function getToken(): string | null { return getCookie(tokenKey); }
+ *   function clearAuth(): void {
+ *       removeToken();
+ *       clearStorage();
+ *   }
+ */
+const functionDeclarationStyle = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            FunctionDeclaration(node) {
+                if (!node.id) return;
+
+                const name = node.id.name;
+
+                // Build the params text
+                const paramsText = node.params.map((p) => sourceCode.getText(p)).join(", ");
+
+                // Build return type annotation if present
+                let returnType = "";
+
+                if (node.returnType) {
+                    returnType = sourceCode.getText(node.returnType);
+                }
+
+                // Build type parameters if present (generics)
+                let typeParams = "";
+
+                if (node.typeParameters) {
+                    typeParams = sourceCode.getText(node.typeParameters);
+                }
+
+                // Check if async
+                const isAsync = node.async;
+                const asyncPrefix = isAsync ? "async " : "";
+
+                // Get the body text
+                const bodyText = sourceCode.getText(node.body);
+
+                // Check for export keywords
+                const parentNode = node.parent;
+                const isExported = parentNode && parentNode.type === "ExportNamedDeclaration";
+
+                const exportPrefix = isExported ? "export " : "";
+
+                context.report({
+                    fix(fixer) {
+                        const fixTarget = isExported ? parentNode : node;
+
+                        const replacement = `${exportPrefix}const ${name} = ${asyncPrefix}(${paramsText})${returnType} => ${bodyText};`;
+
+                        return fixer.replaceText(fixTarget, replacement);
+                    },
+                    message: `Expected a function expression. Use \`const ${name} = ${asyncPrefix}(${paramsText})${returnType} => ...\` instead.`,
+                    node: node.id,
+                });
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce arrow function expressions instead of function declarations" },
+        fixable: "code",
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
  * Rule: Function Naming Convention
  * ───────────────────────────────────────────────────────────────
  *
@@ -1772,9 +1858,37 @@ const functionNamingConvention = {
                     node: node.id || node.parent.id,
                 });
             } else if (!hasHandlerSuffix) {
+                const identifierNode = node.id || node.parent.id;
+                const newName = `${name}Handler`;
+
                 context.report({
-                    message: `Function "${name}" should end with "Handler" suffix (e.g., ${name}Handler)`,
-                    node: node.id || node.parent.id,
+                    fix(fixer) {
+                        const scope = context.sourceCode
+                            ? context.sourceCode.getScope(node)
+                            : context.getScope();
+
+                        // Find all references to this variable in the scope
+                        const variable = scope.variables.find((v) => v.name === name)
+                            || (scope.upper && scope.upper.variables.find((v) => v.name === name));
+
+                        if (!variable) return fixer.replaceText(identifierNode, newName);
+
+                        const fixes = [];
+
+                        // Fix the definition
+                        variable.defs.forEach((def) => {
+                            fixes.push(fixer.replaceText(def.name, newName));
+                        });
+
+                        // Fix all references
+                        variable.references.forEach((ref) => {
+                            fixes.push(fixer.replaceText(ref.identifier, newName));
+                        });
+
+                        return fixes;
+                    },
+                    message: `Function "${name}" should end with "Handler" suffix (e.g., ${newName})`,
+                    node: identifierNode,
                 });
             }
         };
@@ -1787,6 +1901,7 @@ const functionNamingConvention = {
     },
     meta: {
         docs: { description: "Enforce function names to start with a verb AND end with Handler" },
+        fixable: "code",
         schema: [],
         type: "suggestion",
     },
@@ -3113,13 +3228,13 @@ const multilineIfConditions = {
  *   folder-level index files.
  *
  * Options:
- *   - aliasPrefix: string (default: "@/") - The import alias prefix
- *   - extraAllowedFolders: string[] - Additional folders to allow (extends defaults)
- *   - extraReduxSubfolders: string[] - Additional redux subfolders (extends defaults)
- *   - extraDeepImportFolders: string[] - Additional folders allowing deep imports (extends "assets")
- *   - allowedFolders: string[] - Replace default folders entirely (use extraAllowedFolders to extend)
- *   - reduxSubfolders: string[] - Replace default redux subfolders entirely
- *   - deepImportFolders: string[] - Replace default deep import folders entirely
+ *   - aliasPrefix: string (default: "@/") - Change path alias prefix if your project uses something other than @/ (e.g., ~/, src/)
+ *   - extraAllowedFolders: string[] - Add custom folders that can be imported with @/folder. Extends defaults without replacing them
+ *   - extraReduxSubfolders: string[] - Add Redux subfolders importable directly (@/selectors) or nested (@/redux/selectors). Default: actions, reducers, store, thunks, types
+ *   - extraDeepImportFolders: string[] - Add folders where direct file imports are allowed (@/assets/images/logo.svg). Use for folders without index files. Default: assets
+ *   - allowedFolders: string[] - Completely replace the default allowed folders list. Use only if you need full control
+ *   - reduxSubfolders: string[] - Completely replace the default Redux subfolders list
+ *   - deepImportFolders: string[] - Completely replace the default deep import folders list
  *
  * ✓ Good:
  *   import { Button } from "@/components";
@@ -3131,7 +3246,7 @@ const multilineIfConditions = {
  *
  * Configuration Example:
  *   "code-style/absolute-imports-only": ["error", {
- *       extraAllowedFolders: ["features", "modules", "lib"],
+ *       extraAllowedFolders: ["features", "modules"],
  *       extraDeepImportFolders: ["images", "fonts"]
  *   }]
  */
@@ -3170,6 +3285,7 @@ const absoluteImportsOnly = {
             "layouts",
             "lib",
             "middlewares",
+            "pages",
             "providers",
             "reducers",
             "redux",
@@ -3216,10 +3332,14 @@ const absoluteImportsOnly = {
                 // for re-exporting their contents
                 const isIndexFile = /\/index\.(js|jsx|ts|tsx)$/.test(normalizedFilename);
 
+                // Check if this is an entry file (main.tsx, main.ts, etc.) - entry files are allowed
+                // to use relative imports for app root and styles (e.g., ./index.css, ./app)
+                const isEntryFile = /\/main\.(js|jsx|ts|tsx)$/.test(normalizedFilename);
+
                 // 1. Disallow relative imports (starting with ./ or ../)
                 // EXCEPT in index files which need relative imports for re-exports
                 if (importPath.startsWith("./") || importPath.startsWith("../")) {
-                    if (!isIndexFile) {
+                    if (!isIndexFile && !isEntryFile) {
                         context.report({
                             message: `Relative imports are not allowed. Use absolute imports with "${aliasPrefix}" prefix instead.`,
                             node: node.source,
@@ -3780,12 +3900,12 @@ const importSourceSpacing = {
  *   subfolders and files in the module.
  *
  * Options:
- *   - extraModuleFolders: string[] - Additional module folders (extends defaults)
- *   - extraLazyLoadFolders: string[] - Additional lazy load folders (extends defaults)
- *   - extraIgnorePatterns: string[] - Additional ignore patterns (extends defaults)
- *   - moduleFolders: string[] - Replace default module folders entirely
- *   - lazyLoadFolders: string[] - Replace default lazy load folders entirely
- *   - ignorePatterns: string[] - Replace default ignore patterns entirely
+ *   - extraModuleFolders: string[] - Add folders that should have an index.js re-exporting all public files. Use for project-specific folders like features/, modules/
+ *   - extraLazyLoadFolders: string[] - Add folders exempt from index file requirements. Use for route/page components loaded via dynamic import(). Default: pages, views
+ *   - extraIgnorePatterns: string[] - Add file patterns to skip when checking for index exports. Supports wildcards like *.stories.js, *.mock.js
+ *   - moduleFolders: string[] - Completely replace the default module folders list. Use only if you need full control
+ *   - lazyLoadFolders: string[] - Completely replace the default lazy load folders list
+ *   - ignorePatterns: string[] - Completely replace the default ignore patterns list
  *
  * ✓ Good:
  *   // index.js
@@ -3797,8 +3917,8 @@ const importSourceSpacing = {
  *
  * Configuration Example:
  *   "code-style/module-index-exports": ["error", {
- *       extraModuleFolders: ["features", "modules", "lib"],
- *       extraLazyLoadFolders: ["pages"],
+ *       extraModuleFolders: ["features", "modules"],
+ *       extraLazyLoadFolders: ["screens"],
  *       extraIgnorePatterns: ["*.stories.js", "*.mock.js"]
  *   }]
  */
@@ -3829,6 +3949,7 @@ const moduleIndexExports = {
             "layouts",
             "lib",
             "middlewares",
+            "pages",
             "providers",
             "reducers",
             "redux",
@@ -3853,7 +3974,7 @@ const moduleIndexExports = {
             || [...defaultModuleFolders, ...(options.extraModuleFolders || [])];
 
         // Default lazy load folders
-        const defaultLazyLoadFolders = ["views"];
+        const defaultLazyLoadFolders = ["pages", "views"];
 
         // Folders that use lazy loading and shouldn't require index exports
         // These folders typically have components loaded via dynamic import()
@@ -14184,6 +14305,7 @@ export default {
 
         // Function rules
         "function-call-spacing": functionCallSpacing,
+        "function-declaration-style": functionDeclarationStyle,
         "function-naming-convention": functionNamingConvention,
         "function-object-destructure": functionObjectDestructure,
         "function-params-per-line": functionParamsPerLine,

@@ -62,7 +62,7 @@ export default [ // eslint-disable-line
             "@stylistic/jsx-quotes": "error",
             "@stylistic/key-spacing": "error",
             "@stylistic/linebreak-style": "off",
-            "@stylistic/multiline-comment-style": ["error", "bare-block"],
+            "@stylistic/multiline-comment-style": "error",
             "@stylistic/no-extra-semi": "error",
             "@stylistic/no-multi-spaces": "error",
             "@stylistic/no-multiple-empty-lines": [
@@ -136,6 +136,7 @@ export default [ // eslint-disable-line
             "code-style/export-format": "error",
             "code-style/function-arguments-format": "error",
             "code-style/function-call-spacing": "error",
+            "code-style/function-declaration-style": "error",
             "code-style/function-naming-convention": "error",
             "code-style/function-object-destructure": "error",
             "code-style/function-params-per-line": "error",

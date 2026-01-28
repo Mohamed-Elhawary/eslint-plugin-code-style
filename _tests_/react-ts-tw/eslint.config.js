@@ -12,6 +12,12 @@ import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import tailwind from "eslint-plugin-tailwindcss";
 import globals from "globals";
+/*
+ * Tailwind CSS v4 only: uncomment the following lines to resolve __dirname
+ * and set the tailwindcss config path in the settings below.
+ * For Tailwind CSS v3, these are not needed.
+ * Also for v3, use "eslint-plugin-tailwindcss": "^3.18.2" instead of "^4.0.0-beta.0" 
+ */
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -73,7 +79,7 @@ export default [ // eslint-disable-line
             "@stylistic/jsx-quotes": "error",
             "@stylistic/key-spacing": "error",
             "@stylistic/linebreak-style": "off",
-            "@stylistic/multiline-comment-style": ["error", "bare-block"],
+            "@stylistic/multiline-comment-style": "error",
             "@stylistic/no-extra-semi": "error",
             "@stylistic/no-multi-spaces": "error",
             "@stylistic/no-multiple-empty-lines": [
@@ -164,6 +170,7 @@ export default [ // eslint-disable-line
             "code-style/export-format": "error",
             "code-style/function-arguments-format": "error",
             "code-style/function-call-spacing": "error",
+            "code-style/function-declaration-style": "error",
             "code-style/function-naming-convention": "error",
             "code-style/function-object-destructure": "error",
             "code-style/function-params-per-line": "error",
@@ -406,7 +413,7 @@ export default [ // eslint-disable-line
                 },
             },
             react: { version: "detect" },
-            tailwindcss: { config: __dirname + "/src/index.css" },
+            tailwindcss: { config: __dirname + "/src/index.css" }, 
         },
     },
 ];

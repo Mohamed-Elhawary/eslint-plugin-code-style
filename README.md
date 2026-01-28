@@ -10,7 +10,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-JSX%20Support-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-%3E%3D5.0.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-%3E%3D4.0.0-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-%3E%3D3.0.0-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
 [![GitHub stars](https://img.shields.io/github/stars/Mohamed-Elhawary/eslint-plugin-code-style?style=for-the-badge&logo=github&color=yellow)](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/Mohamed-Elhawary/eslint-plugin-code-style?style=for-the-badge&logo=github)](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/issues)
@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*60 auto-fixable rules to keep your codebase clean and consistent*
+*61 auto-fixable rules to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **60 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **61 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **60 custom auto-fixable rules** for code formatting. Built
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Fully automated** — All 60 rules support auto-fix, eliminating manual style reviews
+- **Fully automated** — All 61 rules support auto-fix, eliminating manual style reviews
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -60,7 +60,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 
 ### 💡 Why Use These Configs?
 
-- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 60 code-style rules
+- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 61 code-style rules
 - **Ready-to-Use** — Copy the config file and start linting immediately
 - **Battle-Tested** — These configurations have been refined through real-world usage
 - **Fully Documented** — Each config includes detailed instructions and explanations
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-All **60 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
+All **61 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
 
 </td>
 <td width="50%">
@@ -200,6 +200,7 @@ rules: {
     "code-style/export-format": "error",
     "code-style/function-arguments-format": "error",
     "code-style/function-call-spacing": "error",
+    "code-style/function-declaration-style": "error",
     "code-style/function-naming-convention": "error",
     "code-style/function-object-destructure": "error",
     "code-style/function-params-per-line": "error",
@@ -249,7 +250,7 @@ rules: {
 
 ## 📖 Rules Summary
 
-> All **60 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
+> All **61 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
 >
 > Rules marked with ⚙️ support customization options (e.g., extending default folder lists).
 
@@ -282,6 +283,7 @@ rules: {
 | `no-empty-lines-in-switch-cases` | No empty line after `case X:` before code, no empty lines between cases |
 | **Function Rules** | |
 | `function-call-spacing` | No space between function name and `(`: `fn()` not `fn ()` |
+| `function-declaration-style` | Auto-fix for `func-style`: converts function declarations to arrow expressions |
 | `function-naming-convention` | Functions use camelCase, start with verb (get/set/handle/is/has), handlers end with Handler |
 | `function-object-destructure` | Non-component functions: use typed params (not destructured), destructure in body; report dot notation access |
 | `function-params-per-line` | When multiline, each param on own line with consistent indentation |
@@ -1079,6 +1081,46 @@ array.map ((x) => x * 2);
 
 ---
 
+### `function-declaration-style`
+
+**What it does:** Converts function declarations to `const` arrow function expressions. This is the auto-fixable companion to ESLint's built-in `func-style` rule.
+
+**Why use it:** The built-in `func-style: ["error", "expression"]` rule reports function declarations but does not auto-fix them. This rule provides the auto-fix. Both rules should be used together for the best experience.
+
+> **Important:** This rule depends on `func-style: ["error", "expression"]` being configured. If `func-style` is set to `"declaration"` or is disabled, do not enable this rule — it would conflict.
+
+```typescript
+// ✅ Good — arrow function expression
+export const getToken = (): string | null => getCookie(tokenKey);
+
+export const clearAuth = (): void => {
+    removeToken();
+    clearStorage();
+};
+
+const isAuthenticated = (): boolean => {
+    const token = getToken();
+    return !!token;
+};
+
+// ❌ Bad — function declaration
+export function getToken(): string | null {
+    return getCookie(tokenKey);
+}
+
+export function clearAuth(): void {
+    removeToken();
+    clearStorage();
+}
+
+function isAuthenticated(): boolean {
+    const token = getToken();
+    return !!token;
+}
+```
+
+---
+
 ### `function-naming-convention`
 
 **What it does:** Enforces naming conventions for functions:
@@ -1373,24 +1415,24 @@ import { fetchUsers } from "@/apis/users/fetchUsers";
 ```
 
 **Default Allowed Folders:**
-`actions`, `apis`, `assets`, `atoms`, `components`, `config`, `configs`, `constants`, `contexts`, `data`, `enums`, `helpers`, `hooks`, `interfaces`, `layouts`, `lib`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `ui`, `utils`, `utilities`, `views`
+`actions`, `apis`, `assets`, `atoms`, `components`, `config`, `configs`, `constants`, `contexts`, `data`, `enums`, `helpers`, `hooks`, `interfaces`, `layouts`, `lib`, `middlewares`, `pages`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `ui`, `utils`, `utilities`, `views`
 
 **Customization Options:**
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `extraAllowedFolders` | `string[]` | Add extra folders to the default list |
-| `extraReduxSubfolders` | `string[]` | Add extra redux subfolders (default: `actions`, `reducers`, `store`, `thunks`, `types`) |
-| `extraDeepImportFolders` | `string[]` | Add extra folders that allow deep imports (default: `assets`) |
-| `aliasPrefix` | `string` | Change the import alias prefix (default: `@/`) |
-| `allowedFolders` | `string[]` | Replace default folders entirely |
-| `reduxSubfolders` | `string[]` | Replace default redux subfolders entirely |
-| `deepImportFolders` | `string[]` | Replace default deep import folders entirely |
+| `extraAllowedFolders` | `string[]` | Add custom folders that can be imported with `@/folder`. Extends defaults without replacing them. Use when your project has folders like `features/`, `modules/`, etc. |
+| `extraReduxSubfolders` | `string[]` | Add Redux-related subfolders that can be imported directly (`@/selectors`) or nested (`@/redux/selectors`). Default subfolders: `actions`, `reducers`, `store`, `thunks`, `types` |
+| `extraDeepImportFolders` | `string[]` | Add folders where direct file imports are allowed (`@/assets/images/logo.svg`). Use for folders without index files like images, fonts, etc. Default: `assets` |
+| `aliasPrefix` | `string` | Change the path alias prefix if your project uses something other than `@/` (e.g., `~/`, `src/`) |
+| `allowedFolders` | `string[]` | Completely replace the default allowed folders list. Use only if you need full control over which folders are valid |
+| `reduxSubfolders` | `string[]` | Completely replace the default Redux subfolders list |
+| `deepImportFolders` | `string[]` | Completely replace the default deep import folders list |
 
 ```javascript
 // Example: Add custom folders to the defaults
 "code-style/absolute-imports-only": ["error", {
-    extraAllowedFolders: ["features", "modules", "lib"],
+    extraAllowedFolders: ["features", "modules"],
     extraDeepImportFolders: ["images", "fonts"]
 }]
 ```
@@ -1617,7 +1659,7 @@ import { Button } from "@/components/Button/Button"; // Avoid this!
 ```
 
 **Default Module Folders:**
-`actions`, `apis`, `assets`, `atoms`, `components`, `config`, `configs`, `constants`, `contexts`, `data`, `enums`, `helpers`, `hooks`, `interfaces`, `layouts`, `lib`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `ui`, `utils`, `utilities`, `views`
+`actions`, `apis`, `assets`, `atoms`, `components`, `config`, `configs`, `constants`, `contexts`, `data`, `enums`, `helpers`, `hooks`, `interfaces`, `layouts`, `lib`, `middlewares`, `pages`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `ui`, `utils`, `utilities`, `views`
 
 **Default Ignore Patterns:**
 `index.js`, `index.jsx`, `index.ts`, `index.tsx`, `.DS_Store`, `__tests__`, `__mocks__`, `*.test.js`, `*.test.jsx`, `*.test.ts`, `*.test.tsx`, `*.spec.js`, `*.spec.jsx`, `*.spec.ts`, `*.spec.tsx`
@@ -1626,18 +1668,18 @@ import { Button } from "@/components/Button/Button"; // Avoid this!
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `extraModuleFolders` | `string[]` | Add extra module folders to the default list |
-| `extraLazyLoadFolders` | `string[]` | Add extra lazy load folders (default: `views`) |
-| `extraIgnorePatterns` | `string[]` | Add extra ignore patterns (supports wildcards) |
-| `moduleFolders` | `string[]` | Replace default module folders entirely |
-| `lazyLoadFolders` | `string[]` | Replace default lazy load folders entirely |
-| `ignorePatterns` | `string[]` | Replace default ignore patterns entirely |
+| `extraModuleFolders` | `string[]` | Add folders that should have an `index.js` re-exporting all public files. Use for project-specific folders like `features/`, `modules/` that follow the same pattern |
+| `extraLazyLoadFolders` | `string[]` | Add folders exempt from index file requirements. Use for route/page components loaded via dynamic `import()`. Default: `pages`, `views` |
+| `extraIgnorePatterns` | `string[]` | Add file patterns to skip when checking for index exports. Supports wildcards like `*.stories.js`, `*.mock.js` |
+| `moduleFolders` | `string[]` | Completely replace the default module folders list. Use only if you need full control over which folders require index files |
+| `lazyLoadFolders` | `string[]` | Completely replace the default lazy load folders list |
+| `ignorePatterns` | `string[]` | Completely replace the default ignore patterns list |
 
 ```javascript
 // Example: Add custom folders and patterns
 "code-style/module-index-exports": ["error", {
-    extraModuleFolders: ["features", "modules", "lib"],
-    extraLazyLoadFolders: ["pages"],
+    extraModuleFolders: ["features", "modules"],
+    extraLazyLoadFolders: ["screens"],
     extraIgnorePatterns: ["*.stories.js", "*.mock.js"]
 }]
 ```

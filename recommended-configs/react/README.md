@@ -5,7 +5,7 @@ This is the **recommended ESLint flat configuration** for React.js projects (wit
 - **[@stylistic/eslint-plugin](https://eslint.style/)** — Formatting rules (replaces ESLint's deprecated formatting rules)
 - **ESLint built-in rules** — Code quality and best practices
 - **Third-party plugins** — React, accessibility, import sorting, etc.
-- **eslint-plugin-code-style** — Our 53 custom formatting rules
+- **eslint-plugin-code-style** — Our 61 custom formatting rules
 
 > **Why @stylistic?** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0, moving them to `@stylistic/eslint-plugin`. This config uses @stylistic as the modern replacement.
 
@@ -173,6 +173,7 @@ These are formatting rules from `@stylistic/eslint-plugin` — the modern replac
 | `@stylistic/comma-spacing` | default (`after: true`) | Space after commas: `[a, b, c]` not `[a,b,c]` — standard JavaScript style |
 | `@stylistic/semi` | default (`always`) | Always use semicolons — prevents ASI (automatic semicolon insertion) gotchas |
 | `@stylistic/semi-spacing` | default (`after: true`) | Space after semicolons in for loops: `for (;;)` formatted correctly |
+| `@stylistic/semi-style` | default (`last`) | Semicolons at end of line, not beginning of next line |
 | `@stylistic/no-extra-semi` | `error` | Remove accidental double semicolons `;;` |
 
 ### Indentation & Spacing
@@ -206,7 +207,7 @@ These are formatting rules from `@stylistic/eslint-plugin` — the modern replac
 | Rule | Setting | Why This Value |
 |------|---------|----------------|
 | `@stylistic/nonblock-statement-body-position` | default (`beside`) | Single-line if body beside keyword: `if (x) return;` |
-| `@stylistic/multiline-comment-style` | `bare-block` | Multi-line comments use `/* */` with bare style (no leading `*` on each line) |
+| `@stylistic/multiline-comment-style` | `starred-block` (default) | Multi-line comments use `/* */` with leading `*` on each line |
 | `@stylistic/function-paren-newline` | `off` | Let other rules handle function formatting |
 | `@stylistic/linebreak-style` | `off` | Don't enforce LF vs CRLF — let git handle line endings |
 
@@ -238,6 +239,8 @@ These are native ESLint rules for code quality and best practices.
 | `eqeqeq` | `error` | Always use `===` and `!==` — prevents type coercion bugs |
 | `func-style` | `expression` | Use `const fn = () => {}` not `function fn() {}` — consistent with React component style |
 | `no-inline-comments` | `error` | Comments on their own line, not after code — easier to scan |
+
+> **Important:** The `func-style: ["error", "expression"]` rule works together with `code-style/function-declaration-style`. The built-in `func-style` reports the error but does not auto-fix. The `function-declaration-style` rule provides the auto-fix by converting function declarations to arrow function expressions. Both rules should be enabled together. Do not enable `function-declaration-style` if `func-style` is not set to `"expression"` — it would conflict.
 
 ### Best Practices
 
@@ -280,7 +283,7 @@ These are native ESLint rules for code quality and best practices.
 
 ## eslint-plugin-code-style Rules
 
-Our custom plugin provides **47 auto-fixable rules** that fill the gaps not covered by ESLint's built-in rules or other plugins.
+Our custom plugin provides **61 auto-fixable rules** that fill the gaps not covered by ESLint's built-in rules or other plugins.
 
 For complete rule descriptions, examples, and configuration options, see the [main README](../../README.md#-rules-summary).
 
@@ -314,24 +317,24 @@ The `absolute-imports-only` and `module-index-exports` rules come with default f
 rules: {
     // Add extra folders to the allowed imports list
     "code-style/absolute-imports-only": ["error", {
-        extraAllowedFolders: ["features", "modules", "lib"],
+        extraAllowedFolders: ["features", "modules"],
         extraDeepImportFolders: ["images", "fonts"],
     }],
 
     // Add extra module folders for index exports validation
     "code-style/module-index-exports": ["error", {
-        extraModuleFolders: ["features", "modules", "lib"],
-        extraLazyLoadFolders: ["pages"],
+        extraModuleFolders: ["features", "modules"],
+        extraLazyLoadFolders: ["screens"],
         extraIgnorePatterns: ["*.stories.js", "*.mock.js"],
     }],
 }
 ```
 
 **Default Allowed Folders (absolute-imports-only):**
-`actions`, `apis`, `assets`, `atoms`, `components`, `config`, `configs`, `constants`, `contexts`, `data`, `enums`, `helpers`, `hooks`, `interfaces`, `layouts`, `lib`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `ui`, `utils`, `utilities`, `views`
+`actions`, `apis`, `assets`, `atoms`, `components`, `config`, `configs`, `constants`, `contexts`, `data`, `enums`, `helpers`, `hooks`, `interfaces`, `layouts`, `lib`, `middlewares`, `pages`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `ui`, `utils`, `utilities`, `views`
 
 **Default Module Folders (module-index-exports):**
-`actions`, `apis`, `assets`, `atoms`, `components`, `config`, `configs`, `constants`, `contexts`, `data`, `enums`, `helpers`, `hooks`, `interfaces`, `layouts`, `lib`, `middlewares`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `ui`, `utils`, `utilities`, `views`
+`actions`, `apis`, `assets`, `atoms`, `components`, `config`, `configs`, `constants`, `contexts`, `data`, `enums`, `helpers`, `hooks`, `interfaces`, `layouts`, `lib`, `middlewares`, `pages`, `providers`, `reducers`, `redux`, `requests`, `routes`, `schemas`, `services`, `store`, `styles`, `theme`, `thunks`, `types`, `ui`, `utils`, `utilities`, `views`
 
 ### Import/Export/Object Formatting
 
@@ -378,15 +381,6 @@ export const foo = 1;
 
 export const bar = 2;
 ```
-
----
-
-## Future Configurations
-
-Additional configurations for other project types are planned:
-
-- **react-ts** — React + TypeScript
-- **react-ts-tw** — React + TypeScript + Tailwind CSS
 
 ---
 

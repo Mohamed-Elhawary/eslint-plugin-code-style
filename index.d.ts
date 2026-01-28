@@ -20,6 +20,7 @@ export type RuleNames =
     | "code-style/export-format"
     | "code-style/function-arguments-format"
     | "code-style/function-call-spacing"
+    | "code-style/function-declaration-style"
     | "code-style/function-naming-convention"
     | "code-style/function-object-destructure"
     | "code-style/function-params-per-line"
@@ -101,6 +102,7 @@ interface PluginRules {
     "export-format": Rule.RuleModule;
     "function-arguments-format": Rule.RuleModule;
     "function-call-spacing": Rule.RuleModule;
+    "function-declaration-style": Rule.RuleModule;
     "function-naming-convention": Rule.RuleModule;
     "function-object-destructure": Rule.RuleModule;
     "function-params-per-line": Rule.RuleModule;
