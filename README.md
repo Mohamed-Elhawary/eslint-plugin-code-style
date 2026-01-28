@@ -300,8 +300,9 @@ rules: {
 | `module-index-exports` | Index files must export all folder contents (files and subfolders) ⚙️ |
 | **JSX Rules** | |
 | `classname-dynamic-at-end` | Dynamic expressions (`${className}`) must be at the end of class strings (JSX and variables) |
-| `classname-multiline` | Long className strings broken into multiple lines, one class per line; uses `"..."` in JSX (no expressions) or `` `...` `` (with expressions/variables) ⚙️ |
-| `classname-no-extra-spaces` | No extra/leading/trailing spaces in class strings (JSX, variables, and objects) |
+| `classname-multiline` | Long className strings broken into multiple lines; smart detection for objects/returns with Tailwind values ⚙️ |
+| `classname-no-extra-spaces` | No extra/leading/trailing spaces in class strings; smart detection for objects/returns with Tailwind values |
+| `classname-order` | Tailwind class ordering in variables/objects/returns; smart detection for Tailwind values |
 | `jsx-children-on-new-line` | Multiple JSX children: each on own line with proper indentation |
 | `jsx-closing-bracket-spacing` | No space before `>` or `/>` in JSX tags |
 | `jsx-element-child-new-line` | Nested JSX elements on new lines; text/expression children can stay inline |

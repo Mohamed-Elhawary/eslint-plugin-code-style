@@ -5676,17 +5676,18 @@ const classNameDynamicAtEnd = {
  *
  * Description:
  *   Disallow multiple consecutive spaces and leading/trailing spaces
- *   in className values. Uses smart detection to identify class strings.
+ *   in className values. Uses smart detection: checks objects/returns
+ *   if variable name contains "class" OR if values look like Tailwind.
  *
  * ✓ Good:
  *   className="flex items-center gap-4"
- *   const buttonClasses = `flex items-center ${className}`;
- *   const variantClasses = { primary: "bg-blue-500 text-white" };
+ *   const variants = { primary: "bg-blue-500 text-white" };
+ *   return "border-error text-error focus:border-error";
  *
  * ✗ Bad:
  *   className="flex  items-center   gap-4"
- *   const buttonClasses = ` flex items-center ${className} `;
- *   const variantClasses = { primary: "bg-blue-500  text-white" };
+ *   const variants = { primary: "bg-blue-500  text-white" };
+ *   return "border-error  text-error   focus:border-error";
  */
 const classNameNoExtraSpaces = {
     create(context) {
@@ -5816,15 +5817,15 @@ const classNameNoExtraSpaces = {
 
                 // Check object with class values
                 if (node.init && node.init.type === "ObjectExpression") {
-                    // Only check objects if variable name suggests classes
-                    if (!isClassRelatedName(varName)) return;
-
                     node.init.properties.forEach((prop) => {
                         if (prop.type !== "Property") return;
 
                         if (prop.value && prop.value.type === "Literal" && typeof prop.value.value === "string") {
-                            // For object properties, always check since parent is class-related
                             const value = prop.value.value;
+
+                            // Check if variable name suggests classes OR value looks like Tailwind
+                            if (!isClassRelated(varName, value)) return;
+
                             const raw = sourceCode.getText(prop.value);
                             const quote = raw[0];
 
@@ -5867,15 +5868,33 @@ const classNameNoExtraSpaces = {
                         }
 
                         if (prop.value && prop.value.type === "TemplateLiteral") {
-                            checkTemplateLiteralHandler(prop.value, varName);
+                            // For template literals, extract static content to check for Tailwind classes
+                            const staticContent = prop.value.quasis.map((q) => q.value.raw).join(" ").trim();
+
+                            if (isClassRelated(varName, staticContent)) {
+                                checkTemplateLiteralHandler(prop.value, varName);
+                            }
                         }
                     });
+                }
+            },
+
+            // Check return statements with Tailwind class values
+            ReturnStatement(node) {
+                if (!node.argument) return;
+
+                if (node.argument.type === "Literal" && typeof node.argument.value === "string") {
+                    checkStringLiteralHandler(node.argument, node.argument.value, "return");
+                }
+
+                if (node.argument.type === "TemplateLiteral") {
+                    checkTemplateLiteralHandler(node.argument, "return");
                 }
             },
         };
     },
     meta: {
-        docs: { description: "Disallow extra/leading/trailing spaces in className values" },
+        docs: { description: "Disallow extra/leading/trailing spaces in className values; smart detection for objects with Tailwind values and return statements" },
         fixable: "code",
         schema: [],
         type: "layout",
@@ -5888,21 +5907,21 @@ const classNameNoExtraSpaces = {
  * ───────────────────────────────────────────────────────────────
  *
  * Description:
- *   Enforce Tailwind CSS class ordering in class string variables
- *   and object properties. This rule complements tailwindcss/classnames-order
- *   by handling cases it doesn't cover (variables and objects).
- *   Uses smart detection to identify class strings by name or content.
+ *   Enforce Tailwind CSS class ordering in class string variables,
+ *   object properties, and return statements. Complements
+ *   tailwindcss/classnames-order by handling cases it doesn't cover.
+ *   Uses smart detection: checks if values look like Tailwind classes.
  *
  * Note: This rule does NOT check JSX className attributes directly,
  *       as those should be handled by tailwindcss/classnames-order.
  *
  * ✓ Good:
- *   const classes = "flex items-center p-4 text-white";
- *   const variantClasses = { primary: "bg-blue-500 hover:bg-blue-600" };
+ *   const variants = { primary: "bg-blue-500 hover:bg-blue-600" };
+ *   return "border-error text-error focus:border-error";
  *
  * ✗ Bad:
- *   const classes = "text-white p-4 flex items-center";
- *   const variantClasses = { primary: "hover:bg-blue-600 bg-blue-500" };
+ *   const variants = { primary: "hover:bg-blue-600 bg-blue-500" };
+ *   return "focus:border-error text-error border-error";
  */
 const classNameOrder = {
     create(context) {
@@ -6030,13 +6049,14 @@ const classNameOrder = {
 
                 // Check object with class values
                 if (node.init && node.init.type === "ObjectExpression") {
-                    if (!isClassRelatedName(varName)) return;
-
                     node.init.properties.forEach((prop) => {
                         if (prop.type !== "Property") return;
 
                         if (prop.value && prop.value.type === "Literal" && typeof prop.value.value === "string") {
                             const value = prop.value.value;
+
+                            // Check if variable name suggests classes OR value looks like Tailwind
+                            if (!isClassRelated(varName, value)) return;
 
                             if (needsReordering(value)) {
                                 const sorted = sortTailwindClasses(value);
@@ -6052,15 +6072,45 @@ const classNameOrder = {
                         }
 
                         if (prop.value && prop.value.type === "TemplateLiteral") {
-                            checkTemplateLiteralOrderHandler(prop.value, varName);
+                            // For template literals, extract static content to check for Tailwind classes
+                            const staticContent = prop.value.quasis.map((q) => q.value.raw).join(" ").trim();
+
+                            if (isClassRelated(varName, staticContent)) {
+                                checkTemplateLiteralOrderHandler(prop.value, varName);
+                            }
                         }
                     });
+                }
+            },
+
+            // Check return statements with Tailwind class values
+            ReturnStatement(node) {
+                if (!node.argument) return;
+
+                if (node.argument.type === "Literal" && typeof node.argument.value === "string") {
+                    const value = node.argument.value;
+
+                    if (looksLikeTailwindClasses(value) && needsReordering(value)) {
+                        const sorted = sortTailwindClasses(value);
+                        const raw = sourceCode.getText(node.argument);
+                        const quote = raw[0];
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceText(node.argument, `${quote}${sorted}${quote}`),
+                            message: "Tailwind classes should be ordered according to recommended order",
+                            node: node.argument,
+                        });
+                    }
+                }
+
+                if (node.argument.type === "TemplateLiteral") {
+                    checkTemplateLiteralOrderHandler(node.argument, "return");
                 }
             },
         };
     },
     meta: {
-        docs: { description: "Enforce Tailwind CSS class ordering in class strings" },
+        docs: { description: "Enforce Tailwind CSS class ordering in class strings; smart detection for objects with Tailwind values and return statements" },
         fixable: "code",
         schema: [],
         type: "layout",
@@ -6076,20 +6126,26 @@ const classNameOrder = {
  *   Enforce that long className strings are broken into multiple
  *   lines, with each class on its own line. Triggers when either
  *   the class count or string length exceeds the threshold.
- *   Dynamic expressions must remain at the end.
+ *   Uses smart detection: checks objects/returns if values look
+ *   like Tailwind classes.
  *
  * ✓ Good:
- *   className={`
- *       flex
- *       items-center
- *       justify-center
- *       rounded-lg
- *       ${className}
- *   `}
+ *   const variants = {
+ *       primary: `
+ *           bg-primary
+ *           text-white
+ *           hover:bg-primary-dark
+ *       `,
+ *   };
+ *   return `
+ *       border-error
+ *       text-error
+ *       focus:border-error
+ *   `;
  *
  * ✗ Bad:
- *   className="flex items-center justify-center rounded-lg"
- *   className={`flex items-center justify-center rounded-lg ${className}`}
+ *   const variants = { primary: "bg-primary text-white hover:bg-primary-dark focus:ring-2" };
+ *   return "border-error text-error placeholder-error/50 focus:border-error";
  */
 const classNameMultiline = {
     create(context) {
@@ -6341,25 +6397,53 @@ const classNameMultiline = {
                 }
 
                 if (node.init && node.init.type === "ObjectExpression") {
-                    if (!isClassRelatedName(varName)) return;
-
+                    // Check each property - apply rule if name suggests classes OR value looks like Tailwind
                     node.init.properties.forEach((prop) => {
                         if (prop.type !== "Property") return;
 
                         if (prop.value && prop.value.type === "Literal" && typeof prop.value.value === "string") {
-                            checkStringLiteralHandler(prop.value, prop.value.value, varName);
+                            // Check if variable name suggests classes OR if the value looks like Tailwind classes
+                            if (isClassRelated(varName, prop.value.value)) {
+                                checkStringLiteralHandler(prop.value, prop.value.value, varName);
+                            }
                         }
 
                         if (prop.value && prop.value.type === "TemplateLiteral") {
-                            checkTemplateLiteralHandler(prop.value, varName);
+                            // For template literals, extract static content to check for Tailwind classes
+                            const staticContent = prop.value.quasis.map((q) => q.value.raw).join(" ").trim();
+
+                            if (isClassRelated(varName, staticContent)) {
+                                checkTemplateLiteralHandler(prop.value, varName);
+                            }
                         }
                     });
+                }
+            },
+
+            // Check return statements with Tailwind class values
+            ReturnStatement(node) {
+                if (!node.argument) return;
+
+                if (node.argument.type === "Literal" && typeof node.argument.value === "string") {
+                    const value = node.argument.value;
+
+                    if (looksLikeTailwindClasses(value)) {
+                        checkStringLiteralHandler(node.argument, value, "return");
+                    }
+                }
+
+                if (node.argument.type === "TemplateLiteral") {
+                    const staticContent = node.argument.quasis.map((q) => q.value.raw).join(" ").trim();
+
+                    if (looksLikeTailwindClasses(staticContent)) {
+                        checkTemplateLiteralHandler(node.argument, "return");
+                    }
                 }
             },
         };
     },
     meta: {
-        docs: { description: "Enforce multiline formatting for long className strings" },
+        docs: { description: "Enforce multiline formatting for long className strings; smart detection for objects with Tailwind values and return statements" },
         fixable: "code",
         schema: [
             {
@@ -10744,22 +10828,25 @@ const stringPropertySpacing = {
  *
  * Description:
  *   Variable names should follow naming conventions: camelCase
- *   for regular variables, UPPER_CASE for constants, and
- *   PascalCase for React components.
+ *   for regular variables and PascalCase for React components.
+ *   Auto-fixes SCREAMING_SNAKE_CASE and snake_case to camelCase.
  *
  * ✓ Good:
  *   const userName = "John";
- *   const MAX_RETRIES = 3;
+ *   const maxRetries = 3;
+ *   const codeLength = 8;
  *   const UserProfile = () => <div />;
  *   const useCustomHook = () => {};
  *
- * ✗ Bad:
- *   const user_name = "John";
- *   const maxretries = 3;
- *   const userProfile = () => <div />;
+ * ✗ Bad (auto-fixed):
+ *   const user_name = "John";     // → userName
+ *   const CODE_LENGTH = 8;        // → codeLength
+ *   const MAX_RETRIES = 3;        // → maxRetries
  */
 const variableNamingConvention = {
     create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
         const camelCaseRegex = /^[a-z][a-zA-Z0-9]*$/;
 
         const pascalCaseRegex = /^[A-Z][a-zA-Z0-9]*$/;
@@ -10767,6 +10854,36 @@ const variableNamingConvention = {
         const hookRegex = /^use[A-Z][a-zA-Z0-9]*$/;
 
         const constantRegex = /^[A-Z][A-Z0-9_]*$/;
+
+        // Convert any naming convention to camelCase
+        const toCamelCaseHandler = (name) => {
+            // Handle SCREAMING_SNAKE_CASE (e.g., CODE_LENGTH -> codeLength)
+            if (/^[A-Z][A-Z0-9_]*$/.test(name)) {
+                return name.toLowerCase().replace(/_([a-z0-9])/g, (_, char) => char.toUpperCase());
+            }
+
+            // Handle snake_case (e.g., user_name -> userName)
+            if (/_/.test(name)) {
+                return name.toLowerCase().replace(/_([a-z0-9])/g, (_, char) => char.toUpperCase());
+            }
+
+            // Handle PascalCase (e.g., UserName -> userName)
+            if (/^[A-Z]/.test(name)) {
+                return name[0].toLowerCase() + name.slice(1);
+            }
+
+            return name;
+        };
+
+        // Get all references to a variable in the current scope
+        const getVariableReferencesHandler = (node) => {
+            const scope = sourceCode.getScope ? sourceCode.getScope(node) : context.getScope();
+            const variable = scope.variables.find((v) => v.name === node.name);
+
+            if (!variable) return [];
+
+            return variable.references.map((ref) => ref.identifier);
+        };
 
         const allowedIdentifiers = [
             "ArrowFunctionExpression", "CallExpression", "FunctionDeclaration", "FunctionExpression",
@@ -10978,8 +11095,21 @@ const variableNamingConvention = {
             }
 
             if (!camelCaseRegex.test(name)) {
+                const camelCaseName = toCamelCaseHandler(name);
+                const references = getVariableReferencesHandler(node.id);
+
                 context.report({
-                    message: `Variable "${name}" should be camelCase (e.g., userCookie instead of UserCookie)`,
+                    fix: (fixer) => {
+                        const fixes = [];
+
+                        // Fix all references to this variable
+                        references.forEach((ref) => {
+                            fixes.push(fixer.replaceText(ref, camelCaseName));
+                        });
+
+                        return fixes;
+                    },
+                    message: `Variable "${name}" should be camelCase (e.g., ${camelCaseName} instead of ${name})`,
                     node: node.id,
                 });
             }
@@ -11058,6 +11188,7 @@ const variableNamingConvention = {
     },
     meta: {
         docs: { description: "Enforce naming conventions: camelCase for variables/properties/params/arguments, PascalCase for components, useXxx for hooks" },
+        fixable: "code",
         schema: [],
         type: "suggestion",
     },
