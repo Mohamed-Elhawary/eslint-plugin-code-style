@@ -11216,9 +11216,36 @@ const variableNamingConvention = {
                     // Allow component property names as arguments (e.g., Icon, Component)
                     if (componentPropertyNames.includes(name)) return;
 
+                    // Skip PascalCase that doesn't look like a misnamed function
+                    // (function-naming-convention handles verb-prefixed PascalCase)
+                    if (pascalCaseRegex.test(name)) return;
+
                     if (!camelCaseRegex.test(name)) {
+                        const camelCaseName = toCamelCaseHandler(name);
+
                         context.report({
-                            message: `Argument "${name}" should be camelCase`,
+                            fix(fixer) {
+                                const scope = sourceCode.getScope ? sourceCode.getScope(arg) : context.getScope();
+                                const variable = scope.variables.find((v) => v.name === name)
+                                    || (scope.upper && scope.upper.variables.find((v) => v.name === name));
+
+                                if (!variable) return fixer.replaceText(arg, camelCaseName);
+
+                                const fixes = [];
+                                const fixedRanges = new Set();
+
+                                variable.references.forEach((ref) => {
+                                    const rangeKey = `${ref.identifier.range[0]}-${ref.identifier.range[1]}`;
+
+                                    if (!fixedRanges.has(rangeKey)) {
+                                        fixedRanges.add(rangeKey);
+                                        fixes.push(fixer.replaceText(ref.identifier, camelCaseName));
+                                    }
+                                });
+
+                                return fixes;
+                            },
+                            message: `Argument "${name}" should be camelCase (e.g., ${camelCaseName} instead of ${name})`,
                             node: arg,
                         });
                     }
