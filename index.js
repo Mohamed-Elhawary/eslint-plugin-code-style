@@ -1773,6 +1773,7 @@ const functionDeclarationStyle = {
  * Description:
  *   Function names should follow naming conventions: camelCase,
  *   starting with a verb, and handlers ending with "Handler".
+ *   Auto-fixes PascalCase functions that start with verbs to camelCase.
  *
  * ✓ Good:
  *   function getUserData() {}
@@ -1780,10 +1781,10 @@ const functionDeclarationStyle = {
  *   function isValidEmail() {}
  *   const submitHandler = () => {}
  *
- * ✗ Bad:
- *   function GetUserData() {}
+ * ✗ Bad (auto-fixed):
+ *   function GetUserData() {}   // → getUserData
+ *   const FetchStatus = () => {} // → fetchStatus
  *   function user_data() {}
- *   function click() {}
  */
 const functionNamingConvention = {
     create(context) {
@@ -1823,6 +1824,16 @@ const functionNamingConvention = {
 
         const startsWithVerbHandler = (name) => verbPrefixes.some((verb) => name.startsWith(verb));
 
+        // Case-insensitive check for verb prefix (to catch PascalCase like "GetForStatus")
+        const startsWithVerbCaseInsensitiveHandler = (name) => {
+            const lowerName = name.toLowerCase();
+
+            return verbPrefixes.some((verb) => lowerName.startsWith(verb));
+        };
+
+        // Convert PascalCase to camelCase
+        const toCamelCaseHandler = (name) => name[0].toLowerCase() + name.slice(1);
+
         const endsWithHandler = (name) => handlerRegex.test(name);
 
         const checkFunctionHandler = (node) => {
@@ -1838,11 +1849,49 @@ const functionNamingConvention = {
 
             if (!name) return;
 
-            // Skip React components (PascalCase)
-            if (/^[A-Z]/.test(name)) return;
-
             // Skip hooks
             if (/^use[A-Z]/.test(name)) return;
+
+            // Check PascalCase functions
+            if (/^[A-Z]/.test(name)) {
+                // If starts with a verb (case-insensitive), it should be camelCase
+                if (startsWithVerbCaseInsensitiveHandler(name)) {
+                    const camelCaseName = toCamelCaseHandler(name);
+                    const identifierNode = node.id || node.parent.id;
+
+                    context.report({
+                        fix(fixer) {
+                            const scope = context.sourceCode
+                                ? context.sourceCode.getScope(node)
+                                : context.getScope();
+
+                            const variable = scope.variables.find((v) => v.name === name)
+                                || (scope.upper && scope.upper.variables.find((v) => v.name === name));
+
+                            if (!variable) return fixer.replaceText(identifierNode, camelCaseName);
+
+                            const fixes = [];
+                            const fixedRanges = new Set();
+
+                            variable.references.forEach((ref) => {
+                                const rangeKey = `${ref.identifier.range[0]}-${ref.identifier.range[1]}`;
+
+                                if (!fixedRanges.has(rangeKey)) {
+                                    fixedRanges.add(rangeKey);
+                                    fixes.push(fixer.replaceText(ref.identifier, camelCaseName));
+                                }
+                            });
+
+                            return fixes;
+                        },
+                        message: `Function "${name}" should be camelCase. Use "${camelCaseName}" instead of "${name}"`,
+                        node: node.id || node.parent.id,
+                    });
+                }
+
+                // Skip other PascalCase names (likely React components)
+                return;
+            }
 
             const hasVerbPrefix = startsWithVerbHandler(name);
             const hasHandlerSuffix = endsWithHandler(name);
