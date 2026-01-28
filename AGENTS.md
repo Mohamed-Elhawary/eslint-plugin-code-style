@@ -432,5 +432,5 @@ Format: `MAJOR.MINOR.PATCH` (e.g., `1.2.8`)
    - Feature description 1
    - Feature description 2"
    ```
-4. **Push:** `git push origin HEAD && git push origin v1.2.9`
-5. **Publish:** `npm publish`
+4. **Push (requires explicit approval):** `git push origin HEAD && git push origin v1.2.9`
+5. **Publish (requires explicit approval):** `npm publish`
