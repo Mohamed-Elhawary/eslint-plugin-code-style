@@ -13846,6 +13846,7 @@ const reactCodeOrder = {
 
         const checkCodeOrderHandler = (node, isHook) => {
             const body = node.body;
+            const sourceCode = context.sourceCode || context.getSourceCode();
 
             // Only check block statements (not implicit returns)
             if (body.type !== "BlockStatement") return;
@@ -13902,36 +13903,115 @@ const reactCodeOrder = {
 
             if (relevantStatements.length < 2) return;
 
-            // Track the categories and their order
+            // Collect all statements with their categories and original positions
+            const statementsWithCategories = [];
+            let hasOrderViolation = false;
             let lastCategory = 0;
-            let lastCategoryStatement = null;
+            let violatingStatement = null;
+            let violatingCategory = null;
+            let previousCategory = null;
 
-            for (const statement of relevantStatements) {
+            for (let i = 0; i < relevantStatements.length; i++) {
+                const statement = relevantStatements[i];
                 const category = getStatementCategoryHandler(statement, propNames);
 
-                // Skip unknown statements - they could be anything
+                statementsWithCategories.push({
+                    category,
+                    index: i,
+                    statement,
+                });
+
+                // Skip unknown statements for order checking
                 if (category === ORDER.UNKNOWN) continue;
 
                 // Check if current category comes before the last one
-                if (category < lastCategory) {
-                    // Find what it should come after
-                    context.report({
-                        data: {
-                            current: ORDER_NAMES[category],
-                            previous: ORDER_NAMES[lastCategory],
-                            type: isHook ? "hook" : "component",
-                        },
-                        message: "\"{{current}}\" should come before \"{{previous}}\" in {{type}}. Order: refs → state → redux → router → context → custom hooks → derived → useMemo → useCallback → handlers → useEffect → return",
-                        node: statement,
-                    });
-
-                    // Only report first violation to avoid noise
-                    return;
+                if (category < lastCategory && !hasOrderViolation) {
+                    hasOrderViolation = true;
+                    violatingStatement = statement;
+                    violatingCategory = category;
+                    previousCategory = lastCategory;
                 }
 
                 lastCategory = category;
-                lastCategoryStatement = statement;
             }
+
+            if (!hasOrderViolation) return;
+
+            // Sort statements by category (stable sort - maintains relative order within same category)
+            const sortedStatements = [...statementsWithCategories].sort((a, b) => {
+                if (a.category !== b.category) {
+                    return a.category - b.category;
+                }
+
+                // Maintain original order within the same category
+                return a.index - b.index;
+            });
+
+            // Check if sorting actually changes the order
+            const orderChanged = sortedStatements.some((s, i) => s.index !== statementsWithCategories[i].index);
+
+            if (!orderChanged) return;
+
+            // Build the fix
+            const fixHandler = (fixer) => {
+                // Get the base indentation from the first statement
+                const firstStatementLine = sourceCode.lines[relevantStatements[0].loc.start.line - 1];
+                const baseIndent = firstStatementLine.match(/^\s*/)[0];
+
+                // Get statement text with its leading comments
+                const getStatementTextWithCommentsHandler = (stmt, stmtIndex) => {
+                    // Find the previous statement to determine comment boundaries
+                    const prevStmtIndex = relevantStatements.findIndex((s) => s === stmt) - 1;
+                    const prevStmt = prevStmtIndex >= 0 ? relevantStatements[prevStmtIndex] : null;
+                    const prevEnd = prevStmt ? prevStmt.range[1] : sourceCode.getFirstToken(body).range[1];
+
+                    // Get text from after previous statement to end of current statement
+                    // This includes leading whitespace and comments
+                    const fullText = sourceCode.text.slice(prevEnd, stmt.range[1]);
+
+                    // Trim leading newlines but keep indentation of the statement
+                    const trimmed = fullText.replace(/^\s*\n/, "");
+
+                    return trimmed;
+                };
+
+                // Build new body content
+                let newBodyContent = "";
+                let lastStatementCategory = null;
+
+                for (let i = 0; i < sortedStatements.length; i++) {
+                    const { category, statement, index } = sortedStatements[i];
+
+                    // Add blank line between different categories (except UNKNOWN)
+                    if (lastStatementCategory !== null && category !== ORDER.UNKNOWN && lastStatementCategory !== ORDER.UNKNOWN && category !== lastStatementCategory) {
+                        newBodyContent += "\n";
+                    }
+
+                    // Get the statement text with proper indentation
+                    const stmtText = sourceCode.getText(statement);
+
+                    newBodyContent += baseIndent + stmtText.trim() + "\n";
+
+                    lastStatementCategory = category;
+                }
+
+                // Find the range to replace
+                const firstStmt = relevantStatements[0];
+                const lastStmt = relevantStatements[relevantStatements.length - 1];
+
+                return fixer.replaceTextRange([firstStmt.range[0], lastStmt.range[1]], newBodyContent.trimEnd());
+            };
+
+            context.report({
+                data: {
+                    current: ORDER_NAMES[violatingCategory],
+                    previous: ORDER_NAMES[previousCategory],
+                    type: isHook ? "hook" : "component",
+                },
+                fix: fixHandler,
+                message: "\"{{current}}\" should come before \"{{previous}}\" in {{type}}. Order: refs → state → redux → router → context → custom hooks → derived → useMemo → useCallback → handlers → useEffect → return",
+                node: violatingStatement,
+            });
         };
 
         const checkFunctionHandler = (node) => {
@@ -13956,6 +14036,7 @@ const reactCodeOrder = {
     },
     meta: {
         docs: { description: "Enforce consistent ordering of code blocks in React components and custom hooks" },
+        fixable: "code",
         schema: [],
         type: "suggestion",
     },
