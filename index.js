@@ -13846,6 +13846,7 @@ const reactCodeOrder = {
 
         const checkCodeOrderHandler = (node, isHook) => {
             const body = node.body;
+            const sourceCode = context.sourceCode || context.getSourceCode();
 
             // Only check block statements (not implicit returns)
             if (body.type !== "BlockStatement") return;
@@ -13894,44 +13895,143 @@ const reactCodeOrder = {
                 }
             }
 
-            // Filter to only relevant statements (skip comments, empty statements)
-            const relevantStatements = statements.filter((s) => s.type === "VariableDeclaration"
+            // Categorizable statement types for ordering
+            const isCategorizableStatement = (s) => s.type === "VariableDeclaration"
                     || s.type === "FunctionDeclaration"
                     || s.type === "ExpressionStatement"
-                    || s.type === "ReturnStatement");
+                    || s.type === "ReturnStatement";
 
-            if (relevantStatements.length < 2) return;
+            // Filter to only categorizable statements for order checking
+            const categorizableStatements = statements.filter(isCategorizableStatement);
 
-            // Track the categories and their order
+            if (categorizableStatements.length < 2) return;
+
+            // Check order violations using only categorizable statements
+            let hasOrderViolation = false;
             let lastCategory = 0;
-            let lastCategoryStatement = null;
+            let violatingStatement = null;
+            let violatingCategory = null;
+            let previousCategory = null;
 
-            for (const statement of relevantStatements) {
+            for (const statement of categorizableStatements) {
                 const category = getStatementCategoryHandler(statement, propNames);
 
-                // Skip unknown statements - they could be anything
+                // Skip unknown statements for order checking
                 if (category === ORDER.UNKNOWN) continue;
 
                 // Check if current category comes before the last one
-                if (category < lastCategory) {
-                    // Find what it should come after
-                    context.report({
-                        data: {
-                            current: ORDER_NAMES[category],
-                            previous: ORDER_NAMES[lastCategory],
-                            type: isHook ? "hook" : "component",
-                        },
-                        message: "\"{{current}}\" should come before \"{{previous}}\" in {{type}}. Order: refs → state → redux → router → context → custom hooks → derived → useMemo → useCallback → handlers → useEffect → return",
-                        node: statement,
-                    });
-
-                    // Only report first violation to avoid noise
-                    return;
+                if (category < lastCategory && !hasOrderViolation) {
+                    hasOrderViolation = true;
+                    violatingStatement = statement;
+                    violatingCategory = category;
+                    previousCategory = lastCategory;
                 }
 
                 lastCategory = category;
-                lastCategoryStatement = statement;
             }
+
+            if (!hasOrderViolation) return;
+
+            // For auto-fix, process ALL statements and assign sort keys
+            // Non-categorizable statements (if, for, while, etc.) get the category of the NEXT categorizable statement
+            // This keeps them positioned just before whatever comes after them
+            const allStatementsWithSortKeys = [];
+
+            // First pass: assign categories to categorizable statements
+            const categoryMap = new Map();
+
+            for (const stmt of statements) {
+                if (isCategorizableStatement(stmt)) {
+                    categoryMap.set(stmt, getStatementCategoryHandler(stmt, propNames));
+                }
+            }
+
+            // Second pass: assign sort keys to all statements
+            // Non-categorizable statements get the category of the next categorizable statement
+            for (let i = 0; i < statements.length; i++) {
+                const stmt = statements[i];
+                let sortKey;
+
+                if (isCategorizableStatement(stmt)) {
+                    sortKey = categoryMap.get(stmt);
+                } else {
+                    // Find the next categorizable statement's category
+                    sortKey = ORDER.RETURN; // Default to RETURN if none found
+
+                    for (let j = i + 1; j < statements.length; j++) {
+                        if (isCategorizableStatement(statements[j])) {
+                            sortKey = categoryMap.get(statements[j]);
+
+                            break;
+                        }
+                    }
+                }
+
+                allStatementsWithSortKeys.push({
+                    index: i,
+                    sortKey,
+                    statement: stmt,
+                });
+            }
+
+            // Sort all statements by sort key (stable sort - maintains relative order within same key)
+            const sortedStatements = [...allStatementsWithSortKeys].sort((a, b) => {
+                if (a.sortKey !== b.sortKey) {
+                    return a.sortKey - b.sortKey;
+                }
+
+                // Maintain original order within the same sort key
+                return a.index - b.index;
+            });
+
+            // Check if sorting actually changes the order
+            const orderChanged = sortedStatements.some((s, i) => s.index !== i);
+
+            if (!orderChanged) return;
+
+            // Build the fix
+            const fixHandler = (fixer) => {
+                // Get the base indentation from the first statement
+                const firstStatementLine = sourceCode.lines[statements[0].loc.start.line - 1];
+                const baseIndent = firstStatementLine.match(/^\s*/)[0];
+
+                // Build new body content
+                let newBodyContent = "";
+                let lastSortKey = null;
+
+                for (let i = 0; i < sortedStatements.length; i++) {
+                    const { sortKey, statement } = sortedStatements[i];
+
+                    // Add blank line between different categories (except UNKNOWN)
+                    if (lastSortKey !== null && sortKey !== ORDER.UNKNOWN && lastSortKey !== ORDER.UNKNOWN && sortKey !== lastSortKey) {
+                        newBodyContent += "\n";
+                    }
+
+                    // Get the statement text with proper indentation
+                    const stmtText = sourceCode.getText(statement);
+
+                    newBodyContent += baseIndent + stmtText.trim() + "\n";
+
+                    lastSortKey = sortKey;
+                }
+
+                // Find the range to replace (all statements)
+                const firstStmt = statements[0];
+                const lastStmt = statements[statements.length - 1];
+
+                return fixer.replaceTextRange([firstStmt.range[0], lastStmt.range[1]], newBodyContent.trimEnd());
+            };
+
+            context.report({
+                data: {
+                    current: ORDER_NAMES[violatingCategory],
+                    previous: ORDER_NAMES[previousCategory],
+                    type: isHook ? "hook" : "component",
+                },
+                fix: fixHandler,
+                message: "\"{{current}}\" should come before \"{{previous}}\" in {{type}}. Order: refs → state → redux → router → context → custom hooks → derived → useMemo → useCallback → handlers → useEffect → return",
+                node: violatingStatement,
+            });
         };
 
         const checkFunctionHandler = (node) => {
@@ -13956,6 +14056,7 @@ const reactCodeOrder = {
     },
     meta: {
         docs: { description: "Enforce consistent ordering of code blocks in React components and custom hooks" },
+        fixable: "code",
         schema: [],
         type: "suggestion",
     },
