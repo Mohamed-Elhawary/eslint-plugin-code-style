@@ -1836,6 +1836,47 @@ const functionNamingConvention = {
 
         const endsWithHandler = (name) => handlerRegex.test(name);
 
+        // Check if a node contains JSX (making it a React component)
+        const containsJsxHandler = (node) => {
+            if (!node) return false;
+
+            if (node.type === "JSXElement" || node.type === "JSXFragment") return true;
+
+            if (node.type === "BlockStatement") {
+                for (const statement of node.body) {
+                    if (statement.type === "ReturnStatement" && statement.argument) {
+                        if (containsJsxHandler(statement.argument)) return true;
+                    }
+
+                    if (statement.type === "IfStatement") {
+                        if (containsJsxHandler(statement.consequent)) return true;
+                        if (statement.alternate && containsJsxHandler(statement.alternate)) return true;
+                    }
+                }
+            }
+
+            if (node.type === "ConditionalExpression") {
+                return containsJsxHandler(node.consequent) || containsJsxHandler(node.alternate);
+            }
+
+            if (node.type === "LogicalExpression") {
+                return containsJsxHandler(node.left) || containsJsxHandler(node.right);
+            }
+
+            if (node.type === "ParenthesizedExpression") {
+                return containsJsxHandler(node.expression);
+            }
+
+            return false;
+        };
+
+        // Check if function is a React component (PascalCase + returns JSX)
+        const isReactComponentHandler = (node, name) => {
+            if (!name || !/^[A-Z]/.test(name)) return false;
+
+            return containsJsxHandler(node.body);
+        };
+
         const checkFunctionHandler = (node) => {
             let name = null;
 
@@ -1852,7 +1893,10 @@ const functionNamingConvention = {
             // Skip hooks
             if (/^use[A-Z]/.test(name)) return;
 
-            // Check PascalCase functions
+            // Skip React components (PascalCase + returns JSX)
+            if (isReactComponentHandler(node, name)) return;
+
+            // Check PascalCase functions that are NOT React components
             if (/^[A-Z]/.test(name)) {
                 // If starts with a verb (case-insensitive), it should be camelCase
                 if (startsWithVerbCaseInsensitiveHandler(name)) {
