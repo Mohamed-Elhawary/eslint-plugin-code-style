@@ -351,7 +351,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 - Most rules should be auto-fixable (`fixable: "code"` or `fixable: "whitespace"` in meta)
 - Rules that require file creation/movement or architectural decisions may be report-only
-- Currently: 57 auto-fixable rules, 7 report-only rules
+- Currently: 58 auto-fixable rules, 6 report-only rules
 - Use 4-space indentation throughout
 - Object properties in `context.report()` must be alphabetically sorted
 - Keep rules self-sufficient (no dependencies on other ESLint rules)

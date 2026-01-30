@@ -36,7 +36,7 @@ This plugin provides **64 custom auto-fixable rules** for code formatting. Built
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 57 of 64 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 58 of 64 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-**57 rules** support automatic fixing with `eslint --fix`. 7 rules are report-only (require manual changes).
+**58 rules** support automatic fixing with `eslint --fix`. 6 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -250,7 +250,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **64 rules total** — 57 with auto-fix 🔧, 7 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
+> **64 rules total** — 58 with auto-fix 🔧, 6 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -274,7 +274,7 @@ rules: {
 | **Comment Rules** | |
 | `comment-format` | Space after `//`, space inside `/* */`, convert single-line blocks to `//`, no blank lines between file-top comments 🔧 |
 | **Component Rules** | |
-| `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` |
+| `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` 🔧 |
 | `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference 🔧 |
 | **Control Flow Rules** | |
 | `block-statement-newlines` | Newline after `{` and before `}` in if/for/while/function blocks 🔧 |

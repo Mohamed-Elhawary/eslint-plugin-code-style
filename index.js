@@ -12521,6 +12521,44 @@ const componentPropsDestructure = {
             return false;
         };
 
+        // Find all property accesses on a parameter in the function body
+        const findPropAccessesHandler = (body, paramName) => {
+            const accesses = [];
+
+            const visitNode = (n) => {
+                if (!n || typeof n !== "object") return;
+
+                // Check for member expression like props.name
+                if (n.type === "MemberExpression" && !n.computed) {
+                    if (n.object.type === "Identifier" && n.object.name === paramName) {
+                        const propName = n.property.name;
+
+                        accesses.push({
+                            node: n,
+                            property: propName,
+                        });
+                    }
+                }
+
+                // Recurse into child nodes
+                for (const key of Object.keys(n)) {
+                    if (key === "parent") continue;
+
+                    const child = n[key];
+
+                    if (Array.isArray(child)) {
+                        child.forEach(visitNode);
+                    } else if (child && typeof child === "object" && child.type) {
+                        visitNode(child);
+                    }
+                }
+            };
+
+            visitNode(body);
+
+            return accesses;
+        };
+
         const checkComponentPropsHandler = (node) => {
             if (!isReactComponentHandler(node)) return;
 
@@ -12533,7 +12571,48 @@ const componentPropsDestructure = {
             const firstParam = params[0];
 
             if (firstParam.type === "Identifier") {
+                const paramName = firstParam.name;
+                const accesses = findPropAccessesHandler(node.body, paramName);
+                const accessedProps = [...new Set(accesses.map((a) => a.property))];
+
+                // Check if param is used directly (not just via dot notation)
+                const allRefs = [];
+                const countRefs = (n) => {
+                    if (!n || typeof n !== "object") return;
+
+                    if (n.type === "Identifier" && n.name === paramName) allRefs.push(n);
+
+                    for (const key of Object.keys(n)) {
+                        if (key === "parent") continue;
+
+                        const child = n[key];
+
+                        if (Array.isArray(child)) child.forEach(countRefs);
+                        else if (child && typeof child === "object" && child.type) countRefs(child);
+                    }
+                };
+
+                countRefs(node.body);
+
+                // Can only auto-fix if all references are covered by dot notation accesses
+                const canAutoFix = accessedProps.length > 0 && allRefs.length === accesses.length;
+
                 context.report({
+                    fix: canAutoFix
+                        ? (fixer) => {
+                            const fixes = [];
+
+                            // Replace param with destructured pattern
+                            fixes.push(fixer.replaceText(firstParam, `{ ${accessedProps.join(", ")} }`));
+
+                            // Replace all props.x with just x
+                            accesses.forEach((access) => {
+                                fixes.push(fixer.replaceText(access.node, access.property));
+                            });
+
+                            return fixes;
+                        }
+                        : undefined,
                     message: `Component props should be destructured. Use "({ ...props })" instead of "${firstParam.name}"`,
                     node: firstParam,
                 });
@@ -12548,6 +12627,7 @@ const componentPropsDestructure = {
     },
     meta: {
         docs: { description: "Enforce that React component props must be destructured in the function parameter" },
+        fixable: "code",
         schema: [],
         type: "suggestion",
     },
