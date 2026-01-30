@@ -62,7 +62,7 @@ These rules cannot be auto-fixed because they require file creation, movement, o
 - Auto-fixable: 58 rules 🔧
 - Report-only: 6 rules
 
-**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.3.0...v1.4.2
+**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.3.1...v1.4.2
 
 ---
 
