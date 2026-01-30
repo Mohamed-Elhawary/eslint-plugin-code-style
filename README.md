@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*64 auto-fixable rules to keep your codebase clean and consistent*
+*65 rules (59 auto-fixable) to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **64 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **65 custom rules** (59 auto-fixable) for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **64 custom auto-fixable rules** for code formatting. Built
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 58 of 64 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 59 of 65 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-**58 rules** support automatic fixing with `eslint --fix`. 6 rules are report-only (require manual changes).
+**59 rules** support automatic fixing with `eslint --fix`. 6 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -3034,7 +3034,7 @@ const UseAuth = () => {};          // hooks should be camelCase
 
 ## 🔧 Auto-fixing
 
-All rules support auto-fixing. Run ESLint with the `--fix` flag:
+59 of 65 rules support auto-fixing. Run ESLint with the `--fix` flag:
 
 ```bash
 # Fix all files in src directory
