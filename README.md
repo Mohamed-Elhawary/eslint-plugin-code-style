@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*61 auto-fixable rules to keep your codebase clean and consistent*
+*64 auto-fixable rules to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **61 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **64 custom auto-fixable rules** for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **61 custom auto-fixable rules** for code formatting. Built
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Fully automated** — All 61 rules support auto-fix, eliminating manual style reviews
+- **Fully automated** — All 64 rules support auto-fix, eliminating manual style reviews
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -60,7 +60,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 
 ### 💡 Why Use These Configs?
 
-- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 61 code-style rules
+- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 64 code-style rules
 - **Ready-to-Use** — Copy the config file and start linting immediately
 - **Battle-Tested** — These configurations have been refined through real-world usage
 - **Fully Documented** — Each config includes detailed instructions and explanations
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-All **61 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
+All **64 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
 
 </td>
 <td width="50%">
@@ -250,7 +250,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> All **61 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
+> All **64 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
 >
 > Rules marked with ⚙️ support customization options (e.g., extending default folder lists).
 

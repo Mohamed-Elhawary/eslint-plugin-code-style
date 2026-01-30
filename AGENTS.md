@@ -4,7 +4,7 @@ Instructions for AI coding agents working with this codebase.
 
 ## Project Overview
 
-**eslint-plugin-code-style** is an ESLint plugin providing 61 custom auto-fixable formatting rules for React/JSX projects. It's designed for ESLint v9+ flat config system.
+**eslint-plugin-code-style** is an ESLint plugin providing 64 custom auto-fixable formatting rules for React/JSX projects. It's designed for ESLint v9+ flat config system.
 
 - **Main entry:** `index.js` - Contains all 61 rules in a single file
 - **Type definitions:** `index.d.ts` - TypeScript declarations for IDE support
@@ -44,7 +44,7 @@ index.js
 ├── imports (fs, path, url)
 ├── Rule 1 definition (const ruleName = { create(), meta: {} })
 ├── Rule 2 definition
-├── ... (61 rules total)
+├── ... (64 rules total)
 └── export default { meta: {}, rules: {} }
 ```
 
@@ -309,13 +309,13 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 - **Component Rules** — React component patterns
   - `component-props-destructure`, `component-props-inline-type`
 - **Control Flow Rules** — if/switch/block statements
-  - `block-statement-newlines`, `if-statement-format`, `multiline-if-conditions`, `no-empty-lines-in-switch-cases`
+  - `block-statement-newlines`, `if-statement-format`, `multiline-if-conditions`, `no-empty-lines-in-switch-cases`, `ternary-condition-multiline`
 - **Function Rules** — Function declarations and params
   - `function-call-spacing`, `function-declaration-style`, `function-naming-convention`, `function-object-destructure`, `function-params-per-line`, `no-empty-lines-in-function-params`
 - **Hook Rules** — React hooks formatting
   - `hook-callback-format`, `hook-deps-per-line`
 - **Import/Export Rules** — Import/export statements
-  - `absolute-imports-only`, `export-format`, `import-format`, `import-source-spacing`, `index-export-style`, `module-index-exports`
+  - `absolute-imports-only`, `export-format`, `import-format`, `import-source-spacing`, `index-export-style`, `index-exports-only`, `module-index-exports`
 - **JSX Rules** — JSX elements and attributes
   - `classname-dynamic-at-end`, `classname-multiline`, `classname-no-extra-spaces`, `classname-order`, `jsx-children-on-new-line`, `jsx-closing-bracket-spacing`, `jsx-element-child-new-line`, `jsx-logical-expression-simplify`, `jsx-parentheses-position`, `jsx-prop-naming-convention`, `jsx-simple-element-one-line`, `jsx-string-value-trim`, `jsx-ternary-format`, `no-empty-lines-in-jsx`
 - **Object Rules** — Object literal formatting
@@ -325,7 +325,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 - **Spacing Rules** — General spacing rules
   - `assignment-value-same-line`, `member-expression-bracket-spacing`
 - **TypeScript Rules** — TypeScript-specific rules (TS configs only)
-  - `enum-format`, `interface-format`, `type-annotation-spacing`, `type-format`, `typescript-definition-location`
+  - `enum-format`, `interface-format`, `no-inline-type-definitions`, `type-annotation-spacing`, `type-format`, `typescript-definition-location`
 - **Variable Rules** — Variable declarations and naming
   - `variable-naming-convention`
 
@@ -343,7 +343,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 ## Documentation Files
 
-- `README.md` - Main documentation with all 61 rules
+- `README.md` - Main documentation with all 64 rules
 - `recommended-configs/<config-name>/README.md` - Config-specific documentation (references main README for rule details)
 - `index.d.ts` - TypeScript types for IDE autocomplete
 

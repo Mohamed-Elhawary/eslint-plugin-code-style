@@ -154,6 +154,7 @@ export default [ // eslint-disable-line
             "code-style/import-format": "error",
             "code-style/import-source-spacing": "error",
             "code-style/index-export-style": "error",
+            "code-style/index-exports-only": "error",
             "code-style/jsx-children-on-new-line": "error",
             "code-style/jsx-closing-bracket-spacing": "error",
             "code-style/jsx-element-child-new-line": "error",
@@ -180,6 +181,7 @@ export default [ // eslint-disable-line
             "code-style/simple-call-single-line": "error",
             "code-style/single-argument-on-one-line": "error",
             "code-style/string-property-spacing": "error",
+            "code-style/ternary-condition-multiline": "error",
             "code-style/variable-naming-convention": "error",
 
             // General rules

@@ -30,6 +30,7 @@ export type RuleNames =
     | "code-style/import-format"
     | "code-style/import-source-spacing"
     | "code-style/index-export-style"
+    | "code-style/index-exports-only"
     | "code-style/classname-dynamic-at-end"
     | "code-style/classname-multiline"
     | "code-style/classname-no-extra-spaces"
@@ -47,6 +48,7 @@ export type RuleNames =
     | "code-style/module-index-exports"
     | "code-style/multiline-if-conditions"
     | "code-style/nested-call-closing-brackets"
+    | "code-style/no-inline-type-definitions"
     | "code-style/no-empty-lines-in-function-calls"
     | "code-style/no-empty-lines-in-function-params"
     | "code-style/no-empty-lines-in-jsx"
@@ -59,8 +61,10 @@ export type RuleNames =
     | "code-style/simple-call-single-line"
     | "code-style/single-argument-on-one-line"
     | "code-style/string-property-spacing"
+    | "code-style/ternary-condition-multiline"
     | "code-style/enum-format"
     | "code-style/interface-format"
+    | "code-style/type-annotation-spacing"
     | "code-style/type-format"
     | "code-style/typescript-definition-location"
     | "code-style/variable-naming-convention";
@@ -112,6 +116,7 @@ interface PluginRules {
     "import-format": Rule.RuleModule;
     "import-source-spacing": Rule.RuleModule;
     "index-export-style": Rule.RuleModule;
+    "index-exports-only": Rule.RuleModule;
     "classname-dynamic-at-end": Rule.RuleModule;
     "classname-multiline": Rule.RuleModule;
     "classname-no-extra-spaces": Rule.RuleModule;
@@ -129,6 +134,7 @@ interface PluginRules {
     "module-index-exports": Rule.RuleModule;
     "multiline-if-conditions": Rule.RuleModule;
     "nested-call-closing-brackets": Rule.RuleModule;
+    "no-inline-type-definitions": Rule.RuleModule;
     "no-empty-lines-in-function-calls": Rule.RuleModule;
     "no-empty-lines-in-function-params": Rule.RuleModule;
     "no-empty-lines-in-jsx": Rule.RuleModule;
@@ -141,8 +147,10 @@ interface PluginRules {
     "simple-call-single-line": Rule.RuleModule;
     "single-argument-on-one-line": Rule.RuleModule;
     "string-property-spacing": Rule.RuleModule;
+    "ternary-condition-multiline": Rule.RuleModule;
     "enum-format": Rule.RuleModule;
     "interface-format": Rule.RuleModule;
+    "type-annotation-spacing": Rule.RuleModule;
     "type-format": Rule.RuleModule;
     "typescript-definition-location": Rule.RuleModule;
     "variable-naming-convention": Rule.RuleModule;

@@ -1794,32 +1794,78 @@ const functionNamingConvention = {
 
         const hookRegex = /^use[A-Z]/;
 
+        // Comprehensive list of English verbs commonly used in function names
+        // Organized by category for maintainability
         const verbPrefixes = [
+            // CRUD & Data operations
             "get", "set", "fetch", "load", "save", "create", "update", "delete", "remove", "add",
-            "is", "has", "can", "should", "will", "did", "was", "were",
-            "check", "validate", "verify", "confirm", "ensure",
+            "insert", "append", "prepend", "push", "pop", "shift", "unshift", "put", "patch",
+            // Boolean checks
+            "is", "has", "can", "should", "will", "did", "was", "were", "does", "do",
+            // Validation
+            "check", "validate", "verify", "confirm", "ensure", "assert", "test", "match",
+            // Search & Filter
             "find", "search", "filter", "sort", "map", "reduce", "merge", "split", "join",
+            "query", "lookup", "locate", "detect", "identify", "discover", "scan", "probe",
+            // Transformation
             "parse", "format", "convert", "transform", "normalize", "serialize", "deserialize",
-            "encode", "decode", "encrypt", "decrypt", "hash", "sign",
-            "render", "display", "show", "hide", "toggle", "enable", "disable",
-            "open", "close", "start", "stop", "init", "setup", "reset", "clear",
-            "connect", "disconnect", "subscribe", "unsubscribe", "listen", "emit",
+            "encode", "decode", "encrypt", "decrypt", "hash", "sign", "compress", "decompress",
+            "stringify", "objectify", "flatten", "unflatten", "transpose", "invert",
+            // String manipulation
+            "strip", "trim", "pad", "wrap", "unwrap", "sanitize", "escape", "unescape",
+            "capitalize", "lowercase", "uppercase", "camel", "snake", "kebab", "truncate",
+            "replace", "substitute", "interpolate", "template", "render",
+            // Display & UI
+            "display", "show", "hide", "toggle", "enable", "disable", "activate", "deactivate",
+            "highlight", "focus", "blur", "select", "deselect", "expand", "collapse", "resize",
+            "animate", "transition", "fade", "slide", "zoom", "rotate", "scale",
+            // Lifecycle
+            "open", "close", "start", "stop", "init", "setup", "reset", "clear", "destroy",
+            "mount", "unmount", "attach", "detach", "bind", "unbind", "dispose", "cleanup",
+            "register", "unregister", "install", "uninstall", "configure", "reconfigure",
+            // Network & Communication
+            "connect", "disconnect", "subscribe", "unsubscribe", "listen", "emit", "broadcast",
             "send", "receive", "request", "respond", "submit", "cancel", "abort", "poll",
-            "read", "write", "copy", "move", "clone", "extract", "insert", "append", "prepend",
+            "download", "upload", "import", "export", "sync", "stream", "pipe",
+            // File & I/O
+            "read", "write", "copy", "move", "clone", "extract", "archive", "restore", "backup",
+            // Computation
             "build", "make", "generate", "compute", "calculate", "process", "execute", "run",
-            "apply", "call", "invoke", "trigger", "fire", "dispatch",
-            "mount", "unmount", "attach", "detach", "bind", "unbind",
-            "register", "unregister", "activate", "deactivate",
-            "login", "logout", "authenticate", "authorize",
-            "navigate", "redirect", "route", "scroll", "focus", "blur",
-            "select", "deselect", "expand", "collapse", "resize", "refresh", "reload",
-            "download", "upload", "import", "export", "sync", "async",
-            "log", "warn", "error", "debug", "trace", "print",
-            "wrap", "unwrap", "sanitize", "escape", "unescape", "trim", "pad",
-            "count", "sum", "avg", "min", "max", "clamp", "round", "floor", "ceil",
-            "throw", "catch", "resolve", "reject", "retry", "await",
+            "evaluate", "analyze", "measure", "benchmark", "profile", "optimize",
+            "count", "sum", "avg", "min", "max", "clamp", "round", "floor", "ceil", "abs",
+            // Invocation
+            "apply", "call", "invoke", "trigger", "fire", "dispatch", "emit", "raise", "signal",
+            // Auth
+            "login", "logout", "authenticate", "authorize", "grant", "revoke", "permit", "deny",
+            // Navigation
+            "navigate", "redirect", "route", "scroll", "jump", "go", "back", "forward",
+            "refresh", "reload", "restore",
+            // Logging
+            "log", "warn", "error", "debug", "trace", "print", "dump", "inspect",
+            // Error handling
+            "throw", "catch", "resolve", "reject", "retry", "await", "recover", "fallback",
+            // Performance
             "debounce", "throttle", "memoize", "cache", "batch", "queue", "defer", "delay",
-            "handle", "on", "click", "change", "input", "submit", "press", "drag", "drop",
+            "schedule", "preload", "prefetch", "lazy",
+            // Events
+            "handle", "on", "click", "change", "input", "press", "drag", "drop",
+            "hover", "enter", "leave", "touch", "swipe", "pinch", "tap",
+            // Comparison
+            "compare", "diff", "equal", "differ", "overlap", "intersect", "union", "exclude",
+            // Grouping
+            "group", "ungroup", "partition", "chunk", "segment", "categorize", "classify",
+            // Ordering
+            "order", "reorder", "arrange", "reverse", "shuffle", "randomize", "pick", "sample",
+            // Validation state
+            "lock", "unlock", "freeze", "unfreeze", "seal", "mark", "unmark", "flag", "unflag",
+            // Misc common verbs
+            "use", "require", "need", "want", "try", "attempt", "ensure", "guarantee",
+            "prepare", "finalize", "complete", "finish", "end", "begin", "continue", "resume",
+            "pause", "suspend", "interrupt", "break", "skip", "ignore", "include", "exclude",
+            "accept", "decline", "approve", "reject", "confirm", "dismiss", "acknowledge",
+            "assign", "allocate", "distribute", "collect", "gather", "aggregate", "accumulate",
+            "populate", "fill", "empty", "drain", "flush", "purge", "prune", "clean", "sanitize",
+            "compose", "decompose", "assemble", "disassemble", "construct", "deconstruct",
         ];
 
         const startsWithVerbHandler = (name) => verbPrefixes.some((verb) => name.startsWith(verb));
@@ -3146,8 +3192,10 @@ const multilineIfConditions = {
             if (isCorrectionNeeded) {
                 context.report({
                     fix: (fixer) => {
-                        const indent = " ".repeat(node.loc.start.column + 4);
-                        const parenIndent = " ".repeat(node.loc.start.column);
+                        // Get the indentation of the if statement line
+                        const lineText = sourceCode.lines[node.loc.start.line - 1];
+                        const parenIndent = lineText.match(/^\s*/)[0];
+                        const indent = parenIndent + "    ";
 
                         const buildMultilineHandler = (n) => {
                             if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
@@ -3303,6 +3351,251 @@ const multilineIfConditions = {
     meta: {
         docs: { description: "Enforce multiline if/property conditions when exceeding threshold (default: >3 operands)" },
         fixable: "whitespace",
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    maxOperands: {
+                        default: 3,
+                        description: "Maximum operands to keep on single line (default: 3)",
+                        minimum: 1,
+                        type: "integer",
+                    },
+                },
+                type: "object",
+            },
+        ],
+        type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Ternary Condition Multiline
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   When a ternary condition has multiple operands (>3), format
+ *   each operand on its own line for readability.
+ *
+ * ✓ Good:
+ *   const x = a && b && c ? "yes" : "no";
+ *
+ *   const x =
+ *       variant === "ghost"
+ *       || variant === "ghost-danger"
+ *       || variant === "muted"
+ *       || variant === "primary"
+ *           ? "value1"
+ *           : "value2";
+ *
+ * ✗ Bad:
+ *   const x = variant === "ghost" || variant === "ghost-danger" || variant === "muted" || variant === "primary" ? "value1" : "value2";
+ */
+const ternaryConditionMultiline = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+        const options = context.options[0] || {};
+        const maxOperands = options.maxOperands ?? 3;
+
+        // Check if node is wrapped in parentheses
+        const isParenthesizedHandler = (node) => {
+            const tokenBefore = sourceCode.getTokenBefore(node);
+            const tokenAfter = sourceCode.getTokenAfter(node);
+
+            if (!tokenBefore || !tokenAfter) return false;
+
+            return tokenBefore.value === "(" && tokenAfter.value === ")";
+        };
+
+        // Get source text including any surrounding parentheses
+        const getSourceTextWithGroupsHandler = (node) => {
+            let start = node.range[0];
+            let end = node.range[1];
+            let left = sourceCode.getTokenBefore(node);
+            let right = sourceCode.getTokenAfter(node);
+
+            while (left && left.value === "(" && right && right.value === ")") {
+                start = left.range[0];
+                end = right.range[1];
+                left = sourceCode.getTokenBefore(left);
+                right = sourceCode.getTokenAfter(right);
+            }
+
+            return sourceCode.text.slice(start, end);
+        };
+
+        // Collect all operands from a logical expression
+        const collectOperandsHandler = (node) => {
+            const operands = [];
+
+            const collectHelperHandler = (n) => {
+                if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                    collectHelperHandler(n.left);
+                    collectHelperHandler(n.right);
+                } else {
+                    operands.push(n);
+                }
+            };
+
+            collectHelperHandler(node);
+
+            return operands;
+        };
+
+        // Check if a BinaryExpression is split across lines
+        const isBinaryExpressionSplitHandler = (n) => {
+            if (n.type !== "BinaryExpression") return false;
+
+            const { left, right } = n;
+
+            if (left.loc.end.line !== right.loc.start.line) return true;
+            if (isBinaryExpressionSplitHandler(left)) return true;
+            if (isBinaryExpressionSplitHandler(right)) return true;
+
+            return false;
+        };
+
+        // Collapse a BinaryExpression to single line
+        const buildBinaryExpressionSingleLineHandler = (n) => {
+            if (n.type === "BinaryExpression") {
+                const leftText = buildBinaryExpressionSingleLineHandler(n.left);
+                const rightText = buildBinaryExpressionSingleLineHandler(n.right);
+
+                return `${leftText} ${n.operator} ${rightText}`;
+            }
+
+            return sourceCode.getText(n);
+        };
+
+        // Helper to check if any operator is at end of line (wrong position)
+        const hasOperatorAtEndOfLineHandler = (n) => {
+            if (n.type !== "LogicalExpression") return false;
+
+            const operatorToken = sourceCode.getTokenAfter(
+                n.left,
+                (t) => t.value === "||" || t.value === "&&",
+            );
+
+            if (operatorToken) {
+                const tokenAfterOperator = sourceCode.getTokenAfter(operatorToken);
+
+                if (tokenAfterOperator && operatorToken.loc.end.line < tokenAfterOperator.loc.start.line) {
+                    return true;
+                }
+            }
+
+            if (hasOperatorAtEndOfLineHandler(n.left)) return true;
+            if (hasOperatorAtEndOfLineHandler(n.right)) return true;
+
+            return false;
+        };
+
+        return {
+            ConditionalExpression(node) {
+                const { test } = node;
+
+                // Only handle ternaries with logical expression conditions
+                if (test.type !== "LogicalExpression") return;
+
+                const operands = collectOperandsHandler(test);
+                const testStartLine = test.loc.start.line;
+                const testEndLine = test.loc.end.line;
+                const isMultiLine = testStartLine !== testEndLine;
+
+                // ≤maxOperands operands: keep on single line
+                if (operands.length <= maxOperands) {
+                    const firstOperandStartLine = operands[0].loc.start.line;
+                    const allOperandsStartOnSameLine = operands.every(
+                        (op) => op.loc.start.line === firstOperandStartLine,
+                    );
+
+                    const hasSplitBinaryExpression = operands.some(
+                        (op) => isBinaryExpressionSplitHandler(op),
+                    );
+
+                    if (!allOperandsStartOnSameLine || hasSplitBinaryExpression) {
+                        context.report({
+                            fix: (fixer) => {
+                                const buildSameLineHandler = (n) => {
+                                    if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                                        const leftText = buildSameLineHandler(n.left);
+                                        const rightText = buildSameLineHandler(n.right);
+
+                                        return `${leftText} ${n.operator} ${rightText}`;
+                                    }
+
+                                    if (n.type === "BinaryExpression" && isBinaryExpressionSplitHandler(n)) {
+                                        return buildBinaryExpressionSingleLineHandler(n);
+                                    }
+
+                                    return getSourceTextWithGroupsHandler(n);
+                                };
+
+                                return fixer.replaceText(test, buildSameLineHandler(test));
+                            },
+                            message: `Ternary conditions with ≤${maxOperands} operands should be single line`,
+                            node: test,
+                        });
+                    }
+
+                    return;
+                }
+
+                // More than maxOperands: each on its own line
+                let isCorrectionNeeded = !isMultiLine;
+
+                if (isMultiLine) {
+                    for (let i = 0; i < operands.length - 1; i += 1) {
+                        if (operands[i].loc.end.line === operands[i + 1].loc.start.line) {
+                            isCorrectionNeeded = true;
+                            break;
+                        }
+                    }
+
+                    // Check if any operator is at end of line (should be at beginning)
+                    if (!isCorrectionNeeded && hasOperatorAtEndOfLineHandler(test)) {
+                        isCorrectionNeeded = true;
+                    }
+                }
+
+                if (isCorrectionNeeded) {
+                    context.report({
+                        fix: (fixer) => {
+                            // Get the indentation based on where the ternary starts
+                            const lineText = sourceCode.lines[node.loc.start.line - 1];
+                            const baseIndent = lineText.match(/^\s*/)[0];
+                            const conditionIndent = baseIndent + "    ";
+                            const branchIndent = baseIndent + "        ";
+
+                            const buildMultilineHandler = (n) => {
+                                if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                                    const leftText = buildMultilineHandler(n.left);
+                                    const rightText = buildMultilineHandler(n.right);
+
+                                    return `${leftText}\n${conditionIndent}${n.operator} ${rightText}`;
+                                }
+
+                                return getSourceTextWithGroupsHandler(n);
+                            };
+
+                            const consequentText = sourceCode.getText(node.consequent);
+                            const alternateText = sourceCode.getText(node.alternate);
+
+                            const newText = `\n${conditionIndent}${buildMultilineHandler(test)}\n${branchIndent}? ${consequentText}\n${branchIndent}: ${alternateText}`;
+
+                            return fixer.replaceText(node, newText);
+                        },
+                        message: `Ternary conditions with more than ${maxOperands} operands should be multiline, with each operand on its own line`,
+                        node: test,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce multiline formatting for ternary expressions with complex conditions" },
+        fixable: "code",
         schema: [
             {
                 additionalProperties: false,
@@ -4755,6 +5048,57 @@ const indexExportStyle = {
             },
         ],
         type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Index Exports Only
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Index files (index.ts, index.tsx, index.js, index.jsx) should
+ *   only contain imports and exports, not type or interface definitions.
+ *   Types should be moved to a separate file (e.g., types.ts).
+ *
+ * ✓ Good:
+ *   // index.ts
+ *   export { Button } from "./Button";
+ *   export type { ButtonProps } from "./types";
+ *
+ * ✗ Bad:
+ *   // index.ts
+ *   export type ButtonVariant = "primary" | "secondary";
+ *   export interface ButtonProps { ... }
+ */
+const indexExportsOnly = {
+    create(context) {
+        const filename = context.filename || context.getFilename();
+        const normalizedFilename = filename.replace(/\\/g, "/");
+        const isIndexFile = /\/index\.(js|jsx|ts|tsx)$/.test(normalizedFilename)
+            || /^index\.(js|jsx|ts|tsx)$/.test(normalizedFilename);
+
+        if (!isIndexFile) return {};
+
+        return {
+            TSInterfaceDeclaration(node) {
+                context.report({
+                    message: "Interface definitions should not be in index files. Move to a types file.",
+                    node,
+                });
+            },
+            TSTypeAliasDeclaration(node) {
+                context.report({
+                    message: "Type definitions should not be in index files. Move to a types file.",
+                    node,
+                });
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Index files should only contain imports and exports, not type definitions" },
+        schema: [],
+        type: "suggestion",
     },
 };
 
@@ -6319,7 +6663,19 @@ const classNameMultiline = {
                 if (current.type === "JSXAttribute"
                     || current.type === "VariableDeclarator"
                     || current.type === "Property") {
-                    return getLineIndent(current);
+                    const lineIndent = getLineIndent(current);
+                    const lineText = sourceCode.lines[current.loc.start.line - 1];
+
+                    // Check if there's content before the node on this line
+                    const contentBefore = lineText.slice(0, current.loc.start.column).trim();
+
+                    if (contentBefore) {
+                        // Attribute is inline (e.g., <Component className=...>)
+                        // Use column position as indent for proper alignment
+                        return " ".repeat(current.loc.start.column);
+                    }
+
+                    return lineIndent;
                 }
 
                 current = current.parent;
@@ -11992,6 +12348,31 @@ const functionObjectDestructure = {
                     const accessedProps = [...new Set(accesses.map((a) => a.property))];
 
                     context.report({
+                        fix: (fixer) => {
+                            const fixes = [];
+
+                            // Get the first statement in the block body to insert before it
+                            const firstStatement = body.body[0];
+
+                            if (firstStatement) {
+                                // Get indentation from the first statement
+                                const firstStatementLine = sourceCode.lines[firstStatement.loc.start.line - 1];
+                                const indent = firstStatementLine.match(/^\s*/)[0];
+
+                                // Create the destructuring statement
+                                const destructureStatement = `const { ${accessedProps.join(", ")} } = ${paramName};\n${indent}`;
+
+                                // Insert at the beginning of the first statement
+                                fixes.push(fixer.insertTextBefore(firstStatement, destructureStatement));
+                            }
+
+                            // Replace all param.prop accesses with just prop
+                            accesses.forEach((access) => {
+                                fixes.push(fixer.replaceText(access.node, access.property));
+                            });
+
+                            return fixes;
+                        },
                         message: `Parameter "${paramName}" is accessed via dot notation. Destructure it at the top of the function body: "const { ${accessedProps.join(", ")} } = ${paramName};"`,
                         node: accesses[0].node,
                     });
@@ -12017,6 +12398,31 @@ const functionObjectDestructure = {
                             const accessedProps = [...new Set(accesses.map((a) => a.property))];
 
                             context.report({
+                                fix: (fixer) => {
+                                    const fixes = [];
+
+                                    // Get the first statement in the block body to insert before it
+                                    const firstStatement = body.body[0];
+
+                                    if (firstStatement) {
+                                        // Get indentation from the first statement
+                                        const firstStatementLine = sourceCode.lines[firstStatement.loc.start.line - 1];
+                                        const indent = firstStatementLine.match(/^\s*/)[0];
+
+                                        // Create the destructuring statement
+                                        const destructureStatement = `const { ${accessedProps.join(", ")} } = ${propName};\n\n${indent}`;
+
+                                        // Insert at the beginning of the first statement
+                                        fixes.push(fixer.insertTextBefore(firstStatement, destructureStatement));
+                                    }
+
+                                    // Replace all prop.subprop accesses with just subprop
+                                    accesses.forEach((access) => {
+                                        fixes.push(fixer.replaceText(access.node, access.property));
+                                    });
+
+                                    return fixes;
+                                },
                                 message: `Prop "${propName}" is accessed via dot notation. Destructure it at the top of the component: "const { ${accessedProps.join(", ")} } = ${propName};"`,
                                 node: accesses[0].node,
                             });
@@ -12588,6 +12994,146 @@ const componentPropsInlineType = {
         docs: { description: "Enforce inline type annotation for React component props and return types with proper formatting" },
         fixable: "code",
         schema: [],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: No Inline Type Definitions
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Function parameters with inline union types should be extracted
+ *   to a separate type file. This rule reports union types with
+ *   more than a threshold number of members or exceeding a length limit.
+ *
+ * ✓ Good:
+ *   // In types.ts:
+ *   export type ButtonVariant = "primary" | "muted" | "danger";
+ *
+ *   // In Button.tsx:
+ *   import { ButtonVariant } from "./types";
+ *   export const Button = ({ variant }: { variant?: ButtonVariant }) => ...
+ *
+ * ✗ Bad:
+ *   export const Button = ({ variant }: { variant?: "primary" | "muted" | "danger" }) => ...
+ */
+const noInlineTypeDefinitions = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+        const options = context.options[0] || {};
+        const maxUnionMembers = options.maxUnionMembers ?? 2;
+        const maxLength = options.maxLength ?? 50;
+
+        // Count union type members
+        const countUnionMembersHandler = (node) => {
+            if (node.type !== "TSUnionType") return 1;
+
+            let count = 0;
+
+            for (const type of node.types) {
+                count += countUnionMembersHandler(type);
+            }
+
+            return count;
+        };
+
+        // Check if a type annotation contains a complex inline union
+        const checkTypeAnnotationHandler = (typeNode, paramName) => {
+            if (!typeNode) return;
+
+            // Handle union types directly
+            if (typeNode.type === "TSUnionType") {
+                const memberCount = countUnionMembersHandler(typeNode);
+                const typeText = sourceCode.getText(typeNode);
+
+                if (memberCount > maxUnionMembers || typeText.length > maxLength) {
+                    context.report({
+                        message: `Inline union type with ${memberCount} members is too complex. Extract to a named type in a types file.`,
+                        node: typeNode,
+                    });
+                }
+
+                return;
+            }
+
+            // Handle object types with union properties
+            if (typeNode.type === "TSTypeLiteral") {
+                for (const member of typeNode.members) {
+                    if (member.type === "TSPropertySignature" && member.typeAnnotation) {
+                        const propType = member.typeAnnotation.typeAnnotation;
+                        const propName = member.key && member.key.name ? member.key.name : "unknown";
+
+                        if (propType && propType.type === "TSUnionType") {
+                            const memberCount = countUnionMembersHandler(propType);
+                            const typeText = sourceCode.getText(propType);
+
+                            if (memberCount > maxUnionMembers || typeText.length > maxLength) {
+                                context.report({
+                                    message: `Property "${propName}" has inline union type with ${memberCount} members. Extract to a named type in a types file.`,
+                                    node: propType,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        return {
+            // Check function parameters
+            ArrowFunctionExpression(node) {
+                for (const param of node.params) {
+                    if (param.typeAnnotation && param.typeAnnotation.typeAnnotation) {
+                        const paramName = param.type === "Identifier" ? param.name : "param";
+
+                        checkTypeAnnotationHandler(param.typeAnnotation.typeAnnotation, paramName);
+                    }
+                }
+            },
+            FunctionDeclaration(node) {
+                for (const param of node.params) {
+                    if (param.typeAnnotation && param.typeAnnotation.typeAnnotation) {
+                        const paramName = param.type === "Identifier" ? param.name : "param";
+
+                        checkTypeAnnotationHandler(param.typeAnnotation.typeAnnotation, paramName);
+                    }
+                }
+            },
+            FunctionExpression(node) {
+                for (const param of node.params) {
+                    if (param.typeAnnotation && param.typeAnnotation.typeAnnotation) {
+                        const paramName = param.type === "Identifier" ? param.name : "param";
+
+                        checkTypeAnnotationHandler(param.typeAnnotation.typeAnnotation, paramName);
+                    }
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce extracting inline union types to named types in type files" },
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    maxLength: {
+                        default: 50,
+                        description: "Maximum character length for inline union types (default: 50)",
+                        minimum: 1,
+                        type: "integer",
+                    },
+                    maxUnionMembers: {
+                        default: 2,
+                        description: "Maximum union members to keep inline (default: 2)",
+                        minimum: 1,
+                        type: "integer",
+                    },
+                },
+                type: "object",
+            },
+        ],
         type: "suggestion",
     },
 };
@@ -15096,6 +15642,7 @@ export default {
         "if-statement-format": ifStatementFormat,
         "multiline-if-conditions": multilineIfConditions,
         "no-empty-lines-in-switch-cases": noEmptyLinesInSwitchCases,
+        "ternary-condition-multiline": ternaryConditionMultiline,
 
         // Function rules
         "function-call-spacing": functionCallSpacing,
@@ -15115,6 +15662,7 @@ export default {
         "import-format": importFormat,
         "import-source-spacing": importSourceSpacing,
         "index-export-style": indexExportStyle,
+        "index-exports-only": indexExportsOnly,
         "module-index-exports": moduleIndexExports,
 
         // JSX rules
@@ -15147,6 +15695,7 @@ export default {
         // TypeScript rules
         "enum-format": enumFormat,
         "interface-format": interfaceFormat,
+        "no-inline-type-definitions": noInlineTypeDefinitions,
         "type-annotation-spacing": typeAnnotationSpacing,
         "type-format": typeFormat,
         "typescript-definition-location": typescriptDefinitionLocation,
