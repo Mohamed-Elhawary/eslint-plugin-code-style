@@ -6,30 +6,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) principles.
 
 ---
 
-## [1.4.4] - 2026-01-30
-
-**Release Title:** Bug Fixes for Auto-Fix Indentation & Nested Destructuring
-
-**Version Range:** v1.4.3 → v1.4.4
-
-### Fixed
-
-- **classname-multiline** - Fix template literal indentation for variable declarations:
-  - Use line indentation instead of column position for VariableDeclarator/Property
-  - Only use column-based indent for inline JSX attributes
-  - Fixes issue where content was getting incorrect spacing (e.g., 14 spaces instead of 8)
-
-### Enhanced
-
-- **function-object-destructure** - Added auto-fix for nested destructuring:
-  - Detects `const { target } = e; target.value` pattern
-  - Auto-fixes to `const { target: { value } } = e; value`
-  - Replaces all nested property accesses with the destructured variable
-
-**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.4.3...v1.4.4
-
----
-
 ## [1.4.2] - 2026-01-30
 
 **Release Title:** New Rules, Enhanced Auto-Fix & Comprehensive Documentation

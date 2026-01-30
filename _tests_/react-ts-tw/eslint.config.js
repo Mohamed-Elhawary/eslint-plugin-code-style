@@ -12,12 +12,6 @@ import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import tailwind from "eslint-plugin-tailwindcss";
 import globals from "globals";
-/*
- * Tailwind CSS v4 only: uncomment the following lines to resolve __dirname
- * and set the tailwindcss config path in the settings below.
- * For Tailwind CSS v3, these are not needed.
- * Also for v3, use "eslint-plugin-tailwindcss": "^3.18.2" instead of "^4.0.0-beta.0" 
- */
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 
