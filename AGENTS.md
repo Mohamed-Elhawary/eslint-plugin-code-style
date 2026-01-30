@@ -4,7 +4,7 @@ Instructions for AI coding agents working with this codebase.
 
 ## Project Overview
 
-**eslint-plugin-code-style** is an ESLint plugin providing 64 custom auto-fixable formatting rules for React/JSX projects. It's designed for ESLint v9+ flat config system.
+**eslint-plugin-code-style** is an ESLint plugin providing 64 custom formatting rules (57 auto-fixable, 7 report-only) for React/JSX projects. It's designed for ESLint v9+ flat config system.
 
 - **Main entry:** `index.js` - Contains all 61 rules in a single file
 - **Type definitions:** `index.d.ts` - TypeScript declarations for IDE support
@@ -349,7 +349,9 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 ## Important Notes
 
-- All rules must be auto-fixable (`fixable: "code"` in meta)
+- Most rules should be auto-fixable (`fixable: "code"` or `fixable: "whitespace"` in meta)
+- Rules that require file creation/movement or architectural decisions may be report-only
+- Currently: 57 auto-fixable rules, 7 report-only rules
 - Use 4-space indentation throughout
 - Object properties in `context.report()` must be alphabetically sorted
 - Keep rules self-sufficient (no dependencies on other ESLint rules)

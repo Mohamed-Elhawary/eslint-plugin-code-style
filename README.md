@@ -36,7 +36,7 @@ This plugin provides **64 custom auto-fixable rules** for code formatting. Built
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Fully automated** — All 64 rules support auto-fix, eliminating manual style reviews
+- **Highly automated** — 57 of 64 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-All **64 rules** support automatic fixing with `eslint --fix`. No manual code changes needed.
+**57 rules** support automatic fixing with `eslint --fix`. 7 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -250,88 +250,91 @@ rules: {
 
 ## 📖 Rules Categories
 
-> All **64 rules** are auto-fixable. See detailed examples for each rule in the [Rules Reference](#-rules-reference) section below.
+> **64 rules total** — 57 with auto-fix 🔧, 7 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
-> Rules marked with ⚙️ support customization options (e.g., extending default folder lists).
+> **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
 | Rule | Description |
 |------|-------------|
 | **Array Rules** | |
-| `array-items-per-line` | Collapse arrays ≤ threshold to one line; expand larger arrays with each item on own line (default: ≤3) ⚙️ |
-| `array-objects-on-new-lines` | Each object in an array starts on its own line for better visual scanning |
+| `array-items-per-line` | Collapse arrays ≤ threshold to one line; expand larger arrays with each item on own line (default: ≤3) 🔧 ⚙️ |
+| `array-objects-on-new-lines` | Each object in an array starts on its own line for better visual scanning 🔧 |
 | **Arrow Function Rules** | |
-| `arrow-function-block-body` | Wrap multiline arrow function expressions in parentheses for clear boundaries |
-| `arrow-function-simple-jsx` | Collapse arrow functions returning simple single-element JSX to one line, remove unnecessary parens |
-| `arrow-function-simplify` | Convert block body with single return to implicit return: `() => { return x; }` → `() => x` |
-| `curried-arrow-same-line` | Curried arrow functions start on same line as `=>`, not on new line |
+| `arrow-function-block-body` | Wrap multiline arrow function expressions in parentheses for clear boundaries 🔧 |
+| `arrow-function-simple-jsx` | Collapse arrow functions returning simple single-element JSX to one line, remove unnecessary parens 🔧 |
+| `arrow-function-simplify` | Convert block body with single return to implicit return: `() => { return x; }` → `() => x` 🔧 |
+| `curried-arrow-same-line` | Curried arrow functions start on same line as `=>`, not on new line 🔧 |
 | **Call Expression Rules** | |
-| `function-arguments-format` | Args ≥ threshold or multiline: first arg on new line, each on own line, closing `)` on new line (default: ≥2) ⚙️ |
-| `nested-call-closing-brackets` | Chain closing brackets on same line: `}));` not scattered across lines |
-| `no-empty-lines-in-function-calls` | No empty lines between arguments or after `(`/before `)` |
-| `opening-brackets-same-line` | Opening `{`, `[`, or `(` on same line as function call, not on new line |
-| `simple-call-single-line` | Collapse simple arrow function calls to single line (including callbacks with params and optional chaining) |
-| `single-argument-on-one-line` | Single simple argument stays on one line: `fn(x)` not expanded |
+| `function-arguments-format` | Args ≥ threshold or multiline: first arg on new line, each on own line, closing `)` on new line (default: ≥2) 🔧 ⚙️ |
+| `nested-call-closing-brackets` | Chain closing brackets on same line: `}));` not scattered across lines 🔧 |
+| `no-empty-lines-in-function-calls` | No empty lines between arguments or after `(`/before `)` 🔧 |
+| `opening-brackets-same-line` | Opening `{`, `[`, or `(` on same line as function call, not on new line 🔧 |
+| `simple-call-single-line` | Collapse simple arrow function calls to single line (including callbacks with params and optional chaining) 🔧 |
+| `single-argument-on-one-line` | Single simple argument stays on one line: `fn(x)` not expanded 🔧 |
 | **Comment Rules** | |
-| `comment-format` | Space after `//`, space inside `/* */`, convert single-line blocks to `//`, no blank lines between file-top comments |
+| `comment-format` | Space after `//`, space inside `/* */`, convert single-line blocks to `//`, no blank lines between file-top comments 🔧 |
 | **Component Rules** | |
 | `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` |
-| `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference |
+| `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference 🔧 |
 | **Control Flow Rules** | |
-| `block-statement-newlines` | Newline after `{` and before `}` in if/for/while/function blocks |
-| `if-statement-format` | `{` on same line as `if`/`else if`, `else` on same line as `}`, proper spacing |
-| `multiline-if-conditions` | Conditions exceeding threshold get one operand per line with proper indentation (default: >3) ⚙️ |
-| `no-empty-lines-in-switch-cases` | No empty line after `case X:` before code, no empty lines between cases |
+| `block-statement-newlines` | Newline after `{` and before `}` in if/for/while/function blocks 🔧 |
+| `if-statement-format` | `{` on same line as `if`/`else if`, `else` on same line as `}`, proper spacing 🔧 |
+| `multiline-if-conditions` | Conditions exceeding threshold get one operand per line with proper indentation (default: >3) 🔧 ⚙️ |
+| `no-empty-lines-in-switch-cases` | No empty line after `case X:` before code, no empty lines between cases 🔧 |
+| `ternary-condition-multiline` | Ternary conditions exceeding threshold get one operand per line (default: >3) 🔧 ⚙️ |
 | **Function Rules** | |
-| `function-call-spacing` | No space between function name and `(`: `fn()` not `fn ()` |
-| `function-declaration-style` | Auto-fix for `func-style`: converts function declarations to arrow expressions |
-| `function-naming-convention` | Functions use camelCase, start with verb (get/set/handle/is/has), handlers end with Handler |
-| `function-object-destructure` | Non-component functions: use typed params (not destructured), destructure in body; report dot notation access |
-| `function-params-per-line` | When multiline, each param on own line with consistent indentation |
-| `no-empty-lines-in-function-params` | No empty lines between parameters or after `(`/before `)` |
+| `function-call-spacing` | No space between function name and `(`: `fn()` not `fn ()` 🔧 |
+| `function-declaration-style` | Auto-fix for `func-style`: converts function declarations to arrow expressions 🔧 |
+| `function-naming-convention` | Functions use camelCase, start with verb (get/set/handle/is/has), handlers end with Handler 🔧 |
+| `function-object-destructure` | Non-component functions: use typed params (not destructured), destructure in body; report dot notation access 🔧 |
+| `function-params-per-line` | When multiline, each param on own line with consistent indentation 🔧 |
+| `no-empty-lines-in-function-params` | No empty lines between parameters or after `(`/before `)` 🔧 |
 | **Hook Rules** | |
-| `hook-callback-format` | React hooks: callback on new line, deps array on separate line, proper indentation |
-| `hook-deps-per-line` | Collapse deps ≤ threshold to one line; expand larger arrays with each dep on own line (default: >2) ⚙️ |
+| `hook-callback-format` | React hooks: callback on new line, deps array on separate line, proper indentation 🔧 |
+| `hook-deps-per-line` | Collapse deps ≤ threshold to one line; expand larger arrays with each dep on own line (default: >2) 🔧 ⚙️ |
 | **Import/Export Rules** | |
 | `absolute-imports-only` | Use alias imports from index files only (not deep paths), no relative imports (default: `@/`) ⚙️ |
-| `export-format` | `export {` on same line; collapse ≤ threshold to one line; expand larger with each specifier on own line (default: ≤3) ⚙️ |
-| `import-format` | `import {` and `} from` on same line; collapse ≤ threshold; expand larger with each specifier on own line (default: ≤3) ⚙️ |
-| `import-source-spacing` | No leading/trailing spaces inside import path quotes |
-| `index-export-style` | Index files: no blank lines, enforce shorthand or import-export style; Regular files: require blank lines between exports (default: shorthand) ⚙️ |
+| `export-format` | `export {` on same line; collapse ≤ threshold to one line; expand larger with each specifier on own line (default: ≤3) 🔧 ⚙️ |
+| `import-format` | `import {` and `} from` on same line; collapse ≤ threshold; expand larger with each specifier on own line (default: ≤3) 🔧 ⚙️ |
+| `import-source-spacing` | No leading/trailing spaces inside import path quotes 🔧 |
+| `index-export-style` | Index files: no blank lines, enforce shorthand or import-export style; Regular files: require blank lines between exports (default: shorthand) 🔧 ⚙️ |
+| `index-exports-only` | Index files should only contain imports and exports, not type/interface definitions |
 | `module-index-exports` | Index files must export all folder contents (files and subfolders) ⚙️ |
 | **JSX Rules** | |
-| `classname-dynamic-at-end` | Dynamic expressions (`${className}`) must be at the end of class strings (JSX and variables) |
-| `classname-multiline` | Long className strings broken into multiple lines; smart detection for objects/returns with Tailwind values ⚙️ |
-| `classname-no-extra-spaces` | No extra/leading/trailing spaces in class strings; smart detection for objects/returns with Tailwind values |
-| `classname-order` | Tailwind class ordering in variables/objects/returns; smart detection for Tailwind values |
-| `jsx-children-on-new-line` | Multiple JSX children: each on own line with proper indentation |
-| `jsx-closing-bracket-spacing` | No space before `>` or `/>` in JSX tags |
-| `jsx-element-child-new-line` | Nested JSX elements on new lines; text/expression children can stay inline |
-| `jsx-logical-expression-simplify` | Remove unnecessary parens around conditions and JSX in logical expressions |
-| `jsx-parentheses-position` | Opening `(` for multiline JSX on same line as `return`/`=>`, not on new line |
+| `classname-dynamic-at-end` | Dynamic expressions (`${className}`) must be at the end of class strings (JSX and variables) 🔧 |
+| `classname-multiline` | Long className strings broken into multiple lines; smart detection for objects/returns with Tailwind values 🔧 ⚙️ |
+| `classname-no-extra-spaces` | No extra/leading/trailing spaces in class strings; smart detection for objects/returns with Tailwind values 🔧 |
+| `classname-order` | Tailwind class ordering in variables/objects/returns; smart detection for Tailwind values 🔧 |
+| `jsx-children-on-new-line` | Multiple JSX children: each on own line with proper indentation 🔧 |
+| `jsx-closing-bracket-spacing` | No space before `>` or `/>` in JSX tags 🔧 |
+| `jsx-element-child-new-line` | Nested JSX elements on new lines; text/expression children can stay inline 🔧 |
+| `jsx-logical-expression-simplify` | Remove unnecessary parens around conditions and JSX in logical expressions 🔧 |
+| `jsx-parentheses-position` | Opening `(` for multiline JSX on same line as `return`/`=>`, not on new line 🔧 |
 | `jsx-prop-naming-convention` | Props: camelCase for regular, kebab-case for data-*/aria-*, PascalCase for component refs |
-| `jsx-simple-element-one-line` | Collapse simple JSX with single text/expression child to one line |
-| `jsx-string-value-trim` | No leading/trailing whitespace inside JSX string attribute values |
-| `jsx-ternary-format` | Simple ternaries on one line; complex branches get parens with proper indentation |
-| `no-empty-lines-in-jsx` | No empty lines between children or after opening/before closing tags |
+| `jsx-simple-element-one-line` | Collapse simple JSX with single text/expression child to one line 🔧 |
+| `jsx-string-value-trim` | No leading/trailing whitespace inside JSX string attribute values 🔧 |
+| `jsx-ternary-format` | Simple ternaries on one line; complex branches get parens with proper indentation 🔧 |
+| `no-empty-lines-in-jsx` | No empty lines between children or after opening/before closing tags 🔧 |
 | **Object Rules** | |
-| `no-empty-lines-in-objects` | No empty lines between properties or after `{`/before `}` |
-| `object-property-per-line` | Collapse ≤ threshold to one line; expand larger with `{`/`}` on own lines and each property on own line (default: ≥2) ⚙️ |
-| `object-property-value-brace` | Opening `{` of object value on same line as `:`, not on new line |
-| `object-property-value-format` | Simple property values on same line as `:`, not on new line |
-| `string-property-spacing` | No leading/trailing spaces inside string property keys |
+| `no-empty-lines-in-objects` | No empty lines between properties or after `{`/before `}` 🔧 |
+| `object-property-per-line` | Collapse ≤ threshold to one line; expand larger with `{`/`}` on own lines and each property on own line (default: ≥2) 🔧 ⚙️ |
+| `object-property-value-brace` | Opening `{` of object value on same line as `:`, not on new line 🔧 |
+| `object-property-value-format` | Simple property values on same line as `:`, not on new line 🔧 |
+| `string-property-spacing` | No leading/trailing spaces inside string property keys 🔧 |
 | **Spacing Rules** | |
-| `assignment-value-same-line` | Assignment values start on same line as `=`, not on new line |
-| `member-expression-bracket-spacing` | No spaces inside brackets in computed member expressions: `arr[0]` not `arr[ 0 ]` |
+| `assignment-value-same-line` | Assignment values start on same line as `=`, not on new line 🔧 |
+| `member-expression-bracket-spacing` | No spaces inside brackets in computed member expressions: `arr[0]` not `arr[ 0 ]` 🔧 |
 | **TypeScript Rules** | |
-| `enum-format` | Enforce enum naming (PascalCase + Enum suffix), UPPER_CASE members, no empty lines, and trailing commas |
-| `interface-format` | Enforce interface naming (PascalCase + Interface suffix), camelCase properties, no empty lines, and trailing commas |
-| `type-annotation-spacing` | Enforce consistent spacing in type annotations: no space before colon/generic/array brackets, one space after colon |
-| `type-format` | Enforce type naming (PascalCase + Type suffix), camelCase properties, no empty lines, and trailing commas |
+| `enum-format` | Enforce enum naming (PascalCase + Enum suffix), UPPER_CASE members, no empty lines, and trailing commas 🔧 |
+| `interface-format` | Enforce interface naming (PascalCase + Interface suffix), camelCase properties, no empty lines, and trailing commas 🔧 |
+| `no-inline-type-definitions` | Inline union types in function params should be extracted to named types ⚙️ |
+| `type-annotation-spacing` | Enforce consistent spacing in type annotations: no space before colon/generic/array brackets, one space after colon 🔧 |
+| `type-format` | Enforce type naming (PascalCase + Type suffix), camelCase properties, no empty lines, and trailing commas 🔧 |
 | `typescript-definition-location` | Enforce TypeScript definitions (interfaces, types, enums) to be in designated folders ⚙️ |
 | **React Rules** | |
-| `react-code-order` | Enforce consistent ordering in components and hooks: props destructure → refs → state → redux → router → context → custom hooks → derived → memo → callback → handlers → effects → return |
+| `react-code-order` | Enforce consistent ordering in components and hooks: props destructure → refs → state → redux → router → context → custom hooks → derived → memo → callback → handlers → effects → return 🔧 |
 | **Variable Rules** | |
-| `variable-naming-convention` | camelCase for all variables and constants, PascalCase for components, `use` prefix for hooks |
+| `variable-naming-convention` | camelCase for all variables and constants, PascalCase for components, `use` prefix for hooks 🔧 |
 
 <br />
 
@@ -339,7 +342,7 @@ rules: {
 
 ## 📖 Rules Reference
 
-> All rules are **auto-fixable** using `eslint --fix`
+> Rules marked with 🔧 are **auto-fixable** using `eslint --fix`
 
 <br />
 
