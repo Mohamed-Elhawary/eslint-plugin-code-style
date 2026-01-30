@@ -6,6 +6,66 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) principles.
 
 ---
 
+## [1.4.0] - 2026-01-30
+
+**Release Title:** New Rules, Enhanced Auto-Fix & Comprehensive Documentation
+
+**Version Range:** v1.3.1 → v1.4.2
+
+### Added
+
+- **New Rules (3)**
+  - `index-exports-only` - Prevent type/interface definitions in index files (move to types file)
+  - `ternary-condition-multiline` - Format complex ternary conditions with each operand on its own line 🔧 ⚙️
+  - `no-inline-type-definitions` - Extract inline union types to named types in type files ⚙️
+
+- **Auto-Fix Labels in Documentation**
+  - Added 🔧 label to indicate auto-fixable rules
+  - Added legend explaining 🔧 (auto-fixable) and ⚙️ (customizable) labels
+  - Clear distinction: 58 auto-fixable rules, 6 report-only rules
+
+### Enhanced
+
+- **function-naming-convention** - Expanded verb list from ~50 to ~200+ verbs organized by category (CRUD, validation, transformation, UI, lifecycle, network, etc.)
+- **function-object-destructure** - Added auto-fix: inserts destructuring at function body top and replaces `param.prop` with `prop`
+- **component-props-destructure** - Added auto-fix: converts `(props)` to `({ prop1, prop2 })` and replaces `props.x` with `x` 🔧
+- **react-code-order** - Added auto-fix for reordering code blocks in components/hooks
+- **variable-naming-convention** - Added auto-fix for renaming variables to camelCase
+
+### Fixed
+
+- **multiline-if-conditions** - Fix indentation calculation for nested code (use actual line indentation)
+- **classname-multiline** - Fix template literal indentation for inline JSX attributes
+- **function-naming-convention** - Skip React components (PascalCase + returns JSX)
+- **variable-naming-convention** - Skip PascalCase arguments (component references)
+- Add "poll" as recognized verb prefix in function-naming-convention
+
+### Documentation
+
+- Enhanced error messages with examples and helpful context
+- Improved CHANGELOG with full details and Full Changelog links
+- Added GitHub Releases guidelines to AGENTS.md
+
+### Report-Only Rules (6)
+
+These rules cannot be auto-fixed because they require file creation, movement, or cross-file changes:
+- `absolute-imports-only` - Requires knowledge of project structure
+- `index-exports-only` - Requires moving code to new files
+- `jsx-prop-naming-convention` - Requires cross-file prop renaming
+- `module-index-exports` - Requires file creation
+- `no-inline-type-definitions` - Requires extracting types to new files
+- `typescript-definition-location` - Requires moving code to folders
+
+### Stats
+
+- Total Rules: 64 (was 61)
+- Auto-fixable: 58 rules 🔧
+- Report-only: 6 rules
+
+**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.3.0...v1.4.2
+
+---
+
 ## [1.3.0] - 2026-01-28
 
 **Release Title:** New Rules, Auto-Fix Enhancements & Agent Skills Integration
