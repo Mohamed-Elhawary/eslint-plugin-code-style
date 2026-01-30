@@ -26,6 +26,7 @@ export type RuleNames =
     | "code-style/function-params-per-line"
     | "code-style/hook-callback-format"
     | "code-style/hook-deps-per-line"
+    | "code-style/if-else-spacing"
     | "code-style/if-statement-format"
     | "code-style/import-format"
     | "code-style/import-source-spacing"
@@ -112,6 +113,7 @@ interface PluginRules {
     "function-params-per-line": Rule.RuleModule;
     "hook-callback-format": Rule.RuleModule;
     "hook-deps-per-line": Rule.RuleModule;
+    "if-else-spacing": Rule.RuleModule;
     "if-statement-format": Rule.RuleModule;
     "import-format": Rule.RuleModule;
     "import-source-spacing": Rule.RuleModule;

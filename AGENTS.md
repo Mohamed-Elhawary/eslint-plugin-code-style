@@ -309,7 +309,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 - **Component Rules** — React component patterns
   - `component-props-destructure`, `component-props-inline-type`
 - **Control Flow Rules** — if/switch/block statements
-  - `block-statement-newlines`, `if-statement-format`, `multiline-if-conditions`, `no-empty-lines-in-switch-cases`, `ternary-condition-multiline`
+  - `block-statement-newlines`, `if-else-spacing`, `if-statement-format`, `multiline-if-conditions`, `no-empty-lines-in-switch-cases`, `ternary-condition-multiline`
 - **Function Rules** — Function declarations and params
   - `function-call-spacing`, `function-declaration-style`, `function-naming-convention`, `function-object-destructure`, `function-params-per-line`, `no-empty-lines-in-function-params`
 - **Hook Rules** — React hooks formatting

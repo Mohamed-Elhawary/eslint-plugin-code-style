@@ -142,6 +142,7 @@ export default [ // eslint-disable-line
             "code-style/function-params-per-line": "error",
             "code-style/hook-callback-format": "error",
             "code-style/hook-deps-per-line": "error",
+            "code-style/if-else-spacing": "error",
             "code-style/if-statement-format": "error",
             "code-style/import-format": "error",
             "code-style/import-source-spacing": "error",

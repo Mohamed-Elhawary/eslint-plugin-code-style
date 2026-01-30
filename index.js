@@ -1090,9 +1090,41 @@ const arrowFunctionSimplify = {
             return `${calleeName}(${argsText})`;
         };
 
-        const checkArrowFunctionHandler = (node) => {
-            if (!isJsxAttributeArrowHandler(node)) return;
+        // Check if an expression is simple enough to be on one line
+        const isSimpleExpressionHandler = (expr) => {
+            if (!expr) return false;
 
+            // Simple types that can always be one-lined
+            if (expr.type === "Identifier") return true;
+            if (expr.type === "Literal") return true;
+            if (expr.type === "ThisExpression") return true;
+
+            // Member expressions: obj.prop, this.value
+            if (expr.type === "MemberExpression") {
+                return isSimpleExpressionHandler(expr.object) && isSimpleExpressionHandler(expr.property);
+            }
+
+            // Unary expressions: !x, -x
+            if (expr.type === "UnaryExpression") {
+                return isSimpleExpressionHandler(expr.argument);
+            }
+
+            // Simple call expressions with simple arguments
+            if (expr.type === "CallExpression") {
+                if (expr.arguments.length > 2) return false;
+
+                return expr.arguments.every(isSimpleExpressionHandler);
+            }
+
+            // Object/Array expressions - keep multiline format but still simplify
+            if (expr.type === "ObjectExpression" || expr.type === "ArrayExpression") {
+                return true;
+            }
+
+            return false;
+        };
+
+        const checkArrowFunctionHandler = (node) => {
             if (node.body.type !== "BlockStatement") return;
 
             const { body } = node.body;
@@ -1101,54 +1133,107 @@ const arrowFunctionSimplify = {
 
             const statement = body[0];
 
-            if (statement.type !== "ExpressionStatement") return;
+            // Handle ExpressionStatement (for JSX attributes like onClick={() => { doSomething() }})
+            if (statement.type === "ExpressionStatement") {
+                // Only for JSX attributes - non-JSX expression statements without return are side effects
+                if (!isJsxAttributeArrowHandler(node)) return;
 
-            const expression = statement.expression;
+                const expression = statement.expression;
 
-            // Check if already on single line
-            if (expression.loc.start.line === expression.loc.end.line) {
-                const expressionText = sourceCode.getText(expression);
+                // Check if already on single line
+                if (expression.loc.start.line === expression.loc.end.line) {
+                    const expressionText = sourceCode.getText(expression);
 
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(
+                            node.body,
+                            expressionText,
+                        ),
+                        message: "Arrow function with single statement should use expression body: () => expression instead of () => { expression }",
+                        node: node.body,
+                    });
+
+                    return;
+                }
+
+                // Check if multi-line expression can be simplified to one line
+                if (canSimplifyToOneLineHandler(expression)) {
+                    const simplifiedText = buildSimplifiedTextHandler(expression);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(
+                            node.body,
+                            simplifiedText,
+                        ),
+                        message: "Arrow function with simple nested call should be simplified to one line",
+                        node: node.body,
+                    });
+
+                    return;
+                }
+
+                // Check for call expression with multiline object/array argument
+                if (expression.type === "CallExpression") {
+                    const expressionText = sourceCode.getText(expression);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(
+                            node.body,
+                            expressionText,
+                        ),
+                        message: "Arrow function with single statement should use expression body",
+                        node: node.body,
+                    });
+                }
+
+                return;
+            }
+
+            // Handle ReturnStatement: () => { return x } should become () => x
+            if (statement.type === "ReturnStatement") {
+                const returnValue = statement.argument;
+
+                // No return value: () => { return; } - keep as is (explicit void return)
+                if (!returnValue) return;
+
+                // Check if the return value is simple enough to inline
+                const returnText = sourceCode.getText(returnValue);
+
+                // For object literals, wrap in parentheses: () => ({ key: value })
+                if (returnValue.type === "ObjectExpression") {
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(
+                            node.body,
+                            `(${returnText})`,
+                        ),
+                        message: "Arrow function with single return should use expression body: () => value instead of () => { return value }",
+                        node: node.body,
+                    });
+
+                    return;
+                }
+
+                // For simple expressions, just use the value directly
+                if (isSimpleExpressionHandler(returnValue)) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(
+                            node.body,
+                            returnText,
+                        ),
+                        message: "Arrow function with single return should use expression body: () => value instead of () => { return value }",
+                        node: node.body,
+                    });
+
+                    return;
+                }
+
+                // For other expressions (JSX, complex calls, etc.), still simplify but keep formatting
                 context.report({
                     fix: (fixer) => fixer.replaceText(
                         node.body,
-                        expressionText,
+                        returnText,
                     ),
                     message: "Arrow function with single return should use expression body: () => value instead of () => { return value }",
-                    node: node.body,
-                });
-
-                return;
-            }
-
-            // Check if multi-line expression can be simplified to one line
-            if (canSimplifyToOneLineHandler(expression)) {
-                const simplifiedText = buildSimplifiedTextHandler(expression);
-
-                context.report({
-                    fix: (fixer) => fixer.replaceText(
-                        node.body,
-                        simplifiedText,
-                    ),
-                    message: "Arrow function with simple nested call should be simplified to one line",
-                    node: node.body,
-                });
-
-                return;
-            }
-
-            // Check for call expression with multiline object/array argument
-            // e.g., setSorting({ by: "", number: 0, order: "" })
-            // This should become expression body but keep the multiline format
-            if (expression.type === "CallExpression") {
-                const expressionText = sourceCode.getText(expression);
-
-                context.report({
-                    fix: (fixer) => fixer.replaceText(
-                        node.body,
-                        expressionText,
-                    ),
-                    message: "Arrow function with single statement should use expression body: () => expression instead of () => { return expression }",
                     node: node.body,
                 });
             }
@@ -1198,7 +1283,7 @@ const arrowFunctionSimplify = {
         };
     },
     meta: {
-        docs: { description: "Simplify arrow functions in JSX props with single statement block body" },
+        docs: { description: "Simplify arrow functions with single return to expression body: () => { return x } becomes () => x" },
         fixable: "code",
         schema: [],
         type: "layout",
@@ -1925,16 +2010,19 @@ const functionNamingConvention = {
 
         const checkFunctionHandler = (node) => {
             let name = null;
+            let identifierNode = null;
 
             if (node.type === "FunctionDeclaration" && node.id) {
                 name = node.id.name;
+                identifierNode = node.id;
             } else if (node.type === "FunctionExpression" || node.type === "ArrowFunctionExpression") {
                 if (node.parent && node.parent.type === "VariableDeclarator" && node.parent.id) {
                     name = node.parent.id.name;
+                    identifierNode = node.parent.id;
                 }
             }
 
-            if (!name) return;
+            if (!name || !identifierNode) return;
 
             // Skip hooks
             if (/^use[A-Z]/.test(name)) return;
@@ -2043,14 +2131,116 @@ const functionNamingConvention = {
             }
         };
 
+        // Check class methods (MethodDefinition)
+        const checkMethodHandler = (node) => {
+            // Skip constructors
+            if (node.kind === "constructor") return;
+
+            // Skip getters and setters - they're property accessors, not action methods
+            if (node.kind === "get" || node.kind === "set") return;
+
+            const { key } = node;
+
+            // Only check methods with Identifier keys (skip computed properties like [Symbol.iterator])
+            if (key.type !== "Identifier") return;
+
+            const name = key.name;
+
+            // Skip hooks
+            if (/^use[A-Z]/.test(name)) return;
+
+            // Skip React lifecycle methods
+            const lifecycleMethods = [
+                "render", "componentDidMount", "componentDidUpdate", "componentWillUnmount",
+                "shouldComponentUpdate", "getSnapshotBeforeUpdate", "componentDidCatch",
+                "getDerivedStateFromProps", "getDerivedStateFromError",
+            ];
+
+            if (lifecycleMethods.includes(name)) return;
+
+            const hasVerbPrefix = startsWithVerbHandler(name);
+            const hasHandlerSuffix = endsWithHandler(name);
+
+            if (!hasVerbPrefix && !hasHandlerSuffix) {
+                context.report({
+                    message: `Method "${name}" should start with a verb (get, set, fetch, handle, etc.) AND end with "Handler" (e.g., getDataHandler, handleClickHandler)`,
+                    node: key,
+                });
+            } else if (!hasVerbPrefix) {
+                context.report({
+                    message: `Method "${name}" should start with a verb (get, set, fetch, handle, click, submit, etc.)`,
+                    node: key,
+                });
+            } else if (!hasHandlerSuffix) {
+                const newName = `${name}Handler`;
+
+                context.report({
+                    fix(fixer) {
+                        // For class methods, we need to find all references manually
+                        // This is simpler than functions since class methods are typically accessed via this.methodName
+                        const fixes = [fixer.replaceText(key, newName)];
+
+                        // Find all references to this method in the class body
+                        const classBody = node.parent;
+
+                        if (classBody && classBody.type === "ClassBody") {
+                            const sourceCode = context.sourceCode || context.getSourceCode();
+                            const classText = sourceCode.getText(classBody);
+
+                            // Find usages like this.methodName or super.methodName
+                            const classNode = classBody.parent;
+
+                            if (classNode) {
+                                const searchPatternHandler = (n) => {
+                                    if (n.type === "MemberExpression" &&
+                                        n.property.type === "Identifier" &&
+                                        n.property.name === name &&
+                                        (n.object.type === "ThisExpression" || n.object.type === "Super")) {
+                                        // Don't fix the definition itself
+                                        if (n.property !== key) {
+                                            fixes.push(fixer.replaceText(n.property, newName));
+                                        }
+                                    }
+
+                                    // Recursively search
+                                    for (const childKey of Object.keys(n)) {
+                                        const child = n[childKey];
+
+                                        if (child && typeof child === "object") {
+                                            if (Array.isArray(child)) {
+                                                child.forEach((item) => {
+                                                    if (item && typeof item === "object" && item.type) {
+                                                        searchPatternHandler(item);
+                                                    }
+                                                });
+                                            } else if (child.type) {
+                                                searchPatternHandler(child);
+                                            }
+                                        }
+                                    }
+                                };
+
+                                searchPatternHandler(classNode);
+                            }
+                        }
+
+                        return fixes;
+                    },
+                    message: `Method "${name}" should end with "Handler" suffix (e.g., ${newName})`,
+                    node: key,
+                });
+            }
+        };
+
         return {
             ArrowFunctionExpression: checkFunctionHandler,
             FunctionDeclaration: checkFunctionHandler,
             FunctionExpression: checkFunctionHandler,
+            MethodDefinition: checkMethodHandler,
         };
     },
     meta: {
-        docs: { description: "Enforce function names to start with a verb AND end with Handler" },
+        docs: { description: "Enforce function and method names to start with a verb AND end with Handler" },
         fixable: "code",
         schema: [],
         type: "suggestion",
@@ -2962,6 +3152,164 @@ const ifStatementFormat = {
     },
     meta: {
         docs: { description: "Ensure if statement has proper formatting: if (...) {" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: If-Else Spacing
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforces proper spacing between if statements and if-else chains:
+ *   1. Consecutive if statements with block bodies must have an empty line between them
+ *   2. Single-line if and else should NOT have empty lines between them
+ *
+ * ✓ Good:
+ *   if (!hasValidParams) return null;
+ *
+ *   if (status === "loading") {
+ *       return <Loading />;
+ *   }
+ *
+ *   if (status === "error") {
+ *       return <Error />;
+ *   }
+ *
+ *   if (error) prom.reject(error);
+ *   else prom.resolve(token);
+ *
+ * ✗ Bad:
+ *   if (!hasValidParams) return null;
+ *   if (status === "loading") {
+ *       return <Loading />;
+ *   }
+ *   if (status === "error") {
+ *       return <Error />;
+ *   }
+ *
+ *   if (error) prom.reject(error);
+ *
+ *   else prom.resolve(token);
+ */
+const ifElseSpacing = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Check if an if statement is single-line (no block body or block on same line)
+        const isSingleLineIfHandler = (node) => {
+            if (node.type !== "IfStatement") return false;
+
+            const { consequent } = node;
+
+            // If consequent is not a block, it's single-line
+            if (consequent.type !== "BlockStatement") return true;
+
+            // If it's a block, check if the entire block is on one line
+            return consequent.loc.start.line === consequent.loc.end.line;
+        };
+
+        // Check single-line if-else should not have empty lines between if and else
+        const checkSingleLineIfElseHandler = (node) => {
+            const { alternate } = node;
+
+            if (!alternate) return;
+
+            // Only check single-line if statements
+            if (!isSingleLineIfHandler(node)) return;
+
+            // Find the closing of the consequent
+            const { consequent } = node;
+
+            const closingToken = consequent.type === "BlockStatement"
+                ? sourceCode.getLastToken(consequent)
+                : sourceCode.getLastToken(consequent);
+
+            // Find the else keyword
+            const elseKeyword = sourceCode.getTokenAfter(
+                closingToken,
+                (t) => t.value === "else",
+            );
+
+            if (!elseKeyword) return;
+
+            // Check if there's an empty line between the consequent and else
+            const linesBetween = elseKeyword.loc.start.line - closingToken.loc.end.line;
+
+            if (linesBetween > 1) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [closingToken.range[1], elseKeyword.range[0]],
+                        "\n" + " ".repeat(elseKeyword.loc.start.column),
+                    ),
+                    message: "No empty line allowed between single-line if and else",
+                    node: elseKeyword,
+                });
+            }
+        };
+
+        // Check consecutive if statements in a block
+        const checkConsecutiveIfsHandler = (node) => {
+            const { body } = node;
+
+            if (!body || !Array.isArray(body)) return;
+
+            for (let i = 0; i < body.length - 1; i += 1) {
+                const current = body[i];
+                const next = body[i + 1];
+
+                // Only check if current is an if statement
+                if (current.type !== "IfStatement") continue;
+
+                // Only check if next is an if statement
+                if (next.type !== "IfStatement") continue;
+
+                // Get the actual end of current (could be alternate/else-if chain)
+                let currentEnd = current;
+
+                while (currentEnd.alternate && currentEnd.alternate.type === "IfStatement") {
+                    currentEnd = currentEnd.alternate;
+                }
+
+                // If current ends with an else block (not else-if), use the alternate
+                const endNode = currentEnd.alternate || currentEnd.consequent;
+
+                // Check if either the current if (or its last branch) has a block body
+                const currentHasBlock = endNode.type === "BlockStatement";
+
+                // Check if the next if has a block body
+                const nextHasBlock = next.consequent.type === "BlockStatement";
+
+                // Require empty line if either has a block body
+                if (currentHasBlock || nextHasBlock) {
+                    const linesBetween = next.loc.start.line - endNode.loc.end.line;
+
+                    if (linesBetween === 1) {
+                        // No empty line between them - needs one
+                        context.report({
+                            fix: (fixer) => fixer.insertTextAfter(
+                                endNode,
+                                "\n",
+                            ),
+                            message: "Expected empty line between consecutive if statements with block bodies",
+                            node: next,
+                        });
+                    }
+                }
+            }
+        };
+
+        return {
+            BlockStatement: checkConsecutiveIfsHandler,
+            IfStatement: checkSingleLineIfElseHandler,
+            Program: checkConsecutiveIfsHandler,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce proper spacing between if statements and if-else chains" },
         fixable: "whitespace",
         schema: [],
         type: "layout",
@@ -10076,6 +10424,10 @@ const openingBracketsSameLine = {
 
             // Case 2: Arrow function callback
             if (firstArg.type === "ArrowFunctionExpression") {
+                // Skip if there are multiple arguments - function-arguments-format handles that case
+                // to avoid circular fixes where this rule wants fn((param) and that rule wants fn(\n    (param)
+                if (args.length > 1) return;
+
                 const arrowParams = firstArg.params;
 
                 if (arrowParams.length === 0) return;
@@ -15841,6 +16193,7 @@ export default {
 
         // Control flow rules
         "block-statement-newlines": blockStatementNewlines,
+        "if-else-spacing": ifElseSpacing,
         "if-statement-format": ifStatementFormat,
         "multiline-if-conditions": multilineIfConditions,
         "no-empty-lines-in-switch-cases": noEmptyLinesInSwitchCases,

@@ -206,6 +206,7 @@ rules: {
     "code-style/function-params-per-line": "error",
     "code-style/hook-callback-format": "error",
     "code-style/hook-deps-per-line": "error",
+    "code-style/if-else-spacing": "error",
     "code-style/if-statement-format": "error",
     "code-style/import-format": "error",
     "code-style/import-source-spacing": "error",
@@ -250,7 +251,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **64 rules total** — 58 with auto-fix 🔧, 6 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
+> **65 rules total** — 59 with auto-fix 🔧, 6 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -278,6 +279,7 @@ rules: {
 | `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference 🔧 |
 | **Control Flow Rules** | |
 | `block-statement-newlines` | Newline after `{` and before `}` in if/for/while/function blocks 🔧 |
+| `if-else-spacing` | Empty line between consecutive if blocks, no empty line between single-line if/else 🔧 |
 | `if-statement-format` | `{` on same line as `if`/`else if`, `else` on same line as `}`, proper spacing 🔧 |
 | `multiline-if-conditions` | Conditions exceeding threshold get one operand per line with proper indentation (default: >3) 🔧 ⚙️ |
 | `no-empty-lines-in-switch-cases` | No empty line after `case X:` before code, no empty lines between cases 🔧 |
@@ -874,6 +876,47 @@ if (condition) {doSomething();}
 // ❌ Bad — inconsistent formatting
 for (const item of items) { process(item);
 }
+```
+
+---
+
+### `if-else-spacing`
+
+**What it does:** Enforces proper spacing between if statements and if-else chains:
+- Consecutive if statements with block bodies must have an empty line between them
+- Single-line if and else should NOT have empty lines between them
+
+**Why use it:** Maintains visual separation between distinct conditional blocks while keeping related single-line if-else pairs compact.
+
+```javascript
+// ✅ Good — empty line between consecutive if blocks
+if (!hasValidParams) return null;
+
+if (status === "loading") {
+    return <Loading />;
+}
+
+if (status === "error") {
+    return <Error />;
+}
+
+// ✅ Good — no empty line between single-line if-else
+if (error) prom.reject(error);
+else prom.resolve(token);
+
+// ❌ Bad — no empty line between if blocks
+if (!hasValidParams) return null;
+if (status === "loading") {
+    return <Loading />;
+}
+if (status === "error") {
+    return <Error />;
+}
+
+// ❌ Bad — empty line between single-line if-else
+if (error) prom.reject(error);
+
+else prom.resolve(token);
 ```
 
 ---
