@@ -6660,22 +6660,23 @@ const classNameMultiline = {
             let current = node;
 
             while (current) {
-                if (current.type === "JSXAttribute"
-                    || current.type === "VariableDeclarator"
-                    || current.type === "Property") {
+                // For JSX attributes, check if inline and use column-based indent
+                if (current.type === "JSXAttribute") {
                     const lineIndent = getLineIndent(current);
                     const lineText = sourceCode.lines[current.loc.start.line - 1];
-
-                    // Check if there's content before the node on this line
                     const contentBefore = lineText.slice(0, current.loc.start.column).trim();
 
                     if (contentBefore) {
                         // Attribute is inline (e.g., <Component className=...>)
-                        // Use column position as indent for proper alignment
                         return " ".repeat(current.loc.start.column);
                     }
 
                     return lineIndent;
+                }
+
+                // For variables and properties, just use line indentation
+                if (current.type === "VariableDeclarator" || current.type === "Property") {
+                    return getLineIndent(current);
                 }
 
                 current = current.parent;
@@ -12215,6 +12216,38 @@ const functionObjectDestructure = {
             return destructured;
         };
 
+        // Find the destructuring statement and property node for a variable
+        const findDestructuringStatementHandler = (blockBody, varName, paramName) => {
+            if (blockBody.type !== "BlockStatement") return null;
+
+            for (const stmt of blockBody.body) {
+                if (stmt.type !== "VariableDeclaration") continue;
+
+                for (const decl of stmt.declarations) {
+                    if (decl.id.type === "ObjectPattern" && decl.init) {
+                        // Check if this destructuring creates the variable we're looking for
+                        if (decl.init.type === "Identifier" && decl.init.name === paramName) {
+                            for (const prop of decl.id.properties) {
+                                if (prop.type === "Property" && prop.key.type === "Identifier") {
+                                    const createdVarName = prop.value.type === "Identifier" ? prop.value.name : prop.key.name;
+
+                                    if (createdVarName === varName) {
+                                        return {
+                                            declarator: decl,
+                                            property: prop,
+                                            statement: stmt,
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return null;
+        };
+
         const checkFunctionHandler = (node) => {
             const isComponent = isReactComponentHandler(node);
             const params = node.params;
@@ -12327,7 +12360,29 @@ const functionObjectDestructure = {
                             if (accesses.length > 0) {
                                 const accessedProps = [...new Set(accesses.map((a) => a.property))];
 
+                                // Find the original destructuring statement
+                                const destructInfo = findDestructuringStatementHandler(body, varName, firstParam.name);
+
                                 context.report({
+                                    fix: destructInfo
+                                        ? (fixer) => {
+                                            const fixes = [];
+
+                                            // Modify the destructuring property to use nested destructuring
+                                            // e.g., { target } becomes { target: { value } }
+                                            const { property } = destructInfo;
+                                            const nestedDestructure = `${info.originalProp}: { ${accessedProps.join(", ")} }`;
+
+                                            fixes.push(fixer.replaceText(property, nestedDestructure));
+
+                                            // Replace all varName.prop accesses with just prop
+                                            accesses.forEach((access) => {
+                                                fixes.push(fixer.replaceText(access.node, access.property));
+                                            });
+
+                                            return fixes;
+                                        }
+                                        : undefined,
                                     message: `Variable "${varName}" is accessed via dot notation (${accessedProps.join(", ")}). Use nested destructuring instead: "const { ${info.originalProp}: { ${accessedProps.join(", ")} } } = ..."`,
                                     node: accesses[0].node,
                                 });
