@@ -5058,18 +5058,23 @@ const indexExportStyle = {
  *
  * Description:
  *   Index files (index.ts, index.tsx, index.js, index.jsx) should
- *   only contain imports and exports, not type or interface definitions.
- *   Types should be moved to a separate file (e.g., types.ts).
+ *   only contain imports and re-exports, not any code definitions.
+ *   All definitions (types, interfaces, functions, variables, classes)
+ *   should be moved to separate files.
  *
  * ✓ Good:
  *   // index.ts
  *   export { Button } from "./Button";
+ *   export { helper } from "./utils";
  *   export type { ButtonProps } from "./types";
+ *   export * from "./constants";
  *
  * ✗ Bad:
  *   // index.ts
  *   export type ButtonVariant = "primary" | "secondary";
  *   export interface ButtonProps { ... }
+ *   export const CONSTANT = "value";
+ *   export function helper() { ... }
  */
 const indexExportsOnly = {
     create(context) {
@@ -5080,23 +5085,76 @@ const indexExportsOnly = {
 
         if (!isIndexFile) return {};
 
+        // Helper to check if a node is an import or export statement
+        const isImportOrExportHandler = (node) => {
+            const { type } = node;
+
+            // Import statements
+            if (type === "ImportDeclaration") return true;
+
+            // Export statements (named, default, all)
+            if (type === "ExportNamedDeclaration") {
+                // Only allow re-exports (export { x } from "./module" or export { x })
+                // If it has a declaration, it's defining something (not allowed)
+                return !node.declaration;
+            }
+
+            if (type === "ExportDefaultDeclaration") {
+                // Allow export default <identifier> (re-exporting)
+                // Disallow export default function/class/object (defining something)
+                return node.declaration && node.declaration.type === "Identifier";
+            }
+
+            if (type === "ExportAllDeclaration") return true;
+
+            return false;
+        };
+
+        // Get a friendly description of what the disallowed node is
+        const getNodeDescriptionHandler = (node) => {
+            switch (node.type) {
+                case "TSTypeAliasDeclaration":
+                    return "Type definition";
+                case "TSInterfaceDeclaration":
+                    return "Interface definition";
+                case "TSEnumDeclaration":
+                    return "Enum definition";
+                case "VariableDeclaration":
+                    return "Variable declaration";
+                case "FunctionDeclaration":
+                    return "Function declaration";
+                case "ClassDeclaration":
+                    return "Class declaration";
+                case "ExportNamedDeclaration":
+                    if (node.declaration) {
+                        return getNodeDescriptionHandler(node.declaration);
+                    }
+
+                    return "Export with inline declaration";
+                case "ExportDefaultDeclaration":
+                    return "Default export with inline definition";
+                default:
+                    return "Code";
+            }
+        };
+
         return {
-            TSInterfaceDeclaration(node) {
-                context.report({
-                    message: "Interface definitions should not be in index files. Move to a types file.",
-                    node,
-                });
-            },
-            TSTypeAliasDeclaration(node) {
-                context.report({
-                    message: "Type definitions should not be in index files. Move to a types file.",
-                    node,
-                });
+            Program(programNode) {
+                for (const node of programNode.body) {
+                    if (!isImportOrExportHandler(node)) {
+                        const description = getNodeDescriptionHandler(node);
+
+                        context.report({
+                            message: `${description} should not be in index files. Index files should only contain imports and re-exports. Move this to a separate file.`,
+                            node,
+                        });
+                    }
+                }
             },
         };
     },
     meta: {
-        docs: { description: "Index files should only contain imports and exports, not type definitions" },
+        docs: { description: "Index files should only contain imports and re-exports, not code definitions" },
         schema: [],
         type: "suggestion",
     },
@@ -13188,6 +13246,15 @@ const noInlineTypeDefinitions = {
                         message: `Inline union type with ${memberCount} members is too complex. Extract to a named type in a types file.`,
                         node: typeNode,
                     });
+                }
+
+                return;
+            }
+
+            // Handle intersection types (e.g., ButtonHTMLAttributes & { variant: "a" | "b" })
+            if (typeNode.type === "TSIntersectionType") {
+                for (const type of typeNode.types) {
+                    checkTypeAnnotationHandler(type, paramName);
                 }
 
                 return;

@@ -515,7 +515,9 @@ npm install eslint-plugin-code-style@Y.Y.Y
 
 **CHANGELOG.md:**
 
-All releases are documented in `CHANGELOG.md` at the project root. Update this file whenever creating a GitHub Release.
+All releases are documented in `CHANGELOG.md` at the project root.
+
+**IMPORTANT:** Only update `CHANGELOG.md` for main releases that group multiple tags together. Do NOT update the CHANGELOG for individual commits, bug fixes, or minor patches. The CHANGELOG should only be updated when creating a GitHub Release that groups a range of version tags into a single release entry.
 
 Each release entry in CHANGELOG.md must include a **Full Changelog** link at the end:
 

@@ -298,7 +298,7 @@ rules: {
 | `import-format` | `import {` and `} from` on same line; collapse ≤ threshold; expand larger with each specifier on own line (default: ≤3) 🔧 ⚙️ |
 | `import-source-spacing` | No leading/trailing spaces inside import path quotes 🔧 |
 | `index-export-style` | Index files: no blank lines, enforce shorthand or import-export style; Regular files: require blank lines between exports (default: shorthand) 🔧 ⚙️ |
-| `index-exports-only` | Index files should only contain imports and exports, not type/interface definitions |
+| `index-exports-only` | Index files should only contain imports and re-exports, not code definitions (types, functions, variables, classes) |
 | `module-index-exports` | Index files must export all folder contents (files and subfolders) ⚙️ |
 | **JSX Rules** | |
 | `classname-dynamic-at-end` | Dynamic expressions (`${className}`) must be at the end of class strings (JSX and variables) 🔧 |
