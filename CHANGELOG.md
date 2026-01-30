@@ -6,6 +6,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) principles.
 
 ---
 
+## [1.5.0] - 2026-01-30
+
+**Release Title:** New if-else-spacing Rule & Enhanced Arrow/Class Method Support
+
+**Version Range:** v1.4.3 → v1.5.0
+
+### Added
+
+- **New Rule: `if-else-spacing`** - Enforces proper spacing between if statements:
+  - Requires empty line between consecutive if statements with block bodies
+  - Prevents empty lines between single-line if and else
+
+### Enhanced
+
+- **`function-naming-convention`** - Now checks class methods for Handler suffix (skips constructors, getters, setters, and React lifecycle methods)
+- **`arrow-function-simplify`** - Extended to handle ALL arrow functions with single return (not just JSX attributes): `() => { return x }` becomes `() => x`
+
+### Fixed
+
+- **Circular fix conflict** between `opening-brackets-same-line` and `function-arguments-format` for multi-argument arrow function calls (e.g., axios interceptors)
+
+**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.4.3...v1.5.0
+
+---
+
 ## [1.4.2] - 2026-01-30
 
 **Release Title:** New Rules, Enhanced Auto-Fix & Comprehensive Documentation

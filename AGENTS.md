@@ -519,6 +519,13 @@ All releases are documented in `CHANGELOG.md` at the project root.
 
 **IMPORTANT:** Only update `CHANGELOG.md` for main releases that group multiple tags together. Do NOT update the CHANGELOG for individual commits, bug fixes, or minor patches. The CHANGELOG should only be updated when creating a GitHub Release that groups a range of version tags into a single release entry.
 
+**Changelog Entry Checklist (REQUIRED for each release):**
+- [ ] Version number and date: `## [X.Y.Z] - YYYY-MM-DD`
+- [ ] Release title: `**Release Title:** Short descriptive title`
+- [ ] Version range: `**Version Range:** vX.X.X → vY.Y.Y`
+- [ ] Sections as needed: Added, Enhanced, Fixed, Documentation, etc.
+- [ ] Full Changelog link at the END of the entry (before the `---` separator)
+
 Each release entry in CHANGELOG.md must include a **Full Changelog** link at the end:
 
 ```markdown
