@@ -13314,8 +13314,19 @@ const componentPropsDestructure = {
                         ? (fixer) => {
                             const fixes = [];
 
+                            // Build destructured pattern, preserving type annotation if present
+                            const destructuredPattern = `{ ${accessedProps.join(", ")} }`;
+                            let replacement = destructuredPattern;
+
+                            // Preserve TypeScript type annotation if present
+                            if (firstParam.typeAnnotation) {
+                                const typeText = sourceCode.getText(firstParam.typeAnnotation);
+
+                                replacement = `${destructuredPattern}${typeText}`;
+                            }
+
                             // Replace param with destructured pattern
-                            fixes.push(fixer.replaceText(firstParam, `{ ${accessedProps.join(", ")} }`));
+                            fixes.push(fixer.replaceText(firstParam, replacement));
 
                             // Replace all props.x with just x
                             accesses.forEach((access) => {
