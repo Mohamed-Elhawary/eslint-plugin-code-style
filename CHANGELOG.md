@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.1] - 2026-02-01
+
+### Enhanced
+
+- **`function-params-per-line`** - Handle callbacks with mixed params (destructured + simple like `({ item }, index)`)
+- **`array-callback-destructure`** - Fix closing brace on same line as last property
+- **`simple-call-single-line`** - Skip callbacks with 2+ params to avoid conflicts
+- **`jsx-simple-element-one-line`** - Treat simple function calls (0-1 args) as simple expressions
+- **`jsx-children-on-new-line`** - Treat simple function calls (0-1 args) as simple expressions
+- **`jsx-element-child-new-line`** - Treat simple function calls (0-1 args) as simple expressions
+
+### Docs
+
+- Clarify version bump and tag workflow in AGENTS.md
+
+---
+
 ## [1.6.0] - 2026-02-01
 
 **New array-callback-destructure Rule & Multiple Enhancements**
@@ -970,6 +987,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.6.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.5.2...v1.6.0
 [1.5.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.5.1...v1.5.2
 [1.5.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.5.0...v1.5.1

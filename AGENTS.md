@@ -492,11 +492,15 @@ When modifying an existing rule, check if these need updates:
 
 #### Version Bump After Edits
 
-**NOTE:** Version bump and tag are NOT done with every commit. See "When to Bump Version & Create Tag" section in Git Workflow.
+**IMPORTANT:** Every commit requires a version bump and tag. After committing your changes:
 
-- Commit your fix/enhancement with appropriate message (`fix:` or `feat:`)
-- Push to main
-- Version bump is done later when ready to release (grouping multiple changes)
+1. Bump version in `package.json` (PATCH for fixes, MINOR for new features)
+2. Update `CHANGELOG.md` with new version entry
+3. Commit: `chore: bump version to X.Y.Z`
+4. Create tag: `git tag -a vX.Y.Z -m "vX.Y.Z - description"`
+5. Push: `git push origin main --tags`
+
+See "When to Bump Version & Create Tag" section in Git Workflow for details.
 
 ---
 
@@ -789,47 +793,46 @@ Format: `MAJOR.MINOR.PATCH` (e.g., `1.2.8`)
 
 ### When to Bump Version & Create Tag
 
-**IMPORTANT:** Not every commit requires a version bump and tag. Follow this workflow:
+**IMPORTANT:** Every commit requires a version bump and tag. Follow this workflow:
 
-#### Development Workflow (No Version Bump)
-For work-in-progress changes, commit without bumping version:
-```bash
-git commit -m "fix: description of fix"
-git commit -m "feat: description of feature"
-git push origin main
-```
+#### Commit Workflow (Always Bump Version)
+After every meaningful change:
+1. Make changes and commit with appropriate message
+2. Bump version in `package.json`
+3. Update `CHANGELOG.md` with new version entry
+4. Commit version bump: `chore: bump version to X.Y.Z`
+5. Create annotated tag
+6. Push commits and tags
 
-#### Release Workflow (Version Bump + Tag Required)
-Bump version and create tag when:
-- **Ready to publish to npm** - Always bump before `npm publish`
-- **Completing a feature** - After finishing a new rule or significant enhancement
-- **Accumulating multiple fixes** - Group several bug fixes into one PATCH release
-- **User explicitly requests** - When asked to "release", "publish", or "create a version"
-
-**Version bump checklist:**
-- [ ] Update `package.json` version
-- [ ] Update `CHANGELOG.md` with new version entry
-- [ ] Commit: `chore: bump version to X.Y.Z`
-- [ ] Create tag: `git tag -a vX.Y.Z -m "vX.Y.Z - description"`
-- [ ] Push: `git push origin main && git push origin vX.Y.Z`
+#### Version Bump Rules
+| Change Type | Version Bump | Example |
+|-------------|--------------|---------|
+| Bug fix | PATCH (+0.0.1) | 1.5.2 → 1.5.3 |
+| Enhancement to existing rule | PATCH (+0.0.1) | 1.5.3 → 1.5.4 |
+| New rule | MINOR (+0.1.0) | 1.5.4 → 1.6.0 |
+| Breaking change | MAJOR (+1.0.0) | 1.6.0 → 2.0.0 |
+| Docs only | PATCH (+0.0.1) | 1.5.2 → 1.5.3 |
 
 #### Example Workflow
 ```bash
-# 1. Make changes and commit (no version bump)
+# 1. Make changes and commit
+git add .
 git commit -m "fix: handle edge case in rule-name"
-git push origin main
 
-# 2. Make more changes
-git commit -m "fix: another fix in different rule"
-git push origin main
+# 2. Bump version in package.json (1.5.2 → 1.5.3)
+# 3. Update CHANGELOG.md with new entry
 
-# 3. When ready to release, bump version
-# Update package.json version to 1.5.3
-# Update CHANGELOG.md
+# 4. Commit version bump
+git add package.json CHANGELOG.md
 git commit -m "chore: bump version to 1.5.3"
-git tag -a v1.5.3 -m "v1.5.3 - bug fixes"
+
+# 5. Create annotated tag
+git tag -a v1.5.3 -m "v1.5.3
+
+- Fix edge case in rule-name"
+
+# 6. Push
 git push origin main --tags
-npm publish  # if publishing to npm
 ```
 
 ---
