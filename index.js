@@ -12459,19 +12459,60 @@ const functionObjectDestructure = {
             }
         };
 
-        // Check for destructuring of data imports (not allowed)
+        // Find all references to a variable name in a scope (with parent tracking)
+        const findAllReferencesHandler = (scope, varName, declNode) => {
+            const references = [];
+
+            const visitNode = (n, parent) => {
+                if (!n || typeof n !== "object") return;
+
+                // Skip the declaration itself
+                if (n === declNode) return;
+
+                // Found a reference
+                if (n.type === "Identifier" && n.name === varName) {
+                    // Make sure it's not a property key or part of a member expression property
+                    const isMemberProp = parent && parent.type === "MemberExpression" && parent.property === n && !parent.computed;
+                    const isObjectKey = parent && parent.type === "Property" && parent.key === n && !parent.computed;
+                    const isShorthandValue = parent && parent.type === "Property" && parent.shorthand && parent.value === n;
+
+                    // Include shorthand properties as references (they use the variable)
+                    if (!isMemberProp && !isObjectKey) {
+                        references.push(n);
+                    }
+                }
+
+                for (const key of Object.keys(n)) {
+                    if (key === "parent" || key === "range" || key === "loc") continue;
+
+                    const child = n[key];
+
+                    if (Array.isArray(child)) {
+                        child.forEach((c) => visitNode(c, n));
+                    } else if (child && typeof child === "object" && child.type) {
+                        visitNode(child, n);
+                    }
+                }
+            };
+
+            visitNode(scope, null);
+
+            return references;
+        };
+
+        // Check for destructuring of module imports (not allowed)
         const checkVariableDeclarationHandler = (node) => {
             for (const decl of node.declarations) {
                 // Check for ObjectPattern destructuring
                 if (decl.id.type === "ObjectPattern" && decl.init) {
                     let sourceVarName = null;
 
-                    // Direct destructuring: const { x } = dataImport
+                    // Direct destructuring: const { x } = moduleImport
                     if (decl.init.type === "Identifier") {
                         sourceVarName = decl.init.name;
                     }
 
-                    // Nested destructuring: const { x } = dataImport.nested
+                    // Nested destructuring: const { x } = moduleImport.nested
                     if (decl.init.type === "MemberExpression") {
                         let obj = decl.init;
 
@@ -12485,14 +12526,76 @@ const functionObjectDestructure = {
                     }
 
                     if (sourceVarName && moduleImports.has(sourceVarName)) {
+                        // Get destructured properties with their local names
                         const destructuredProps = decl.id.properties
                             .filter((p) => p.type === "Property" && p.key && p.key.name)
-                            .map((p) => p.key.name);
+                            .map((p) => ({
+                                key: p.key.name,
+                                local: p.value && p.value.type === "Identifier" ? p.value.name : p.key.name,
+                            }));
 
                         const sourceText = sourceCode.getText(decl.init);
 
+                        // Find the containing function/program to search for references
+                        let scope = node.parent;
+
+                        while (scope && scope.type !== "BlockStatement" && scope.type !== "Program") {
+                            scope = scope.parent;
+                        }
+
                         context.report({
-                            message: `Do not destructure module imports. Use dot notation for searchability: "${sourceText}.${destructuredProps[0]}" instead of destructuring`,
+                            fix: scope
+                                ? (fixer) => {
+                                    const fixes = [];
+
+                                    // Replace all references with dot notation
+                                    destructuredProps.forEach(({ key, local }) => {
+                                        const refs = findAllReferencesHandler(scope, local, decl);
+
+                                        refs.forEach((ref) => {
+                                            fixes.push(fixer.replaceText(ref, `${sourceText}.${key}`));
+                                        });
+                                    });
+
+                                    // Remove the entire declaration statement
+                                    // If it's the only declaration in the statement, remove the whole statement
+                                    if (node.declarations.length === 1) {
+                                        // Find the full statement including newline
+                                        const tokenBefore = sourceCode.getTokenBefore(node);
+                                        const tokenAfter = sourceCode.getTokenAfter(node);
+                                        let start = node.range[0];
+                                        let end = node.range[1];
+
+                                        // Include leading whitespace/newline
+                                        if (tokenBefore) {
+                                            const textBetween = sourceCode.text.slice(tokenBefore.range[1], node.range[0]);
+                                            const newlineIndex = textBetween.lastIndexOf("\n");
+
+                                            if (newlineIndex !== -1) {
+                                                start = tokenBefore.range[1] + newlineIndex;
+                                            }
+                                        }
+
+                                        // Include trailing newline
+                                        if (tokenAfter) {
+                                            const textBetween = sourceCode.text.slice(node.range[1], tokenAfter.range[0]);
+                                            const newlineIndex = textBetween.indexOf("\n");
+
+                                            if (newlineIndex !== -1) {
+                                                end = node.range[1] + newlineIndex + 1;
+                                            }
+                                        }
+
+                                        fixes.push(fixer.removeRange([start, end]));
+                                    } else {
+                                        // Remove just this declarator
+                                        fixes.push(fixer.remove(decl));
+                                    }
+
+                                    return fixes;
+                                }
+                                : undefined,
+                            message: `Do not destructure module imports. Use dot notation for searchability: "${sourceText}.${destructuredProps[0].key}" instead of destructuring`,
                             node: decl.id,
                         });
                     }
