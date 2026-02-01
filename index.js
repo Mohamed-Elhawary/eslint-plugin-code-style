@@ -12420,14 +12420,18 @@ const functionObjectDestructure = {
 
         // Folders that contain modules which should be accessed via dot notation
         const modulePathPatterns = [
-            "services",
-            "constants",
-            "config",
-            "data",
             "api",
-            "utils",
+            "apis",
+            "config",
+            "configs",
+            "constants",
+            "data",
             "helpers",
             "lib",
+            "routes",
+            "services",
+            "utils",
+            "utilities",
         ];
 
         const isModuleImportPath = (importPath) => {
