@@ -1,9 +1,9 @@
 /*
-Test Rules:
-- @typescript-eslint/consistent-type-imports (type imports)
-- code-style/function-naming-convention
-- code-style/object-property-per-line
-*/
+ *Test Rules:
+ *- @typescript-eslint/consistent-type-imports (type imports)
+ *- code-style/function-naming-convention
+ *- code-style/object-property-per-line
+ */
 // Test: type import for TypeScript types
 
 import type { UserInterface } from "@/interfaces";

@@ -1,13 +1,13 @@
 /*
-Test Rules:
-- jsx-children-on-new-line
-- jsx-element-child-new-line
-- jsx-ternary-format
-- jsx-logical-expression-simplify
-- jsx-parentheses-position
-- no-empty-lines-in-jsx
-- arrow-function-simple-jsx
-*/
+ *Test Rules:
+ *- jsx-children-on-new-line
+ *- jsx-element-child-new-line
+ *- jsx-ternary-format
+ *- jsx-logical-expression-simplify
+ *- jsx-parentheses-position
+ *- no-empty-lines-in-jsx
+ *- arrow-function-simple-jsx
+ */
 // Test: function-naming-convention (PascalCase for components)
 
 const Card = ({
@@ -25,9 +25,7 @@ const Card = ({
     // Test: jsx-ternary-format
     return (
         <div className="card">
-            <div className="card-header">
-                {renderTitleHandler()}
-            </div>
+            <div className="card-header">{renderTitleHandler()}</div>
             {isLoading ? <span>Loading...</span> : (
                 <div className="card-body">
                     {showDescription && <p>{description}</p>}

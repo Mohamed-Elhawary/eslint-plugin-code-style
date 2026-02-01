@@ -1,24 +1,24 @@
 /*
-Test Rules:
-- code-style/react-code-order (correct ordering of code blocks in custom hooks)
-- code-style/hook-callback-format
-- code-style/hook-deps-per-line
-
-This hook demonstrates the correct order of code blocks in custom hooks:
-1. useRef declarations
-2. useState declarations
-3. useReducer declarations
-4. useSelector / useDispatch (Redux)
-5. Router hooks (useNavigate, useLocation, useParams, useSearchParams)
-6. Context hooks (useContext, useToast, etc.)
-7. Custom hooks (use* pattern)
-8. Derived state / variables
-9. useMemo declarations
-10. useCallback declarations
-11. Handler functions
-12. useEffect / useLayoutEffect
-13. Return statement
-*/
+ *Test Rules:
+ *- code-style/react-code-order (correct ordering of code blocks in custom hooks)
+ *- code-style/hook-callback-format
+ *- code-style/hook-deps-per-line
+ *
+ *This hook demonstrates the correct order of code blocks in custom hooks:
+ *1. useRef declarations
+ *2. useState declarations
+ *3. useReducer declarations
+ *4. useSelector / useDispatch (Redux)
+ *5. Router hooks (useNavigate, useLocation, useParams, useSearchParams)
+ *6. Context hooks (useContext, useToast, etc.)
+ *7. Custom hooks (use* pattern)
+ *8. Derived state / variables
+ *9. useMemo declarations
+ *10. useCallback declarations
+ *11. Handler functions
+ *12. useEffect / useLayoutEffect
+ *13. Return statement
+ */
 
 import {
     useCallback,
@@ -74,12 +74,10 @@ export const useFormSubmission = (initialData) => {
         (
             field,
             value,
-        ) => {
-            setFormData((prev) => ({
-                ...prev,
-                [field]: value,
-            }));
-        },
+        ) => setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        })),
         [],
     );
 
@@ -126,9 +124,7 @@ export const useFormSubmission = (initialData) => {
         () => {
             if (isSuccess) {
                 const timer = setTimeout(
-                    () => {
-                        setIsSuccess(false);
-                    },
+                    () => setIsSuccess(false),
                     3000,
                 );
 
@@ -141,9 +137,7 @@ export const useFormSubmission = (initialData) => {
     );
 
     useEffect(
-        () => () => {
-            submitCountRef.current = 0;
-        },
+        () => () => submitCountRef.current = 0,
         [],
     );
 

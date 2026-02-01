@@ -1,33 +1,33 @@
 /*
-Test Rules:
-- code-style/react-code-order (correct ordering of code blocks)
-- code-style/component-props-inline-type
-- code-style/hook-callback-format
-- code-style/hook-deps-per-line
-- code-style/type-annotation-spacing (colon spacing in type annotations)
-- code-style/variable-naming-convention (camelCase for variables)
-- code-style/assignment-value-same-line (value on same line as assignment)
-- code-style/block-statement-newlines (empty lines after block statements)
-- code-style/if-statement-format (if/else formatting)
-- code-style/arrow-function-simplify (simplify arrow functions when possible)
-
-React Code Order (15 categories):
-1. Props destructure (parameter level: `({ prop1, prop2 }): Type`)
-2. Props destructure in body (`const { x } = propValue` where propValue is a prop)
-3. useRef declarations
-4. useState declarations
-5. useReducer declarations
-6. useSelector / useDispatch (Redux)
-7. Router hooks (useNavigate, useLocation, useParams, useSearchParams)
-8. Context hooks (useContext, useToast, etc.)
-9. Custom hooks (use* pattern)
-10. Derived state / variables (computed values like `const isSearching = x.length > 0`)
-11. useMemo declarations
-12. useCallback declarations
-13. Handler functions
-14. useEffect / useLayoutEffect
-15. Return statement (JSX)
-*/
+ *Test Rules:
+ *- code-style/react-code-order (correct ordering of code blocks)
+ *- code-style/component-props-inline-type
+ *- code-style/hook-callback-format
+ *- code-style/hook-deps-per-line
+ *- code-style/type-annotation-spacing (colon spacing in type annotations)
+ *- code-style/variable-naming-convention (camelCase for variables)
+ *- code-style/assignment-value-same-line (value on same line as assignment)
+ *- code-style/block-statement-newlines (empty lines after block statements)
+ *- code-style/if-statement-format (if/else formatting)
+ *- code-style/arrow-function-simplify (simplify arrow functions when possible)
+ *
+ *React Code Order (15 categories):
+ *1. Props destructure (parameter level: `({ prop1, prop2 }): Type`)
+ *2. Props destructure in body (`const { x } = propValue` where propValue is a prop)
+ *3. useRef declarations
+ *4. useState declarations
+ *5. useReducer declarations
+ *6. useSelector / useDispatch (Redux)
+ *7. Router hooks (useNavigate, useLocation, useParams, useSearchParams)
+ *8. Context hooks (useContext, useToast, etc.)
+ *9. Custom hooks (use* pattern)
+ *10. Derived state / variables (computed values like `const isSearching = x.length > 0`)
+ *11. useMemo declarations
+ *12. useCallback declarations
+ *13. Handler functions
+ *14. useEffect / useLayoutEffect
+ *15. Return statement (JSX)
+ */
 
 import {
     useCallback,
@@ -82,16 +82,12 @@ export const UserDashboard = ({
 
     // 5. useCallback declarations
     const incrementHandler = useCallback(
-        () => {
-            setCount((prev) => prev + 1);
-        },
+        () => setCount((prev) => prev + 1),
         [],
     );
 
     const decrementHandler = useCallback(
-        () => {
-            setCount((prev) => prev - 1);
-        },
+        () => setCount((prev) => prev - 1),
         [],
     );
 
@@ -100,9 +96,7 @@ export const UserDashboard = ({
         setIsLoading(true);
 
         timerRef.current = window.setTimeout(
-            () => {
-                setIsLoading(false);
-            },
+            () => setIsLoading(false),
             1000,
         );
     };
@@ -117,9 +111,7 @@ export const UserDashboard = ({
 
     // 7. useEffect / useLayoutEffect
     useEffect(
-        () => {
-            inputRef.current?.focus();
-        },
+        () => inputRef.current?.focus(),
         [],
     );
 

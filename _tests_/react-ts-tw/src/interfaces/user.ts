@@ -1,8 +1,8 @@
 /*
-Test Rules:
-- code-style/interface-format (PascalCase + Interface suffix, camelCase props, commas)
-- code-style/typescript-definition-location (interfaces in interfaces folder)
-*/
+ *Test Rules:
+ *- code-style/interface-format (PascalCase + Interface suffix, camelCase props, commas)
+ *- code-style/typescript-definition-location (interfaces in interfaces folder)
+ */
 // Test: interface-format - proper interface naming and formatting
 
 export interface UserInterface {

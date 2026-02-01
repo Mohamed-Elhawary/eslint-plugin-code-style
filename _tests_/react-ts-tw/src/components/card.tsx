@@ -1,11 +1,11 @@
 /*
-Test Rules:
-- tailwindcss/enforces-shorthand
-- code-style/component-props-destructure (props must be destructured)
-- code-style/component-props-inline-type (inline type annotation)
-- code-style/jsx-children-on-new-line
-- Test: TypeScript component with inline type annotation
-*/
+ *Test Rules:
+ *- tailwindcss/enforces-shorthand
+ *- code-style/component-props-destructure (props must be destructured)
+ *- code-style/component-props-inline-type (inline type annotation)
+ *- code-style/jsx-children-on-new-line
+ *- Test: TypeScript component with inline type annotation
+ */
 
 import type { ReactNode } from "react";
 

@@ -1,14 +1,14 @@
 /*
-Test Rules:
-- code-style/jsx-children-on-new-line (children on separate lines)
-- code-style/jsx-element-child-new-line (child elements on new lines)
-- code-style/jsx-logical-expression-simplify (simplify && expressions)
-- code-style/jsx-parentheses-position (opening parenthesis on same line)
-- code-style/jsx-closing-bracket-spacing (no space before />)
-- code-style/no-empty-lines-in-jsx (no empty lines inside JSX elements)
-- code-style/object-property-per-line (object properties on separate lines)
-- code-style/array-items-per-line (array items on separate lines)
-*/
+ *Test Rules:
+ *- code-style/jsx-children-on-new-line (children on separate lines)
+ *- code-style/jsx-element-child-new-line (child elements on new lines)
+ *- code-style/jsx-logical-expression-simplify (simplify && expressions)
+ *- code-style/jsx-parentheses-position (opening parenthesis on same line)
+ *- code-style/jsx-closing-bracket-spacing (no space before />)
+ *- code-style/no-empty-lines-in-jsx (no empty lines inside JSX elements)
+ *- code-style/object-property-per-line (object properties on separate lines)
+ *- code-style/array-items-per-line (array items on separate lines)
+ */
 
 import { useMemo, useState } from "react";
 
@@ -61,7 +61,10 @@ export const List = ({
             <h2>{title}</h2>
             {hasItems && (
                 <ul>
-                    {displayItems.map(({ id, label }) => (
+                    {displayItems.map(({
+                        id,
+                        label,
+                    }) => (
                         <li
                             key={id}
                             style={{

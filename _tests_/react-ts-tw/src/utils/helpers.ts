@@ -1,14 +1,14 @@
 /*
-Test Rules:
-- code-style/type-annotation-spacing (no space before colon, one space after)
-- code-style/variable-naming-convention (camelCase for variables, UPPER_CASE for constants)
-- code-style/arrow-function-simplify (simplify arrow functions when possible)
-- code-style/assignment-value-same-line (value must be on same line as assignment)
-- code-style/block-statement-newlines (empty line after multi-line blocks)
-- code-style/export-format (export keyword on same line as declaration)
-- code-style/function-call-spacing (no space between function name and parentheses)
-- code-style/member-expression-bracket-spacing (no space inside brackets)
-*/
+ *Test Rules:
+ *- code-style/type-annotation-spacing (no space before colon, one space after)
+ *- code-style/variable-naming-convention (camelCase for variables, UPPER_CASE for constants)
+ *- code-style/arrow-function-simplify (simplify arrow functions when possible)
+ *- code-style/assignment-value-same-line (value must be on same line as assignment)
+ *- code-style/block-statement-newlines (empty line after multi-line blocks)
+ *- code-style/export-format (export keyword on same line as declaration)
+ *- code-style/function-call-spacing (no space between function name and parentheses)
+ *- code-style/member-expression-bracket-spacing (no space inside brackets)
+ */
 
 export const formatValueHandler = (value: string): string => value.trim();
 

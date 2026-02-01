@@ -1,20 +1,22 @@
 /*
-Test Rules:
-- import-format
-- export-format
-- import-source-spacing
-- array-items-per-line
-- array-objects-on-new-lines
-- object-property-value-format
-- object-property-value-brace
-- string-property-spacing
-- member-expression-bracket-spacing
-- comment-format
-- assignment-value-same-line
-- absolute-imports-only
-*/
-/* Test: import-format (single specifier on one line)
-   Test: absolute-imports-only */
+ *Test Rules:
+ *- import-format
+ *- export-format
+ *- import-source-spacing
+ *- array-items-per-line
+ *- array-objects-on-new-lines
+ *- object-property-value-format
+ *- object-property-value-brace
+ *- string-property-spacing
+ *- member-expression-bracket-spacing
+ *- comment-format
+ *- assignment-value-same-line
+ *- absolute-imports-only
+ */
+/*
+ * Test: import-format (single specifier on one line)
+ * Test: absolute-imports-only 
+ */
 
 import { isNumber } from "@/utils";
 

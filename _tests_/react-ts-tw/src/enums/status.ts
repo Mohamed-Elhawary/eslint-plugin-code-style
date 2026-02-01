@@ -1,8 +1,8 @@
 /*
-Test Rules:
-- code-style/enum-format (PascalCase + Enum suffix, UPPER_CASE members, commas)
-- code-style/typescript-definition-location (enums in enums folder)
-*/
+ *Test Rules:
+ *- code-style/enum-format (PascalCase + Enum suffix, UPPER_CASE members, commas)
+ *- code-style/typescript-definition-location (enums in enums folder)
+ */
 // Test: enum-format - proper enum naming with UPPER_CASE members
 
 export enum UserRoleEnum {

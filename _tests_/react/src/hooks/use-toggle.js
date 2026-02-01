@@ -1,10 +1,10 @@
 /*
-Test Rules:
-- hook-callback-format
-- hook-deps-per-line
-- single-argument-on-one-line
-- simple-call-single-line
-*/
+ *Test Rules:
+ *- hook-callback-format
+ *- hook-deps-per-line
+ *- single-argument-on-one-line
+ *- simple-call-single-line
+ */
 
 import { useCallback, useState } from "react";
 

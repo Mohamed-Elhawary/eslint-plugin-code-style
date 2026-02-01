@@ -1,12 +1,14 @@
 /*
-Test Rules:
-- code-style/function-object-destructure (non-component functions use typed params, destructure in body)
-- code-style/component-props-inline-type (regular functions can use interface references)
-- code-style/opening-brackets-same-line (preserves TypeScript generics)
-*/
-/* Test: Non-component functions with typed params and destructuring in body
-   These are NOT React components, so they should NOT destructure in the signature.
-   Instead, use a typed param and destructure at the top of the function body. */
+ *Test Rules:
+ *- code-style/function-object-destructure (non-component functions use typed params, destructure in body)
+ *- code-style/component-props-inline-type (regular functions can use interface references)
+ *- code-style/opening-brackets-same-line (preserves TypeScript generics)
+ */
+/*
+ * Test: Non-component functions with typed params and destructuring in body
+ * These are NOT React components, so they should NOT destructure in the signature.
+ * Instead, use a typed param and destructure at the top of the function body. 
+ */
 
 import { useState } from "react";
 
@@ -25,8 +27,10 @@ export const useUserActions = () => {
 
     const [error, setError] = useState<string | null>(null);
 
-    /* Test: Non-component function with typed param and destructuring in body
-       Spacing: data : InterfaceName (one space before and after colon) */
+    /*
+     * Test: Non-component function with typed param and destructuring in body
+     * Spacing: data : InterfaceName (one space before and after colon) 
+     */
     const createUserHandler = async (data: CreateUserParamsInterface) => {
         const {
             age,

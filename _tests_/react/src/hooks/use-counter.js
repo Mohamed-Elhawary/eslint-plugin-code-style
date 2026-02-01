@@ -1,10 +1,10 @@
 /*
-Test Rules:
-- hook-callback-format
-- hook-deps-per-line
-- function-naming-convention (camelCase for hooks)
-- arrow-function-simplify
-*/
+ *Test Rules:
+ *- hook-callback-format
+ *- hook-deps-per-line
+ *- function-naming-convention (camelCase for hooks)
+ *- arrow-function-simplify
+ */
 
 import { useCallback, useState } from "react";
 

@@ -585,20 +585,20 @@ const arrayCallbackDestructure = {
             // Only enforce multiline when 2+ properties
             if (properties.length < 2) return;
 
-            // Check if all properties are on the same line
             const firstProp = properties[0];
             const lastProp = properties[properties.length - 1];
+            const closeBrace = sourceCode.getLastToken(pattern);
 
+            // Calculate indent based on the call expression
+            const callLine = sourceCode.lines[callNode.loc.start.line - 1];
+            const baseIndent = callLine.match(/^\s*/)[0];
+            const propIndent = baseIndent + "        ";
+
+            // Check if all properties are on the same line (need full reformat)
             if (firstProp.loc.start.line === lastProp.loc.end.line) {
-                // Calculate indent based on the call expression
-                const callLine = sourceCode.lines[callNode.loc.start.line - 1];
-                const baseIndent = callLine.match(/^\s*/)[0];
-                const propIndent = baseIndent + "    ";
-
                 context.report({
                     fix(fixer) {
                         const openBrace = sourceCode.getFirstToken(pattern);
-                        const closeBrace = sourceCode.getLastToken(pattern);
 
                         const propsText = properties
                             .map((prop) => propIndent + sourceCode.getText(prop))
@@ -606,11 +606,38 @@ const arrayCallbackDestructure = {
 
                         return fixer.replaceTextRange(
                             [openBrace.range[0], closeBrace.range[1]],
-                            `{\n${propsText},\n${baseIndent}}`,
+                            `{\n${propsText},\n${baseIndent}    }`,
                         );
                     },
                     message: "Destructured properties in array callback should each be on their own line when there are 2 or more properties",
                     node: pattern,
+                });
+
+                return;
+            }
+
+            // Check if closing brace is on the same line as last property (needs fixing)
+            if (closeBrace.loc.start.line === lastProp.loc.end.line) {
+                context.report({
+                    fix(fixer) {
+                        // Add trailing comma if missing and move closing brace to new line
+                        const tokenBeforeClose = sourceCode.getTokenBefore(closeBrace);
+                        const hasTrailingComma = tokenBeforeClose.value === ",";
+
+                        if (hasTrailingComma) {
+                            return fixer.replaceTextRange(
+                                [tokenBeforeClose.range[1], closeBrace.range[0]],
+                                "\n" + baseIndent + "    ",
+                            );
+                        }
+
+                        return fixer.replaceTextRange(
+                            [lastProp.range[1], closeBrace.range[0]],
+                            ",\n" + baseIndent + "    ",
+                        );
+                    },
+                    message: "Closing brace should be on its own line in multiline destructuring",
+                    node: closeBrace,
                 });
             }
         };
@@ -2694,67 +2721,66 @@ const functionParamsPerLine = {
                 closeParen.range[0],
             );
 
-            // Callback arrow functions with 2+ simple params: each param on its own line
-            if (isCallback && params.length >= 2 && !hasComplexDestructuredParamHandler(params)) {
-                // Check if all params are simple identifiers (not destructuring)
-                const allSimpleParams = params.every((p) => p.type === "Identifier");
+            // Callback arrow functions with 2+ params: each param on its own line
+            // This handles both simple params (item, index) and mixed params ({ item }, index)
+            if (isCallback && params.length >= 2) {
+                // Calculate proper indent based on line's base indentation, not the paren column
+                // This ensures consistent indentation for callbacks in method chains
+                const lineText = sourceCode.lines[openParen.loc.start.line - 1];
+                const lineIndent = lineText.match(/^(\s*)/)[1].length;
+                const paramIndent = " ".repeat(lineIndent + 4);
+                const parenIndent = " ".repeat(lineIndent);
 
-                if (allSimpleParams) {
-                    // Calculate proper indent based on opening paren position
-                    const paramIndent = " ".repeat(openParen.loc.start.column + 4);
-                    const parenIndent = " ".repeat(openParen.loc.start.column);
+                // Check if first param is on same line as opening paren
+                if (openParen.loc.end.line === firstParam.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openParen.range[1], firstParam.range[0]],
+                            "\n" + paramIndent,
+                        ),
+                        message: "Callback arrow with 2+ params: first param should be on its own line",
+                        node: firstParam,
+                    });
+                }
 
-                    // Check if first param is on same line as opening paren
-                    if (openParen.loc.end.line === firstParam.loc.start.line) {
+                // Check if closing paren is on same line as last param
+                if (closeParen.loc.start.line === lastParam.loc.end.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [lastParam.range[1], closeParen.range[0]],
+                            ",\n" + parenIndent,
+                        ),
+                        message: "Callback arrow with 2+ params: closing paren should be on its own line",
+                        node: closeParen,
+                    });
+                }
+
+                // Check each param is on its own line
+                for (let i = 0; i < params.length - 1; i += 1) {
+                    const current = params[i];
+                    const next = params[i + 1];
+
+                    if (current.loc.end.line === next.loc.start.line) {
+                        const commaToken = sourceCode.getTokenAfter(
+                            current,
+                            (token) => token.value === ",",
+                        );
+
                         context.report({
                             fix: (fixer) => fixer.replaceTextRange(
-                                [openParen.range[1], firstParam.range[0]],
+                                [commaToken.range[1], next.range[0]],
                                 "\n" + paramIndent,
                             ),
-                            message: "Callback arrow with 2+ params: first param should be on its own line",
-                            node: firstParam,
+                            message: "Callback arrow with 2+ params: each param should be on its own line",
+                            node: next,
                         });
                     }
-
-                    // Check if closing paren is on same line as last param
-                    if (closeParen.loc.start.line === lastParam.loc.end.line) {
-                        context.report({
-                            fix: (fixer) => fixer.replaceTextRange(
-                                [lastParam.range[1], closeParen.range[0]],
-                                ",\n" + parenIndent,
-                            ),
-                            message: "Callback arrow with 2+ params: closing paren should be on its own line",
-                            node: closeParen,
-                        });
-                    }
-
-                    // Check each param is on its own line
-                    for (let i = 0; i < params.length - 1; i += 1) {
-                        const current = params[i];
-                        const next = params[i + 1];
-
-                        if (current.loc.end.line === next.loc.start.line) {
-                            const commaToken = sourceCode.getTokenAfter(
-                                current,
-                                (token) => token.value === ",",
-                            );
-
-                            context.report({
-                                fix: (fixer) => fixer.replaceTextRange(
-                                    [commaToken.range[1], next.range[0]],
-                                    "\n" + paramIndent,
-                                ),
-                                message: "Callback arrow with 2+ params: each param should be on its own line",
-                                node: next,
-                            });
-                        }
-                    }
-
-                    return;
                 }
+
+                return;
             }
 
-            // Skip other callback arrow functions (single param handled by opening-brackets-same-line)
+            // Skip single-param callback arrow functions (handled by opening-brackets-same-line)
             if (isCallback) return;
 
             // 1-2 simple params without complex destructuring: keep on same line
@@ -5651,7 +5677,19 @@ const jsxChildrenOnNewLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        // Check if expression is simple (identifier, literal, or member expression chain)
+        // Check if an argument is simple
+        const isSimpleArgHandler = (node) => {
+            if (!node) return false;
+            if (node.type === "Identifier") return true;
+            if (node.type === "Literal") return true;
+            if (node.type === "MemberExpression") {
+                return node.object.type === "Identifier" && node.property.type === "Identifier";
+            }
+
+            return false;
+        };
+
+        // Check if expression is simple (identifier, literal, member expression chain, or simple function call)
         const isSimpleExpressionHandler = (expr) => {
             if (!expr) return true;
 
@@ -5675,6 +5713,22 @@ const jsxChildrenOnNewLine = {
                 }
 
                 return current.type === "Identifier";
+            }
+
+            // Allow simple function calls with 0-1 simple arguments
+            if (expr.type === "CallExpression") {
+                const { callee } = expr;
+                const isSimpleCallee = callee.type === "Identifier" ||
+                    (callee.type === "MemberExpression" &&
+                     callee.object.type === "Identifier" &&
+                     callee.property.type === "Identifier");
+
+                if (!isSimpleCallee) return false;
+
+                if (expr.arguments.length === 0) return true;
+                if (expr.arguments.length === 1 && isSimpleArgHandler(expr.arguments[0])) return true;
+
+                return false;
             }
 
             return false;
@@ -5884,7 +5938,19 @@ const jsxElementChildNewLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        // Check if expression is simple (identifier, literal, or member expression chain)
+        // Check if an argument is simple
+        const isSimpleArgHandler = (node) => {
+            if (!node) return false;
+            if (node.type === "Identifier") return true;
+            if (node.type === "Literal") return true;
+            if (node.type === "MemberExpression") {
+                return node.object.type === "Identifier" && node.property.type === "Identifier";
+            }
+
+            return false;
+        };
+
+        // Check if expression is simple (identifier, literal, member expression chain, or simple function call)
         const isSimpleExpressionHandler = (expr) => {
             if (!expr) return true;
 
@@ -5908,6 +5974,22 @@ const jsxElementChildNewLine = {
                 }
 
                 return current.type === "Identifier";
+            }
+
+            // Allow simple function calls with 0-1 simple arguments
+            if (expr.type === "CallExpression") {
+                const { callee } = expr;
+                const isSimpleCallee = callee.type === "Identifier" ||
+                    (callee.type === "MemberExpression" &&
+                     callee.object.type === "Identifier" &&
+                     callee.property.type === "Identifier");
+
+                if (!isSimpleCallee) return false;
+
+                if (expr.arguments.length === 0) return true;
+                if (expr.arguments.length === 1 && isSimpleArgHandler(expr.arguments[0])) return true;
+
+                return false;
             }
 
             return false;
@@ -6436,7 +6518,19 @@ const jsxSimpleElementOneLine = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        // Check if an expression is simple (just an identifier or literal)
+        // Check if an argument is simple (identifier, literal, or simple member expression)
+        const isSimpleArgHandler = (node) => {
+            if (!node) return false;
+            if (node.type === "Identifier") return true;
+            if (node.type === "Literal") return true;
+            if (node.type === "MemberExpression") {
+                return node.object.type === "Identifier" && node.property.type === "Identifier";
+            }
+
+            return false;
+        };
+
+        // Check if an expression is simple (identifier, literal, member expression, or simple function call)
         const isSimpleExpressionHandler = (node) => {
             if (!node) return false;
 
@@ -6445,6 +6539,24 @@ const jsxSimpleElementOneLine = {
             if (node.type === "MemberExpression") {
                 // Allow simple member expressions like obj.prop
                 return node.object.type === "Identifier" && node.property.type === "Identifier";
+            }
+
+            // Allow simple function calls with 0-1 simple arguments
+            if (node.type === "CallExpression") {
+                // Check callee is simple (identifier or member expression)
+                const { callee } = node;
+                const isSimpleCallee = callee.type === "Identifier" ||
+                    (callee.type === "MemberExpression" &&
+                     callee.object.type === "Identifier" &&
+                     callee.property.type === "Identifier");
+
+                if (!isSimpleCallee) return false;
+
+                // Allow 0-1 arguments, and the argument must be simple
+                if (node.arguments.length === 0) return true;
+                if (node.arguments.length === 1 && isSimpleArgHandler(node.arguments[0])) return true;
+
+                return false;
             }
 
             return false;
@@ -11565,13 +11677,16 @@ const simpleCallSingleLine = {
                 // Argument must be arrow function
                 if (arg.type !== "ArrowFunctionExpression") return;
 
+                // Callbacks with 2+ params should be multiline (handled by function-params-per-line)
+                if (arg.params.length >= 2) return;
+
                 const { body } = arg;
 
                 // Zero params: body must be a simple call/import
                 if (arg.params.length === 0 && !isSimpleBodyHandler(body)) return;
 
-                // With params: body must be expression (not block) and simple
-                if (arg.params.length > 0) {
+                // With single param: body must be expression (not block) and simple
+                if (arg.params.length === 1) {
                     if (body.type === "BlockStatement") return;
                     if (!isSimpleExpressionHandler(body)) return;
                 }

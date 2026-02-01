@@ -1,13 +1,13 @@
 /*
-Test Rules:
-- function-arguments-format
-- function-params-per-line
-- function-call-spacing
-- nested-call-closing-brackets
-- curried-arrow-same-line
-- opening-brackets-same-line
-- block-statement-newlines
-*/
+ *Test Rules:
+ *- function-arguments-format
+ *- function-params-per-line
+ *- function-call-spacing
+ *- nested-call-closing-brackets
+ *- curried-arrow-same-line
+ *- opening-brackets-same-line
+ *- block-statement-newlines
+ */
 // Test: function-params-per-line (each param on own line)
 
 const Modal = ({

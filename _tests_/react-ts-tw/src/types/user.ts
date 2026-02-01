@@ -1,8 +1,8 @@
 /*
-Test Rules:
-- code-style/type-format (PascalCase + Type suffix, camelCase props, commas)
-- code-style/typescript-definition-location (types in types folder)
-*/
+ *Test Rules:
+ *- code-style/type-format (PascalCase + Type suffix, camelCase props, commas)
+ *- code-style/typescript-definition-location (types in types folder)
+ */
 
 export type UserProfileType = {
     avatar: string,

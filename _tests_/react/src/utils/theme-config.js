@@ -1,9 +1,9 @@
 /*
-Test Rules:
-- object-property-per-line (multi-line template literal should NOT be collapsed)
-This file tests that objects with multi-line template literals
-are allowed to remain multi-line, even if they have fewer than 2 properties.
-*/
+ *Test Rules:
+ *- object-property-per-line (multi-line template literal should NOT be collapsed)
+ *This file tests that objects with multi-line template literals
+ *are allowed to remain multi-line, even if they have fewer than 2 properties.
+ */
 // Test: object with multi-line template literal value should NOT trigger collapse
 
 const muiTheme = {

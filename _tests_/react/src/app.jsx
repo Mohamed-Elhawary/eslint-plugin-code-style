@@ -1,15 +1,17 @@
 /*
-Test Rules:
-- module-index-exports
-- import-format (multiline when >= 4 specifiers)
-- export-format
-- opening-brackets-same-line
-- object-property-per-line
-- no-empty-lines-in-function-params
-- absolute-imports-only
-*/
-/* Test: import-format (single line when 3 or fewer specifiers)
-   Test: absolute-imports-only (use @/ prefix) */
+ *Test Rules:
+ *- module-index-exports
+ *- import-format (multiline when >= 4 specifiers)
+ *- export-format
+ *- opening-brackets-same-line
+ *- object-property-per-line
+ *- no-empty-lines-in-function-params
+ *- absolute-imports-only
+ */
+/*
+ * Test: import-format (single line when 3 or fewer specifiers)
+ * Test: absolute-imports-only (use @/ prefix) 
+ */
 
 import { Button, Card, Modal } from "@/components";
 import { useCounter, useToggle } from "@/hooks";

@@ -1,27 +1,27 @@
 /*
-Test Rules:
-- code-style/react-code-order (correct ordering of code blocks in custom hooks)
-- code-style/hook-callback-format
-- code-style/hook-deps-per-line
-- code-style/type-annotation-spacing (colon spacing in type annotations)
-
-Custom Hook Code Order (15 categories):
-1. Props/params destructure (parameter level)
-2. Props/params destructure in body (`const { x } = param` where param is a function parameter)
-3. useRef declarations
-4. useState declarations
-5. useReducer declarations
-6. useSelector / useDispatch (Redux)
-7. Router hooks (useNavigate, useLocation, useParams, useSearchParams)
-8. Context hooks (useContext, useToast, etc.)
-9. Custom hooks (use* pattern)
-10. Derived state / variables (computed from hooks above)
-11. useMemo declarations
-12. useCallback declarations
-13. Handler functions
-14. useEffect / useLayoutEffect
-15. Return statement
-*/
+ *Test Rules:
+ *- code-style/react-code-order (correct ordering of code blocks in custom hooks)
+ *- code-style/hook-callback-format
+ *- code-style/hook-deps-per-line
+ *- code-style/type-annotation-spacing (colon spacing in type annotations)
+ *
+ *Custom Hook Code Order (15 categories):
+ *1. Props/params destructure (parameter level)
+ *2. Props/params destructure in body (`const { x } = param` where param is a function parameter)
+ *3. useRef declarations
+ *4. useState declarations
+ *5. useReducer declarations
+ *6. useSelector / useDispatch (Redux)
+ *7. Router hooks (useNavigate, useLocation, useParams, useSearchParams)
+ *8. Context hooks (useContext, useToast, etc.)
+ *9. Custom hooks (use* pattern)
+ *10. Derived state / variables (computed from hooks above)
+ *11. useMemo declarations
+ *12. useCallback declarations
+ *13. Handler functions
+ *14. useEffect / useLayoutEffect
+ *15. Return statement
+ */
 
 import {
     useCallback,
@@ -79,12 +79,10 @@ export const useFormSubmission = (initialData: FormInitialDataInterface): UseFor
         (
             field: "name" | "email",
             value: string,
-        ) => {
-            setFormData((prev) => ({
-                ...prev,
-                [field]: value,
-            }));
-        },
+        ) => setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        })),
         [],
     );
 
@@ -131,9 +129,7 @@ export const useFormSubmission = (initialData: FormInitialDataInterface): UseFor
         () => {
             if (isSuccess) {
                 const timer = setTimeout(
-                    () => {
-                        setIsSuccess(false);
-                    },
+                    () => setIsSuccess(false),
                     3000,
                 );
 
@@ -146,9 +142,7 @@ export const useFormSubmission = (initialData: FormInitialDataInterface): UseFor
     );
 
     useEffect(
-        () => () => {
-            submitCountRef.current = 0;
-        },
+        () => () => submitCountRef.current = 0,
         [],
     );
 

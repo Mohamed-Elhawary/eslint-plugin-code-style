@@ -1,25 +1,25 @@
 /*
-Test Rules:
-- code-style/react-code-order (correct ordering of code blocks)
-- code-style/hook-callback-format
-- code-style/hook-deps-per-line
-
-This component demonstrates the correct order of code blocks:
-1. Props destructure (implicit via parameter)
-2. useRef declarations
-3. useState declarations
-4. useReducer declarations
-5. useSelector / useDispatch (Redux)
-6. Router hooks (useNavigate, useLocation, useParams, useSearchParams)
-7. Context hooks (useContext, useToast, etc.)
-8. Custom hooks (use* pattern)
-9. Derived state / variables
-10. useMemo declarations
-11. useCallback declarations
-12. Handler functions
-13. useEffect / useLayoutEffect
-14. Return statement (JSX)
-*/
+ *Test Rules:
+ *- code-style/react-code-order (correct ordering of code blocks)
+ *- code-style/hook-callback-format
+ *- code-style/hook-deps-per-line
+ *
+ *This component demonstrates the correct order of code blocks:
+ *1. Props destructure (implicit via parameter)
+ *2. useRef declarations
+ *3. useState declarations
+ *4. useReducer declarations
+ *5. useSelector / useDispatch (Redux)
+ *6. Router hooks (useNavigate, useLocation, useParams, useSearchParams)
+ *7. Context hooks (useContext, useToast, etc.)
+ *8. Custom hooks (use* pattern)
+ *9. Derived state / variables
+ *10. useMemo declarations
+ *11. useCallback declarations
+ *12. Handler functions
+ *13. useEffect / useLayoutEffect
+ *14. Return statement (JSX)
+ */
 
 import {
     useCallback,
@@ -71,16 +71,12 @@ export const UserDashboard = ({
 
     // 5. useCallback declarations
     const incrementHandler = useCallback(
-        () => {
-            setCount((prev) => prev + 1);
-        },
+        () => setCount((prev) => prev + 1),
         [],
     );
 
     const decrementHandler = useCallback(
-        () => {
-            setCount((prev) => prev - 1);
-        },
+        () => setCount((prev) => prev - 1),
         [],
     );
 
@@ -89,9 +85,7 @@ export const UserDashboard = ({
         setIsLoading(true);
 
         timerRef.current = window.setTimeout(
-            () => {
-                setIsLoading(false);
-            },
+            () => setIsLoading(false),
             1000,
         );
     };
@@ -106,9 +100,7 @@ export const UserDashboard = ({
 
     // 7. useEffect / useLayoutEffect
     useEffect(
-        () => {
-            inputRef.current?.focus();
-        },
+        () => inputRef.current?.focus(),
         [],
     );
 

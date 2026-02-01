@@ -1,13 +1,13 @@
 /*
-Test Rules:
-- no-empty-lines-in-switch-cases
-- no-empty-lines-in-objects
-- no-empty-lines-in-function-calls
-- no-empty-lines-in-function-params
-- multiline-if-conditions
-- nested-call-closing-brackets
-- curried-arrow-same-line
-*/
+ *Test Rules:
+ *- no-empty-lines-in-switch-cases
+ *- no-empty-lines-in-objects
+ *- no-empty-lines-in-function-calls
+ *- no-empty-lines-in-function-params
+ *- multiline-if-conditions
+ *- nested-call-closing-brackets
+ *- curried-arrow-same-line
+ */
 // Test: variable-naming-convention
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

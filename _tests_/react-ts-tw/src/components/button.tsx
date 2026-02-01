@@ -1,14 +1,16 @@
 /*
-Test Rules:
-- code-style/classname-multiline (multiline classes: "..." in JSX, `...` in variables/objects)
-- code-style/component-props-destructure (props must be destructured)
-- code-style/component-props-inline-type (inline type annotation)
-- code-style/jsx-prop-naming-convention (camelCase for event handlers, data-* lowercase)
-- code-style/jsx-closing-bracket-spacing (no space before closing bracket)
-- code-style/jsx-simple-element-one-line (simple elements on single line)
-- code-style/jsx-string-value-trim (no leading/trailing whitespace in string values)
-- code-style/no-empty-lines-in-jsx (no empty lines between JSX attributes)
-*/
+ *Test Rules:
+ *- code-style/classname-multiline (multiline classes: "..." in JSX, `...` in variables/objects)
+ *- code-style/component-props-destructure (props must be destructured)
+ *- code-style/component-props-inline-type (inline type annotation)
+ *- code-style/jsx-prop-naming-convention (camelCase for event handlers, data-* lowercase)
+ *- code-style/jsx-closing-bracket-spacing (no space before closing bracket)
+ *- code-style/jsx-simple-element-one-line (simple elements on single line)
+ *- code-style/jsx-string-value-trim (no leading/trailing whitespace in string values)
+ *- code-style/no-empty-lines-in-jsx (no empty lines between JSX attributes)
+ */
+
+import type { ButtonVariantType } from "src/types";
 
 export const Button = ({
     className = "",
@@ -19,7 +21,7 @@ export const Button = ({
     className?: string,
     label: string,
     onClick?: () => void,
-    variant?: "danger" | "primary" | "secondary",
+    variant?: ButtonVariantType,
 }) => {
     const variantClasses = {
         danger: "bg-red-500 hover:bg-red-600",

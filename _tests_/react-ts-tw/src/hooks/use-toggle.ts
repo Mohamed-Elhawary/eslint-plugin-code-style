@@ -1,9 +1,9 @@
 /*
-Test Rules:
-- TypeScript generics in hooks
-- code-style/function-params-per-line
-- code-style/component-props-inline-type (return type must be interface reference)
-*/
+ *Test Rules:
+ *- TypeScript generics in hooks
+ *- code-style/function-params-per-line
+ *- code-style/component-props-inline-type (return type must be interface reference)
+ */
 // Test: hook with TypeScript types and interface return type
 
 import { useCallback, useState } from "react";
@@ -14,23 +14,17 @@ export const useToggle = (initialValue: boolean = false): UseToggleReturnInterfa
     const [value, setValue] = useState<boolean>(initialValue);
 
     const toggleHandler = useCallback(
-        () => {
-            setValue((prev) => !prev);
-        },
+        () => setValue((prev) => !prev),
         [],
     );
 
     const setTrueHandler = useCallback(
-        () => {
-            setValue(true);
-        },
+        () => setValue(true),
         [],
     );
 
     const setFalseHandler = useCallback(
-        () => {
-            setValue(false);
-        },
+        () => setValue(false),
         [],
     );
 

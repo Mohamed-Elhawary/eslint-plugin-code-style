@@ -1,7 +1,7 @@
 /*
-Test Rules:
-- jsx-ternary-format (return statement with complex consequent, simple alternate)
-*/
+ *Test Rules:
+ *- jsx-ternary-format (return statement with complex consequent, simple alternate)
+ */
 // Test: jsx-ternary-format in return statements
 
 const TernaryTest = ({

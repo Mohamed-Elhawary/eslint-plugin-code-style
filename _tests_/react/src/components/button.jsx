@@ -1,16 +1,16 @@
 /*
-Test Rules:
-- arrow-function-simplify
-- arrow-function-block-body
-- classname-no-extra-spaces
-- jsx-simple-element-one-line
-- jsx-closing-bracket-spacing
-- jsx-prop-naming-convention
-- jsx-string-value-trim
-- variable-naming-convention
-- function-naming-convention
-- object-property-per-line
-*/
+ *Test Rules:
+ *- arrow-function-simplify
+ *- arrow-function-block-body
+ *- classname-no-extra-spaces
+ *- jsx-simple-element-one-line
+ *- jsx-closing-bracket-spacing
+ *- jsx-prop-naming-convention
+ *- jsx-string-value-trim
+ *- variable-naming-convention
+ *- function-naming-convention
+ *- object-property-per-line
+ */
 // Test: variable-naming-convention (camelCase for regular variables)
 
 const buttonVariants = { 

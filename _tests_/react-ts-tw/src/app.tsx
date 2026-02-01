@@ -1,10 +1,10 @@
 /*
-Test Rules:
-- @typescript-eslint/consistent-type-imports
-- tailwindcss/classnames-order
-- code-style/import-format
-- code-style/jsx-ternary-format
-*/
+ *Test Rules:
+ *- @typescript-eslint/consistent-type-imports
+ *- tailwindcss/classnames-order
+ *- code-style/import-format
+ *- code-style/jsx-ternary-format
+ */
 // Test: type imports separated from value imports
 
 import { Button, Card } from "@/components";
@@ -56,9 +56,7 @@ export const App = () => {
             >
                 <div className="mb-4 text-center">
                     <p className="text-2xl font-bold text-gray-800">{count}</p>
-                    <p className="text-sm text-gray-500">
-                        {formatDateHandler(currentDate)}
-                    </p>
+                    <p className="text-sm text-gray-500">{formatDateHandler(currentDate)}</p>
                     <p className="text-sm text-gray-500">
                         {formatCurrencyHandler(count * 10)}
                     </p>
