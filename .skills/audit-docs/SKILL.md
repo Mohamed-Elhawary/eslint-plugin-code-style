@@ -16,10 +16,8 @@ Verify documentation is accurate and consistent across all files.
 
 2. **Check rule count references**
 
-   Files that mention rule count:
-   - `AGENTS.md`: "61 custom auto-fixable formatting rules" (Project Overview)
-   - `AGENTS.md`: "61 rules total" (Code Structure)
-   - `AGENTS.md`: "all 61 rules" (Documentation Files)
+   Files that mention rule count (see AGENTS.md "Rule Count Locations" section for complete list):
+   - `AGENTS.md`: Multiple locations (see below)
    - `README.md`: Multiple mentions in badges, features, headings
    - `recommended-configs/*/README.md`: May mention rule counts
 

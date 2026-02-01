@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*65 rules (59 auto-fixable) to keep your codebase clean and consistent*
+*66 rules (60 auto-fixable) to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **65 custom rules** (59 auto-fixable) for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **66 custom rules** (60 auto-fixable) for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **65 custom rules** (59 auto-fixable) for code formatting. 
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 59 of 65 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 60 of 66 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-**59 rules** support automatic fixing with `eslint --fix`. 6 rules are report-only (require manual changes).
+**60 rules** support automatic fixing with `eslint --fix`. 6 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -182,6 +182,7 @@ eslint src/ --fix
 ```javascript
 rules: {
     "code-style/absolute-imports-only": "error",
+    "code-style/array-callback-destructure": "error",
     "code-style/array-items-per-line": "error",
     "code-style/array-objects-on-new-lines": "error",
     "code-style/arrow-function-block-body": "error",
@@ -251,13 +252,14 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **65 rules total** — 59 with auto-fix 🔧, 6 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
+> **66 rules total** — 60 with auto-fix 🔧, 6 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
 | Rule | Description |
 |------|-------------|
 | **Array Rules** | |
+| `array-callback-destructure` | Destructured params in array callbacks (map, filter, find) go multiline when ≥2 properties 🔧 |
 | `array-items-per-line` | Collapse arrays ≤ threshold to one line; expand larger arrays with each item on own line (default: ≤3) 🔧 ⚙️ |
 | `array-objects-on-new-lines` | Each object in an array starts on its own line for better visual scanning 🔧 |
 | **Arrow Function Rules** | |
@@ -349,6 +351,36 @@ rules: {
 <br />
 
 ## 📚 Array Rules
+
+### `array-callback-destructure`
+
+**What it does:** When destructuring parameters in array method callbacks (map, filter, find, etc.), enforces each property on its own line when there are 2 or more properties.
+
+**Why use it:** Improves readability of array transformations by making destructured properties easy to scan vertically.
+
+```javascript
+// ✅ Good — each destructured property on its own line
+const result = items.map(({
+    name,
+    value,
+}) => `${name}: ${value}`);
+
+const filtered = users.filter(({
+    age,
+    isActive,
+}) => age > 18 && isActive);
+
+// ✅ Good — single property stays inline
+const names = items.map(({ name }) => name);
+
+// ❌ Bad — multiple properties on same line
+const result = items.map(({ name, value, id }) => `${name}: ${value}`);
+
+// ❌ Bad — hard to scan properties
+const data = records.filter(({ status, type, category }) => status === "active");
+```
+
+---
 
 ### `array-items-per-line`
 
@@ -3034,7 +3066,7 @@ const UseAuth = () => {};          // hooks should be camelCase
 
 ## 🔧 Auto-fixing
 
-59 of 65 rules support auto-fixing. Run ESLint with the `--fix` flag:
+60 of 66 rules support auto-fixing. Run ESLint with the `--fix` flag:
 
 ```bash
 # Fix all files in src directory

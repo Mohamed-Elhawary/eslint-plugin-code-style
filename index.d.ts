@@ -5,6 +5,7 @@ import type { Linter, Rule } from "eslint";
  */
 export type RuleNames =
     | "code-style/absolute-imports-only"
+    | "code-style/array-callback-destructure"
     | "code-style/array-items-per-line"
     | "code-style/array-objects-on-new-lines"
     | "code-style/arrow-function-block-body"
@@ -92,6 +93,7 @@ export type CodeStyleRulesConfig = {
  */
 interface PluginRules {
     "absolute-imports-only": Rule.RuleModule;
+    "array-callback-destructure": Rule.RuleModule;
     "array-items-per-line": Rule.RuleModule;
     "array-objects-on-new-lines": Rule.RuleModule;
     "arrow-function-block-body": Rule.RuleModule;

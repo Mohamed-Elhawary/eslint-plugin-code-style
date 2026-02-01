@@ -127,6 +127,7 @@ export default [ // eslint-disable-line
 
             // Code style rules
             "code-style/absolute-imports-only": "error",
+            "code-style/array-callback-destructure": "error",
             "code-style/array-items-per-line": "error",
             "code-style/array-objects-on-new-lines": "error",
             "code-style/arrow-function-block-body": "error",
@@ -232,7 +233,7 @@ export default [ // eslint-disable-line
             "no-lone-blocks": "error",
             "no-lonely-if": "error",
             "no-nested-ternary": "off",
-            "no-plusplus": "error",
+            "no-plusplus": "off",
             "no-redeclare": "error",
             "no-return-assign": "off",
             "no-self-compare": "error",

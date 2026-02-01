@@ -4,9 +4,9 @@ Instructions for AI coding agents working with this codebase.
 
 ## Project Overview
 
-**eslint-plugin-code-style** is an ESLint plugin providing 64 custom formatting rules (57 auto-fixable, 7 report-only) for React/JSX projects. It's designed for ESLint v9+ flat config system.
+**eslint-plugin-code-style** is an ESLint plugin providing 66 custom formatting rules (60 auto-fixable, 6 report-only) for React/JSX projects. It's designed for ESLint v9+ flat config system.
 
-- **Main entry:** `index.js` - Contains all 61 rules in a single file
+- **Main entry:** `index.js` - Contains all 66 rules in a single file
 - **Type definitions:** `index.d.ts` - TypeScript declarations for IDE support
 - **Recommended configs:** `recommended-configs/` - Ready-to-use ESLint configurations
 - **Test apps:** `_tests_/` - Sample apps for testing rules
@@ -19,6 +19,39 @@ Instructions for AI coding agents working with this codebase.
 | React + TS + Tailwind | `recommended-configs/react-ts-tw/` | `_tests_/react-ts-tw/` | Available |
 | React + TypeScript | - | - | Coming Soon |
 | React + Tailwind | - | - | Coming Soon |
+
+### Test Projects & Rule Compatibility
+
+**IMPORTANT:** When adding/editing rules, they must be tested in ALL applicable test projects.
+
+Each test project in `_tests_/` corresponds to a specific tech stack. Rules should ONLY be added to projects that support them:
+
+| Rule Category | `react/` (JS only) | `react-ts-tw/` (TS + Tailwind) | Future: `react-ts/` | Future: `react-tw/` |
+|---------------|:------------------:|:------------------------------:|:-------------------:|:-------------------:|
+| **General rules** (arrays, functions, etc.) | ✅ | ✅ | ✅ | ✅ |
+| **JSX/React rules** | ✅ | ✅ | ✅ | ✅ |
+| **TypeScript rules** | ❌ | ✅ | ✅ | ❌ |
+| **Tailwind rules** | ❌ | ✅ | ❌ | ✅ |
+
+**TypeScript-only rules** (59 rules in JS projects, 66 in TS projects):
+- `component-props-inline-type`
+- `enum-format`
+- `interface-format`
+- `no-inline-type-definitions`
+- `type-annotation-spacing`
+- `type-format`
+- `typescript-definition-location`
+
+**Tailwind-only rules** (if any are added in future):
+- `classname-*` rules work in all projects but are most useful with Tailwind
+
+**When adding a new test project:**
+1. Create folder: `_tests_/<project-name>/`
+2. Copy structure from similar existing project
+3. Create `eslint.config.js` with appropriate rules for that stack
+4. Add ALL applicable rules (skip rules for unsupported tech)
+5. Update this table in AGENTS.md
+6. Update "Available Configurations" table above
 
 ## Build & Test Commands
 
@@ -44,7 +77,7 @@ index.js
 ├── imports (fs, path, url)
 ├── Rule 1 definition (const ruleName = { create(), meta: {} })
 ├── Rule 2 definition
-├── ... (64 rules total)
+├── ... (66 rules total)
 └── export default { meta: {}, rules: {} }
 ```
 
@@ -113,47 +146,258 @@ const ruleName = {
 
 ### Adding a New Rule — Complete Checklist
 
+**IMPORTANT:** Adding a new rule requires a **MINOR version bump** (e.g., 1.5.0 → 1.6.0).
+
 When creating a new rule, ALL of the following files must be updated:
 
 #### 1. `index.js` — Rule Implementation
-- [ ] Add JSDoc comment block with the standard format (see Rule Implementation Pattern above)
-- [ ] Include: Description, Options (if any), Good examples, Bad examples
+
+- [ ] Add JSDoc comment block with the standard format:
+  ```javascript
+  /**
+   * ───────────────────────────────────────────────────────────────
+   * Rule: Rule Name Here
+   * ───────────────────────────────────────────────────────────────
+   *
+   * Description:
+   *   Brief description of what the rule does.
+   *
+   * ✓ Good:
+   *   // Example of correct code
+   *
+   * ✗ Bad:
+   *   // Example of incorrect code
+   */
+  ```
 - [ ] Add `const ruleName = { create(), meta: {} }` definition
-- [ ] Add to `rules` object in default export (keep alphabetical order)
-- [ ] Update the rule count in any comments if present
+- [ ] Include `fixable: "code"` or `fixable: "whitespace"` in meta if auto-fixable
+- [ ] Add to `rules` object in default export (keep **alphabetical order**)
 
 #### 2. `index.d.ts` — TypeScript Types
-- [ ] Add rule name to `RuleNames` type union (alphabetically sorted)
-- [ ] Add rule to `PluginRules` interface (alphabetically sorted)
 
-#### 3. `AGENTS.md` — Agent Instructions
-- [ ] Update rule count in "Project Overview" section (e.g., "61 custom auto-fixable formatting rules")
-- [ ] Update rule count in "Code Structure" section
-- [ ] Add rule to its category in "[Rule Categories](#rule-categories)" section (see list below for all categories)
-- [ ] Update rule count in "Documentation Files" section
+- [ ] Add rule name to `RuleNames` type union (**alphabetically sorted**):
+  ```typescript
+  | "code-style/new-rule-name"
+  ```
+- [ ] Add rule to `PluginRules` interface (**alphabetically sorted**):
+  ```typescript
+  "new-rule-name": Rule.RuleModule;
+  ```
 
-#### 4. `README.md` — Main Documentation
-- [ ] Update rule count in badges/header section
-- [ ] Update rule count in "Why This Plugin?" section
-- [ ] Update rule count in "Key Features" section
-- [ ] Update rule count in "Auto-Fixable Rules" section
-- [ ] Add rule to `rules: {}` example in "Quick Start" section
-- [ ] Add rule to "Rules Summary" table (with description)
-- [ ] Add detailed rule documentation with:
-  - "What it does" description
-  - Code examples (Good ✅ and Bad ❌)
-  - Options table (if rule has options)
-  - Configuration example (if rule has options)
+#### 3. `README.md` — Main Documentation
+
+**a) Update rule counts** (see [Rule Count Locations](#rule-count-locations) for all positions):
+- [ ] Line ~22: `*XX rules (YY auto-fixable)*`
+- [ ] Line ~30: `**XX custom rules** (YY auto-fixable)`
+- [ ] Line ~39: `YY of XX rules support auto-fix`
+- [ ] Line ~100: `**YY rules** support automatic fixing`
+- [ ] Line ~254: `**XX rules total** — YY with auto-fix`
+- [ ] Line ~3037: `YY of XX rules support auto-fixing`
+
+**b) Add rule to Quick Start example** (~line 184, alphabetically sorted):
+```javascript
+"code-style/new-rule-name": "error",
+```
+
+**c) Add rule to Rules Summary table** (find the appropriate category):
+```markdown
+| `new-rule-name` | Brief description of what it does 🔧 |
+```
+- Add 🔧 emoji if auto-fixable
+- Add ⚙️ emoji if has configurable options
+
+**d) Add detailed rule documentation section** (in appropriate category section):
+```markdown
+### `new-rule-name`
+
+**What it does:** One-line description of the rule's purpose.
+
+**Why use it:** Context for why this rule is helpful (optional).
+
+\`\`\`javascript
+// ✅ Good — description of correct pattern
+const example = "correct code";
+
+// ✅ Good — another correct example
+const another = "also correct";
+
+// ❌ Bad — description of incorrect pattern
+const example = "incorrect code";
+
+// ❌ Bad — another incorrect example
+const wrong = "also wrong";
+\`\`\`
+
+**Options:** (only if rule has options)
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `optionName` | `string` | `"value"` | What the option does |
+
+\`\`\`javascript
+// Configuration example
+"code-style/new-rule-name": ["error", { optionName: "value" }]
+\`\`\`
+
+---
+```
+
+#### 4. `AGENTS.md` — Agent Instructions
+
+- [ ] Update rule counts in [Rule Count Locations](#rule-count-locations) section (Current Counts table)
+- [ ] Update all rule count references (see table in Rule Count Locations)
+- [ ] Add rule to its category in [Rule Categories](#rule-categories) section
 
 #### 5. Config Files — Add Rule to Configs
-- [ ] `recommended-configs/react/eslint.config.js`
-- [ ] `recommended-configs/react-ts-tw/eslint.config.js`
-- [ ] `_tests_/react/eslint.config.js`
-- [ ] `_tests_/react-ts-tw/eslint.config.js`
 
-#### 6. Config READMEs (if rule count changed)
-- [ ] `recommended-configs/react/README.md` — Update any rule counts
-- [ ] `recommended-configs/react-ts-tw/README.md` — Update any rule counts
+Add the rule (**alphabetically sorted**) to ALL config files:
+
+- [ ] `recommended-configs/react-ts-tw/eslint.config.js`
+- [ ] `recommended-configs/react/eslint.config.js` (skip if TypeScript-only rule)
+- [ ] `_tests_/react-ts-tw/eslint.config.js`
+- [ ] `_tests_/react/eslint.config.js` (skip if TypeScript-only rule)
+
+**TypeScript-only rules** (only add to `-ts-tw` configs):
+- `component-props-inline-type`, `enum-format`, `interface-format`
+- `no-inline-type-definitions`, `type-annotation-spacing`, `type-format`
+- `typescript-definition-location`
+
+#### 6. Config READMEs — Update Rule Counts
+
+- [ ] `recommended-configs/react-ts-tw/README.md` (~line 396)
+- [ ] `recommended-configs/react/README.md` (~line 286)
+
+#### 7. Version & Tag
+
+- [ ] Update `package.json` version (MINOR bump: x.Y.0)
+- [ ] Commit with message: `feat: add rule-name rule`
+- [ ] Create tag: `git tag vX.Y.0`
+
+#### 8. Testing the Rule
+
+**IMPORTANT:** Every new rule MUST be tested before committing.
+
+**a) Add examples to existing test project code:**
+
+The test projects (`_tests_/react/`, `_tests_/react-ts-tw/`, etc.) contain real code (components, hooks, utils, etc.) that should naturally exercise all rules. When adding a new rule:
+
+- Add code examples to **existing files** in the test project that are relevant to the rule
+- For example: if adding an array rule, add array code to existing component files
+- The test project code should cover ALL rules through its natural structure
+
+```
+_tests_/react-ts-tw/src/
+├── app.tsx              # Main app - exercises component rules
+├── components/          # Components - exercises JSX, props rules
+│   ├── button.tsx
+│   └── card.tsx
+├── hooks/               # Hooks - exercises hook rules
+├── utils/               # Utils - exercises function rules
+├── interfaces/          # Interfaces - exercises TS rules
+└── types/               # Types - exercises type rules
+```
+
+**b) Create temporary test file for quick verification:**
+
+For quick testing during development, create a temporary test file:
+
+```bash
+# Create temp test file
+_tests_/react-ts-tw/src/test-rule-name.tsx
+```
+
+```javascript
+// Temporary test file: test-rule-name.tsx
+
+// Test case 1: Should trigger error (BAD code)
+const badExample = /* code that violates the rule */;
+
+// Test case 2: Should NOT trigger error (GOOD code)
+const goodExample = /* code that follows the rule */;
+```
+
+**c) Run the linter to verify:**
+
+```bash
+cd _tests_/react-ts-tw
+
+# Check errors are reported for bad code
+npx eslint src/test-rule-name.tsx
+
+# Verify auto-fix works (if rule is fixable)
+npx eslint src/test-rule-name.tsx --fix
+cat src/test-rule-name.tsx  # Verify fixed code is correct
+
+# Also run on entire project to ensure no regressions
+npx eslint src/
+```
+
+**d) Clean up temporary test file:**
+
+```bash
+rm _tests_/react-ts-tw/src/test-rule-name.tsx
+rm _tests_/react/src/test-rule-name.jsx  # if created
+```
+
+**e) Ensure test project code covers the new rule:**
+
+After temporary testing, make sure the actual test project code (components, hooks, etc.) includes examples that exercise the new rule. This provides ongoing regression testing.
+
+#### 9. Verification
+
+Run these commands to verify all rules are in sync:
+
+```bash
+# Count rules in each location
+grep -c "^const [a-zA-Z]* = {$" index.js
+grep -c 'code-style/' index.d.ts
+grep -c '"code-style/' recommended-configs/react-ts-tw/eslint.config.js
+
+# Find rules missing from README
+grep -oE '"[a-z-]+":' index.js | tr -d '":' | sort > /tmp/a.txt
+grep -oE '\`[a-z-]+\`' README.md | tr -d '\`' | sort | uniq > /tmp/b.txt
+comm -23 /tmp/a.txt /tmp/b.txt
+```
+
+---
+
+### Removing a Rule — Complete Checklist
+
+**IMPORTANT:** Removing a rule is a **BREAKING CHANGE** requiring a **MAJOR version bump** (e.g., 1.6.0 → 2.0.0).
+
+#### 1. `index.js`
+- [ ] Remove the rule's JSDoc comment block
+- [ ] Remove the `const ruleName = { ... }` definition
+- [ ] Remove from `rules` object in default export
+
+#### 2. `index.d.ts`
+- [ ] Remove from `RuleNames` type union
+- [ ] Remove from `PluginRules` interface
+
+#### 3. `README.md`
+- [ ] Update all rule counts (see [Rule Count Locations](#rule-count-locations))
+- [ ] Remove from `rules: {}` example in Quick Start
+- [ ] Remove from Rules Summary table
+- [ ] Remove detailed documentation section
+
+#### 4. `AGENTS.md`
+- [ ] Update all rule counts
+- [ ] Remove from Rule Categories section
+
+#### 5. Config Files
+- [ ] Remove from `recommended-configs/react-ts-tw/eslint.config.js`
+- [ ] Remove from `recommended-configs/react/eslint.config.js`
+- [ ] Remove from `_tests_/react-ts-tw/eslint.config.js`
+- [ ] Remove from `_tests_/react/eslint.config.js`
+
+#### 6. Config READMEs
+- [ ] Update `recommended-configs/react-ts-tw/README.md`
+- [ ] Update `recommended-configs/react/README.md`
+
+#### 7. Version & Tag
+- [ ] Update `package.json` version (MAJOR bump: X.0.0)
+- [ ] Commit with message: `feat!: remove rule-name rule` (note the `!` for breaking change)
+- [ ] Create tag: `git tag vX.0.0`
 
 ---
 
@@ -161,26 +405,90 @@ When creating a new rule, ALL of the following files must be updated:
 
 When modifying an existing rule, check if these need updates:
 
-#### If changing rule behavior:
-- [ ] Update JSDoc in `index.js` (Good/Bad examples)
-- [ ] Update `README.md` rule documentation (examples, description)
+#### If fixing a bug (PATCH version: x.x.+1):
+- [ ] Fix the issue in rule's `create()` function in `index.js`
+- [ ] Test in `_tests_/` apps with `npm run lint` and `npm run lint:fix`
+- [ ] Commit: `fix: description of what was fixed in rule-name`
+
+#### If changing rule behavior (PATCH or MINOR depending on scope):
+- [ ] Update rule logic in `index.js`
+- [ ] Update JSDoc in `index.js` (Good/Bad examples if they changed)
+- [ ] Update `README.md` rule documentation section:
+  - Update "What it does" if behavior changed
+  - Update code examples (✅ Good / ❌ Bad) to reflect new behavior
 - [ ] Test in `_tests_/` apps with `npm run lint` and `npm run lint:fix`
 
-#### If adding new options:
-- [ ] Add option to `schema` in rule's `meta` object
-- [ ] Add option handling in `create()` function
+#### If adding new options (MINOR version: x.+1.0):
+- [ ] Add option to `schema` in rule's `meta` object in `index.js`
+- [ ] Add option handling in `create()` function with default value:
+  ```javascript
+  const options = context.options[0] || {};
+  const newOption = options.newOption !== undefined ? options.newOption : defaultValue;
+  ```
 - [ ] Update JSDoc Options section in `index.js`
-- [ ] Update README.md options table for the rule
-- [ ] Add configuration example in README.md
+- [ ] Update README.md rule documentation:
+  - Add row to Options table
+  - Add configuration example showing the new option
 
-#### If adding auto-fix to rule that didn't have it:
-- [ ] Add `fixable: "code"` to rule's `meta` object
-- [ ] Add `fix()` function in `context.report()`
+#### If adding auto-fix to rule that didn't have it (MINOR version: x.+1.0):
+- [ ] Add `fixable: "code"` or `fixable: "whitespace"` to rule's `meta` object
+- [ ] Add `fix()` function in `context.report()`:
+  ```javascript
+  context.report({
+      fix: (fixer) => fixer.replaceText(node, "fixed code"),
+      message: "Error message",
+      node,
+  });
+  ```
+- [ ] Update README.md Rules Summary table: add 🔧 emoji
+- [ ] Update rule counts: increment auto-fixable count, decrement report-only count
+- [ ] Test auto-fix with `npm run lint:fix`
 
-#### If changing default values:
+#### If changing default values (MAJOR version: +1.0.0 — breaking change):
+- [ ] Update default value in `create()` function
 - [ ] Update JSDoc in `index.js`
-- [ ] Update README.md options table
-- [ ] Consider if this is a MAJOR version bump (breaking change)
+- [ ] Update README.md options table (Default column)
+- [ ] Commit with `!`: `feat!: change default value for rule-name option`
+
+#### Testing After Any Edit
+
+**IMPORTANT:** Always test rule changes before committing.
+
+1. **Create a temporary test file** for quick verification:
+   ```bash
+   # Create in appropriate project(s)
+   _tests_/react-ts-tw/src/test-rule-name.tsx   # For TS rules
+   _tests_/react/src/test-rule-name.jsx         # For general rules (test in both)
+   ```
+
+2. **Add test cases:**
+   ```javascript
+   // Temporary test file
+
+   // Should trigger the rule (BAD - test this fails)
+   const badCode = /* code that should fail */;
+
+   // Should pass (GOOD - test this passes)
+   const goodCode = /* code that should pass */;
+   ```
+
+3. **Run tests:**
+   ```bash
+   cd _tests_/react-ts-tw
+   npx eslint src/test-rule-name.tsx          # Verify error is reported
+   npx eslint src/test-rule-name.tsx --fix    # Verify auto-fix works
+   npx eslint src/                            # Ensure no regressions
+   ```
+
+4. **Clean up temporary test file:**
+   ```bash
+   rm _tests_/react-ts-tw/src/test-rule-name.tsx
+   rm _tests_/react/src/test-rule-name.jsx    # if created
+   ```
+
+5. **Ensure test project code covers the change:**
+   - Update existing code in test project (components, hooks, etc.) if needed
+   - The test project should naturally exercise the edited rule behavior
 
 ---
 
@@ -299,7 +607,7 @@ if (node.parent?.type === "CallExpression") return;
 Rules are organized in these categories (alphabetically sorted in index.js and README.md):
 
 - **Array Rules** — Rules for array formatting
-  - `array-items-per-line`, `array-objects-on-new-lines`
+  - `array-callback-destructure`, `array-items-per-line`, `array-objects-on-new-lines`
 - **Arrow Function Rules** — Arrow function syntax and style
   - `arrow-function-block-body`, `arrow-function-simple-jsx`, `arrow-function-simplify`, `curried-arrow-same-line`
 - **Call Expression Rules** — Function call formatting
@@ -343,7 +651,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 ## Documentation Files
 
-- `README.md` - Main documentation with all 64 rules
+- `README.md` - Main documentation with all 66 rules
 - `recommended-configs/<config-name>/README.md` - Config-specific documentation (references main README for rule details)
 - `index.d.ts` - TypeScript types for IDE autocomplete
 
@@ -351,11 +659,59 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 - Most rules should be auto-fixable (`fixable: "code"` or `fixable: "whitespace"` in meta)
 - Rules that require file creation/movement or architectural decisions may be report-only
-- Currently: 58 auto-fixable rules, 6 report-only rules
+- Currently: 60 auto-fixable rules, 6 report-only rules
 - Use 4-space indentation throughout
 - Object properties in `context.report()` must be alphabetically sorted
 - Keep rules self-sufficient (no dependencies on other ESLint rules)
 - Test with relevant test app in `_tests_/` before publishing
+
+---
+
+## Rule Count Locations
+
+**IMPORTANT:** When adding/removing rules, update the rule counts in ALL these locations:
+
+### Current Counts (update these when changing rules)
+- **Total rules:** 66
+- **Auto-fixable:** 60 (38 with `fixable: "code"` + 22 with `fixable: "whitespace"`)
+- **Report-only:** 6
+
+### Files & Line Numbers to Update
+
+| File | Line(s) | What to Update |
+|------|---------|----------------|
+| `README.md` | ~22 | `*66 rules (60 auto-fixable)*` |
+| `README.md` | ~30 | `**66 custom rules** (60 auto-fixable)` |
+| `README.md` | ~39 | `60 of 66 rules support auto-fix` |
+| `README.md` | ~100 | `**60 rules** support automatic fixing` |
+| `README.md` | ~254 | `**66 rules total** — 60 with auto-fix` |
+| `README.md` | ~3037 | `60 of 66 rules support auto-fixing` |
+| `AGENTS.md` | ~7 | `66 custom formatting rules (60 auto-fixable, 6 report-only)` |
+| `AGENTS.md` | ~9 | `Contains all 66 rules` |
+| `AGENTS.md` | ~47 | `(66 rules total)` |
+| `AGENTS.md` | ~346 | `all 66 rules` |
+| `AGENTS.md` | ~354 | `60 auto-fixable rules, 6 report-only` |
+| `AGENTS.md` | Rule Count Locations section | Current Counts table |
+| `recommended-configs/react-ts-tw/README.md` | ~396 | `**60 auto-fixable rules** (66 total, 6 report-only)` |
+| `recommended-configs/react/README.md` | ~286 | `**60 auto-fixable rules** (66 total, 6 report-only)` |
+
+### Quick Verification Commands
+
+```bash
+# Count total rules
+grep -c "^const [a-zA-Z]* = {$" index.js
+
+# Count auto-fixable (code)
+grep -c 'fixable: "code"' index.js
+
+# Count auto-fixable (whitespace)
+grep -c 'fixable: "whitespace"' index.js
+
+# Find all rule count mentions (excluding CHANGELOG)
+grep -rn "[0-9][0-9] rules\|[0-9][0-9] auto" --include="*.md" | grep -v CHANGELOG
+```
+
+---
 
 ## Git Workflow
 
@@ -513,32 +869,166 @@ npm install eslint-plugin-code-style@Y.Y.Y
 5. Update `CHANGELOG.md` with the same information
 6. Publish release
 
-**CHANGELOG.md:**
+### CHANGELOG.md
 
-All releases are documented in `CHANGELOG.md` at the project root.
+This project follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) standard.
 
-**IMPORTANT:** Only update `CHANGELOG.md` for main releases that group multiple tags together. Do NOT update the CHANGELOG for individual commits, bug fixes, or minor patches. The CHANGELOG should only be updated when creating a GitHub Release that groups a range of version tags into a single release entry.
+**IMPORTANT:**
+- The CHANGELOG must list **ALL version tags** (currently 82 tags)
+- Update the CHANGELOG with every new tag/release
+- Keep it in sync with changes as you work
+- **Releases must match GitHub Releases content exactly**
 
-**Changelog Entry Checklist (REQUIRED for each release):**
-- [ ] Version number and date: `## [X.Y.Z] - YYYY-MM-DD`
-- [ ] Release title: `**Release Title:** Short descriptive title`
-- [ ] Version range: `**Version Range:** vX.X.X → vY.Y.Y`
-- [ ] Sections as needed: Added, Enhanced, Fixed, Documentation, etc.
-- [ ] Full Changelog link at the END of the entry (before the `---` separator)
+#### Two Types of Entries
 
-Each release entry in CHANGELOG.md must include a **Full Changelog** link at the end:
+**1. Releases** (published to GitHub Releases)
+- Have **Version Range** showing tags covered
+- Full detailed sections with sub-categories
+- Include **Full Changelog** link at the end
+- Content must match the GitHub Release description
+- **Current releases:** v1.6.0, v1.5.0, v1.4.2, v1.3.0, v1.2.0, v1.1.0, v1.0.16, v1.0.14, v1.0.7, v1.0.6
+
+**2. Tags** (between releases)
+- Simpler entries with just the changes
+- No Version Range or Full Changelog link needed
+
+#### When to Create a Release
+
+Create a release when:
+- Adding new rules (MINOR version bump)
+- Significant feature additions
+- Major documentation overhauls
+- Grouping multiple related changes together
+
+After creating a release:
+1. Create the GitHub Release with full description
+2. Copy the same content to CHANGELOG.md
+3. Add **Full Changelog** link at the end
+4. Ensure both match exactly
+
+#### Release Format
 
 ```markdown
-**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/vFIRST...vLAST
+## [1.4.2] - 2026-01-30
+
+**New Rules, Enhanced Auto-Fix & Comprehensive Documentation**
+
+**Version Range:** v1.3.1 → v1.4.2
+
+### Added
+
+**New Rules (3)**
+- `rule-name` - Description 🔧
+
+**Feature Category**
+- Feature description
+
+### Enhanced
+
+- **`rule-name`** - What was improved
+- **`rule-name`** - Another improvement
+
+### Fixed
+
+- **`rule-name`** - What was fixed
+
+### Documentation
+
+- What docs were updated
+
+### Stats
+
+- Total Rules: 64 (was 61)
+- Auto-fixable: 58 rules 🔧
+- Report-only: 6 rules
+
+**Full Changelog:** [v1.3.1...v1.4.2](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.3.1...v1.4.2)
 ```
 
-Where:
-- `vFIRST` = First version tag in the release range (the tag after the last tag of the previous release)
-- `vLAST` = Last version tag in the release range (current release)
+#### Tag Format
 
-Example: For release 1.2.0 with version range v1.1.10 → v1.2.0:
 ```markdown
-**Full Changelog:** https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.1.10...v1.2.0
+## [1.3.11] - 2026-01-30
+
+### Enhanced
+
+- Dependency-aware ordering for react-code-order
+- Auto-fix for module-level constants
+
+---
+
+## [1.3.10] - 2026-01-30
+
+### Fixed
+
+- `function-naming-convention` - Skip React components
+```
+
+For version bumps with no changes:
+```markdown
+## [1.0.19] - 2026-01-11
+
+- Version bump
+```
+
+#### Section Types
+
+| Section | Use for |
+|---------|---------|
+| **Added** | New rules, features, configurations |
+| **Changed** | Breaking changes, behavior changes |
+| **Enhanced** | Improvements to existing functionality |
+| **Fixed** | Bug fixes |
+| **Deprecated** | Features to be removed in future |
+| **Removed** | Removed features |
+| **Security** | Security fixes |
+| **Documentation** | Doc-only changes |
+| **Stats** | Rule counts (include for releases) |
+
+#### Comparison Links
+
+At the bottom of CHANGELOG.md, maintain comparison links for **every version**:
+
+```markdown
+[1.4.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.4.1...v1.4.2
+[1.4.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.4.0...v1.4.1
+```
+
+#### When to Update
+
+Update CHANGELOG.md when creating any new tag:
+- [ ] Add new section at top: `## [X.Y.Z] - YYYY-MM-DD`
+- [ ] For releases: add **Version Range**, full detailed sections, and **Full Changelog** link
+- [ ] For tags: add appropriate subsections
+- [ ] Add comparison link at bottom
+- [ ] Separate each version with `---`
+
+**Tip:** Update the CHANGELOG as you make changes, not just at release time
+
+#### Release Checklist
+
+When creating a release:
+- [ ] Write full release description with all sections (Added, Enhanced, Fixed, Stats, etc.)
+- [ ] Create GitHub Release with the description and title
+- [ ] Copy exact same content to CHANGELOG.md
+- [ ] Add **Release Title** (bold text after version header)
+- [ ] Add **Version Range** showing first and last tag in release
+- [ ] Add **Full Changelog** link at the end: `**Full Changelog:** [vX.X.X...vY.Y.Y](compare-url)`
+- [ ] Update the "Current releases" list in this file (AGENTS.md)
+- [ ] Verify content matches between GitHub Release and CHANGELOG
+
+#### Verifying CHANGELOG
+
+To verify all tags are in CHANGELOG:
+```bash
+# Count tags vs CHANGELOG entries
+echo "Tags: $(git tag | wc -l)"
+echo "CHANGELOG: $(grep -c '^## \[' CHANGELOG.md)"
+
+# Check for missing tags
+git tag -l | sort -V > /tmp/tags.txt
+grep '^## \[' CHANGELOG.md | sed 's/.*\[\([^]]*\)\].*/v\1/' | sort -V > /tmp/changelog.txt
+diff /tmp/tags.txt /tmp/changelog.txt
 ```
 
 ## Skills

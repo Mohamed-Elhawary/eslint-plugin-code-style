@@ -550,6 +550,104 @@ const arrayItemsPerLine = {
 
 /**
  * ───────────────────────────────────────────────────────────────
+ * Rule: Array Callback Destructure
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   When destructuring parameters in array method callbacks (map,
+ *   filter, find, etc.), put each property on its own line when
+ *   there are 2 or more properties.
+ *
+ * ✓ Good:
+ *   items.map(({
+ *       name,
+ *       value,
+ *   }) => name + value);
+ *
+ * ✗ Bad:
+ *   items.map(({ name, value }) => name + value);
+ */
+const arrayCallbackDestructure = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        const arrayMethods = [
+            "map", "filter", "find", "findIndex", "findLast", "findLastIndex",
+            "some", "every", "forEach", "reduce", "reduceRight", "flatMap",
+            "sort", "toSorted",
+        ];
+
+        const checkDestructuringHandler = (pattern, callNode) => {
+            if (pattern.type !== "ObjectPattern") return;
+
+            const properties = pattern.properties.filter((p) => p.type === "Property");
+
+            // Only enforce multiline when 2+ properties
+            if (properties.length < 2) return;
+
+            // Check if all properties are on the same line
+            const firstProp = properties[0];
+            const lastProp = properties[properties.length - 1];
+
+            if (firstProp.loc.start.line === lastProp.loc.end.line) {
+                // Calculate indent based on the call expression
+                const callLine = sourceCode.lines[callNode.loc.start.line - 1];
+                const baseIndent = callLine.match(/^\s*/)[0];
+                const propIndent = baseIndent + "    ";
+
+                context.report({
+                    fix(fixer) {
+                        const openBrace = sourceCode.getFirstToken(pattern);
+                        const closeBrace = sourceCode.getLastToken(pattern);
+
+                        const propsText = properties
+                            .map((prop) => propIndent + sourceCode.getText(prop))
+                            .join(",\n");
+
+                        return fixer.replaceTextRange(
+                            [openBrace.range[0], closeBrace.range[1]],
+                            `{\n${propsText},\n${baseIndent}}`,
+                        );
+                    },
+                    message: "Destructured properties in array callback should each be on their own line when there are 2 or more properties",
+                    node: pattern,
+                });
+            }
+        };
+
+        return {
+            CallExpression(node) {
+                // Check if this is an array method call
+                if (node.callee.type !== "MemberExpression") return;
+
+                const methodName = node.callee.property && node.callee.property.name;
+
+                if (!arrayMethods.includes(methodName)) return;
+
+                // Check the callback argument (usually the first argument)
+                const callback = node.arguments[0];
+
+                if (!callback) return;
+
+                if (callback.type === "ArrowFunctionExpression" || callback.type === "FunctionExpression") {
+                    // Check each parameter
+                    callback.params.forEach((param) => {
+                        checkDestructuringHandler(param, node);
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce multiline destructuring in array method callbacks (map, filter, find, etc.) when there are 2+ properties" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
  * Rule: Array Objects On New Lines
  * ───────────────────────────────────────────────────────────────
  *
@@ -1133,11 +1231,8 @@ const arrowFunctionSimplify = {
 
             const statement = body[0];
 
-            // Handle ExpressionStatement (for JSX attributes like onClick={() => { doSomething() }})
+            // Handle ExpressionStatement (for onClick={() => { doSomething() }} or simple side-effect functions)
             if (statement.type === "ExpressionStatement") {
-                // Only for JSX attributes - non-JSX expression statements without return are side effects
-                if (!isJsxAttributeArrowHandler(node)) return;
-
                 const expression = statement.expression;
 
                 // Check if already on single line
@@ -1945,7 +2040,7 @@ const functionNamingConvention = {
             // Logging
             "log", "warn", "error", "debug", "trace", "print", "dump", "inspect",
             // Error handling
-            "throw", "catch", "resolve", "reject", "retry", "await", "recover", "fallback",
+            "throw", "catch", "resolve", "reject", "retry", "await", "recover", "fallback", "forgot",
             // Performance
             "debounce", "throttle", "memoize", "cache", "batch", "queue", "defer", "delay",
             "schedule", "preload", "prefetch", "lazy",
@@ -16188,6 +16283,7 @@ export default {
     },
     rules: {
         // Array rules
+        "array-callback-destructure": arrayCallbackDestructure,
         "array-items-per-line": arrayItemsPerLine,
         "array-objects-on-new-lines": arrayObjectsOnNewLines,
 
