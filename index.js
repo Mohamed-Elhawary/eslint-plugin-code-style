@@ -2201,17 +2201,23 @@ const functionNamingConvention = {
                         const classBody = node.parent;
 
                         if (classBody && classBody.type === "ClassBody") {
-                            const sourceCode = context.sourceCode || context.getSourceCode();
-                            const classText = sourceCode.getText(classBody);
-
                             // Find usages like this.methodName or super.methodName
                             const classNode = classBody.parent;
 
                             if (classNode) {
+                                const visited = new Set();
+
                                 const searchPatternHandler = (n) => {
+                                    // Avoid circular references and already visited nodes
+                                    if (!n || typeof n !== "object" || visited.has(n)) return;
+
+                                    visited.add(n);
+
                                     if (n.type === "MemberExpression" &&
+                                        n.property &&
                                         n.property.type === "Identifier" &&
                                         n.property.name === name &&
+                                        n.object &&
                                         (n.object.type === "ThisExpression" || n.object.type === "Super")) {
                                         // Don't fix the definition itself
                                         if (n.property !== key) {
@@ -2219,18 +2225,19 @@ const functionNamingConvention = {
                                         }
                                     }
 
-                                    // Recursively search
-                                    for (const childKey of Object.keys(n)) {
+                                    // Recursively search only AST child properties (skip parent, tokens, etc.)
+                                    const childKeys = ["body", "declarations", "expression", "left", "right",
+                                        "callee", "arguments", "object", "property", "consequent", "alternate",
+                                        "test", "init", "update", "params", "elements", "properties", "value",
+                                        "key", "argument", "block", "handler", "finalizer", "cases"];
+
+                                    for (const childKey of childKeys) {
                                         const child = n[childKey];
 
-                                        if (child && typeof child === "object") {
+                                        if (child) {
                                             if (Array.isArray(child)) {
-                                                child.forEach((item) => {
-                                                    if (item && typeof item === "object" && item.type) {
-                                                        searchPatternHandler(item);
-                                                    }
-                                                });
-                                            } else if (child.type) {
+                                                child.forEach((item) => searchPatternHandler(item));
+                                            } else {
                                                 searchPatternHandler(child);
                                             }
                                         }
