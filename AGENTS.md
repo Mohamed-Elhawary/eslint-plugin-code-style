@@ -805,13 +805,59 @@ After every meaningful change:
 6. Push commits and tags
 
 #### Version Bump Rules
-| Change Type | Version Bump | Example |
-|-------------|--------------|---------|
-| Bug fix | PATCH (+0.0.1) | 1.5.2 → 1.5.3 |
-| Enhancement to existing rule | PATCH (+0.0.1) | 1.5.3 → 1.5.4 |
-| New rule | MINOR (+0.1.0) | 1.5.4 → 1.6.0 |
-| Breaking change | MAJOR (+1.0.0) | 1.6.0 → 2.0.0 |
-| Docs only | PATCH (+0.0.1) | 1.5.2 → 1.5.3 |
+| Change Type | Version Bump | Example | GitHub Release? |
+|-------------|--------------|---------|-----------------|
+| Bug fix | PATCH (+0.0.1) | 1.5.2 → 1.5.3 | No |
+| Enhancement to existing rule | PATCH (+0.0.1) | 1.5.3 → 1.5.4 | No |
+| New rule | MINOR (+0.1.0) | 1.5.4 → 1.6.0 | **Yes** |
+| Breaking change | MAJOR (+1.0.0) | 1.6.0 → 2.0.0 | **Yes** |
+| Docs only | PATCH (+0.0.1) | 1.5.2 → 1.5.3 | No |
+
+#### MINOR/MAJOR Release Format (GitHub Releases)
+
+When bumping MINOR or MAJOR version, the CHANGELOG entry must follow this format.
+
+**IMPORTANT:** The release should contain ALL changes since the **previous RELEASE** (MINOR/MAJOR). The Version Range starts from the first version AFTER the previous release.
+
+Example: If releasing v1.7.0 and the previous release was v1.6.0:
+- Version Range: **v1.6.1 → v1.7.0** (starts AFTER v1.6.0)
+- Include changes from: v1.6.1, v1.6.2, ... v1.6.6, AND v1.7.0
+
+```markdown
+## [X.Y.0] - YYYY-MM-DD
+
+**Release Title (Brief Description of Main Features)**
+
+**Version Range:** vAfterPreviousRelease → vCurrent
+
+### Added
+
+**New Rules (N)**
+- `rule-name` - Description 🔧
+
+### Enhanced
+
+- **`rule-name`** - What was enhanced (consolidate all enhancements since last release)
+
+### Fixed
+
+- **`rule-name`** - What was fixed (consolidate all fixes since last release)
+
+### Stats
+
+- Total Rules: XX (was YY)
+- Auto-fixable: ZZ rules 🔧
+- Report-only: N rules
+
+**Full Changelog:** [vAfterPreviousRelease...vCurrent](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/vAfterPreviousRelease...vCurrent)
+```
+
+**Required elements for MINOR/MAJOR releases:**
+1. **Release title** in bold describing main changes
+2. **Version Range** showing first version AFTER previous release → current version
+3. **Consolidated changes** from all versions since last release
+4. **Stats** section with rule counts
+5. **Full Changelog** link at the end
 
 #### Example Workflow
 ```bash

@@ -13,11 +13,14 @@ export type RuleNames =
     | "code-style/arrow-function-simplify"
     | "code-style/assignment-value-same-line"
     | "code-style/block-statement-newlines"
+    | "code-style/class-naming-convention"
     | "code-style/comment-format"
     | "code-style/component-props-destructure"
     | "code-style/react-code-order"
     | "code-style/component-props-inline-type"
     | "code-style/curried-arrow-same-line"
+    | "code-style/empty-line-after-block"
+    | "code-style/enum-type-enforcement"
     | "code-style/export-format"
     | "code-style/function-arguments-format"
     | "code-style/function-call-spacing"
@@ -101,11 +104,14 @@ interface PluginRules {
     "arrow-function-simplify": Rule.RuleModule;
     "assignment-value-same-line": Rule.RuleModule;
     "block-statement-newlines": Rule.RuleModule;
+    "class-naming-convention": Rule.RuleModule;
     "comment-format": Rule.RuleModule;
     "component-props-destructure": Rule.RuleModule;
     "react-code-order": Rule.RuleModule;
     "component-props-inline-type": Rule.RuleModule;
     "curried-arrow-same-line": Rule.RuleModule;
+    "empty-line-after-block": Rule.RuleModule;
+    "enum-type-enforcement": Rule.RuleModule;
     "export-format": Rule.RuleModule;
     "function-arguments-format": Rule.RuleModule;
     "function-call-spacing": Rule.RuleModule;

@@ -3890,6 +3890,7 @@ const ternaryConditionMultiline = {
         const sourceCode = context.sourceCode || context.getSourceCode();
         const options = context.options[0] || {};
         const maxOperands = options.maxOperands ?? 3;
+        const maxLineLength = options.maxLineLength ?? 120;
 
         // Check if node is wrapped in parentheses
         const isParenthesizedHandler = (node) => {
@@ -3984,115 +3985,228 @@ const ternaryConditionMultiline = {
             return false;
         };
 
-        return {
-            ConditionalExpression(node) {
-                const { test } = node;
+        // Check if the test is a simple condition (not a complex logical expression)
+        const isSimpleConditionHandler = (test) => {
+            if (test.type === "Identifier") return true;
 
-                // Only handle ternaries with logical expression conditions
-                if (test.type !== "LogicalExpression") return;
+            if (test.type === "MemberExpression") return true;
 
-                const operands = collectOperandsHandler(test);
-                const testStartLine = test.loc.start.line;
-                const testEndLine = test.loc.end.line;
-                const isMultiLine = testStartLine !== testEndLine;
+            if (test.type === "UnaryExpression") return true;
 
-                // ≤maxOperands operands: keep on single line
-                if (operands.length <= maxOperands) {
-                    const firstOperandStartLine = operands[0].loc.start.line;
-                    const allOperandsStartOnSameLine = operands.every(
-                        (op) => op.loc.start.line === firstOperandStartLine,
-                    );
+            if (test.type === "BinaryExpression") return true;
 
-                    const hasSplitBinaryExpression = operands.some(
-                        (op) => isBinaryExpressionSplitHandler(op),
-                    );
+            if (test.type === "CallExpression") return true;
 
-                    if (!allOperandsStartOnSameLine || hasSplitBinaryExpression) {
-                        context.report({
-                            fix: (fixer) => {
-                                const buildSameLineHandler = (n) => {
-                                    if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
-                                        const leftText = buildSameLineHandler(n.left);
-                                        const rightText = buildSameLineHandler(n.right);
+            // Logical expression with ≤maxOperands is still simple
+            if (test.type === "LogicalExpression") {
+                return collectOperandsHandler(test).length <= maxOperands;
+            }
 
-                                        return `${leftText} ${n.operator} ${rightText}`;
-                                    }
+            return false;
+        };
 
-                                    if (n.type === "BinaryExpression" && isBinaryExpressionSplitHandler(n)) {
-                                        return buildBinaryExpressionSingleLineHandler(n);
-                                    }
+        // Get the full ternary as single line text
+        const getTernarySingleLineHandler = (node) => {
+            const testText = sourceCode.getText(node.test).replace(/\s+/g, " ").trim();
+            const consequentText = sourceCode.getText(node.consequent).replace(/\s+/g, " ").trim();
+            const alternateText = sourceCode.getText(node.alternate).replace(/\s+/g, " ").trim();
 
-                                    return getSourceTextWithGroupsHandler(n);
-                                };
+            return `${testText} ? ${consequentText} : ${alternateText}`;
+        };
 
-                                return fixer.replaceText(test, buildSameLineHandler(test));
-                            },
-                            message: `Ternary conditions with ≤${maxOperands} operands should be single line`,
-                            node: test,
-                        });
-                    }
+        // Get the indentation level for the line
+        const getLineIndentHandler = (node) => {
+            const lineText = sourceCode.lines[node.loc.start.line - 1];
 
-                    return;
-                }
+            return lineText.match(/^\s*/)[0].length;
+        };
 
-                // More than maxOperands: each on its own line
-                let isCorrectionNeeded = !isMultiLine;
+        // Check if branches have complex objects (should stay multiline)
+        const hasComplexObjectHandler = (n) => {
+            if (n.type === "ObjectExpression" && n.properties.length >= 2) return true;
 
-                if (isMultiLine) {
-                    for (let i = 0; i < operands.length - 1; i += 1) {
-                        if (operands[i].loc.end.line === operands[i + 1].loc.start.line) {
-                            isCorrectionNeeded = true;
-                            break;
-                        }
-                    }
+            if (n.type === "ArrayExpression" && n.elements.length >= 3) return true;
 
-                    // Check if any operator is at end of line (should be at beginning)
-                    if (!isCorrectionNeeded && hasOperatorAtEndOfLineHandler(test)) {
-                        isCorrectionNeeded = true;
-                    }
-                }
+            return false;
+        };
 
-                if (isCorrectionNeeded) {
+        // Handle simple ternaries - collapse to single line if they fit
+        const handleSimpleTernaryHandler = (node) => {
+            // Skip if already on single line
+            if (node.loc.start.line === node.loc.end.line) return false;
+
+            // Skip nested ternaries
+            if (node.consequent.type === "ConditionalExpression" || node.alternate.type === "ConditionalExpression") {
+                return false;
+            }
+
+            // Skip if branches have complex objects
+            if (hasComplexObjectHandler(node.consequent) || hasComplexObjectHandler(node.alternate)) {
+                return false;
+            }
+
+            // Calculate what the single line would look like
+            const singleLineText = getTernarySingleLineHandler(node);
+            const indent = getLineIndentHandler(node);
+
+            // Check if the parent needs prefix text (like "const x = ")
+            let prefixLength = 0;
+            const parent = node.parent;
+
+            if (parent && parent.type === "VariableDeclarator" && parent.init === node) {
+                const declarationLine = sourceCode.lines[parent.loc.start.line - 1];
+                const beforeTernary = declarationLine.slice(0, node.loc.start.column);
+
+                prefixLength = beforeTernary.length - indent;
+            } else if (parent && parent.type === "AssignmentExpression" && parent.right === node) {
+                const assignmentLine = sourceCode.lines[parent.loc.start.line - 1];
+                const beforeTernary = assignmentLine.slice(0, node.loc.start.column);
+
+                prefixLength = beforeTernary.length - indent;
+            }
+
+            // Check if single line would fit
+            const totalLength = indent + prefixLength + singleLineText.length + 1;
+
+            if (totalLength <= maxLineLength) {
+                context.report({
+                    fix: (fixer) => fixer.replaceText(node, singleLineText),
+                    message: "Simple ternary should be on a single line",
+                    node,
+                });
+
+                return true;
+            }
+
+            return false;
+        };
+
+        // Handle complex logical expressions - format multiline
+        const handleComplexLogicalTernaryHandler = (node) => {
+            const { test } = node;
+            const operands = collectOperandsHandler(test);
+            const testStartLine = test.loc.start.line;
+            const testEndLine = test.loc.end.line;
+            const isMultiLine = testStartLine !== testEndLine;
+
+            // ≤maxOperands operands: keep condition on single line
+            if (operands.length <= maxOperands) {
+                const firstOperandStartLine = operands[0].loc.start.line;
+                const allOperandsStartOnSameLine = operands.every(
+                    (op) => op.loc.start.line === firstOperandStartLine,
+                );
+
+                const hasSplitBinaryExpression = operands.some(
+                    (op) => isBinaryExpressionSplitHandler(op),
+                );
+
+                if (!allOperandsStartOnSameLine || hasSplitBinaryExpression) {
                     context.report({
                         fix: (fixer) => {
-                            // Get the indentation based on where the ternary starts
-                            const lineText = sourceCode.lines[node.loc.start.line - 1];
-                            const baseIndent = lineText.match(/^\s*/)[0];
-                            const conditionIndent = baseIndent + "    ";
-                            const branchIndent = baseIndent + "        ";
-
-                            const buildMultilineHandler = (n) => {
+                            const buildSameLineHandler = (n) => {
                                 if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
-                                    const leftText = buildMultilineHandler(n.left);
-                                    const rightText = buildMultilineHandler(n.right);
+                                    const leftText = buildSameLineHandler(n.left);
+                                    const rightText = buildSameLineHandler(n.right);
 
-                                    return `${leftText}\n${conditionIndent}${n.operator} ${rightText}`;
+                                    return `${leftText} ${n.operator} ${rightText}`;
+                                }
+
+                                if (n.type === "BinaryExpression" && isBinaryExpressionSplitHandler(n)) {
+                                    return buildBinaryExpressionSingleLineHandler(n);
                                 }
 
                                 return getSourceTextWithGroupsHandler(n);
                             };
 
-                            const consequentText = sourceCode.getText(node.consequent);
-                            const alternateText = sourceCode.getText(node.alternate);
-
-                            const newText = `\n${conditionIndent}${buildMultilineHandler(test)}\n${branchIndent}? ${consequentText}\n${branchIndent}: ${alternateText}`;
-
-                            return fixer.replaceText(node, newText);
+                            return fixer.replaceText(test, buildSameLineHandler(test));
                         },
-                        message: `Ternary conditions with more than ${maxOperands} operands should be multiline, with each operand on its own line`,
+                        message: `Ternary conditions with ≤${maxOperands} operands should be single line`,
                         node: test,
                     });
+                }
+
+                return;
+            }
+
+            // More than maxOperands: each on its own line
+            let isCorrectionNeeded = !isMultiLine;
+
+            if (isMultiLine) {
+                for (let i = 0; i < operands.length - 1; i += 1) {
+                    if (operands[i].loc.end.line === operands[i + 1].loc.start.line) {
+                        isCorrectionNeeded = true;
+                        break;
+                    }
+                }
+
+                // Check if any operator is at end of line (should be at beginning)
+                if (!isCorrectionNeeded && hasOperatorAtEndOfLineHandler(test)) {
+                    isCorrectionNeeded = true;
+                }
+            }
+
+            if (isCorrectionNeeded) {
+                context.report({
+                    fix: (fixer) => {
+                        // Get the indentation based on where the ternary starts
+                        const lineText = sourceCode.lines[node.loc.start.line - 1];
+                        const baseIndent = lineText.match(/^\s*/)[0];
+                        const conditionIndent = baseIndent + "    ";
+                        const branchIndent = baseIndent + "        ";
+
+                        const buildMultilineHandler = (n) => {
+                            if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                                const leftText = buildMultilineHandler(n.left);
+                                const rightText = buildMultilineHandler(n.right);
+
+                                return `${leftText}\n${conditionIndent}${n.operator} ${rightText}`;
+                            }
+
+                            return getSourceTextWithGroupsHandler(n);
+                        };
+
+                        const consequentText = sourceCode.getText(node.consequent);
+                        const alternateText = sourceCode.getText(node.alternate);
+
+                        const newText = `\n${conditionIndent}${buildMultilineHandler(test)}\n${branchIndent}? ${consequentText}\n${branchIndent}: ${alternateText}`;
+
+                        return fixer.replaceText(node, newText);
+                    },
+                    message: `Ternary conditions with more than ${maxOperands} operands should be multiline, with each operand on its own line`,
+                    node: test,
+                });
+            }
+        };
+
+        return {
+            ConditionalExpression(node) {
+                const { test } = node;
+
+                // First, try to collapse simple ternaries to single line
+                if (isSimpleConditionHandler(test)) {
+                    if (handleSimpleTernaryHandler(node)) return;
+                }
+
+                // For complex logical expressions, handle multiline formatting
+                if (test.type === "LogicalExpression") {
+                    handleComplexLogicalTernaryHandler(node);
                 }
             },
         };
     },
     meta: {
-        docs: { description: "Enforce multiline formatting for ternary expressions with complex conditions" },
+        docs: { description: "Enforce consistent ternary formatting: collapse simple ternaries to single line, expand complex conditions to multiline" },
         fixable: "code",
         schema: [
             {
                 additionalProperties: false,
                 properties: {
+                    maxLineLength: {
+                        default: 120,
+                        description: "Maximum line length for single-line ternaries (default: 120)",
+                        minimum: 80,
+                        type: "integer",
+                    },
                     maxOperands: {
                         default: 3,
                         description: "Maximum operands to keep on single line (default: 3)",
@@ -4104,6 +4218,372 @@ const ternaryConditionMultiline = {
             },
         ],
         type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Empty Line After Block
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Require an empty line between a closing brace `}` of a block
+ *   statement (if, try, for, while, etc.) and the next statement,
+ *   unless the next statement is part of the same construct (else, catch, finally).
+ *
+ * ✓ Good:
+ *   if (condition) {
+ *       doSomething();
+ *   }
+ *
+ *   const x = 1;
+ *
+ * ✗ Bad:
+ *   if (condition) {
+ *       doSomething();
+ *   }
+ *   const x = 1;
+ */
+const emptyLineAfterBlock = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Check if a node is a block-containing statement
+        const isBlockStatementHandler = (node) => {
+            const blockTypes = [
+                "IfStatement",
+                "ForStatement",
+                "ForInStatement",
+                "ForOfStatement",
+                "WhileStatement",
+                "DoWhileStatement",
+                "TryStatement",
+                "SwitchStatement",
+                "WithStatement",
+            ];
+
+            return blockTypes.includes(node.type);
+        };
+
+        // Get the actual end line of a statement (including else, catch, finally)
+        const getStatementEndLineHandler = (node) => {
+            if (node.type === "IfStatement" && node.alternate) {
+                return getStatementEndLineHandler(node.alternate);
+            }
+
+            if (node.type === "TryStatement") {
+                if (node.finalizer) return node.finalizer.loc.end.line;
+
+                if (node.handler) return node.handler.loc.end.line;
+            }
+
+            return node.loc.end.line;
+        };
+
+        return {
+            "BlockStatement:exit"(node) {
+                const parent = node.parent;
+
+                // Only check for block-containing statements
+                if (!parent || !isBlockStatementHandler(parent)) return;
+
+                // Skip if this block is followed by else, catch, or finally
+                if (parent.type === "IfStatement" && parent.consequent === node && parent.alternate) {
+                    return;
+                }
+
+                if (parent.type === "TryStatement" && (parent.block === node || parent.handler?.body === node) && (parent.handler || parent.finalizer)) {
+                    if (parent.block === node && (parent.handler || parent.finalizer)) return;
+
+                    if (parent.handler?.body === node && parent.finalizer) return;
+                }
+
+                // Get the parent's container (the block that contains the parent statement)
+                const grandparent = parent.parent;
+
+                if (!grandparent || grandparent.type !== "BlockStatement") return;
+
+                // Find the index of the parent statement in the grandparent's body
+                const stmtIndex = grandparent.body.indexOf(parent);
+
+                if (stmtIndex === -1 || stmtIndex === grandparent.body.length - 1) return;
+
+                // Get the next statement
+                const nextStmt = grandparent.body[stmtIndex + 1];
+
+                // Get the actual end of the current statement
+                const currentEndLine = getStatementEndLineHandler(parent);
+                const nextStartLine = nextStmt.loc.start.line;
+
+                // Check if there's an empty line between them
+                if (nextStartLine - currentEndLine < 2) {
+                    context.report({
+                        fix: (fixer) => {
+                            const endToken = sourceCode.getLastToken(parent);
+
+                            return fixer.insertTextAfter(endToken, "\n");
+                        },
+                        message: "Expected empty line after block statement",
+                        node: nextStmt,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Require empty line between block statement closing brace and next statement" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Class Naming Convention
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforce that class declarations must end with "Class" suffix.
+ *   This distinguishes class definitions from other PascalCase names
+ *   like React components or type definitions.
+ *
+ * ✓ Good:
+ *   class ApiServiceClass { ... }
+ *   class UserRepositoryClass { ... }
+ *
+ * ✗ Bad:
+ *   class ApiService { ... }
+ *   class UserRepository { ... }
+ */
+const classNamingConvention = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            ClassDeclaration(node) {
+                if (!node.id || !node.id.name) return;
+
+                const className = node.id.name;
+
+                if (!className.endsWith("Class")) {
+                    context.report({
+                        fix: (fixer) => {
+                            const newName = `${className}Class`;
+
+                            // Find all references to this class and rename them
+                            const scope = context.sourceCode.getScope
+                                ? context.sourceCode.getScope(node)
+                                : context.getScope();
+                            const variable = scope.set.get(className);
+                            const fixes = [fixer.replaceText(node.id, newName)];
+
+                            if (variable && variable.references) {
+                                variable.references.forEach((ref) => {
+                                    if (ref.identifier !== node.id) {
+                                        fixes.push(fixer.replaceText(ref.identifier, newName));
+                                    }
+                                });
+                            }
+
+                            return fixes;
+                        },
+                        message: `Class name "${className}" should end with "Class" suffix`,
+                        node: node.id,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce class names end with 'Class' suffix" },
+        fixable: "code",
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Enum Type Enforcement
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   When a variable/parameter has a type like "ButtonVariantType",
+ *   enforce using the corresponding enum "ButtonVariantEnum.VALUE"
+ *   instead of string literals like "primary" or "ghost".
+ *
+ *   The rule detects:
+ *   - Default values in destructuring: `variant = "primary"` → `variant = ButtonVariantEnum.PRIMARY`
+ *   - Comparisons: `variant === "ghost"` → `variant === ButtonVariantEnum.GHOST`
+ *   - Object property values matching the type
+ *
+ * ✓ Good:
+ *   const Button = ({ variant = ButtonVariantEnum.PRIMARY }: { variant?: ButtonVariantType }) => ...
+ *   if (variant === ButtonVariantEnum.GHOST) { ... }
+ *
+ * ✗ Bad:
+ *   const Button = ({ variant = "primary" }: { variant?: ButtonVariantType }) => ...
+ *   if (variant === "ghost") { ... }
+ */
+const enumTypeEnforcement = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        // Map to track variables with Type annotations and their corresponding Enum
+        // e.g., "variant" -> { typeName: "ButtonVariantType", enumName: "ButtonVariantEnum" }
+        const typeAnnotatedVars = new Map();
+
+        // Convert type name to enum name: ButtonVariantType -> ButtonVariantEnum
+        const getEnumNameFromTypeHandler = (typeName) => {
+            if (typeName.endsWith("Type")) {
+                return typeName.slice(0, -4) + "Enum";
+            }
+
+            return null;
+        };
+
+        // Convert string literal to enum member: "primary" -> "PRIMARY", "ghost-danger" -> "GHOST_DANGER"
+        const toEnumMemberHandler = (str) => str.toUpperCase().replace(/-/g, "_");
+
+        // Check if a type annotation references a Type that has a corresponding Enum
+        const extractTypeInfoHandler = (typeAnnotation) => {
+            if (!typeAnnotation) return null;
+
+            const annotation = typeAnnotation.typeAnnotation;
+
+            if (!annotation) return null;
+
+            // Handle direct type reference: : ButtonVariantType
+            if (annotation.type === "TSTypeReference" && annotation.typeName?.type === "Identifier") {
+                const typeName = annotation.typeName.name;
+
+                if (typeName.endsWith("Type")) {
+                    return {
+                        enumName: getEnumNameFromTypeHandler(typeName),
+                        typeName,
+                    };
+                }
+            }
+
+            return null;
+        };
+
+        // Track type-annotated parameters in function/component definitions
+        const trackTypedParamsHandler = (params) => {
+            params.forEach((param) => {
+                // Handle destructured params: ({ variant }: { variant?: ButtonVariantType })
+                if (param.type === "ObjectPattern" && param.typeAnnotation) {
+                    const annotation = param.typeAnnotation.typeAnnotation;
+
+                    if (annotation && annotation.type === "TSTypeLiteral") {
+                        annotation.members.forEach((member) => {
+                            if (member.type === "TSPropertySignature" && member.key?.type === "Identifier") {
+                                const propName = member.key.name;
+                                const typeInfo = extractTypeInfoHandler(member);
+
+                                if (typeInfo) {
+                                    typeAnnotatedVars.set(propName, typeInfo);
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // Handle simple typed param: (variant: ButtonVariantType)
+                if (param.type === "Identifier" && param.typeAnnotation) {
+                    const typeInfo = extractTypeInfoHandler(param);
+
+                    if (typeInfo) {
+                        typeAnnotatedVars.set(param.name, typeInfo);
+                    }
+                }
+            });
+        };
+
+        return {
+            // Track function parameters
+            "ArrowFunctionExpression, FunctionDeclaration, FunctionExpression"(node) {
+                trackTypedParamsHandler(node.params);
+            },
+
+            // Check default values in destructuring patterns
+            AssignmentPattern(node) {
+                // Pattern like: variant = "primary"
+                if (node.left.type !== "Identifier") return;
+
+                const varName = node.left.name;
+                const typeInfo = typeAnnotatedVars.get(varName);
+
+                if (!typeInfo) return;
+
+                // Check if the default is a string literal
+                if (node.right.type === "Literal" && typeof node.right.value === "string") {
+                    const stringValue = node.right.value;
+                    const enumMember = toEnumMemberHandler(stringValue);
+                    const replacement = `${typeInfo.enumName}.${enumMember}`;
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(node.right, replacement),
+                        message: `Use "${replacement}" instead of string literal "${stringValue}"`,
+                        node: node.right,
+                    });
+                }
+            },
+
+            // Check comparisons: variant === "ghost"
+            BinaryExpression(node) {
+                if (node.operator !== "===" && node.operator !== "!==") return;
+
+                let varNode = null;
+                let literalNode = null;
+
+                if (node.left.type === "Identifier" && node.right.type === "Literal") {
+                    varNode = node.left;
+                    literalNode = node.right;
+                } else if (node.right.type === "Identifier" && node.left.type === "Literal") {
+                    varNode = node.right;
+                    literalNode = node.left;
+                }
+
+                if (!varNode || !literalNode) return;
+
+                if (typeof literalNode.value !== "string") return;
+
+                const typeInfo = typeAnnotatedVars.get(varNode.name);
+
+                if (!typeInfo) return;
+
+                const stringValue = literalNode.value;
+                const enumMember = toEnumMemberHandler(stringValue);
+                const replacement = `${typeInfo.enumName}.${enumMember}`;
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(literalNode, replacement),
+                    message: `Use "${replacement}" instead of string literal "${stringValue}"`,
+                    node: literalNode,
+                });
+            },
+
+            // Clear tracked vars when exiting function scope
+            "ArrowFunctionExpression:exit"() {
+                typeAnnotatedVars.clear();
+            },
+
+            "FunctionDeclaration:exit"() {
+                typeAnnotatedVars.clear();
+            },
+
+            "FunctionExpression:exit"() {
+                typeAnnotatedVars.clear();
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce using enum values instead of string literals for typed variables" },
+        fixable: "code",
+        schema: [],
+        type: "suggestion",
     },
 };
 
@@ -16694,11 +17174,15 @@ export default {
 
         // Control flow rules
         "block-statement-newlines": blockStatementNewlines,
+        "empty-line-after-block": emptyLineAfterBlock,
         "if-else-spacing": ifElseSpacing,
         "if-statement-format": ifStatementFormat,
         "multiline-if-conditions": multilineIfConditions,
         "no-empty-lines-in-switch-cases": noEmptyLinesInSwitchCases,
         "ternary-condition-multiline": ternaryConditionMultiline,
+
+        // Class rules
+        "class-naming-convention": classNamingConvention,
 
         // Function rules
         "function-call-spacing": functionCallSpacing,
@@ -16755,6 +17239,9 @@ export default {
         "type-annotation-spacing": typeAnnotationSpacing,
         "type-format": typeFormat,
         "typescript-definition-location": typescriptDefinitionLocation,
+
+        // Type/Enum rules
+        "enum-type-enforcement": enumTypeEnforcement,
 
         // Variable rules
         "variable-naming-convention": variableNamingConvention,

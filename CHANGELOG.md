@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.0] - 2026-02-02
+
+**New Rules for Blocks, Classes & Enum Enforcement + Multiple Enhancements**
+
+**Version Range:** v1.6.1 → v1.7.0
+
+### Added
+
+**New Rules (3)**
+- `empty-line-after-block` - Require empty line between closing `}` of block statement and next statement 🔧
+- `class-naming-convention` - Enforce class declarations end with "Class" suffix 🔧
+- `enum-type-enforcement` - Enforce using enum values instead of string literals for typed variables (e.g., `ButtonVariantEnum.PRIMARY` instead of `"primary"`) 🔧
+
+### Enhanced
+
+- **`ternary-condition-multiline`** - Now also collapses simple ternaries to single line when they fit within max line length (default: 120 chars). Added `maxLineLength` option.
+- **`function-object-destructure`** - Add auto-fix (replaces destructured usages with dot notation), expand module paths (services, constants, config, api, utils, helpers, lib, apis, configs, utilities, routes)
+- **`function-params-per-line`** - Handle callbacks with mixed params (destructured + simple like `({ item }, index)`)
+- **`array-callback-destructure`** - Fix closing brace on same line as last property
+- **`simple-call-single-line`** - Skip callbacks with 2+ params to avoid conflicts
+- **`jsx-simple-element-one-line`**, **`jsx-children-on-new-line`**, **`jsx-element-child-new-line`** - Treat simple function calls (0-1 args) as simple expressions
+
+### Fixed
+
+- **`component-props-destructure`** - Detect body destructuring patterns even without type annotations, add auto-fix for body destructuring, preserve TypeScript type annotation when auto-fixing
+
+### Stats
+
+- Total Rules: 69 (was 66)
+- Auto-fixable: 63 rules 🔧
+- Report-only: 6 rules
+
+**Full Changelog:** [v1.6.1...v1.7.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.1...v1.7.0)
+
+---
+
 ## [1.6.6] - 2026-02-01
 
 ### Fixed
@@ -1028,6 +1064,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.7.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.6...v1.7.0
+[1.6.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.5...v1.6.6
 [1.6.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.4...v1.6.5
 [1.6.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.3...v1.6.4
 [1.6.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.2...v1.6.3

@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*66 rules (60 auto-fixable) to keep your codebase clean and consistent*
+*69 rules (63 auto-fixable) to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **66 custom rules** (60 auto-fixable) for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **69 custom rules** (63 auto-fixable) for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **66 custom rules** (60 auto-fixable) for code formatting. 
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 60 of 66 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 63 of 69 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -60,7 +60,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 
 ### 💡 Why Use These Configs?
 
-- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 64 code-style rules
+- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 69 code-style rules
 - **Ready-to-Use** — Copy the config file and start linting immediately
 - **Battle-Tested** — These configurations have been refined through real-world usage
 - **Fully Documented** — Each config includes detailed instructions and explanations
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-**60 rules** support automatic fixing with `eslint --fix`. 6 rules are report-only (require manual changes).
+**63 rules** support automatic fixing with `eslint --fix`. 6 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -252,7 +252,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **66 rules total** — 60 with auto-fix 🔧, 6 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
+> **69 rules total** — 63 with auto-fix 🔧, 6 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -279,13 +279,16 @@ rules: {
 | **Component Rules** | |
 | `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` 🔧 |
 | `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference 🔧 |
+| **Class Rules** | |
+| `class-naming-convention` | Class declarations must end with "Class" suffix (e.g., `ApiServiceClass`) 🔧 |
 | **Control Flow Rules** | |
 | `block-statement-newlines` | Newline after `{` and before `}` in if/for/while/function blocks 🔧 |
+| `empty-line-after-block` | Empty line required between closing `}` of block and next statement 🔧 |
 | `if-else-spacing` | Empty line between consecutive if blocks, no empty line between single-line if/else 🔧 |
 | `if-statement-format` | `{` on same line as `if`/`else if`, `else` on same line as `}`, proper spacing 🔧 |
 | `multiline-if-conditions` | Conditions exceeding threshold get one operand per line with proper indentation (default: >3) 🔧 ⚙️ |
 | `no-empty-lines-in-switch-cases` | No empty line after `case X:` before code, no empty lines between cases 🔧 |
-| `ternary-condition-multiline` | Ternary conditions exceeding threshold get one operand per line (default: >3) 🔧 ⚙️ |
+| `ternary-condition-multiline` | Collapse simple ternaries to single line; expand complex conditions (>3 operands) to multiline 🔧 ⚙️ |
 | **Function Rules** | |
 | `function-call-spacing` | No space between function name and `(`: `fn()` not `fn ()` 🔧 |
 | `function-declaration-style` | Auto-fix for `func-style`: converts function declarations to arrow expressions 🔧 |
@@ -330,6 +333,7 @@ rules: {
 | `member-expression-bracket-spacing` | No spaces inside brackets in computed member expressions: `arr[0]` not `arr[ 0 ]` 🔧 |
 | **TypeScript Rules** | |
 | `enum-format` | Enforce enum naming (PascalCase + Enum suffix), UPPER_CASE members, no empty lines, and trailing commas 🔧 |
+| `enum-type-enforcement` | Enforce using enum values instead of string literals for variables typed with `*Type` (e.g., use `ButtonVariantEnum.PRIMARY` not `"primary"`) 🔧 |
 | `interface-format` | Enforce interface naming (PascalCase + Interface suffix), camelCase properties, no empty lines, and trailing commas 🔧 |
 | `no-inline-type-definitions` | Inline union types in function params should be extracted to named types ⚙️ |
 | `type-annotation-spacing` | Enforce consistent spacing in type annotations: no space before colon/generic/array brackets, one space after colon 🔧 |
@@ -3066,7 +3070,7 @@ const UseAuth = () => {};          // hooks should be camelCase
 
 ## 🔧 Auto-fixing
 
-60 of 66 rules support auto-fixing. Run ESLint with the `--fix` flag:
+63 of 69 rules support auto-fixing. Run ESLint with the `--fix` flag:
 
 ```bash
 # Fix all files in src directory
