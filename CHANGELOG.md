@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.5] - 2026-02-01
+
+### Added
+
+- **`function-object-destructure`** - Add auto-fix: replaces destructured usages with dot notation and removes declaration
+
+---
+
 ## [1.6.4] - 2026-02-01
 
 ### Enhanced
@@ -1011,6 +1019,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.6.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.4...v1.6.5
 [1.6.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.3...v1.6.4
 [1.6.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.1...v1.6.2
