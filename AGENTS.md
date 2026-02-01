@@ -490,6 +490,14 @@ When modifying an existing rule, check if these need updates:
    - Update existing code in test project (components, hooks, etc.) if needed
    - The test project should naturally exercise the edited rule behavior
 
+#### Version Bump After Edits
+
+**NOTE:** Version bump and tag are NOT done with every commit. See "When to Bump Version & Create Tag" section in Git Workflow.
+
+- Commit your fix/enhancement with appropriate message (`fix:` or `feat:`)
+- Push to main
+- Version bump is done later when ready to release (grouping multiple changes)
+
 ---
 
 ### Rule Documentation Format in README.md
@@ -779,19 +787,67 @@ Format: `MAJOR.MINOR.PATCH` (e.g., `1.2.8`)
 
 ---
 
+### When to Bump Version & Create Tag
+
+**IMPORTANT:** Not every commit requires a version bump and tag. Follow this workflow:
+
+#### Development Workflow (No Version Bump)
+For work-in-progress changes, commit without bumping version:
+```bash
+git commit -m "fix: description of fix"
+git commit -m "feat: description of feature"
+git push origin main
+```
+
+#### Release Workflow (Version Bump + Tag Required)
+Bump version and create tag when:
+- **Ready to publish to npm** - Always bump before `npm publish`
+- **Completing a feature** - After finishing a new rule or significant enhancement
+- **Accumulating multiple fixes** - Group several bug fixes into one PATCH release
+- **User explicitly requests** - When asked to "release", "publish", or "create a version"
+
+**Version bump checklist:**
+- [ ] Update `package.json` version
+- [ ] Update `CHANGELOG.md` with new version entry
+- [ ] Commit: `chore: bump version to X.Y.Z`
+- [ ] Create tag: `git tag -a vX.Y.Z -m "vX.Y.Z - description"`
+- [ ] Push: `git push origin main && git push origin vX.Y.Z`
+
+#### Example Workflow
+```bash
+# 1. Make changes and commit (no version bump)
+git commit -m "fix: handle edge case in rule-name"
+git push origin main
+
+# 2. Make more changes
+git commit -m "fix: another fix in different rule"
+git push origin main
+
+# 3. When ready to release, bump version
+# Update package.json version to 1.5.3
+# Update CHANGELOG.md
+git commit -m "chore: bump version to 1.5.3"
+git tag -a v1.5.3 -m "v1.5.3 - bug fixes"
+git push origin main --tags
+npm publish  # if publishing to npm
+```
+
+---
+
 ### Release Steps
 
 1. **Update version in package.json**
-2. **Commit changes:** `git commit -m "feat: description"`
-3. **Create annotated tag:**
+2. **Update CHANGELOG.md** with new version section
+3. **Commit version bump:** `git commit -m "chore: bump version to X.Y.Z"`
+4. **Create annotated tag:**
    ```bash
    git tag -a v1.2.9 -m "v1.2.9
 
    - Feature description 1
    - Feature description 2"
    ```
-4. **Push (requires explicit approval):** `git push origin HEAD && git push origin v1.2.9`
-5. **Publish (requires explicit approval):** `npm publish`
+5. **Push (requires explicit approval):** `git push origin main --tags`
+6. **Publish (requires explicit approval):** `npm publish`
 
 ---
 
