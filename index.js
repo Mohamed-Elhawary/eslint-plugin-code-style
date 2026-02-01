@@ -1809,10 +1809,26 @@ const functionDeclarationStyle = {
                 }
 
                 // Build type parameters if present (generics)
+                // For arrow functions in TSX files, use trailing comma to avoid JSX ambiguity: <T,>
                 let typeParams = "";
 
                 if (node.typeParameters) {
-                    typeParams = sourceCode.getText(node.typeParameters);
+                    const typeParamsText = sourceCode.getText(node.typeParameters);
+
+                    // Add trailing comma if single type parameter to avoid JSX parsing issues
+                    // <T> becomes <T,> but <T, U> stays as is
+                    if (node.typeParameters.params && node.typeParameters.params.length === 1) {
+                        // Check if it already has a trailing comma
+                        const innerText = typeParamsText.slice(1, -1).trim();
+
+                        if (!innerText.endsWith(",")) {
+                            typeParams = `<${innerText},>`;
+                        } else {
+                            typeParams = typeParamsText;
+                        }
+                    } else {
+                        typeParams = typeParamsText;
+                    }
                 }
 
                 // Check if async
@@ -1832,11 +1848,12 @@ const functionDeclarationStyle = {
                     fix(fixer) {
                         const fixTarget = isExported ? parentNode : node;
 
-                        const replacement = `${exportPrefix}const ${name} = ${asyncPrefix}(${paramsText})${returnType} => ${bodyText};`;
+                        // For arrow functions with generics: const fn = <T,>(param: T) => ...
+                        const replacement = `${exportPrefix}const ${name} = ${typeParams}${asyncPrefix}(${paramsText})${returnType} => ${bodyText};`;
 
                         return fixer.replaceText(fixTarget, replacement);
                     },
-                    message: `Expected a function expression. Use \`const ${name} = ${asyncPrefix}(${paramsText})${returnType} => ...\` instead.`,
+                    message: `Expected a function expression. Use \`const ${name} = ${typeParams}${asyncPrefix}(${paramsText})${returnType} => ...\` instead.`,
                     node: node.id,
                 });
             },
