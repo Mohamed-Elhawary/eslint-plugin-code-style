@@ -12414,15 +12414,28 @@ const functionObjectDestructure = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
-        // Track imports from data-related paths (should use dot notation, not destructure)
-        const dataImports = new Set();
+        // Track imports from module paths that should use dot notation, not destructure
+        // This improves searchability: api.loginHandler is easier to find than loginHandler
+        const moduleImports = new Set();
 
-        const isDataImportPath = (importPath) => {
-            // Match paths like @/data, ./data, ../data, or any path containing /data/
-            return importPath === "@/data"
-                || importPath.endsWith("/data")
-                || importPath.includes("/data/")
-                || /^\.\.?\/data$/.test(importPath);
+        // Folders that contain modules which should be accessed via dot notation
+        const modulePathPatterns = [
+            "services",
+            "constants",
+            "config",
+            "data",
+            "api",
+            "utils",
+            "helpers",
+            "lib",
+        ];
+
+        const isModuleImportPath = (importPath) => {
+            // Match paths like @/services, @/constants, ./data, ../config, etc.
+            return modulePathPatterns.some((pattern) => importPath === `@/${pattern}`
+                    || importPath.endsWith(`/${pattern}`)
+                    || importPath.includes(`/${pattern}/`)
+                    || new RegExp(`^\\.?\\.?/${pattern}$`).test(importPath));
         };
 
         const checkImportHandler = (node) => {
@@ -12430,13 +12443,13 @@ const functionObjectDestructure = {
 
             const importPath = node.source.value;
 
-            if (isDataImportPath(importPath)) {
-                // Track all imported specifiers from data paths
+            if (isModuleImportPath(importPath)) {
+                // Track all imported specifiers from module paths
                 node.specifiers.forEach((spec) => {
                     if (spec.type === "ImportSpecifier" && spec.local && spec.local.name) {
-                        dataImports.add(spec.local.name);
+                        moduleImports.add(spec.local.name);
                     } else if (spec.type === "ImportDefaultSpecifier" && spec.local && spec.local.name) {
-                        dataImports.add(spec.local.name);
+                        moduleImports.add(spec.local.name);
                     }
                 });
             }
@@ -12467,7 +12480,7 @@ const functionObjectDestructure = {
                         }
                     }
 
-                    if (sourceVarName && dataImports.has(sourceVarName)) {
+                    if (sourceVarName && moduleImports.has(sourceVarName)) {
                         const destructuredProps = decl.id.properties
                             .filter((p) => p.type === "Property" && p.key && p.key.name)
                             .map((p) => p.key.name);
@@ -12475,7 +12488,7 @@ const functionObjectDestructure = {
                         const sourceText = sourceCode.getText(decl.init);
 
                         context.report({
-                            message: `Do not destructure data imports. Use dot notation for searchability: "${sourceText}.${destructuredProps[0]}" instead of destructuring`,
+                            message: `Do not destructure module imports. Use dot notation for searchability: "${sourceText}.${destructuredProps[0]}" instead of destructuring`,
                             node: decl.id,
                         });
                     }
