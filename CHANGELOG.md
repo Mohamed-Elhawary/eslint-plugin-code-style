@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New array-callback-destructure Rule & Multiple Enhancements**
 
-**Version Range:** v1.5.2 → v1.6.0
+**Version Range:** v1.5.1 → v1.6.0
 
 ### Added
 
@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-fixable: 60 rules 🔧
 - Report-only: 6 rules
 
-**Full Changelog:** [v1.5.2...v1.6.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.5.2...v1.6.0)
+**Full Changelog:** [v1.5.1...v1.6.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.5.1...v1.6.0)
 
 ---
 
