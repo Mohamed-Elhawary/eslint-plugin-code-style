@@ -13378,6 +13378,66 @@ const componentPropsDestructure = {
             return accesses;
         };
 
+        // Find body destructuring like: const { name } = data; or const { name, age } = data;
+        const findBodyDestructuringHandler = (body, paramName) => {
+            const results = [];
+
+            if (body.type !== "BlockStatement") return results;
+
+            for (const statement of body.body) {
+                if (statement.type === "VariableDeclaration") {
+                    for (const declarator of statement.declarations) {
+                        // Check if it's destructuring from the param: const { x } = paramName
+                        if (
+                            declarator.id.type === "ObjectPattern" &&
+                            declarator.init &&
+                            declarator.init.type === "Identifier" &&
+                            declarator.init.name === paramName
+                        ) {
+                            const props = [];
+
+                            for (const prop of declarator.id.properties) {
+                                if (prop.type === "Property" && prop.key.type === "Identifier") {
+                                    // Handle both { name } and { name: alias }
+                                    const keyName = prop.key.name;
+                                    const valueName = prop.value.type === "Identifier" ? prop.value.name : null;
+                                    const hasDefault = prop.value.type === "AssignmentPattern";
+                                    let defaultValue = null;
+
+                                    if (hasDefault && prop.value.right) {
+                                        defaultValue = sourceCode.getText(prop.value.right);
+                                    }
+
+                                    props.push({
+                                        default: defaultValue,
+                                        hasAlias: keyName !== valueName && !hasDefault,
+                                        key: keyName,
+                                        value: hasDefault ? prop.value.left.name : valueName,
+                                    });
+                                } else if (prop.type === "RestElement" && prop.argument.type === "Identifier") {
+                                    props.push({
+                                        isRest: true,
+                                        key: prop.argument.name,
+                                        value: prop.argument.name,
+                                    });
+                                }
+                            }
+
+                            results.push({
+                                declarator,
+                                props,
+                                statement,
+                                // Track if this is the only declarator in the statement
+                                statementHasOnlyThisDeclarator: statement.declarations.length === 1,
+                            });
+                        }
+                    }
+                }
+            }
+
+            return results;
+        };
+
         const checkComponentPropsHandler = (node) => {
             if (!isReactComponentHandler(node)) return;
 
@@ -13391,13 +13451,32 @@ const componentPropsDestructure = {
 
             if (firstParam.type === "Identifier") {
                 const paramName = firstParam.name;
-                const accesses = findPropAccessesHandler(node.body, paramName);
-                const accessedProps = [...new Set(accesses.map((a) => a.property))];
 
-                // Check if param is used directly (not just via dot notation)
+                // Find dot notation accesses: props.name
+                const accesses = findPropAccessesHandler(node.body, paramName);
+
+                // Find body destructuring: const { name } = props
+                const bodyDestructures = findBodyDestructuringHandler(node.body, paramName);
+
+                // Collect all accessed props from dot notation
+                const dotNotationProps = [...new Set(accesses.map((a) => a.property))];
+
+                // Collect all props from body destructuring
+                const bodyDestructuredProps = [];
+
+                bodyDestructures.forEach((bd) => {
+                    bd.props.forEach((p) => {
+                        bodyDestructuredProps.push(p);
+                    });
+                });
+
+                // Check if param is used anywhere that we can't handle
                 const allRefs = [];
-                const countRefs = (n) => {
+                const countRefs = (n, skipNodes = []) => {
                     if (!n || typeof n !== "object") return;
+
+                    // Skip nodes we're already accounting for
+                    if (skipNodes.includes(n)) return;
 
                     if (n.type === "Identifier" && n.name === paramName) allRefs.push(n);
 
@@ -13406,23 +13485,58 @@ const componentPropsDestructure = {
 
                         const child = n[key];
 
-                        if (Array.isArray(child)) child.forEach(countRefs);
-                        else if (child && typeof child === "object" && child.type) countRefs(child);
+                        if (Array.isArray(child)) child.forEach((c) => countRefs(c, skipNodes));
+                        else if (child && typeof child === "object" && child.type) countRefs(child, skipNodes);
                     }
                 };
 
                 countRefs(node.body);
 
-                // Can only auto-fix if all references are covered by dot notation accesses
-                const canAutoFix = accessedProps.length > 0 && allRefs.length === accesses.length;
+                // Count expected refs: dot notation accesses + body destructuring init nodes
+                const expectedRefCount = accesses.length + bodyDestructures.length;
+
+                // Can auto-fix if:
+                // 1. We have either dot notation props OR body destructured props
+                // 2. All references to the param are accounted for
+                const hasSomeProps = dotNotationProps.length > 0 || bodyDestructuredProps.length > 0;
+                const canAutoFix = hasSomeProps && allRefs.length === expectedRefCount;
 
                 context.report({
                     fix: canAutoFix
                         ? (fixer) => {
                             const fixes = [];
 
-                            // Build destructured pattern, preserving type annotation if present
-                            const destructuredPattern = `{ ${accessedProps.join(", ")} }`;
+                            // Build the destructured props list for the parameter
+                            const allProps = [];
+
+                            // Add dot notation props (simple names)
+                            dotNotationProps.forEach((p) => {
+                                if (!allProps.some((ap) => ap.key === p)) {
+                                    allProps.push({ key: p, simple: true });
+                                }
+                            });
+
+                            // Add body destructured props (may have aliases, defaults, rest)
+                            bodyDestructuredProps.forEach((p) => {
+                                // Don't duplicate if already in dot notation
+                                if (!allProps.some((ap) => ap.key === p.key)) {
+                                    allProps.push(p);
+                                }
+                            });
+
+                            // Build the destructured pattern string
+                            const propStrings = allProps.map((p) => {
+                                if (p.isRest) return `...${p.key}`;
+
+                                if (p.simple) return p.key;
+
+                                if (p.default) return `${p.key} = ${p.default}`;
+
+                                if (p.hasAlias) return `${p.key}: ${p.value}`;
+
+                                return p.key;
+                            });
+                            const destructuredPattern = `{ ${propStrings.join(", ")} }`;
                             let replacement = destructuredPattern;
 
                             // Preserve TypeScript type annotation if present
@@ -13438,6 +13552,27 @@ const componentPropsDestructure = {
                             // Replace all props.x with just x
                             accesses.forEach((access) => {
                                 fixes.push(fixer.replaceText(access.node, access.property));
+                            });
+
+                            // Remove body destructuring statements
+                            bodyDestructures.forEach((bd) => {
+                                if (bd.statementHasOnlyThisDeclarator) {
+                                    // Remove the entire statement including newline
+                                    const statementStart = bd.statement.range[0];
+                                    let statementEnd = bd.statement.range[1];
+
+                                    // Try to also remove trailing newline/whitespace
+                                    const textAfter = sourceCode.getText().slice(statementEnd, statementEnd + 2);
+
+                                    if (textAfter.startsWith("\n")) statementEnd += 1;
+                                    else if (textAfter.startsWith("\r\n")) statementEnd += 2;
+
+                                    fixes.push(fixer.removeRange([statementStart, statementEnd]));
+                                } else {
+                                    // Only remove this declarator from a multi-declarator statement
+                                    // This is more complex - for now just remove the declarator text
+                                    fixes.push(fixer.remove(bd.declarator));
+                                }
                             });
 
                             return fixes;

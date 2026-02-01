@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.6] - 2026-02-01
+
+### Fixed
+
+- **`component-props-destructure`** - Detect body destructuring patterns (e.g., `const { name } = data;`) even without type annotations
+- **`component-props-destructure`** - Add auto-fix for body destructuring: moves props to parameter and removes body declaration
+
+---
+
 ## [1.6.5] - 2026-02-01
 
 ### Added
