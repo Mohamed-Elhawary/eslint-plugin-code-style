@@ -918,8 +918,8 @@ git push origin main --tags
    ```bash
    git tag -a v1.2.9 -m "v1.2.9 - Brief Description
 
-   - Feature/fix description 1
-   - Feature/fix description 2"
+   - Feature description 1
+   - Feature description 2"
    ```
 5. **Push (requires explicit approval):** `git push origin main --tags`
 6. **Publish (requires explicit approval):** `npm publish`
