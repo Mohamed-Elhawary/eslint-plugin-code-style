@@ -16,12 +16,7 @@ export const Button = ({
     className = "",
     label,
     onClick,
-    variant = "primary",
-}: {
-    className?: string,
-    label: string,
-    onClick?: () => void,
-    variant?: ButtonVariantType,
+    variant = ButtonVariantEnum.PRIMARY,
 }) => {
     const variantClasses = {
         danger: "bg-red-500 hover:bg-red-600",

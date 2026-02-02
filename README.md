@@ -190,14 +190,18 @@ rules: {
     "code-style/arrow-function-simplify": "error",
     "code-style/assignment-value-same-line": "error",
     "code-style/block-statement-newlines": "error",
+    "code-style/class-naming-convention": "error",
     "code-style/classname-dynamic-at-end": "error",
     "code-style/classname-multiline": "error",
     "code-style/classname-no-extra-spaces": "error",
+    "code-style/classname-order": "error",
     "code-style/comment-format": "error",
     "code-style/component-props-destructure": "error",
     "code-style/component-props-inline-type": "error",
     "code-style/curried-arrow-same-line": "error",
+    "code-style/empty-line-after-block": "error",
     "code-style/enum-format": "error",
+    "code-style/enum-type-enforcement": "error",
     "code-style/export-format": "error",
     "code-style/function-arguments-format": "error",
     "code-style/function-call-spacing": "error",
@@ -212,6 +216,7 @@ rules: {
     "code-style/import-format": "error",
     "code-style/import-source-spacing": "error",
     "code-style/index-export-style": "error",
+    "code-style/index-exports-only": "error",
     "code-style/interface-format": "error",
     "code-style/jsx-children-on-new-line": "error",
     "code-style/jsx-closing-bracket-spacing": "error",
@@ -231,6 +236,7 @@ rules: {
     "code-style/no-empty-lines-in-jsx": "error",
     "code-style/no-empty-lines-in-objects": "error",
     "code-style/no-empty-lines-in-switch-cases": "error",
+    "code-style/no-inline-type-definitions": "error",
     "code-style/object-property-per-line": "error",
     "code-style/object-property-value-brace": "error",
     "code-style/object-property-value-format": "error",
@@ -239,6 +245,7 @@ rules: {
     "code-style/simple-call-single-line": "error",
     "code-style/single-argument-on-one-line": "error",
     "code-style/string-property-spacing": "error",
+    "code-style/ternary-condition-multiline": "error",
     "code-style/type-annotation-spacing": "error",
     "code-style/type-format": "error",
     "code-style/typescript-definition-location": "error",
@@ -881,6 +888,37 @@ dispatch(
 
 <br />
 
+## 🏛️ Class Rules
+
+### `class-naming-convention`
+
+**What it does:** Enforces that class declarations must end with "Class" suffix. This distinguishes class definitions from other PascalCase names like React components or type definitions.
+
+**Why use it:** Clear naming conventions prevent confusion between classes, components, and types. The "Class" suffix immediately identifies the construct.
+
+```javascript
+// ✅ Good — class ends with "Class"
+class ApiServiceClass {
+    constructor() {}
+    fetch() {}
+}
+
+class UserRepositoryClass {
+    save(user) {}
+}
+
+// ❌ Bad — missing "Class" suffix
+class ApiService {
+    constructor() {}
+}
+
+class UserRepository {
+    save(user) {}
+}
+```
+
+<br />
+
 ## 🔀 Control Flow Rules
 
 ### `block-statement-newlines`
@@ -912,6 +950,38 @@ if (condition) {doSomething();}
 // ❌ Bad — inconsistent formatting
 for (const item of items) { process(item);
 }
+```
+
+---
+
+### `empty-line-after-block`
+
+**What it does:** Requires an empty line between a closing brace `}` of a block statement (if, try, for, while, etc.) and the next statement, unless the next statement is part of the same construct (else, catch, finally).
+
+**Why use it:** Visual separation between logical blocks improves code readability and makes the structure clearer.
+
+> **Note:** Consecutive if statements are handled by `if-else-spacing` rule.
+
+```javascript
+// ✅ Good — empty line after block
+if (condition) {
+    doSomething();
+}
+
+const x = 1;
+
+// ✅ Good — else is part of same construct (no empty line needed)
+if (condition) {
+    doSomething();
+} else {
+    doOther();
+}
+
+// ❌ Bad — no empty line after block
+if (condition) {
+    doSomething();
+}
+const x = 1;
 ```
 
 ---
@@ -1135,6 +1205,39 @@ switch (status) {
     default:
         return "Unknown";
 }
+```
+
+---
+
+### `ternary-condition-multiline`
+
+**What it does:** Enforces consistent ternary formatting:
+- Simple ternaries (≤3 operands in condition) collapse to single line if they fit
+- Complex ternaries (>3 operands) expand to multiline with each operand on its own line
+
+**Why use it:** Long ternary conditions on a single line are hard to read. Breaking complex conditions into multiple lines makes them scannable.
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxOperands` | `integer` | `3` | Maximum operands to keep on single line |
+| `maxLineLength` | `integer` | `120` | Maximum line length for single-line ternaries |
+
+```javascript
+// ✅ Good — simple condition on single line
+const x = a && b && c ? "yes" : "no";
+
+// ✅ Good — complex condition multiline (>3 operands)
+const style = variant === "ghost"
+    || variant === "ghost-danger"
+    || variant === "muted"
+    || variant === "primary"
+    ? "transparent"
+    : "solid";
+
+// ❌ Bad — complex condition crammed on one line
+const style = variant === "ghost" || variant === "ghost-danger" || variant === "muted" || variant === "primary" ? "transparent" : "solid";
 ```
 
 <br />
@@ -1719,6 +1822,28 @@ export {
 
 ---
 
+### `index-exports-only`
+
+**What it does:** Index files (`index.ts`, `index.tsx`, `index.js`, `index.jsx`) should only contain imports and re-exports, not any code definitions. All definitions (types, interfaces, functions, variables, classes) should be moved to separate files.
+
+**Why use it:** Index files should be "barrels" that aggregate exports from a module. Mixing definitions with re-exports makes the codebase harder to navigate and can cause circular dependency issues.
+
+```javascript
+// ✅ Good — index.ts with only imports and re-exports
+export { Button } from "./Button";
+export { helper } from "./utils";
+export type { ButtonProps } from "./types";
+export * from "./constants";
+
+// ❌ Bad — index.ts with code definitions
+export type ButtonVariant = "primary" | "secondary";  // Move to types.ts
+export interface ButtonProps { ... }                  // Move to types.ts
+export const CONSTANT = "value";                      // Move to constants.ts
+export function helper() { ... }                      // Move to utils.ts
+```
+
+---
+
 ### `module-index-exports`
 
 **What it does:** Ensures module folders have index files that export all their contents, creating a proper public API for each module.
@@ -1893,6 +2018,49 @@ const variantClasses = { primary: "bg-blue-500  text-white" };
 
 // ❌ Bad — leading/trailing spaces in template literal
 const buttonClasses = ` flex items-center ${className} `;
+```
+
+---
+
+### `classname-order`
+
+**What it does:** Enforces Tailwind CSS class ordering in variables, object properties, and return statements. Uses smart detection to identify Tailwind class strings.
+
+**Why use it:** This rule complements the official `tailwindcss/classnames-order` plugin by handling areas it doesn't cover:
+- **`tailwindcss/classnames-order`** — Handles JSX `className` attributes directly
+- **`classname-order`** — Handles class strings in variables, object properties, and return statements
+
+Both rules should be enabled together for complete Tailwind class ordering coverage.
+
+**Order enforced:** layout (flex, grid) → positioning → sizing (w, h) → spacing (p, m) → typography (text, font) → colors (bg, text) → effects (shadow, opacity) → transitions → states (hover, focus)
+
+```javascript
+// ✅ Good — classes in correct order (variable)
+const buttonClasses = "flex items-center px-4 py-2 text-white bg-blue-500 hover:bg-blue-600";
+
+// ✅ Good — classes in correct order (object property)
+const variants = {
+    primary: "flex items-center bg-blue-500 hover:bg-blue-600",
+    secondary: "flex items-center bg-gray-500 hover:bg-gray-600",
+};
+
+// ✅ Good — classes in correct order (return statement)
+const getInputStyles = () => {
+    return "border-error text-error placeholder-error/50 focus:border-error";
+};
+
+// ❌ Bad — hover state before base color (variable)
+const buttonClasses = "flex items-center hover:bg-blue-600 bg-blue-500";
+
+// ❌ Bad — unordered classes (object property)
+const variants = {
+    primary: "hover:bg-blue-600 bg-blue-500 flex items-center",
+};
+
+// ❌ Bad — unordered classes (return statement)
+const getInputStyles = () => {
+    return "focus:border-error text-error border-error";
+};
 ```
 
 ---
@@ -2696,6 +2864,38 @@ export enum UserStatusEnum {
 
 ---
 
+### `enum-type-enforcement`
+
+**What it does:** When a variable or parameter has a type ending in `Type` (like `ButtonVariantType`), enforces using the corresponding enum (`ButtonVariantEnum.VALUE`) instead of string literals.
+
+**Why use it:** Using enum values instead of string literals provides type safety, autocompletion, and prevents typos. Changes to enum values automatically propagate.
+
+```javascript
+// ✅ Good — using enum values
+const Button = ({
+    variant = ButtonVariantEnum.PRIMARY,
+}: {
+    variant?: ButtonVariantType,
+}) => { ... };
+
+if (variant === ButtonVariantEnum.GHOST) {
+    // ...
+}
+
+// ❌ Bad — using string literals
+const Button = ({
+    variant = "primary",  // Should use ButtonVariantEnum.PRIMARY
+}: {
+    variant?: ButtonVariantType,
+}) => { ... };
+
+if (variant === "ghost") {  // Should use ButtonVariantEnum.GHOST
+    // ...
+}
+```
+
+---
+
 ### `interface-format`
 
 **What it does:** Enforces consistent formatting for TypeScript interfaces:
@@ -2735,6 +2935,42 @@ export interface UserInterface {
 
     name: string;              // Empty line not allowed
 }
+```
+
+---
+
+### `no-inline-type-definitions`
+
+**What it does:** Reports when function parameters have inline union types that are too complex (too many members or too long). These should be extracted to a named type in a types file.
+
+**Why use it:** Complex inline types make function signatures hard to read. Named types are reusable, self-documenting, and easier to maintain.
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxUnionMembers` | `integer` | `2` | Maximum union members before requiring extraction |
+| `maxLength` | `integer` | `50` | Maximum character length before requiring extraction |
+
+```javascript
+// ✅ Good — type extracted to separate file
+// types.ts
+export type ButtonVariantType = "primary" | "muted" | "danger";
+
+// Button.tsx
+import { ButtonVariantType } from "./types";
+export const Button = ({
+    variant,
+}: {
+    variant?: ButtonVariantType,
+}) => { ... };
+
+// ❌ Bad — complex inline union type
+export const Button = ({
+    variant,
+}: {
+    variant?: "primary" | "muted" | "danger",  // Extract to named type
+}) => { ... };
 ```
 
 ---

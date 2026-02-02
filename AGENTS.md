@@ -4,9 +4,9 @@ Instructions for AI coding agents working with this codebase.
 
 ## Project Overview
 
-**eslint-plugin-code-style** is an ESLint plugin providing 66 custom formatting rules (60 auto-fixable, 6 report-only) for React/JSX projects. It's designed for ESLint v9+ flat config system.
+**eslint-plugin-code-style** is an ESLint plugin providing 69 custom formatting rules (63 auto-fixable, 6 report-only) for React/JSX projects. It's designed for ESLint v9+ flat config system.
 
-- **Main entry:** `index.js` - Contains all 66 rules in a single file
+- **Main entry:** `index.js` - Contains all 69 rules in a single file
 - **Type definitions:** `index.d.ts` - TypeScript declarations for IDE support
 - **Recommended configs:** `recommended-configs/` - Ready-to-use ESLint configurations
 - **Test apps:** `_tests_/` - Sample apps for testing rules
@@ -33,7 +33,7 @@ Each test project in `_tests_/` corresponds to a specific tech stack. Rules shou
 | **TypeScript rules** | ❌ | ✅ | ✅ | ❌ |
 | **Tailwind rules** | ❌ | ✅ | ❌ | ✅ |
 
-**TypeScript-only rules** (59 rules in JS projects, 66 in TS projects):
+**TypeScript-only rules** (62 rules in JS projects, 69 in TS projects):
 - `component-props-inline-type`
 - `enum-format`
 - `interface-format`
@@ -42,8 +42,17 @@ Each test project in `_tests_/` corresponds to a specific tech stack. Rules shou
 - `type-format`
 - `typescript-definition-location`
 
-**Tailwind-only rules** (if any are added in future):
-- `classname-*` rules work in all projects but are most useful with Tailwind
+**Tailwind-related rules** (work in all projects but most useful with Tailwind):
+- `classname-dynamic-at-end` - Enforce dynamic expressions at end of className
+- `classname-multiline` - Format long className strings with one class per line
+- `classname-no-extra-spaces` - Remove extra/leading/trailing spaces in className
+- `classname-order` - Enforce Tailwind CSS class ordering in variables, object properties, and return statements
+
+> **Note:** `classname-order` complements the official `tailwindcss/classnames-order` plugin:
+> - **`tailwindcss/classnames-order`** - Handles JSX `className` attributes directly
+> - **`classname-order`** - Handles class strings in variables, object properties, and return statements (areas the Tailwind plugin doesn't cover)
+>
+> Both rules should be enabled together for complete Tailwind class ordering coverage.
 
 **When adding a new test project:**
 1. Create folder: `_tests_/<project-name>/`
@@ -77,7 +86,7 @@ index.js
 ├── imports (fs, path, url)
 ├── Rule 1 definition (const ruleName = { create(), meta: {} })
 ├── Rule 2 definition
-├── ... (66 rules total)
+├── ... (69 rules total)
 └── export default { meta: {}, rules: {} }
 ```
 
@@ -185,6 +194,14 @@ When creating a new rule, ALL of the following files must be updated:
   ```
 
 #### 3. `README.md` — Main Documentation
+
+> ⚠️ **IMPORTANT:** README.md has **four separate sections** that mention rules. When adding or editing a rule, you must update ALL relevant sections:
+> - **Rule counts** (6 locations) — must match actual rule count
+> - **Quick Start example** (~line 184) — alphabetically sorted configuration example
+> - **Rules Summary table** — brief description with emoji indicators
+> - **Detailed documentation** — full examples, options, and explanations
+>
+> Missing any section will leave documentation inconsistent. Use the `audit-docs` skill to verify all sections are in sync.
 
 **a) Update rule counts** (see [Rule Count Locations](#rule-count-locations) for all positions):
 - [ ] Line ~22: `*XX rules (YY auto-fixable)*`
@@ -374,7 +391,7 @@ comm -23 /tmp/a.txt /tmp/b.txt
 - [ ] Remove from `RuleNames` type union
 - [ ] Remove from `PluginRules` interface
 
-#### 3. `README.md`
+#### 3. `README.md` (all four sections)
 - [ ] Update all rule counts (see [Rule Count Locations](#rule-count-locations))
 - [ ] Remove from `rules: {}` example in Quick Start
 - [ ] Remove from Rules Summary table
@@ -404,6 +421,8 @@ comm -23 /tmp/a.txt /tmp/b.txt
 ### Editing an Existing Rule — Checklist
 
 When modifying an existing rule, check if these need updates:
+
+> ⚠️ **README.md Reminder:** If the rule's behavior, examples, or options change, remember that README.md has multiple sections to update (Quick Start example, Rules Summary table, detailed documentation). See the note in "Adding a New Rule" section for details.
 
 #### If fixing a bug (PATCH version: x.x.+1):
 - [ ] Fix the issue in rule's `create()` function in `index.js`
@@ -663,7 +682,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 ## Documentation Files
 
-- `README.md` - Main documentation with all 66 rules
+- `README.md` - Main documentation with all 69 rules
 - `recommended-configs/<config-name>/README.md` - Config-specific documentation (references main README for rule details)
 - `index.d.ts` - TypeScript types for IDE autocomplete
 
@@ -671,7 +690,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 - Most rules should be auto-fixable (`fixable: "code"` or `fixable: "whitespace"` in meta)
 - Rules that require file creation/movement or architectural decisions may be report-only
-- Currently: 60 auto-fixable rules, 6 report-only rules
+- Currently: 63 auto-fixable rules, 6 report-only rules
 - Use 4-space indentation throughout
 - Object properties in `context.report()` must be alphabetically sorted
 - Keep rules self-sufficient (no dependencies on other ESLint rules)
@@ -684,28 +703,29 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 **IMPORTANT:** When adding/removing rules, update the rule counts in ALL these locations:
 
 ### Current Counts (update these when changing rules)
-- **Total rules:** 66
-- **Auto-fixable:** 60 (38 with `fixable: "code"` + 22 with `fixable: "whitespace"`)
+- **Total rules:** 69
+- **Auto-fixable:** 63 (41 with `fixable: "code"` + 22 with `fixable: "whitespace"`)
 - **Report-only:** 6
 
 ### Files & Line Numbers to Update
 
 | File | Line(s) | What to Update |
 |------|---------|----------------|
-| `README.md` | ~22 | `*66 rules (60 auto-fixable)*` |
-| `README.md` | ~30 | `**66 custom rules** (60 auto-fixable)` |
-| `README.md` | ~39 | `60 of 66 rules support auto-fix` |
-| `README.md` | ~100 | `**60 rules** support automatic fixing` |
-| `README.md` | ~254 | `**66 rules total** — 60 with auto-fix` |
-| `README.md` | ~3037 | `60 of 66 rules support auto-fixing` |
-| `AGENTS.md` | ~7 | `66 custom formatting rules (60 auto-fixable, 6 report-only)` |
-| `AGENTS.md` | ~9 | `Contains all 66 rules` |
-| `AGENTS.md` | ~47 | `(66 rules total)` |
-| `AGENTS.md` | ~346 | `all 66 rules` |
-| `AGENTS.md` | ~354 | `60 auto-fixable rules, 6 report-only` |
+| `README.md` | ~22 | `*69 rules (63 auto-fixable)*` |
+| `README.md` | ~30 | `**69 custom rules** (63 auto-fixable)` |
+| `README.md` | ~39 | `63 of 69 rules support auto-fix` |
+| `README.md` | ~100 | `**63 rules** support automatic fixing` |
+| `README.md` | ~262 | `**69 rules total** — 63 with auto-fix` |
+| `README.md` | ~3309 | `63 of 69 rules support auto-fixing` |
+| `AGENTS.md` | ~7 | `69 custom formatting rules (63 auto-fixable, 6 report-only)` |
+| `AGENTS.md` | ~9 | `Contains all 69 rules` |
+| `AGENTS.md` | ~36 | `(62 rules in JS projects, 69 in TS projects)` |
+| `AGENTS.md` | ~89 | `(69 rules total)` |
+| `AGENTS.md` | ~675 | `all 69 rules` |
+| `AGENTS.md` | ~697 | `63 auto-fixable rules, 6 report-only` |
 | `AGENTS.md` | Rule Count Locations section | Current Counts table |
-| `recommended-configs/react-ts-tw/README.md` | ~396 | `**60 auto-fixable rules** (66 total, 6 report-only)` |
-| `recommended-configs/react/README.md` | ~286 | `**60 auto-fixable rules** (66 total, 6 report-only)` |
+| `recommended-configs/react-ts-tw/README.md` | ~396 | `**63 auto-fixable rules** (69 total, 6 report-only)` |
+| `recommended-configs/react/README.md` | ~286 | `**63 auto-fixable rules** (69 total, 6 report-only)` |
 
 ### Quick Verification Commands
 
@@ -1168,12 +1188,13 @@ This project includes reusable skills in the `.skills/` directory following the 
 
 | Skill | Description |
 |-------|-------------|
+| `audit-docs` | Verify documentation accuracy across all files |
+| `manage-rule` | Add, edit, or remove an ESLint rule with all required file updates |
+| `review-config` | Review a recommended ESLint configuration |
 | `test-rule` | Test an ESLint rule after creating or modifying it |
 | `validate-types` | Verify TypeScript definitions match rules in index.js |
-| `review-config` | Review a recommended ESLint configuration |
-| `audit-docs` | Verify documentation accuracy across all files |
 
-See `.skills/*/SKILL.md` for detailed instructions.
+See `.skills/*/skill.md` for detailed instructions.
 
 ---
 

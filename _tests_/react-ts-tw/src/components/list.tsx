@@ -18,10 +18,6 @@ export const List = ({
     emptyMessage = "No items",
     items,
     title,
-}: {
-    emptyMessage?: string,
-    items: ListItemInterface[],
-    title: string,
 }) => {
     const [selectedId, setSelectedId] = useState<string | null>(null);
 

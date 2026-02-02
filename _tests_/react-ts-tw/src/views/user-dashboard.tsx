@@ -40,9 +40,6 @@ import {
 export const UserDashboard = ({
     initialCount = 0,
     title,
-}: {
-    initialCount?: number,
-    title: string,
 }) => {
     // 1. useRef declarations
     const inputRef = useRef<HTMLInputElement>(null);

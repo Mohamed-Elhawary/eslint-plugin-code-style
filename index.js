@@ -4030,10 +4030,31 @@ const ternaryConditionMultiline = {
             return false;
         };
 
+        // Check if ? or : is on its own line without its value
+        const isOperatorOnOwnLineHandler = (node) => {
+            const questionToken = sourceCode.getTokenAfter(node.test, (t) => t.value === "?");
+            const colonToken = sourceCode.getTokenAfter(node.consequent, (t) => t.value === ":");
+
+            // Check if ? is on different line than consequent start
+            if (questionToken && node.consequent.loc.start.line !== questionToken.loc.start.line) {
+                return true;
+            }
+
+            // Check if : is on different line than alternate start
+            if (colonToken && node.alternate.loc.start.line !== colonToken.loc.start.line) {
+                return true;
+            }
+
+            return false;
+        };
+
         // Handle simple ternaries - collapse to single line if they fit
         const handleSimpleTernaryHandler = (node) => {
-            // Skip if already on single line
-            if (node.loc.start.line === node.loc.end.line) return false;
+            const isOnSingleLine = node.loc.start.line === node.loc.end.line;
+            const hasOperatorOnOwnLine = isOperatorOnOwnLineHandler(node);
+
+            // Skip if already on single line and no formatting issues
+            if (isOnSingleLine && !hasOperatorOnOwnLine) return false;
 
             // Skip nested ternaries
             if (node.consequent.type === "ConditionalExpression" || node.alternate.type === "ConditionalExpression") {
@@ -4097,7 +4118,7 @@ const ternaryConditionMultiline = {
             const testEndLine = test.loc.end.line;
             const isMultiLine = testStartLine !== testEndLine;
 
-            // ≤maxOperands operands: keep condition on single line
+            // ≤maxOperands operands: keep condition on single line, and try to collapse whole ternary
             if (operands.length <= maxOperands) {
                 const firstOperandStartLine = operands[0].loc.start.line;
                 const allOperandsStartOnSameLine = operands.every(
@@ -4108,29 +4129,82 @@ const ternaryConditionMultiline = {
                     (op) => isBinaryExpressionSplitHandler(op),
                 );
 
-                if (!allOperandsStartOnSameLine || hasSplitBinaryExpression) {
-                    context.report({
-                        fix: (fixer) => {
-                            const buildSameLineHandler = (n) => {
-                                if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
-                                    const leftText = buildSameLineHandler(n.left);
-                                    const rightText = buildSameLineHandler(n.right);
+                // Check if ? or : is on its own line without its value
+                const hasOperatorOnOwnLine = isOperatorOnOwnLineHandler(node);
 
-                                    return `${leftText} ${n.operator} ${rightText}`;
-                                }
+                // Check if ternary is multiline (could be collapsed)
+                const isTernaryMultiline = node.loc.start.line !== node.loc.end.line;
 
-                                if (n.type === "BinaryExpression" && isBinaryExpressionSplitHandler(n)) {
-                                    return buildBinaryExpressionSingleLineHandler(n);
-                                }
+                // Helper to build single line condition
+                const buildSameLineHandler = (n) => {
+                    if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                        const leftText = buildSameLineHandler(n.left);
+                        const rightText = buildSameLineHandler(n.right);
 
-                                return getSourceTextWithGroupsHandler(n);
-                            };
+                        return `${leftText} ${n.operator} ${rightText}`;
+                    }
 
-                            return fixer.replaceText(test, buildSameLineHandler(test));
-                        },
-                        message: `Ternary conditions with ≤${maxOperands} operands should be single line`,
-                        node: test,
-                    });
+                    if (n.type === "BinaryExpression" && isBinaryExpressionSplitHandler(n)) {
+                        return buildBinaryExpressionSingleLineHandler(n);
+                    }
+
+                    return getSourceTextWithGroupsHandler(n);
+                };
+
+                // Check if whole ternary can fit on one line
+                const singleLineText = getTernarySingleLineHandler(node);
+                const indent = getLineIndentHandler(node);
+
+                // Calculate prefix length for context
+                let prefixLength = 0;
+                const parent = node.parent;
+
+                if (parent && parent.type === "VariableDeclarator" && parent.init === node) {
+                    const varDecl = parent.parent;
+                    const declKeyword = varDecl ? sourceCode.getFirstToken(varDecl).value : "const";
+                    const varName = parent.id.name || sourceCode.getText(parent.id);
+
+                    prefixLength = declKeyword.length + 1 + varName.length + 3;
+                } else if (parent && parent.type === "AssignmentExpression" && parent.right === node) {
+                    const leftText = sourceCode.getText(parent.left);
+
+                    prefixLength = leftText.length + 3;
+                } else if (parent && parent.type === "Property" && parent.value === node) {
+                    const keyText = sourceCode.getText(parent.key);
+
+                    prefixLength = keyText.length + 2;
+                }
+
+                const totalLength = indent + prefixLength + singleLineText.length + 1;
+                const canFitOnOneLine = totalLength <= maxLineLength;
+
+                // Skip if branches have complex objects
+                const hasComplexBranches = hasComplexObjectHandler(node.consequent) || hasComplexObjectHandler(node.alternate);
+
+                // Skip nested ternaries
+                const hasNestedTernary = node.consequent.type === "ConditionalExpression" || node.alternate.type === "ConditionalExpression";
+
+                // Determine if we need to fix anything
+                const needsConditionFix = !allOperandsStartOnSameLine || hasSplitBinaryExpression;
+                const needsTernaryCollapse = isTernaryMultiline && canFitOnOneLine && !hasComplexBranches && !hasNestedTernary;
+                const needsOperatorFix = hasOperatorOnOwnLine;
+
+                if (needsConditionFix || needsTernaryCollapse || needsOperatorFix) {
+                    // If whole ternary can fit on one line, collapse it
+                    if (canFitOnOneLine && !hasComplexBranches && !hasNestedTernary) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceText(node, singleLineText),
+                            message: `Ternary with ≤${maxOperands} operands should be on single line when it fits`,
+                            node,
+                        });
+                    } else if (needsConditionFix) {
+                        // Otherwise just fix the condition to be on single line
+                        context.report({
+                            fix: (fixer) => fixer.replaceText(test, buildSameLineHandler(test)),
+                            message: `Ternary conditions with ≤${maxOperands} operands should be single line`,
+                            node: test,
+                        });
+                    }
                 }
 
                 return;
@@ -4177,6 +4251,11 @@ const ternaryConditionMultiline = {
                     if (colonToken && colonToken.loc.start.line > node.consequent.loc.end.line + 1) {
                         isCorrectionNeeded = true;
                     }
+                }
+
+                // Check if ? or : is on its own line without its value
+                if (!isCorrectionNeeded && isOperatorOnOwnLineHandler(node)) {
+                    isCorrectionNeeded = true;
                 }
             }
 
@@ -4267,6 +4346,8 @@ const ternaryConditionMultiline = {
  *   statement (if, try, for, while, etc.) and the next statement,
  *   unless the next statement is part of the same construct (else, catch, finally).
  *
+ * Note: Consecutive if statements are handled by if-else-spacing rule.
+ *
  * ✓ Good:
  *   if (condition) {
  *       doSomething();
@@ -4346,6 +4427,11 @@ const emptyLineAfterBlock = {
 
                 // Get the next statement
                 const nextStmt = grandparent.body[stmtIndex + 1];
+
+                // Skip consecutive if statements - handled by if-else-spacing rule
+                if (parent.type === "IfStatement" && nextStmt.type === "IfStatement") {
+                    return;
+                }
 
                 // Get the actual end of the current statement
                 const currentEndLine = getStatementEndLineHandler(parent);
@@ -7512,12 +7598,16 @@ const classNameNoExtraSpaces = {
  *
  * Description:
  *   Enforce Tailwind CSS class ordering in class string variables,
- *   object properties, and return statements. Complements
- *   tailwindcss/classnames-order by handling cases it doesn't cover.
+ *   object properties, and return statements. This rule complements
+ *   tailwindcss/classnames-order by handling areas it doesn't cover.
  *   Uses smart detection: checks if values look like Tailwind classes.
  *
- * Note: This rule does NOT check JSX className attributes directly,
- *       as those should be handled by tailwindcss/classnames-order.
+ * Coverage Division:
+ *   - tailwindcss/classnames-order: Handles JSX className attributes
+ *   - classname-order (this rule): Handles variables, object properties,
+ *     and return statements containing Tailwind class strings
+ *
+ * Both rules should be enabled together for complete coverage.
  *
  * ✓ Good:
  *   const variants = { primary: "bg-blue-500 hover:bg-blue-600" };
@@ -7843,6 +7933,11 @@ const classNameMultiline = {
 
                 // For variables and properties, just use line indentation
                 if (current.type === "VariableDeclarator" || current.type === "Property") {
+                    return getLineIndent(current);
+                }
+
+                // For return statements, use the return keyword's indentation
+                if (current.type === "ReturnStatement") {
                     return getLineIndent(current);
                 }
 
@@ -9534,6 +9629,8 @@ const noEmptyLinesInFunctionCalls = {
  * Description:
  *   Function parameter lists should not contain empty lines
  *   between parameters or after opening/before closing parens.
+ *   Also checks inside ObjectPattern (destructuring) params for
+ *   empty lines after {, before }, or between properties.
  *
  * ✓ Good:
  *   function test(
@@ -9541,12 +9638,23 @@ const noEmptyLinesInFunctionCalls = {
  *       param2,
  *   ) {}
  *
+ *   const Button = ({
+ *       children,
+ *       className,
+ *   }) => {};
+ *
  * ✗ Bad:
  *   function test(
  *       param1,
  *
  *       param2,
  *   ) {}
+ *
+ *   const Button = ({
+ *
+ *       children,
+ *       className,
+ *   }) => {};
  */
 const noEmptyLinesInFunctionParams = {
     create(context) {
@@ -9618,22 +9726,62 @@ const noEmptyLinesInFunctionParams = {
 
             // Check inside ObjectPattern params for empty lines between destructured props
             params.forEach((param) => {
-                if (param.type === "ObjectPattern" && param.properties.length > 1) {
-                    for (let i = 0; i < param.properties.length - 1; i += 1) {
-                        const current = param.properties[i];
-                        const next = param.properties[i + 1];
+                if (param.type === "ObjectPattern" && param.properties.length > 0) {
+                    const firstProp = param.properties[0];
+                    const lastProp = param.properties[param.properties.length - 1];
 
-                        if (next.loc.start.line - current.loc.end.line > 1) {
-                            const commaToken = sourceCode.getTokenAfter(current, (t) => t.value === ",");
+                    // Find the opening brace of ObjectPattern
+                    const openBrace = sourceCode.getFirstToken(param);
 
+                    if (openBrace && openBrace.value === "{") {
+                        // Check for empty line after opening brace
+                        if (firstProp.loc.start.line - openBrace.loc.end.line > 1) {
                             context.report({
                                 fix: (fixer) => fixer.replaceTextRange(
-                                    [commaToken.range[1], next.range[0]],
-                                    "\n" + " ".repeat(next.loc.start.column),
+                                    [openBrace.range[1], firstProp.range[0]],
+                                    "\n" + " ".repeat(firstProp.loc.start.column),
                                 ),
-                                message: "No empty lines between destructured properties",
-                                node: next,
+                                message: "No empty line after opening brace in destructuring",
+                                node: firstProp,
                             });
+                        }
+                    }
+
+                    // Find the closing brace of ObjectPattern
+                    const closeBrace = sourceCode.getLastToken(param);
+
+                    if (closeBrace && closeBrace.value === "}") {
+                        // Check for empty line before closing brace
+                        if (closeBrace.loc.start.line - lastProp.loc.end.line > 1) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [lastProp.range[1], closeBrace.range[0]],
+                                    "\n" + " ".repeat(closeBrace.loc.start.column),
+                                ),
+                                message: "No empty line before closing brace in destructuring",
+                                node: lastProp,
+                            });
+                        }
+                    }
+
+                    // Check for empty lines between properties
+                    if (param.properties.length > 1) {
+                        for (let i = 0; i < param.properties.length - 1; i += 1) {
+                            const current = param.properties[i];
+                            const next = param.properties[i + 1];
+
+                            if (next.loc.start.line - current.loc.end.line > 1) {
+                                const commaToken = sourceCode.getTokenAfter(current, (t) => t.value === ",");
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange(
+                                        [commaToken.range[1], next.range[0]],
+                                        "\n" + " ".repeat(next.loc.start.column),
+                                    ),
+                                    message: "No empty lines between destructured properties",
+                                    node: next,
+                                });
+                            }
                         }
                     }
                 }
