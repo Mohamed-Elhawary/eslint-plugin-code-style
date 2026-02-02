@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.5] - 2026-02-02
+
+### Fixed
+
+- **`ternary-condition-multiline`** - For ≤3 operands, always collapse to single line when `?` is on different line than condition end (enforces `condition ? value : value` format for simple ternaries)
+- **`no-empty-lines-in-function-params`** - Add detection for empty lines in TSTypeLiteral (type annotation objects like `{ prop: Type }` in intersection types)
+
+---
+
 ## [1.7.4] - 2026-02-02
 
 ### Fixed
@@ -1117,6 +1126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.7.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.4...v1.7.5
 [1.7.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.3...v1.7.4
 [1.7.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.2...v1.7.3
 [1.7.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.1...v1.7.2

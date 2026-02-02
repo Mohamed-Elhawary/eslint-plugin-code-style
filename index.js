@@ -4184,17 +4184,25 @@ const ternaryConditionMultiline = {
                 // Skip nested ternaries
                 const hasNestedTernary = node.consequent.type === "ConditionalExpression" || node.alternate.type === "ConditionalExpression";
 
+                // Check if ? is on different line than condition end (should collapse for simple conditions)
+                const questionToken = sourceCode.getTokenAfter(test, (t) => t.value === "?");
+                const questionOnDifferentLineThanCondition = questionToken && questionToken.loc.start.line !== test.loc.end.line;
+
+                // For ≤maxOperands, if ? is on different line than condition, always collapse to single line
+                // This enforces that simple ternaries have ? and : on same line as condition
+                const needsCollapseForSplitTernary = questionOnDifferentLineThanCondition && !hasComplexBranches && !hasNestedTernary;
+
                 // Determine if we need to fix anything
                 const needsConditionFix = !allOperandsStartOnSameLine || hasSplitBinaryExpression;
                 const needsTernaryCollapse = isTernaryMultiline && canFitOnOneLine && !hasComplexBranches && !hasNestedTernary;
                 const needsOperatorFix = hasOperatorOnOwnLine;
 
-                if (needsConditionFix || needsTernaryCollapse || needsOperatorFix) {
-                    // If whole ternary can fit on one line, collapse it
-                    if (canFitOnOneLine && !hasComplexBranches && !hasNestedTernary) {
+                if (needsConditionFix || needsTernaryCollapse || needsOperatorFix || needsCollapseForSplitTernary) {
+                    // If whole ternary can fit on one line OR ? is on different line than condition (for simple ternaries), collapse it
+                    if ((canFitOnOneLine || needsCollapseForSplitTernary) && !hasComplexBranches && !hasNestedTernary) {
                         context.report({
                             fix: (fixer) => fixer.replaceText(node, singleLineText),
-                            message: `Ternary with ≤${maxOperands} operands should be on single line when it fits`,
+                            message: `Ternary with ≤${maxOperands} operands should be on single line`,
                             node,
                         });
                     } else if (needsOperatorFix) {
@@ -9857,14 +9865,74 @@ const noEmptyLinesInFunctionParams = {
             });
         };
 
+        // Check TSTypeLiteral for empty lines (type annotation objects like { prop: Type })
+        const checkTypeLiteralHandler = (node) => {
+            if (!node.members || node.members.length === 0) return;
+
+            const firstMember = node.members[0];
+            const lastMember = node.members[node.members.length - 1];
+
+            // Find opening brace
+            const openBrace = sourceCode.getFirstToken(node);
+
+            if (openBrace && openBrace.value === "{") {
+                // Check for empty line after opening brace
+                if (firstMember.loc.start.line - openBrace.loc.end.line > 1) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [openBrace.range[1], firstMember.range[0]],
+                            "\n" + " ".repeat(firstMember.loc.start.column),
+                        ),
+                        message: "No empty line after opening brace in type definition",
+                        node: firstMember,
+                    });
+                }
+            }
+
+            // Find closing brace
+            const closeBrace = sourceCode.getLastToken(node);
+
+            if (closeBrace && closeBrace.value === "}") {
+                // Check for empty line before closing brace
+                if (closeBrace.loc.start.line - lastMember.loc.end.line > 1) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [lastMember.range[1], closeBrace.range[0]],
+                            "\n" + " ".repeat(closeBrace.loc.start.column),
+                        ),
+                        message: "No empty line before closing brace in type definition",
+                        node: lastMember,
+                    });
+                }
+            }
+
+            // Check for empty lines between members
+            for (let i = 0; i < node.members.length - 1; i += 1) {
+                const current = node.members[i];
+                const next = node.members[i + 1];
+
+                if (next.loc.start.line - current.loc.end.line > 1) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [current.range[1], next.range[0]],
+                            "\n" + " ".repeat(next.loc.start.column),
+                        ),
+                        message: "No empty lines between type members",
+                        node: next,
+                    });
+                }
+            }
+        };
+
         return {
             ArrowFunctionExpression: checkFunctionHandler,
             FunctionDeclaration: checkFunctionHandler,
             FunctionExpression: checkFunctionHandler,
+            TSTypeLiteral: checkTypeLiteralHandler,
         };
     },
     meta: {
-        docs: { description: "Disallow empty lines in function parameters" },
+        docs: { description: "Disallow empty lines in function parameters and type definitions" },
         fixable: "whitespace",
         schema: [],
         type: "layout",
