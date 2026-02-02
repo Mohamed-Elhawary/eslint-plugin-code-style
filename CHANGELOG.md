@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.4] - 2026-02-02
+
+### Fixed
+
+- **`no-empty-lines-in-function-params`** - Fix bug that deleted TypeScript type annotations when fixing empty lines in destructured params; now uses `getTokenAfter` instead of `getLastToken` to find closing brace
+- **`no-inline-type-definitions`** - Change threshold comparison from `>` to `>=` so 2-member unions are now flagged (with default `maxUnionMembers: 2`)
+- **`ternary-condition-multiline`** - Fix multiline formatting for >3 operands: first operand stays on same line as property key, `?` and `:` each on their own lines; fix circular fix bug for ≤3 operands case
+
+---
+
 ## [1.7.3] - 2026-02-02
 
 ### Fixed
@@ -1107,6 +1117,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.7.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.3...v1.7.4
+[1.7.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.2...v1.7.3
 [1.7.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.6...v1.7.0

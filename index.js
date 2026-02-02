@@ -4197,6 +4197,23 @@ const ternaryConditionMultiline = {
                             message: `Ternary with ≤${maxOperands} operands should be on single line when it fits`,
                             node,
                         });
+                    } else if (needsOperatorFix) {
+                        // Format as proper multiline with ? and : on their own lines with values
+                        context.report({
+                            fix: (fixer) => {
+                                const lineText = sourceCode.lines[node.loc.start.line - 1];
+                                const baseIndent = lineText.match(/^\s*/)[0];
+                                const conditionIndent = baseIndent + "    ";
+                                const conditionText = buildSameLineHandler(test);
+                                const consequentText = sourceCode.getText(node.consequent);
+                                const alternateText = sourceCode.getText(node.alternate);
+                                const newText = `${conditionText}\n${conditionIndent}? ${consequentText}\n${conditionIndent}: ${alternateText}`;
+
+                                return fixer.replaceText(node, newText);
+                            },
+                            message: `Ternary with ≤${maxOperands} operands should have ? and : with their values on the same line`,
+                            node,
+                        });
                     } else if (needsConditionFix) {
                         // Otherwise just fix the condition to be on single line
                         context.report({
@@ -4212,6 +4229,7 @@ const ternaryConditionMultiline = {
 
             // More than maxOperands: each on its own line
             let isCorrectionNeeded = !isMultiLine;
+            const parent = node.parent;
 
             if (isMultiLine) {
                 for (let i = 0; i < operands.length - 1; i += 1) {
@@ -4257,14 +4275,57 @@ const ternaryConditionMultiline = {
                 if (!isCorrectionNeeded && isOperatorOnOwnLineHandler(node)) {
                     isCorrectionNeeded = true;
                 }
+
+                // Check if : is on same line as ? (both should be on their own lines for multiline)
+                if (!isCorrectionNeeded) {
+                    const questionToken = sourceCode.getTokenAfter(test, (t) => t.value === "?");
+                    const colonToken = sourceCode.getTokenAfter(node.consequent, (t) => t.value === ":");
+
+                    if (questionToken && colonToken && questionToken.loc.start.line === colonToken.loc.start.line) {
+                        isCorrectionNeeded = true;
+                    }
+                }
+
+                // Check if first operand is not on same line as parent property key
+                if (!isCorrectionNeeded && parent && parent.type === "Property" && parent.value === node) {
+                    const keyEndLine = parent.key.loc.end.line;
+                    const firstOperandLine = operands[0].loc.start.line;
+
+                    if (firstOperandLine !== keyEndLine) {
+                        isCorrectionNeeded = true;
+                    }
+                }
             }
 
             if (isCorrectionNeeded) {
                 context.report({
                     fix: (fixer) => {
-                        // Get the indentation based on where the ternary starts
-                        const lineText = sourceCode.lines[node.loc.start.line - 1];
-                        const baseIndent = lineText.match(/^\s*/)[0];
+                        // Get proper base indent
+                        let baseIndent;
+                        let includePropertyKey = false;
+                        let propertyKeyText = "";
+
+                        // Check if parent is Property and value starts on different line
+                        if (parent && parent.type === "Property" && parent.value === node) {
+                            const keyEndLine = parent.key.loc.end.line;
+                            const firstOperandLine = operands[0].loc.start.line;
+
+                            if (firstOperandLine !== keyEndLine) {
+                                // Need to include property key in fix
+                                includePropertyKey = true;
+                                propertyKeyText = sourceCode.getText(parent.key) + ": ";
+                                const propertyLineText = sourceCode.lines[parent.loc.start.line - 1];
+
+                                baseIndent = propertyLineText.match(/^\s*/)[0];
+                            }
+                        }
+
+                        if (!baseIndent) {
+                            const lineText = sourceCode.lines[node.loc.start.line - 1];
+
+                            baseIndent = lineText.match(/^\s*/)[0];
+                        }
+
                         const conditionIndent = baseIndent + "    ";
 
                         const buildMultilineHandler = (n) => {
@@ -4281,9 +4342,17 @@ const ternaryConditionMultiline = {
                         const consequentText = sourceCode.getText(node.consequent);
                         const alternateText = sourceCode.getText(node.alternate);
 
-                        // No leading newline - keep first operand on same line as whatever precedes it
-                        // Use conditionIndent for ? and : to align with || operators
-                        const newText = `${buildMultilineHandler(test)}\n${conditionIndent}? ${consequentText}\n${conditionIndent}: ${alternateText}`;
+                        // Build multiline with ? and : each on their own lines
+                        const conditionPart = buildMultilineHandler(test);
+                        const newText = `${conditionPart}\n${conditionIndent}? ${consequentText}\n${conditionIndent}: ${alternateText}`;
+
+                        if (includePropertyKey) {
+                            // Replace the entire property value including fixing the key position
+                            return fixer.replaceTextRange(
+                                [parent.key.range[0], node.range[1]],
+                                `${propertyKeyText}${newText}`,
+                            );
+                        }
 
                         return fixer.replaceText(node, newText);
                     },
@@ -9747,10 +9816,10 @@ const noEmptyLinesInFunctionParams = {
                         }
                     }
 
-                    // Find the closing brace of ObjectPattern
-                    const closeBrace = sourceCode.getLastToken(param);
+                    // Find the closing brace of ObjectPattern (first } after last prop, not last token which could be from type annotation)
+                    const closeBrace = sourceCode.getTokenAfter(lastProp, (t) => t.value === "}");
 
-                    if (closeBrace && closeBrace.value === "}") {
+                    if (closeBrace) {
                         // Check for empty line before closing brace
                         if (closeBrace.loc.start.line - lastProp.loc.end.line > 1) {
                             context.report({
@@ -14993,7 +15062,7 @@ const noInlineTypeDefinitions = {
                 const memberCount = countUnionMembersHandler(typeNode);
                 const typeText = sourceCode.getText(typeNode);
 
-                if (memberCount > maxUnionMembers || typeText.length > maxLength) {
+                if (memberCount >= maxUnionMembers || typeText.length > maxLength) {
                     context.report({
                         message: `Inline union type with ${memberCount} members is too complex. Extract to a named type in a types file.`,
                         node: typeNode,
@@ -15023,7 +15092,7 @@ const noInlineTypeDefinitions = {
                             const memberCount = countUnionMembersHandler(propType);
                             const typeText = sourceCode.getText(propType);
 
-                            if (memberCount > maxUnionMembers || typeText.length > maxLength) {
+                            if (memberCount >= maxUnionMembers || typeText.length > maxLength) {
                                 context.report({
                                     message: `Property "${propName}" has inline union type with ${memberCount} members. Extract to a named type in a types file.`,
                                     node: propType,

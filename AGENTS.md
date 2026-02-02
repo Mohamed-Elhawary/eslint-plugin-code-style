@@ -514,7 +514,9 @@ When modifying an existing rule, check if these need updates:
 **IMPORTANT:** Every commit requires a version bump and tag. After committing your changes:
 
 1. Bump version in `package.json` (PATCH for fixes, MINOR for new features)
-2. Update `CHANGELOG.md` with new version entry
+2. Update `CHANGELOG.md`:
+   - Add new version entry at the top
+   - Add comparison link at the bottom: `[X.Y.Z]: https://github.com/.../compare/vPREV...vX.Y.Z`
 3. Commit: `chore: bump version to X.Y.Z`
 4. Create tag: `git tag -a vX.Y.Z -m "vX.Y.Z - description"`
 5. Push: `git push origin main --tags`
@@ -819,7 +821,9 @@ Format: `MAJOR.MINOR.PATCH` (e.g., `1.2.8`)
 After every meaningful change:
 1. Make changes and commit with appropriate message
 2. Bump version in `package.json`
-3. Update `CHANGELOG.md` with new version entry
+3. Update `CHANGELOG.md`:
+   - Add new version entry at the top
+   - Add comparison link at the bottom: `[X.Y.Z]: https://github.com/.../compare/vPREV...vX.Y.Z`
 4. Commit version bump with descriptive message (see below)
 5. Create annotated tag with descriptive message
 6. Push commits and tags
@@ -929,7 +933,9 @@ git push origin main --tags
 ### Release Steps
 
 1. **Update version in package.json**
-2. **Update CHANGELOG.md** with new version section
+2. **Update CHANGELOG.md:**
+   - Add new version entry at the top
+   - Add comparison link at the bottom: `[X.Y.Z]: https://github.com/.../compare/vPREV...vX.Y.Z`
 3. **Commit version bump with descriptive message:**
    ```bash
    git commit -m "chore: release v1.2.9 - brief description of changes"
