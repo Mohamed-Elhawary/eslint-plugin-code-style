@@ -14450,6 +14450,36 @@ const componentPropsInlineType = {
                             }
                         }
                     });
+
+                    // Check that last member has trailing comma
+                    if (members.length > 0) {
+                        const lastMember = members[members.length - 1];
+                        const lastMemberText = sourceCode.getText(lastMember);
+
+                        if (!lastMemberText.trimEnd().endsWith(",")) {
+                            context.report({
+                                fix: (fixer) => fixer.insertTextAfter(lastMember, ","),
+                                message: "Last props type property must have trailing comma",
+                                node: lastMember,
+                            });
+                        }
+                    }
+
+                    // Check for empty lines before closing brace
+                    if (members.length > 0 && closeBraceToken) {
+                        const lastMember = members[members.length - 1];
+
+                        if (closeBraceToken.loc.start.line - lastMember.loc.end.line > 1) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [lastMember.range[1], closeBraceToken.range[0]],
+                                    "\n" + baseIndent,
+                                ),
+                                message: "No empty line before closing brace in props type",
+                                node: closeBraceToken,
+                            });
+                        }
+                    }
                 }
 
                 return;
@@ -14657,6 +14687,20 @@ const componentPropsInlineType = {
                         }
                     }
                 });
+
+                // Check that last member has trailing comma
+                if (members.length > 0) {
+                    const lastMember = members[members.length - 1];
+                    const lastMemberText = sourceCode.getText(lastMember);
+
+                    if (!lastMemberText.trimEnd().endsWith(",")) {
+                        context.report({
+                            fix: (fixer) => fixer.insertTextAfter(lastMember, ","),
+                            message: "Last props type property must have trailing comma",
+                            node: lastMember,
+                        });
+                    }
+                }
             }
         };
 
@@ -16994,19 +17038,24 @@ const enumFormat = {
                     }
 
                     // Check member ends with comma, not semicolon
-                    const memberText = sourceCode.getText(member);
+                    // Skip last member when multiple members - handled by combined check below
+                    const isLastMember = index === members.length - 1;
 
-                    if (memberText.trimEnd().endsWith(";")) {
-                        context.report({
-                            fix(fixer) {
-                                const lastChar = memberText.lastIndexOf(";");
-                                const absolutePos = member.range[0] + lastChar;
+                    if (!isLastMember || members.length === 1) {
+                        const memberText = sourceCode.getText(member);
 
-                                return fixer.replaceTextRange([absolutePos, absolutePos + 1], ",");
-                            },
-                            message: "Enum members must end with comma (,) not semicolon (;)",
-                            node: member,
-                        });
+                        if (memberText.trimEnd().endsWith(";")) {
+                            context.report({
+                                fix(fixer) {
+                                    const lastChar = memberText.lastIndexOf(";");
+                                    const absolutePos = member.range[0] + lastChar;
+
+                                    return fixer.replaceTextRange([absolutePos, absolutePos + 1], ",");
+                                },
+                                message: "Enum members must end with comma (,) not semicolon (;)",
+                                node: member,
+                            });
+                        }
                     }
 
                     // Check formatting for multiple members
@@ -17056,6 +17105,67 @@ const enumFormat = {
                         }
                     }
                 });
+
+                // Check closing brace position and trailing comma/semicolon (for multiple members)
+                if (members.length > 1) {
+                    const lastMemberText = sourceCode.getText(lastMember);
+                    const trimmedText = lastMemberText.trimEnd();
+                    // Check both: text ends with comma OR there's a comma token after the member
+                    const tokenAfterLast = sourceCode.getTokenAfter(lastMember);
+                    const hasTrailingComma = trimmedText.endsWith(",") || (tokenAfterLast && tokenAfterLast.value === ",");
+                    const hasTrailingSemicolon = trimmedText.endsWith(";");
+                    const braceOnSameLine = closeBraceToken && closeBraceToken.loc.start.line === lastMember.loc.end.line;
+
+                    // Handle semicolon on last member (needs replacement with comma)
+                    if (hasTrailingSemicolon) {
+                        const lastSemicolon = lastMemberText.lastIndexOf(";");
+                        const absolutePos = lastMember.range[0] + lastSemicolon;
+
+                        if (braceOnSameLine) {
+                            // Both semicolon and brace issues - fix together
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [absolutePos, closeBraceToken.range[0]],
+                                    ",\n" + baseIndent,
+                                ),
+                                message: "Last enum member must end with comma and closing brace must be on its own line",
+                                node: lastMember,
+                            });
+                        } else {
+                            // Just semicolon issue
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange([absolutePos, absolutePos + 1], ","),
+                                message: "Enum members must end with comma (,) not semicolon (;)",
+                                node: lastMember,
+                            });
+                        }
+                    } else if (!hasTrailingComma && braceOnSameLine) {
+                        // Both missing comma and brace issues - fix together
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [lastMember.range[1], closeBraceToken.range[0]],
+                                ",\n" + baseIndent,
+                            ),
+                            message: "Last enum member must have trailing comma and closing brace must be on its own line",
+                            node: lastMember,
+                        });
+                    } else if (!hasTrailingComma) {
+                        context.report({
+                            fix: (fixer) => fixer.insertTextAfter(lastMember, ","),
+                            message: "Last enum member must have trailing comma",
+                            node: lastMember,
+                        });
+                    } else if (braceOnSameLine) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [lastMember.range[1], closeBraceToken.range[0]],
+                                "\n" + baseIndent,
+                            ),
+                            message: "Closing brace must be on its own line",
+                            node: closeBraceToken,
+                        });
+                    }
+                }
             },
         };
     },
@@ -17239,19 +17349,24 @@ const interfaceFormat = {
                     }
 
                     // Check property ends with comma, not semicolon
-                    const memberText = sourceCode.getText(member);
+                    // Skip last member when multiple members - handled by combined check below
+                    const isLastMember = index === members.length - 1;
 
-                    if (memberText.trimEnd().endsWith(";")) {
-                        context.report({
-                            fix(fixer) {
-                                const lastChar = memberText.lastIndexOf(";");
-                                const absolutePos = member.range[0] + lastChar;
+                    if (!isLastMember || members.length === 1) {
+                        const memberText = sourceCode.getText(member);
 
-                                return fixer.replaceTextRange([absolutePos, absolutePos + 1], ",");
-                            },
-                            message: "Interface properties must end with comma (,) not semicolon (;)",
-                            node: member,
-                        });
+                        if (memberText.trimEnd().endsWith(";")) {
+                            context.report({
+                                fix(fixer) {
+                                    const lastChar = memberText.lastIndexOf(";");
+                                    const absolutePos = member.range[0] + lastChar;
+
+                                    return fixer.replaceTextRange([absolutePos, absolutePos + 1], ",");
+                                },
+                                message: "Interface properties must end with comma (,) not semicolon (;)",
+                                node: member,
+                            });
+                        }
                     }
 
                     // Check formatting for multiple members
@@ -17301,6 +17416,67 @@ const interfaceFormat = {
                         }
                     }
                 });
+
+                // Check closing brace position and trailing comma/semicolon (for multiple members)
+                if (members.length > 1) {
+                    const lastMemberText = sourceCode.getText(lastMember);
+                    const trimmedText = lastMemberText.trimEnd();
+                    // Check both: text ends with comma OR there's a comma token after the member
+                    const tokenAfterLast = sourceCode.getTokenAfter(lastMember);
+                    const hasTrailingComma = trimmedText.endsWith(",") || (tokenAfterLast && tokenAfterLast.value === ",");
+                    const hasTrailingSemicolon = trimmedText.endsWith(";");
+                    const braceOnSameLine = closeBraceToken.loc.start.line === lastMember.loc.end.line;
+
+                    // Handle semicolon on last member (needs replacement with comma)
+                    if (hasTrailingSemicolon) {
+                        const lastSemicolon = lastMemberText.lastIndexOf(";");
+                        const absolutePos = lastMember.range[0] + lastSemicolon;
+
+                        if (braceOnSameLine) {
+                            // Both semicolon and brace issues - fix together
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [absolutePos, closeBraceToken.range[0]],
+                                    ",\n" + baseIndent,
+                                ),
+                                message: "Last interface property must end with comma and closing brace must be on its own line",
+                                node: lastMember,
+                            });
+                        } else {
+                            // Just semicolon issue
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange([absolutePos, absolutePos + 1], ","),
+                                message: "Interface properties must end with comma (,) not semicolon (;)",
+                                node: lastMember,
+                            });
+                        }
+                    } else if (!hasTrailingComma && braceOnSameLine) {
+                        // Both missing comma and brace issues - fix together
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [lastMember.range[1], closeBraceToken.range[0]],
+                                ",\n" + baseIndent,
+                            ),
+                            message: "Last interface property must have trailing comma and closing brace must be on its own line",
+                            node: lastMember,
+                        });
+                    } else if (!hasTrailingComma) {
+                        context.report({
+                            fix: (fixer) => fixer.insertTextAfter(lastMember, ","),
+                            message: "Last interface property must have trailing comma",
+                            node: lastMember,
+                        });
+                    } else if (braceOnSameLine) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [lastMember.range[1], closeBraceToken.range[0]],
+                                "\n" + baseIndent,
+                            ),
+                            message: "Closing brace must be on its own line",
+                            node: closeBraceToken,
+                        });
+                    }
+                }
             },
         };
     },
