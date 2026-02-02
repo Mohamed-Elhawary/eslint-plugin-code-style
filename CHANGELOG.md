@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.1] - 2026-02-02
+
+### Fixed
+
+- **`no-empty-lines-in-function-params`** - Detect empty lines between destructured properties inside ObjectPattern params
+- **`component-props-inline-type`** - Handle TSIntersectionType (e.g., `ButtonHTMLAttributes & { prop: Type }`): check `&` position, opening brace position, and apply formatting rules to type literals within intersections
+- **`enum-type-enforcement`** - Handle TSIntersectionType to track typed props; fix extractTypeInfoHandler argument for TSPropertySignature members
+- **`ternary-condition-multiline`** - Improve simple ternary prefix calculation for object properties; add checks for `?` on same line as condition end and empty lines before `?` or `:`; fix multiline formatting to not add leading newline
+
+---
+
 ## [1.7.0] - 2026-02-02
 
 **New Rules for Blocks, Classes & Enum Enforcement + Multiple Enhancements**
@@ -1064,6 +1075,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.7.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.6...v1.7.0
 [1.6.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.5...v1.6.6
 [1.6.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.4...v1.6.5
