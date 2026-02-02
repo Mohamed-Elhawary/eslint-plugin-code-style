@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.2] - 2026-02-02
+
+### Fixed
+
+- **`enum-format`** - Fix double comma bug when auto-fixing trailing comma and closing brace position; check for comma token after member, not just member text
+- **`interface-format`** - Same fix as enum-format for trailing comma detection
+
+---
+
 ## [1.7.1] - 2026-02-02
 
 ### Fixed
@@ -1075,6 +1084,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.7.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.6...v1.7.0
 [1.6.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.5...v1.6.6
