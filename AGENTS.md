@@ -706,7 +706,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 ### Current Counts (update these when changing rules)
 - **Total rules:** 69
-- **Auto-fixable:** 63 (41 with `fixable: "code"` + 22 with `fixable: "whitespace"`)
+- **Auto-fixable:** 63 (40 with `fixable: "code"` + 23 with `fixable: "whitespace"`)
 - **Report-only:** 6
 
 ### Files & Line Numbers to Update
