@@ -295,7 +295,7 @@ rules: {
 | `if-statement-format` | `{` on same line as `if`/`else if`, `else` on same line as `}`, proper spacing 🔧 |
 | `multiline-if-conditions` | Conditions exceeding threshold get one operand per line with proper indentation (default: >3) 🔧 ⚙️ |
 | `no-empty-lines-in-switch-cases` | No empty line after `case X:` before code, no empty lines between cases 🔧 |
-| `ternary-condition-multiline` | Collapse simple ternaries to single line; expand complex conditions (>3 operands) to multiline 🔧 ⚙️ |
+| `ternary-condition-multiline` | ≤maxOperands always single line; >maxOperands multiline (based on operand count, not line length) 🔧 ⚙️ |
 | **Function Rules** | |
 | `function-call-spacing` | No space between function name and `(`: `fn()` not `fn ()` 🔧 |
 | `function-declaration-style` | Auto-fix for `func-style`: converts function declarations to arrow expressions 🔧 |
@@ -1211,24 +1211,24 @@ switch (status) {
 
 ### `ternary-condition-multiline`
 
-**What it does:** Enforces consistent ternary formatting:
-- Simple ternaries (≤3 operands in condition) collapse to single line if they fit
-- Complex ternaries (>3 operands) expand to multiline with each operand on its own line
+**What it does:** Formats ternary expressions based on condition operand count:
+- ≤maxOperands (default: 3): Always collapse to single line regardless of line length
+- \>maxOperands: Expand to multiline with each operand on its own line
 
-**Why use it:** Long ternary conditions on a single line are hard to read. Breaking complex conditions into multiple lines makes them scannable.
+**Why use it:** Consistent formatting based on complexity, not line length. Simple conditions stay readable on one line; complex conditions get proper multiline formatting.
 
 **Options:**
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `maxOperands` | `integer` | `3` | Maximum operands to keep on single line |
-| `maxLineLength` | `integer` | `120` | Maximum line length for single-line ternaries |
+| `maxOperands` | `integer` | `3` | Maximum condition operands to keep ternary on single line |
 
 ```javascript
-// ✅ Good — simple condition on single line
+// ✅ Good — ≤3 operands always on single line
 const x = a && b && c ? "yes" : "no";
+const url = lang === "ar" ? `${apiEndpoints.exam.status}/${jobId}?lang=ar` : `${apiEndpoints.exam.status}/${jobId}`;
 
-// ✅ Good — complex condition multiline (>3 operands)
+// ✅ Good — >3 operands formatted multiline
 const style = variant === "ghost"
     || variant === "ghost-danger"
     || variant === "muted"
@@ -1236,7 +1236,12 @@ const style = variant === "ghost"
     ? "transparent"
     : "solid";
 
-// ❌ Bad — complex condition crammed on one line
+// ❌ Bad — ≤3 operands split across lines
+const x = a && b && c
+    ? "yes"
+    : "no";
+
+// ❌ Bad — >3 operands crammed on one line
 const style = variant === "ghost" || variant === "ghost-danger" || variant === "muted" || variant === "primary" ? "transparent" : "solid";
 ```
 

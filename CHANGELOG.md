@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.6] - 2026-02-02
+
+### Changed
+
+- **`ternary-condition-multiline`** - Now depends only on operand count, not line length:
+  - ≤maxOperands (default: 3): Always collapse to single line regardless of line length
+  - \>maxOperands: Format multiline with each operand on its own line
+  - Removed `maxLineLength` option (no longer used)
+  - This aligns behavior with `multiline-if-conditions` rule
+
+---
+
 ## [1.7.5] - 2026-02-02
 
 ### Fixed
@@ -1126,6 +1138,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.7.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.5...v1.7.6
 [1.7.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.4...v1.7.5
 [1.7.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.3...v1.7.4
 [1.7.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.2...v1.7.3

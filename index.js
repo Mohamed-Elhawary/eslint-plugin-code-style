@@ -3868,21 +3868,31 @@ const multilineIfConditions = {
  * ───────────────────────────────────────────────────────────────
  *
  * Description:
- *   When a ternary condition has multiple operands (>3), format
- *   each operand on its own line for readability.
+ *   Formats ternary expressions based on condition operand count:
+ *   - ≤maxOperands (default: 3): Always collapse to single line
+ *   - >maxOperands: Format multiline with each operand on its own line
  *
- * ✓ Good:
+ * Options:
+ *   { maxOperands: 3 } - Maximum operands to keep on single line (default: 3)
+ *
+ * ✓ Good (≤3 operands - single line):
  *   const x = a && b && c ? "yes" : "no";
+ *   const url = lang === "ar" ? "/ar/path" : "/en/path";
  *
- *   const x =
- *       variant === "ghost"
+ * ✓ Good (>3 operands - multiline):
+ *   const x = variant === "ghost"
  *       || variant === "ghost-danger"
  *       || variant === "muted"
  *       || variant === "primary"
- *           ? "value1"
- *           : "value2";
+ *       ? "value1"
+ *       : "value2";
  *
- * ✗ Bad:
+ * ✗ Bad (≤3 operands split across lines):
+ *   const x = a && b && c
+ *       ? "yes"
+ *       : "no";
+ *
+ * ✗ Bad (>3 operands on single line):
  *   const x = variant === "ghost" || variant === "ghost-danger" || variant === "muted" || variant === "primary" ? "value1" : "value2";
  */
 const ternaryConditionMultiline = {
@@ -3890,7 +3900,6 @@ const ternaryConditionMultiline = {
         const sourceCode = context.sourceCode || context.getSourceCode();
         const options = context.options[0] || {};
         const maxOperands = options.maxOperands ?? 3;
-        const maxLineLength = options.maxLineLength ?? 120;
 
         // Check if node is wrapped in parentheses
         const isParenthesizedHandler = (node) => {
@@ -4048,7 +4057,7 @@ const ternaryConditionMultiline = {
             return false;
         };
 
-        // Handle simple ternaries - collapse to single line if they fit
+        // Handle simple ternaries (≤maxOperands) - always collapse to single line
         const handleSimpleTernaryHandler = (node) => {
             const isOnSingleLine = node.loc.start.line === node.loc.end.line;
             const hasOperatorOnOwnLine = isOperatorOnOwnLineHandler(node);
@@ -4068,46 +4077,15 @@ const ternaryConditionMultiline = {
 
             // Calculate what the single line would look like
             const singleLineText = getTernarySingleLineHandler(node);
-            const indent = getLineIndentHandler(node);
 
-            // Check if the parent needs prefix text (like "const x = " or "key: ")
-            let prefixLength = 0;
-            const parent = node.parent;
+            // For ≤maxOperands conditions, always collapse to single line regardless of length
+            context.report({
+                fix: (fixer) => fixer.replaceText(node, singleLineText),
+                message: `Ternary with ≤${maxOperands} operands should be on a single line`,
+                node,
+            });
 
-            if (parent && parent.type === "VariableDeclarator" && parent.init === node) {
-                // Calculate prefix based on parent's start line (where "const x = " is)
-                const varDecl = parent.parent;
-                const declKeyword = varDecl ? sourceCode.getFirstToken(varDecl).value : "const";
-                const varName = parent.id.name || sourceCode.getText(parent.id);
-
-                // Prefix is "const varName = " or similar
-                prefixLength = declKeyword.length + 1 + varName.length + 3; // keyword + space + name + " = "
-            } else if (parent && parent.type === "AssignmentExpression" && parent.right === node) {
-                // Calculate prefix based on left side of assignment
-                const leftText = sourceCode.getText(parent.left);
-
-                prefixLength = leftText.length + 3; // left + " = "
-            } else if (parent && parent.type === "Property" && parent.value === node) {
-                // Object property: key: ternary
-                const keyText = sourceCode.getText(parent.key);
-
-                prefixLength = keyText.length + 2; // key + ": "
-            }
-
-            // Check if single line would fit
-            const totalLength = indent + prefixLength + singleLineText.length + 1;
-
-            if (totalLength <= maxLineLength) {
-                context.report({
-                    fix: (fixer) => fixer.replaceText(node, singleLineText),
-                    message: "Simple ternary should be on a single line",
-                    node,
-                });
-
-                return true;
-            }
-
-            return false;
+            return true;
         };
 
         // Handle complex logical expressions - format multiline
@@ -4118,119 +4096,34 @@ const ternaryConditionMultiline = {
             const testEndLine = test.loc.end.line;
             const isMultiLine = testStartLine !== testEndLine;
 
-            // ≤maxOperands operands: keep condition on single line, and try to collapse whole ternary
+            // ≤maxOperands operands: always collapse to single line (regardless of line length)
             if (operands.length <= maxOperands) {
-                const firstOperandStartLine = operands[0].loc.start.line;
-                const allOperandsStartOnSameLine = operands.every(
-                    (op) => op.loc.start.line === firstOperandStartLine,
-                );
-
-                const hasSplitBinaryExpression = operands.some(
-                    (op) => isBinaryExpressionSplitHandler(op),
-                );
-
-                // Check if ? or : is on its own line without its value
-                const hasOperatorOnOwnLine = isOperatorOnOwnLineHandler(node);
-
-                // Check if ternary is multiline (could be collapsed)
-                const isTernaryMultiline = node.loc.start.line !== node.loc.end.line;
-
-                // Helper to build single line condition
-                const buildSameLineHandler = (n) => {
-                    if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
-                        const leftText = buildSameLineHandler(n.left);
-                        const rightText = buildSameLineHandler(n.right);
-
-                        return `${leftText} ${n.operator} ${rightText}`;
-                    }
-
-                    if (n.type === "BinaryExpression" && isBinaryExpressionSplitHandler(n)) {
-                        return buildBinaryExpressionSingleLineHandler(n);
-                    }
-
-                    return getSourceTextWithGroupsHandler(n);
-                };
-
-                // Check if whole ternary can fit on one line
-                const singleLineText = getTernarySingleLineHandler(node);
-                const indent = getLineIndentHandler(node);
-
-                // Calculate prefix length for context
-                let prefixLength = 0;
-                const parent = node.parent;
-
-                if (parent && parent.type === "VariableDeclarator" && parent.init === node) {
-                    const varDecl = parent.parent;
-                    const declKeyword = varDecl ? sourceCode.getFirstToken(varDecl).value : "const";
-                    const varName = parent.id.name || sourceCode.getText(parent.id);
-
-                    prefixLength = declKeyword.length + 1 + varName.length + 3;
-                } else if (parent && parent.type === "AssignmentExpression" && parent.right === node) {
-                    const leftText = sourceCode.getText(parent.left);
-
-                    prefixLength = leftText.length + 3;
-                } else if (parent && parent.type === "Property" && parent.value === node) {
-                    const keyText = sourceCode.getText(parent.key);
-
-                    prefixLength = keyText.length + 2;
-                }
-
-                const totalLength = indent + prefixLength + singleLineText.length + 1;
-                const canFitOnOneLine = totalLength <= maxLineLength;
-
                 // Skip if branches have complex objects
                 const hasComplexBranches = hasComplexObjectHandler(node.consequent) || hasComplexObjectHandler(node.alternate);
 
                 // Skip nested ternaries
                 const hasNestedTernary = node.consequent.type === "ConditionalExpression" || node.alternate.type === "ConditionalExpression";
 
-                // Check if ? is on different line than condition end (should collapse for simple conditions)
-                const questionToken = sourceCode.getTokenAfter(test, (t) => t.value === "?");
-                const questionOnDifferentLineThanCondition = questionToken && questionToken.loc.start.line !== test.loc.end.line;
-
-                // For ≤maxOperands, if ? is on different line than condition, always collapse to single line
-                // This enforces that simple ternaries have ? and : on same line as condition
-                const needsCollapseForSplitTernary = questionOnDifferentLineThanCondition && !hasComplexBranches && !hasNestedTernary;
-
-                // Determine if we need to fix anything
-                const needsConditionFix = !allOperandsStartOnSameLine || hasSplitBinaryExpression;
-                const needsTernaryCollapse = isTernaryMultiline && canFitOnOneLine && !hasComplexBranches && !hasNestedTernary;
-                const needsOperatorFix = hasOperatorOnOwnLine;
-
-                if (needsConditionFix || needsTernaryCollapse || needsOperatorFix || needsCollapseForSplitTernary) {
-                    // If whole ternary can fit on one line OR ? is on different line than condition (for simple ternaries), collapse it
-                    if ((canFitOnOneLine || needsCollapseForSplitTernary) && !hasComplexBranches && !hasNestedTernary) {
-                        context.report({
-                            fix: (fixer) => fixer.replaceText(node, singleLineText),
-                            message: `Ternary with ≤${maxOperands} operands should be on single line`,
-                            node,
-                        });
-                    } else if (needsOperatorFix) {
-                        // Format as proper multiline with ? and : on their own lines with values
-                        context.report({
-                            fix: (fixer) => {
-                                const lineText = sourceCode.lines[node.loc.start.line - 1];
-                                const baseIndent = lineText.match(/^\s*/)[0];
-                                const conditionIndent = baseIndent + "    ";
-                                const conditionText = buildSameLineHandler(test);
-                                const consequentText = sourceCode.getText(node.consequent);
-                                const alternateText = sourceCode.getText(node.alternate);
-                                const newText = `${conditionText}\n${conditionIndent}? ${consequentText}\n${conditionIndent}: ${alternateText}`;
-
-                                return fixer.replaceText(node, newText);
-                            },
-                            message: `Ternary with ≤${maxOperands} operands should have ? and : with their values on the same line`,
-                            node,
-                        });
-                    } else if (needsConditionFix) {
-                        // Otherwise just fix the condition to be on single line
-                        context.report({
-                            fix: (fixer) => fixer.replaceText(test, buildSameLineHandler(test)),
-                            message: `Ternary conditions with ≤${maxOperands} operands should be single line`,
-                            node: test,
-                        });
-                    }
+                if (hasComplexBranches || hasNestedTernary) {
+                    return;
                 }
+
+                // Check if already properly formatted (single line)
+                const isOnSingleLine = node.loc.start.line === node.loc.end.line;
+                const hasOperatorOnOwnLine = isOperatorOnOwnLineHandler(node);
+
+                if (isOnSingleLine && !hasOperatorOnOwnLine) {
+                    return;
+                }
+
+                // Collapse to single line
+                const singleLineText = getTernarySingleLineHandler(node);
+
+                context.report({
+                    fix: (fixer) => fixer.replaceText(node, singleLineText),
+                    message: `Ternary with ≤${maxOperands} operands should be on a single line`,
+                    node,
+                });
 
                 return;
             }
@@ -4387,21 +4280,15 @@ const ternaryConditionMultiline = {
         };
     },
     meta: {
-        docs: { description: "Enforce consistent ternary formatting: collapse simple ternaries to single line, expand complex conditions to multiline" },
+        docs: { description: "Enforce consistent ternary formatting based on condition operand count: ≤maxOperands collapses to single line, >maxOperands expands to multiline" },
         fixable: "code",
         schema: [
             {
                 additionalProperties: false,
                 properties: {
-                    maxLineLength: {
-                        default: 120,
-                        description: "Maximum line length for single-line ternaries (default: 120)",
-                        minimum: 80,
-                        type: "integer",
-                    },
                     maxOperands: {
                         default: 3,
-                        description: "Maximum operands to keep on single line (default: 3)",
+                        description: "Maximum condition operands to keep ternary on single line (default: 3). Ternaries with more operands are formatted multiline.",
                         minimum: 1,
                         type: "integer",
                     },
