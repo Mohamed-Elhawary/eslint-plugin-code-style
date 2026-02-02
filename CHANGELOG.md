@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.3] - 2026-02-02
+
+### Fixed
+
+- **`ternary-condition-multiline`** - Fix `?`/`:` on own line without value; collapse simple ternaries to single line when they fit
+- **`no-empty-lines-in-function-params`** - Detect empty lines after opening `{` and before closing `}` in ObjectPattern params
+- **`empty-line-after-block`** - Skip consecutive if statements (already handled by `if-else-spacing`)
+- **`classname-multiline`** - Fix closing backtick alignment for return statements
+
+### Documentation
+
+- Add 6 missing rules to README detailed documentation
+- Add 7 missing rules to README Quick Start example
+- Update rule counts from 66 to 69 across all documentation files
+- Update AGENTS.md Tailwind section with actual rules and comparison with `tailwindcss/classnames-order`
+- Add README multi-section update warnings to AGENTS.md rule modification checklists
+
+### Added
+
+- **`manage-rule` skill** - New skill for adding, editing, or removing ESLint rules with complete workflow
+
+---
+
 ## [1.7.2] - 2026-02-02
 
 ### Fixed
