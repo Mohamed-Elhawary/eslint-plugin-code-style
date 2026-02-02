@@ -4049,20 +4049,28 @@ const ternaryConditionMultiline = {
             const singleLineText = getTernarySingleLineHandler(node);
             const indent = getLineIndentHandler(node);
 
-            // Check if the parent needs prefix text (like "const x = ")
+            // Check if the parent needs prefix text (like "const x = " or "key: ")
             let prefixLength = 0;
             const parent = node.parent;
 
             if (parent && parent.type === "VariableDeclarator" && parent.init === node) {
-                const declarationLine = sourceCode.lines[parent.loc.start.line - 1];
-                const beforeTernary = declarationLine.slice(0, node.loc.start.column);
+                // Calculate prefix based on parent's start line (where "const x = " is)
+                const varDecl = parent.parent;
+                const declKeyword = varDecl ? sourceCode.getFirstToken(varDecl).value : "const";
+                const varName = parent.id.name || sourceCode.getText(parent.id);
 
-                prefixLength = beforeTernary.length - indent;
+                // Prefix is "const varName = " or similar
+                prefixLength = declKeyword.length + 1 + varName.length + 3; // keyword + space + name + " = "
             } else if (parent && parent.type === "AssignmentExpression" && parent.right === node) {
-                const assignmentLine = sourceCode.lines[parent.loc.start.line - 1];
-                const beforeTernary = assignmentLine.slice(0, node.loc.start.column);
+                // Calculate prefix based on left side of assignment
+                const leftText = sourceCode.getText(parent.left);
 
-                prefixLength = beforeTernary.length - indent;
+                prefixLength = leftText.length + 3; // left + " = "
+            } else if (parent && parent.type === "Property" && parent.value === node) {
+                // Object property: key: ternary
+                const keyText = sourceCode.getText(parent.key);
+
+                prefixLength = keyText.length + 2; // key + ": "
             }
 
             // Check if single line would fit
@@ -4143,6 +4151,33 @@ const ternaryConditionMultiline = {
                 if (!isCorrectionNeeded && hasOperatorAtEndOfLineHandler(test)) {
                     isCorrectionNeeded = true;
                 }
+
+                // Check if ? is on same line as end of multiline condition (BAD - should be on its own line)
+                if (!isCorrectionNeeded) {
+                    const questionToken = sourceCode.getTokenAfter(test, (t) => t.value === "?");
+
+                    if (questionToken && questionToken.loc.start.line === test.loc.end.line) {
+                        isCorrectionNeeded = true;
+                    }
+                }
+
+                // Check for empty lines before ? (between condition and ?)
+                if (!isCorrectionNeeded) {
+                    const questionToken = sourceCode.getTokenAfter(test, (t) => t.value === "?");
+
+                    if (questionToken && questionToken.loc.start.line > test.loc.end.line + 1) {
+                        isCorrectionNeeded = true;
+                    }
+                }
+
+                // Check for empty lines before : (between consequent and :)
+                if (!isCorrectionNeeded) {
+                    const colonToken = sourceCode.getTokenAfter(node.consequent, (t) => t.value === ":");
+
+                    if (colonToken && colonToken.loc.start.line > node.consequent.loc.end.line + 1) {
+                        isCorrectionNeeded = true;
+                    }
+                }
             }
 
             if (isCorrectionNeeded) {
@@ -4152,7 +4187,6 @@ const ternaryConditionMultiline = {
                         const lineText = sourceCode.lines[node.loc.start.line - 1];
                         const baseIndent = lineText.match(/^\s*/)[0];
                         const conditionIndent = baseIndent + "    ";
-                        const branchIndent = baseIndent + "        ";
 
                         const buildMultilineHandler = (n) => {
                             if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
@@ -4168,7 +4202,9 @@ const ternaryConditionMultiline = {
                         const consequentText = sourceCode.getText(node.consequent);
                         const alternateText = sourceCode.getText(node.alternate);
 
-                        const newText = `\n${conditionIndent}${buildMultilineHandler(test)}\n${branchIndent}? ${consequentText}\n${branchIndent}: ${alternateText}`;
+                        // No leading newline - keep first operand on same line as whatever precedes it
+                        // Use conditionIndent for ? and : to align with || operators
+                        const newText = `${buildMultilineHandler(test)}\n${conditionIndent}? ${consequentText}\n${conditionIndent}: ${alternateText}`;
 
                         return fixer.replaceText(node, newText);
                     },
@@ -4469,6 +4505,20 @@ const enumTypeEnforcement = {
             return null;
         };
 
+        // Helper to process TSTypeLiteral members
+        const processTypeLiteralMembersHandler = (members) => {
+            members.forEach((member) => {
+                if (member.type === "TSPropertySignature" && member.key?.type === "Identifier") {
+                    const propName = member.key.name;
+                    const typeInfo = extractTypeInfoHandler(member.typeAnnotation);
+
+                    if (typeInfo) {
+                        typeAnnotatedVars.set(propName, typeInfo);
+                    }
+                }
+            });
+        };
+
         // Track type-annotated parameters in function/component definitions
         const trackTypedParamsHandler = (params) => {
             params.forEach((param) => {
@@ -4477,14 +4527,14 @@ const enumTypeEnforcement = {
                     const annotation = param.typeAnnotation.typeAnnotation;
 
                     if (annotation && annotation.type === "TSTypeLiteral") {
-                        annotation.members.forEach((member) => {
-                            if (member.type === "TSPropertySignature" && member.key?.type === "Identifier") {
-                                const propName = member.key.name;
-                                const typeInfo = extractTypeInfoHandler(member);
+                        processTypeLiteralMembersHandler(annotation.members);
+                    }
 
-                                if (typeInfo) {
-                                    typeAnnotatedVars.set(propName, typeInfo);
-                                }
+                    // Handle intersection types: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariantType }
+                    if (annotation && annotation.type === "TSIntersectionType") {
+                        annotation.types.forEach((intersectionType) => {
+                            if (intersectionType.type === "TSTypeLiteral") {
+                                processTypeLiteralMembersHandler(intersectionType.members);
                             }
                         });
                     }
@@ -9565,6 +9615,29 @@ const noEmptyLinesInFunctionParams = {
                     });
                 }
             }
+
+            // Check inside ObjectPattern params for empty lines between destructured props
+            params.forEach((param) => {
+                if (param.type === "ObjectPattern" && param.properties.length > 1) {
+                    for (let i = 0; i < param.properties.length - 1; i += 1) {
+                        const current = param.properties[i];
+                        const next = param.properties[i + 1];
+
+                        if (next.loc.start.line - current.loc.end.line > 1) {
+                            const commaToken = sourceCode.getTokenAfter(current, (t) => t.value === ",");
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [commaToken.range[1], next.range[0]],
+                                    "\n" + " ".repeat(next.loc.start.column),
+                                ),
+                                message: "No empty lines between destructured properties",
+                                node: next,
+                            });
+                        }
+                    }
+                }
+            });
         };
 
         return {
@@ -14225,6 +14298,161 @@ const componentPropsInlineType = {
                         node: typeAnnotation,
                     });
                 }
+            }
+
+            // Handle intersection types: ButtonHTMLAttributes<HTMLButtonElement> & { prop: Type }
+            if (typeAnnotation.type === "TSIntersectionType" && isComponent) {
+                const types = typeAnnotation.types;
+
+                // Check & operators are on same line as previous type
+                for (let i = 0; i < types.length - 1; i += 1) {
+                    const currentType = types[i];
+                    const nextType = types[i + 1];
+
+                    const ampersandToken = sourceCode.getTokenAfter(currentType, (t) => t.value === "&");
+
+                    if (ampersandToken && ampersandToken.loc.start.line !== currentType.loc.end.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [currentType.range[1], ampersandToken.range[1]],
+                                " &",
+                            ),
+                            message: "\"&\" must be on same line as previous type",
+                            node: ampersandToken,
+                        });
+                    }
+
+                    // { should be on same line as &
+                    if (nextType.type === "TSTypeLiteral" && ampersandToken) {
+                        const openBrace = sourceCode.getFirstToken(nextType);
+
+                        if (openBrace && openBrace.loc.start.line !== ampersandToken.loc.end.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [ampersandToken.range[1], openBrace.range[0]],
+                                    " ",
+                                ),
+                                message: "Opening brace must be on same line as \"&\"",
+                                node: openBrace,
+                            });
+                        }
+                    }
+                }
+
+                // Find TSTypeLiteral in the intersection and apply formatting rules
+                const typeLiteral = types.find((t) => t.type === "TSTypeLiteral");
+
+                if (typeLiteral) {
+                    const members = typeLiteral.members;
+
+                    // Get the base indentation from the component declaration
+                    const componentLine = sourceCode.lines[node.loc.start.line - 1];
+                    const baseIndent = componentLine.match(/^\s*/)[0];
+                    const propIndent = baseIndent + "    ";
+
+                    // Get opening and closing brace tokens
+                    const openBraceToken = sourceCode.getFirstToken(typeLiteral);
+                    const closeBraceToken = sourceCode.getLastToken(typeLiteral);
+
+                    // For multiple members, first member should be on new line after opening brace
+                    if (members.length > 1 && members[0]) {
+                        const firstMember = members[0];
+
+                        if (firstMember.loc.start.line === openBraceToken.loc.end.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [openBraceToken.range[1], firstMember.range[0]],
+                                    "\n" + propIndent,
+                                ),
+                                message: "First props type property must be on a new line when there are multiple properties",
+                                node: firstMember,
+                            });
+                        }
+                    }
+
+                    // Check closing brace position - should be on its own line for multiple members
+                    if (members.length > 1 && closeBraceToken) {
+                        const lastMember = members[members.length - 1];
+
+                        if (closeBraceToken.loc.start.line === lastMember.loc.end.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [lastMember.range[1], closeBraceToken.range[0]],
+                                    "\n" + baseIndent,
+                                ),
+                                message: "Closing brace must be on its own line when there are multiple properties",
+                                node: closeBraceToken,
+                            });
+                        }
+                    }
+
+                    // Check each member for formatting
+                    members.forEach((member, index) => {
+                        const memberText = sourceCode.getText(member);
+
+                        // Check property ends with comma, not semicolon
+                        if (memberText.trimEnd().endsWith(";")) {
+                            context.report({
+                                fix: (fixer) => {
+                                    const lastChar = memberText.lastIndexOf(";");
+                                    const absolutePos = member.range[0] + lastChar;
+
+                                    return fixer.replaceTextRange([absolutePos, absolutePos + 1], ",");
+                                },
+                                message: "Props type properties must end with comma (,) not semicolon (;)",
+                                node: member,
+                            });
+                        }
+
+                        // If more than one member, check each is on its own line
+                        if (members.length > 1 && index > 0) {
+                            const prevMember = members[index - 1];
+
+                            if (member.loc.start.line === prevMember.loc.end.line) {
+                                context.report({
+                                    fix: (fixer) => {
+                                        let commaToken = sourceCode.getTokenAfter(prevMember);
+
+                                        while (commaToken && commaToken.value !== "," && commaToken.range[0] < member.range[0]) {
+                                            commaToken = sourceCode.getTokenAfter(commaToken);
+                                        }
+
+                                        const insertPoint = commaToken && commaToken.value === "," ? commaToken.range[1] : prevMember.range[1];
+
+                                        return fixer.replaceTextRange(
+                                            [insertPoint, member.range[0]],
+                                            "\n" + propIndent,
+                                        );
+                                    },
+                                    message: "Each props type property must be on its own line when there are multiple properties",
+                                    node: member,
+                                });
+                            }
+
+                            // Check for empty lines between properties
+                            if (member.loc.start.line - prevMember.loc.end.line > 1) {
+                                context.report({
+                                    fix: (fixer) => {
+                                        const textBetween = sourceCode.getText().slice(
+                                            prevMember.range[1],
+                                            member.range[0],
+                                        );
+                                        const newText = textBetween.replace(/\n\s*\n/g, "\n");
+
+                                        return fixer.replaceTextRange(
+                                            [prevMember.range[1], member.range[0]],
+                                            newText,
+                                        );
+                                    },
+                                    message: "No empty lines allowed between props type properties",
+                                    node: member,
+                                });
+                            }
+                        }
+                    });
+                }
+
+                return;
             }
 
             // Check if type is a reference (TSTypeReference) instead of inline (TSTypeLiteral)
