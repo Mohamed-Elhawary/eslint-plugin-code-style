@@ -11,10 +11,15 @@ Verify documentation is accurate and consistent across all files.
 
 1. **Count actual rules**
    ```bash
+   # Total rules
    grep -c "^const .* = {$" index.js
+
+   # Auto-fixable breakdown
+   grep -c 'fixable: "code"' index.js
+   grep -c 'fixable: "whitespace"' index.js
    ```
 
-2. **Check rule count references**
+2. **Check rule count references (must be uniform across ALL files)**
 
    Files that mention rule count (see AGENTS.md "Rule Count Locations" section for complete list):
    - `AGENTS.md`: Multiple locations (see below)
@@ -42,10 +47,13 @@ Verify documentation is accurate and consistent across all files.
 
 ```
 Actual rule count: X
+Auto-fixable: Y (Z code + W whitespace)
+Report-only: X - Y
 
-Rule count references:
+Rule count references (must be uniform):
 - AGENTS.md (Project Overview): X [OK/OUTDATED]
 - AGENTS.md (Code Structure): X [OK/OUTDATED]
+- AGENTS.md (Current Counts breakdown): Z code + W whitespace [OK/OUTDATED]
 - README.md: X [OK/OUTDATED]
 
 Version:

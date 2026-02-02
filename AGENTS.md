@@ -709,6 +709,11 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 - **Auto-fixable:** 63 (40 with `fixable: "code"` + 23 with `fixable: "whitespace"`)
 - **Report-only:** 6
 
+**IMPORTANT:** All counts must be uniform across ALL files. When updating:
+- Total rules, auto-fixable count, and report-only count must match everywhere
+- The auto-fixable breakdown (code vs whitespace) in this section must match actual `grep` counts
+- Use the Quick Verification Commands below to verify counts before committing
+
 ### Files & Line Numbers to Update
 
 | File | Line(s) | What to Update |

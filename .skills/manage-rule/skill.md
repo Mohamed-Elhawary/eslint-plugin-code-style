@@ -71,7 +71,8 @@ Complete workflow for adding, editing, or removing a rule from the plugin.
 - Add `fixable: "code"` or `fixable: "whitespace"` to `meta`
 - Add `fix()` function in `context.report()`
 - Add 🔧 emoji in README Rules Summary table
-- Update auto-fixable counts in docs
+- Update auto-fixable counts in ALL docs (must be uniform everywhere)
+- Update AGENTS.md "Current Counts" breakdown (code vs whitespace counts)
 
 **Changing defaults (MAJOR +1.0.0):**
 - This is a breaking change
