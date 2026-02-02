@@ -800,9 +800,31 @@ After every meaningful change:
 1. Make changes and commit with appropriate message
 2. Bump version in `package.json`
 3. Update `CHANGELOG.md` with new version entry
-4. Commit version bump: `chore: bump version to X.Y.Z`
-5. Create annotated tag
+4. Commit version bump with descriptive message (see below)
+5. Create annotated tag with descriptive message
 6. Push commits and tags
+
+#### Version Bump Commit Messages
+
+**IMPORTANT:** Do NOT use generic messages like `chore: bump version to X.Y.Z`. Instead, use descriptive messages that summarize what changes are in this version.
+
+**Format:** `chore: release vX.Y.Z - brief description`
+
+**Good examples:**
+```
+chore: release v1.7.2 - fix double comma bug in enum/interface format
+chore: release v1.7.1 - multiple rule fixes for destructuring and ternaries
+chore: release v1.6.0 - add 3 new rules and enhance ternary formatting
+```
+
+**Bad examples:**
+```
+chore: bump version to 1.7.2
+chore: version bump
+chore: v1.7.2
+```
+
+This makes `git log` readable and helps understand what each version contains without checking the CHANGELOG.
 
 #### Version Bump Rules
 | Change Type | Version Bump | Example | GitHub Release? |
@@ -868,14 +890,15 @@ git commit -m "fix: handle edge case in rule-name"
 # 2. Bump version in package.json (1.5.2 → 1.5.3)
 # 3. Update CHANGELOG.md with new entry
 
-# 4. Commit version bump
+# 4. Commit version bump with descriptive message
 git add package.json CHANGELOG.md
-git commit -m "chore: bump version to 1.5.3"
+git commit -m "chore: release v1.5.3 - fix edge case in rule-name"
 
-# 5. Create annotated tag
-git tag -a v1.5.3 -m "v1.5.3
+# 5. Create annotated tag with descriptive message
+git tag -a v1.5.3 -m "v1.5.3 - Fix Edge Case in rule-name
 
-- Fix edge case in rule-name"
+- Fixed edge case handling in rule-name
+- Improved error messages"
 
 # 6. Push
 git push origin main --tags
@@ -887,13 +910,16 @@ git push origin main --tags
 
 1. **Update version in package.json**
 2. **Update CHANGELOG.md** with new version section
-3. **Commit version bump:** `git commit -m "chore: bump version to X.Y.Z"`
-4. **Create annotated tag:**
+3. **Commit version bump with descriptive message:**
    ```bash
-   git tag -a v1.2.9 -m "v1.2.9
+   git commit -m "chore: release v1.2.9 - brief description of changes"
+   ```
+4. **Create annotated tag with descriptive message:**
+   ```bash
+   git tag -a v1.2.9 -m "v1.2.9 - Brief Description
 
-   - Feature description 1
-   - Feature description 2"
+   - Feature/fix description 1
+   - Feature/fix description 2"
    ```
 5. **Push (requires explicit approval):** `git push origin main --tags`
 6. **Publish (requires explicit approval):** `npm publish`
