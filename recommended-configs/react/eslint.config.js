@@ -177,6 +177,7 @@ export default [ // eslint-disable-line
             "code-style/no-empty-lines-in-jsx": "error",
             "code-style/no-empty-lines-in-objects": "error",
             "code-style/no-empty-lines-in-switch-cases": "error",
+            "code-style/no-hardcoded-strings": "error",
             "code-style/object-property-per-line": "error",
             "code-style/object-property-value-brace": "error",
             "code-style/object-property-value-format": "error",

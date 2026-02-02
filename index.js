@@ -4738,6 +4738,8 @@ const absoluteImportsOnly = {
 
         // Default allowed folders
         const defaultAllowedFolders = [
+            "@constants",
+            "@strings",
             "actions",
             "apis",
             "assets",
@@ -4764,6 +4766,7 @@ const absoluteImportsOnly = {
             "schemas",
             "services",
             "store",
+            "strings",
             "styles",
             "theme",
             "thunks",
@@ -5402,6 +5405,8 @@ const moduleIndexExports = {
 
         // Default module folders
         const defaultModuleFolders = [
+            "@constants",
+            "@strings",
             "actions",
             "apis",
             "assets",
@@ -5428,6 +5433,7 @@ const moduleIndexExports = {
             "schemas",
             "services",
             "store",
+            "strings",
             "styles",
             "theme",
             "thunks",
@@ -12642,6 +12648,627 @@ const stringPropertySpacing = {
 
 /**
  * ───────────────────────────────────────────────────────────────
+ * Rule: No Hardcoded Strings
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforces that user-facing strings should be imported from
+ *   constants/strings modules rather than hardcoded inline.
+ *   This promotes maintainability, consistency, and enables
+ *   easier internationalization.
+ *
+ * Options:
+ *   { ignoreAttributes: ["className", "id", ...] } - JSX attributes to ignore
+ *   { ignorePatterns: [/^[A-Z_]+$/, ...] } - Regex patterns for strings to ignore
+ *   { minLength: 3 } - Minimum string length to check (default: 3)
+ *
+ * ✓ Good:
+ *   import { BUTTON_LABEL, ERROR_MESSAGE } from "@/constants";
+ *   import { welcomeText } from "@/strings";
+ *
+ *   <button>{BUTTON_LABEL}</button>
+ *   <span>{ERROR_MESSAGE}</span>
+ *   const message = welcomeText;
+ *
+ * ✗ Bad:
+ *   <button>Submit</button>
+ *   <span>Something went wrong</span>
+ *   const message = "Welcome to the app";
+ *   return "User not found";
+ */
+const noHardcodedStrings = {
+    create(context) {
+        const options = context.options[0] || {};
+
+        // Minimum string length to check (shorter strings are often technical)
+        const minLength = options.minLength ?? 3;
+
+        // JSX attributes that commonly contain non-translatable values
+        const defaultIgnoreAttributes = [
+            "accept",
+            "acceptCharset",
+            "accessKey",
+            "action",
+            "align",
+            "allow",
+            "allowFullScreen",
+            "alt", // Often needs translation but sometimes contains technical descriptions
+            "as",
+            "async",
+            "autoCapitalize",
+            "autoComplete",
+            "autoCorrect",
+            "autoFocus",
+            "autoPlay",
+            "capture",
+            "cellPadding",
+            "cellSpacing",
+            "charSet",
+            "className",
+            "classNames",
+            "colSpan",
+            "contentEditable",
+            "controls",
+            "controlsList",
+            "coords",
+            "crossOrigin",
+            "d", // SVG path data
+            "data",
+            "data-*",
+            "dateTime",
+            "decoding",
+            "default",
+            "defer",
+            "dir",
+            "disabled",
+            "download",
+            "draggable",
+            "encType",
+            "enterKeyHint",
+            "fill", // SVG
+            "fillRule", // SVG
+            "for",
+            "form",
+            "formAction",
+            "formEncType",
+            "formMethod",
+            "formNoValidate",
+            "formTarget",
+            "frameBorder",
+            "headers",
+            "height",
+            "hidden",
+            "high",
+            "href",
+            "hrefLang",
+            "htmlFor",
+            "httpEquiv",
+            "icon",
+            "id",
+            "imagesizes",
+            "imagesrcset",
+            "inputMode",
+            "integrity",
+            "is",
+            "itemID",
+            "itemProp",
+            "itemRef",
+            "itemScope",
+            "itemType",
+            "key",
+            "keyParams",
+            "keyType",
+            "kind",
+            "lang",
+            "list",
+            "loading",
+            "loop",
+            "low",
+            "marginHeight",
+            "marginWidth",
+            "max",
+            "maxLength",
+            "media",
+            "mediaGroup",
+            "method",
+            "min",
+            "minLength",
+            "multiple",
+            "muted",
+            "name",
+            "noModule",
+            "noValidate",
+            "nonce",
+            "open",
+            "optimum",
+            "pattern",
+            "ping",
+            "playsInline",
+            "poster",
+            "preload",
+            "profile",
+            "radioGroup",
+            "readOnly",
+            "referrerPolicy",
+            "rel",
+            "required",
+            "reversed",
+            "role",
+            "rowSpan",
+            "rows",
+            "sandbox",
+            "scope",
+            "scoped",
+            "scrolling",
+            "seamless",
+            "selected",
+            "shape",
+            "sizes",
+            "slot",
+            "span",
+            "spellCheck",
+            "src",
+            "srcDoc",
+            "srcLang",
+            "srcSet",
+            "start",
+            "step",
+            "stroke", // SVG
+            "strokeWidth", // SVG
+            "style",
+            "summary",
+            "tabIndex",
+            "target",
+            "testId",
+            "transform", // SVG
+            "translate",
+            "type",
+            "useMap",
+            "value",
+            "viewBox", // SVG
+            "width",
+            "wmode",
+            "wrap",
+            "xmlns",
+        ];
+
+        const ignoreAttributes = options.ignoreAttributes
+            || [...defaultIgnoreAttributes, ...(options.extraIgnoreAttributes || [])];
+
+        // Patterns for strings that are likely technical/non-translatable
+        const technicalPatterns = [
+            // Empty or whitespace only
+            /^\s*$/,
+            // Single characters
+            /^.$/,
+            // CSS units and values
+            /^-?\d+(\.\d+)?(px|em|rem|%|vh|vw|vmin|vmax|ch|ex|cm|mm|in|pt|pc|deg|rad|turn|s|ms|fr)?$/,
+            // Colors (hex, rgb, hsl)
+            /^#[0-9a-fA-F]{3,8}$/,
+            /^(rgb|rgba|hsl|hsla)\(.+\)$/,
+            // URLs and paths
+            /^(https?:\/\/|\/\/|\/|\.\/|\.\.\/)/,
+            // Data URLs
+            /^data:/,
+            // Email pattern check (not full validation)
+            /^mailto:/,
+            // Tel pattern
+            /^tel:/,
+            // File extensions
+            /^\.[a-zA-Z0-9]+$/,
+            // MIME types
+            /^[a-z]+\/[a-z0-9.+-]+$/,
+            // UUIDs
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+            // Date formats (ISO, common patterns)
+            /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?/,
+            // Time formats
+            /^\d{1,2}:\d{2}(:\d{2})?(\s?(AM|PM|am|pm))?$/,
+            // JSON keys (camelCase, snake_case, SCREAMING_SNAKE_CASE)
+            /^[a-z][a-zA-Z0-9]*$/,
+            /^[a-z][a-z0-9_]*$/,
+            /^[A-Z][A-Z0-9_]*$/,
+            // Common technical strings
+            /^(true|false|null|undefined|NaN|Infinity)$/,
+            // HTTP methods
+            /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|CONNECT|TRACE)$/,
+            // Content types
+            /^application\//,
+            // Environment variables pattern
+            /^[A-Z][A-Z0-9_]*$/,
+            // Query parameters
+            /^[a-z][a-zA-Z0-9_]*=/,
+            // CSS property-like
+            /^[a-z]+(-[a-z]+)*$/,
+            // Numbers with separators
+            /^[\d,._]+$/,
+            // Semantic version
+            /^\d+\.\d+\.\d+/,
+            // Common separators
+            /^[,;:|•·\-–—/\\]+$/,
+            // HTML entities
+            /^&[a-z]+;$/,
+            // Punctuation only
+            /^[.!?,;:'"()\[\]{}]+$/,
+        ];
+
+        const extraIgnorePatterns = (options.ignorePatterns || []).map((p) => {
+            if (typeof p === "string") return new RegExp(p);
+
+            return p;
+        });
+
+        const allIgnorePatterns = [...technicalPatterns, ...extraIgnorePatterns];
+
+        // Check if a string matches any ignore pattern
+        const shouldIgnoreStringHandler = (str) => {
+            if (str.length < minLength) return true;
+
+            return allIgnorePatterns.some((pattern) => pattern.test(str));
+        };
+
+        // Check if we're inside a constants/strings file
+        const isConstantsFileHandler = () => {
+            const filename = context.filename || context.getFilename();
+            const normalizedPath = filename.replace(/\\/g, "/").toLowerCase();
+
+            // Check if file is in constants/strings folders
+            return /\/(constants|strings|@constants|@strings)(\/|\.)/i.test(normalizedPath)
+                || /\/data\/(constants|strings)/i.test(normalizedPath);
+        };
+
+        // Check if the string is from an imported constant
+        const importedConstantsHandler = new Set();
+
+        // Track which identifiers come from constants imports
+        const trackImportsHandler = (node) => {
+            const importPath = node.source.value;
+
+            if (typeof importPath !== "string") return;
+
+            // Check if import is from constants/strings
+            const isFromConstants = /@?\/?(@?constants|@?strings|data\/constants|data\/strings)/i
+                .test(importPath);
+
+            if (isFromConstants) {
+                node.specifiers.forEach((spec) => {
+                    if (spec.local && spec.local.name) {
+                        importedConstantsHandler.add(spec.local.name);
+                    }
+                });
+            }
+        };
+
+        // Check if a node is a reference to an imported constant
+        const isImportedConstantHandler = (node) => {
+            if (node.type === "Identifier") {
+                return importedConstantsHandler.has(node.name);
+            }
+
+            if (node.type === "MemberExpression") {
+                // Check if the object is an imported constant (e.g., STRINGS.welcome)
+                if (node.object.type === "Identifier") {
+                    return importedConstantsHandler.has(node.object.name);
+                }
+            }
+
+            return false;
+        };
+
+        // Check if we're in a component, hook, or utility function
+        const isInRelevantContextHandler = (node) => {
+            let current = node.parent;
+
+            while (current) {
+                // Check for function declarations/expressions
+                if (
+                    current.type === "FunctionDeclaration"
+                    || current.type === "FunctionExpression"
+                    || current.type === "ArrowFunctionExpression"
+                ) {
+                    // Get function name if available
+                    let funcName = null;
+
+                    if (current.id && current.id.name) {
+                        funcName = current.id.name;
+                    } else if (
+                        current.parent
+                        && current.parent.type === "VariableDeclarator"
+                        && current.parent.id
+                        && current.parent.id.name
+                    ) {
+                        funcName = current.parent.id.name;
+                    }
+
+                    if (funcName) {
+                        // React components (PascalCase)
+                        if (/^[A-Z]/.test(funcName)) return true;
+
+                        // Custom hooks (useXxx)
+                        if (/^use[A-Z]/.test(funcName)) return true;
+
+                        // Utility/helper functions (common patterns)
+                        if (/Handler$|Helper$|Util$|Utils$/i.test(funcName)) return true;
+
+                        // Any function that returns JSX is a component
+                        // (This is checked via JSX detection below)
+                    }
+
+                    return true; // Check all functions for now
+                }
+
+                // Check for JSX - if we're in JSX, we're in a component
+                if (
+                    current.type === "JSXElement"
+                    || current.type === "JSXFragment"
+                ) {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        };
+
+        // Check if string is in an object that looks like constants definition
+        const isInConstantsObjectHandler = (node) => {
+            let current = node.parent;
+
+            while (current) {
+                if (current.type === "VariableDeclarator") {
+                    const varName = current.id && current.id.name;
+
+                    // Check if variable name suggests it's a constants object
+                    if (varName && /^[A-Z][A-Z0-9_]*$|CONSTANTS?|STRINGS?|MESSAGES?|LABELS?|TEXTS?/i.test(varName)) {
+                        return true;
+                    }
+                }
+
+                // Check for export const CONSTANT_NAME = "value"
+                if (current.type === "ExportNamedDeclaration") {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        };
+
+        // Skip if we're in a constants file
+        if (isConstantsFileHandler()) {
+            return {};
+        }
+
+        return {
+            ImportDeclaration: trackImportsHandler,
+
+            // Check JSX text content
+            JSXText(node) {
+                const text = node.value.trim();
+
+                if (!text || shouldIgnoreStringHandler(text)) return;
+
+                // Check if it looks like user-facing text (contains letters and spaces)
+                if (!/[a-zA-Z]/.test(text)) return;
+
+                context.report({
+                    message: `Hardcoded string "${text.substring(0, 30)}${text.length > 30 ? "..." : ""}" should be imported from constants/strings module`,
+                    node,
+                });
+            },
+
+            // Check JSX expression containers with string literals
+            JSXExpressionContainer(node) {
+                const { expression } = node;
+
+                // Skip if it's a reference to an imported constant
+                if (isImportedConstantHandler(expression)) return;
+
+                // Check string literals
+                if (expression.type === "Literal" && typeof expression.value === "string") {
+                    const str = expression.value;
+
+                    if (shouldIgnoreStringHandler(str)) return;
+
+                    // Check if it looks like user-facing text
+                    if (!/[a-zA-Z]/.test(str)) return;
+
+                    context.report({
+                        message: `Hardcoded string "${str.substring(0, 30)}${str.length > 30 ? "..." : ""}" should be imported from constants/strings module`,
+                        node: expression,
+                    });
+                }
+
+                // Check template literals
+                if (expression.type === "TemplateLiteral") {
+                    expression.quasis.forEach((quasi) => {
+                        const str = quasi.value.cooked || quasi.value.raw;
+
+                        if (shouldIgnoreStringHandler(str)) return;
+
+                        // Check if it contains user-facing text (more than just variable placeholders)
+                        if (!/[a-zA-Z]{2,}/.test(str)) return;
+
+                        // Skip if it looks like a path or URL pattern
+                        if (/^[/.]|https?:\/\//.test(str)) return;
+
+                        context.report({
+                            message: `Hardcoded string in template literal "${str.substring(0, 30)}${str.length > 30 ? "..." : ""}" should be imported from constants/strings module`,
+                            node: quasi,
+                        });
+                    });
+                }
+            },
+
+            // Check JSX attributes
+            JSXAttribute(node) {
+                if (!node.value) return;
+
+                // Get attribute name
+                const attrName = node.name.name || (node.name.namespace && `${node.name.namespace.name}:${node.name.name.name}`);
+
+                // Skip ignored attributes
+                if (ignoreAttributes.includes(attrName)) return;
+
+                // Handle data-* attributes
+                if (attrName && attrName.startsWith("data-")) return;
+
+                // Handle aria-* attributes
+                if (attrName && attrName.startsWith("aria-")) return;
+
+                // Check string literal values
+                if (node.value.type === "Literal" && typeof node.value.value === "string") {
+                    const str = node.value.value;
+
+                    if (shouldIgnoreStringHandler(str)) return;
+
+                    // Check if it looks like user-facing text (contains letters and multiple words or is long)
+                    if (!/[a-zA-Z]/.test(str)) return;
+
+                    if (str.split(/\s+/).length < 2 && str.length < 10) return;
+
+                    context.report({
+                        message: `Hardcoded string "${str.substring(0, 30)}${str.length > 30 ? "..." : ""}" in attribute "${attrName}" should be imported from constants/strings module`,
+                        node: node.value,
+                    });
+                }
+
+                // Check expression containers
+                if (node.value.type === "JSXExpressionContainer") {
+                    const { expression } = node.value;
+
+                    // Skip if it's a reference to an imported constant
+                    if (isImportedConstantHandler(expression)) return;
+
+                    if (expression.type === "Literal" && typeof expression.value === "string") {
+                        const str = expression.value;
+
+                        if (shouldIgnoreStringHandler(str)) return;
+
+                        if (!/[a-zA-Z]/.test(str)) return;
+
+                        if (str.split(/\s+/).length < 2 && str.length < 10) return;
+
+                        context.report({
+                            message: `Hardcoded string "${str.substring(0, 30)}${str.length > 30 ? "..." : ""}" in attribute "${attrName}" should be imported from constants/strings module`,
+                            node: expression,
+                        });
+                    }
+                }
+            },
+
+            // Check string literals in component/hook/utility logic
+            Literal(node) {
+                // Only check string literals
+                if (typeof node.value !== "string") return;
+
+                const str = node.value;
+
+                // Skip if it matches ignore patterns
+                if (shouldIgnoreStringHandler(str)) return;
+
+                // Skip if not in relevant context
+                if (!isInRelevantContextHandler(node)) return;
+
+                // Skip if in a constants definition object
+                if (isInConstantsObjectHandler(node)) return;
+
+                // Skip JSX (handled separately)
+                if (node.parent.type === "JSXAttribute" || node.parent.type === "JSXExpressionContainer") return;
+
+                // Skip import/export sources
+                if (node.parent.type === "ImportDeclaration" || node.parent.type === "ExportNamedDeclaration" || node.parent.type === "ExportAllDeclaration") return;
+
+                // Skip object property keys
+                if (node.parent.type === "Property" && node.parent.key === node) return;
+
+                // Skip if it doesn't look like user-facing text
+                if (!/[a-zA-Z]/.test(str)) return;
+
+                // Require at least 2 words or be reasonably long to be considered user-facing
+                if (str.split(/\s+/).length < 2 && str.length < 15) return;
+
+                context.report({
+                    message: `Hardcoded string "${str.substring(0, 30)}${str.length > 30 ? "..." : ""}" should be imported from constants/strings module`,
+                    node,
+                });
+            },
+
+            // Check template literals in component/hook/utility logic
+            TemplateLiteral(node) {
+                // Skip if in JSX (handled separately)
+                if (node.parent.type === "JSXExpressionContainer") return;
+
+                // Skip if not in relevant context
+                if (!isInRelevantContextHandler(node)) return;
+
+                // Skip if in a constants definition
+                if (isInConstantsObjectHandler(node)) return;
+
+                // Check each quasi (static part)
+                node.quasis.forEach((quasi) => {
+                    const str = quasi.value.cooked || quasi.value.raw;
+
+                    if (shouldIgnoreStringHandler(str)) return;
+
+                    // Check if it contains substantial user-facing text
+                    if (!/[a-zA-Z]{3,}/.test(str)) return;
+
+                    // Skip if it looks like a path, URL, or query
+                    if (/^[/.]|^https?:\/\/|^[?&]/.test(str)) return;
+
+                    // Skip interpolation-heavy templates (more expressions than text)
+                    if (node.expressions.length > node.quasis.length) return;
+
+                    context.report({
+                        message: `Hardcoded string in template literal "${str.substring(0, 30)}${str.length > 30 ? "..." : ""}" should be imported from constants/strings module`,
+                        node: quasi,
+                    });
+                });
+            },
+        };
+    },
+    meta: {
+        docs: {
+            description: "Enforce importing strings from constants/strings modules instead of hardcoding them",
+        },
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    extraIgnoreAttributes: {
+                        description: "Additional JSX attributes to ignore (extends defaults)",
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    ignoreAttributes: {
+                        description: "JSX attributes to ignore (replaces defaults)",
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    ignorePatterns: {
+                        description: "Regex patterns for strings to ignore",
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    minLength: {
+                        default: 3,
+                        description: "Minimum string length to check (default: 3)",
+                        minimum: 1,
+                        type: "integer",
+                    },
+                },
+                type: "object",
+            },
+        ],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
  * Rule: Variable Naming Convention
  * ───────────────────────────────────────────────────────────────
  *
@@ -17818,6 +18445,9 @@ export default {
 
         // Type/Enum rules
         "enum-type-enforcement": enumTypeEnforcement,
+
+        // String rules
+        "no-hardcoded-strings": noHardcodedStrings,
 
         // Variable rules
         "variable-naming-convention": variableNamingConvention,

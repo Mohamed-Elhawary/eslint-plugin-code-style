@@ -59,6 +59,7 @@ export type RuleNames =
     | "code-style/no-empty-lines-in-jsx"
     | "code-style/no-empty-lines-in-objects"
     | "code-style/no-empty-lines-in-switch-cases"
+    | "code-style/no-hardcoded-strings"
     | "code-style/object-property-per-line"
     | "code-style/object-property-value-brace"
     | "code-style/object-property-value-format"
@@ -150,6 +151,7 @@ interface PluginRules {
     "no-empty-lines-in-jsx": Rule.RuleModule;
     "no-empty-lines-in-objects": Rule.RuleModule;
     "no-empty-lines-in-switch-cases": Rule.RuleModule;
+    "no-hardcoded-strings": Rule.RuleModule;
     "object-property-per-line": Rule.RuleModule;
     "object-property-value-brace": Rule.RuleModule;
     "object-property-value-format": Rule.RuleModule;

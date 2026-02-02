@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*69 rules (63 auto-fixable) to keep your codebase clean and consistent*
+*70 rules (63 auto-fixable) to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **69 custom rules** (63 auto-fixable) for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **70 custom rules** (63 auto-fixable) for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **69 custom rules** (63 auto-fixable) for code formatting. 
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 63 of 69 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 63 of 70 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -236,6 +236,7 @@ rules: {
     "code-style/no-empty-lines-in-jsx": "error",
     "code-style/no-empty-lines-in-objects": "error",
     "code-style/no-empty-lines-in-switch-cases": "error",
+    "code-style/no-hardcoded-strings": "error",
     "code-style/no-inline-type-definitions": "error",
     "code-style/object-property-per-line": "error",
     "code-style/object-property-value-brace": "error",
@@ -259,7 +260,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **69 rules total** — 63 with auto-fix 🔧, 6 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
+> **70 rules total** — 63 with auto-fix 🔧, 7 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -348,6 +349,8 @@ rules: {
 | `typescript-definition-location` | Enforce TypeScript definitions (interfaces, types, enums) to be in designated folders ⚙️ |
 | **React Rules** | |
 | `react-code-order` | Enforce consistent ordering in components and hooks: props destructure → refs → state → redux → router → context → custom hooks → derived → memo → callback → handlers → effects → return 🔧 |
+| **String Rules** | |
+| `no-hardcoded-strings` | Enforce importing strings from constants/strings modules instead of hardcoding them ⚙️ |
 | **Variable Rules** | |
 | `variable-naming-convention` | camelCase for all variables and constants, PascalCase for components, `use` prefix for hooks 🔧 |
 
@@ -3278,6 +3281,75 @@ const YetAnotherBad = ({ title }) => {
 
 <br />
 
+## 📝 String Rules
+
+### `no-hardcoded-strings`
+
+**What it does:** Enforces that user-facing strings should be imported from constants/strings modules rather than hardcoded inline. This promotes maintainability, consistency, and enables easier internationalization.
+
+**Why use it:** Hardcoded strings scattered throughout your codebase are hard to maintain, translate, and keep consistent. Centralizing strings in constants makes them easy to find, update, and potentially translate.
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `minLength` | `integer` | `3` | Minimum string length to check |
+| `ignoreAttributes` | `string[]` | See below | JSX attributes to ignore (replaces defaults) |
+| `extraIgnoreAttributes` | `string[]` | `[]` | Additional JSX attributes to ignore (extends defaults) |
+| `ignorePatterns` | `string[]` | `[]` | Regex patterns for strings to ignore |
+
+**Default ignored attributes:** `className`, `id`, `type`, `name`, `href`, `src`, `alt`, `role`, `style`, `key`, `data-*`, `aria-*`, and many more HTML/SVG attributes.
+
+**Default ignored patterns:** Empty strings, single characters, CSS units (`px`, `em`, `%`), colors, URLs, paths, file extensions, MIME types, UUIDs, dates, camelCase/snake_case identifiers, HTTP methods, and other technical strings.
+
+```javascript
+// ✅ Good — strings imported from constants
+import { BUTTON_LABEL, ERROR_MESSAGE, welcomeText } from "@/constants";
+import { FORM_LABELS } from "@/strings";
+
+const Component = () => (
+    <div>
+        <button>{BUTTON_LABEL}</button>
+        <span>{ERROR_MESSAGE}</span>
+        <p>{welcomeText}</p>
+    </div>
+);
+
+const getMessage = () => ERROR_MESSAGE;
+
+// ✅ Good — technical strings are allowed
+<input type="text" className="input-field" />
+<a href="/dashboard">Link</a>
+const url = `/api/users/${id}`;
+const size = "100px";
+
+// ❌ Bad — hardcoded user-facing strings
+<button>Submit Form</button>
+<span>Something went wrong</span>
+const message = "Welcome to the application";
+return "User not found";
+```
+
+**Configuration example:**
+
+```javascript
+// Allow more attributes, add custom ignore patterns
+"code-style/no-hardcoded-strings": ["error", {
+    minLength: 5,
+    extraIgnoreAttributes: ["tooltip", "placeholder"],
+    ignorePatterns: ["^TODO:", "^FIXME:"]
+}]
+```
+
+**Valid import paths for constants:**
+- `@/constants` or `@/@constants`
+- `@/strings` or `@/@strings`
+- `@/data/constants` or `@/data/strings`
+
+---
+
+<br />
+
 ## 📝 Variable Rules
 
 ### `variable-naming-convention`
@@ -3311,7 +3383,7 @@ const UseAuth = () => {};          // hooks should be camelCase
 
 ## 🔧 Auto-fixing
 
-63 of 69 rules support auto-fixing. Run ESLint with the `--fix` flag:
+63 of 70 rules support auto-fixing. Run ESLint with the `--fix` flag:
 
 ```bash
 # Fix all files in src directory
