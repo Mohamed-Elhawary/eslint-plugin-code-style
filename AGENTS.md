@@ -1052,7 +1052,7 @@ This project follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 - Full detailed sections with sub-categories
 - Include **Full Changelog** link at the end
 - Content must match the GitHub Release description
-- **Current releases:** v1.10.0, v1.9.0, v1.8.0, v1.7.0, v1.6.0, v1.5.0, v1.4.2, v1.3.0, v1.2.0, v1.1.0, v1.0.16, v1.0.14, v1.0.7, v1.0.6
+- **Current releases:** v1.11.0, v1.10.0, v1.9.0, v1.8.0, v1.7.0, v1.6.0, v1.5.0, v1.4.2, v1.3.0, v1.2.0, v1.1.0, v1.0.16, v1.0.14, v1.0.7, v1.0.6
 
 **2. Tags** (between releases)
 - Simpler entries with just the changes

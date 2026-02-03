@@ -2552,7 +2552,30 @@ const functionParamsPerLine = {
 
                 // Preserve type annotation if present
                 if (param.typeAnnotation) {
-                    result += sourceCode.getText(param.typeAnnotation);
+                    let typeText = sourceCode.getText(param.typeAnnotation);
+                    const typeAnnotation = param.typeAnnotation.typeAnnotation;
+
+                    // For single-member inline types, collapse to one line
+                    if (typeAnnotation) {
+                        let members = null;
+
+                        if (typeAnnotation.type === "TSTypeLiteral") {
+                            members = typeAnnotation.members;
+                        } else if (typeAnnotation.type === "TSIntersectionType") {
+                            const typeLiteral = typeAnnotation.types.find((t) => t.type === "TSTypeLiteral");
+
+                            if (typeLiteral) {
+                                members = typeLiteral.members;
+                            }
+                        }
+
+                        if (members && members.length === 1) {
+                            // Normalize whitespace to collapse to one line, remove trailing comma
+                            typeText = typeText.replace(/\s+/g, " ").trim().replace(/,\s*}/, " }").replace(/,\s*&/, " &");
+                        }
+                    }
+
+                    result += typeText;
                 }
 
                 return result;
@@ -17071,6 +17094,28 @@ const componentPropsInlineType = {
                         }
                     }
 
+                    // Collapse single-member type to single line if it spans multiple lines
+                    if (members.length === 1 && openBraceToken && closeBraceToken) {
+                        const member = members[0];
+
+                        // Check if the type spans multiple lines
+                        if (openBraceToken.loc.end.line !== closeBraceToken.loc.start.line) {
+                            let memberText = sourceCode.getText(member);
+
+                            // Remove trailing comma/semicolon if any
+                            memberText = memberText.replace(/[,;]\s*$/, "");
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [openBraceToken.range[0], closeBraceToken.range[1]],
+                                    `{ ${memberText} }`,
+                                ),
+                                message: "Single props type property should be on a single line",
+                                node: typeLiteral,
+                            });
+                        }
+                    }
+
                     // Check each member for formatting
                     members.forEach((member, index) => {
                         const memberText = sourceCode.getText(member);
@@ -17316,6 +17361,28 @@ const componentPropsInlineType = {
                             ),
                             message: "Closing brace must be on its own line when there are multiple properties",
                             node: closeBraceToken,
+                        });
+                    }
+                }
+
+                // Collapse single-member type to single line if it spans multiple lines
+                if (members.length === 1 && openBraceToken && closeBraceToken) {
+                    const member = members[0];
+
+                    // Check if the type spans multiple lines
+                    if (openBraceToken.loc.end.line !== closeBraceToken.loc.start.line) {
+                        let memberText = sourceCode.getText(member);
+
+                        // Remove trailing comma/semicolon if any
+                        memberText = memberText.replace(/[,;]\s*$/, "");
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBraceToken.range[0], closeBraceToken.range[1]],
+                                `{ ${memberText} }`,
+                            ),
+                            message: "Single props type property should be on a single line",
+                            node: typeAnnotation,
                         });
                     }
                 }

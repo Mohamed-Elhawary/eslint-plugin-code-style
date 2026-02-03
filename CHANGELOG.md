@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.11.1] - 2026-02-03
+
+**Bug Fix: Single-property type annotations now collapse to single line**
+
+**Version Range:** v1.11.0 → v1.11.1
+
+### Fixed
+
+- **`component-props-inline-type`** - Single-property type annotations spanning multiple lines now auto-fix to single line format `{ prop: Type }`
+- **`function-params-per-line`** - Normalize single-member type annotations to prevent circular fix conflicts
+
+**Full Changelog:** [v1.11.0...v1.11.1](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.0...v1.11.1)
+
+---
+
 ## [1.11.0] - 2026-02-03
 
 **New Rule: svg-component-icon-naming + Multiple Component Props Fixes**
