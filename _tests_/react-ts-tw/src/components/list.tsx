@@ -36,6 +36,15 @@ export const List = ({
     // Derived state / computed values
     const hasItems = items.length > 0 || defaultItems.length > 0;
 
+    // Test: logical-expression-multiline - simple expression should be on single line
+    const testData = {
+        currentStep: 1,
+        errorMessage: null,
+        status: "active",
+    };
+
+    const err = testData.errorMessage || testData.currentStep || testData.status;
+
     // Test: object-property-per-line - each property on its own line when 2+ properties
     const listStyle = useMemo(
         () => ({

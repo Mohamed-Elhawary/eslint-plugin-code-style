@@ -5304,9 +5304,35 @@ const logicalExpressionMultiline = {
             // Collect all operands
             const operands = collectOperandsHandler(node);
 
-            // If operands count is within threshold, skip
-            if (operands.length <= maxOperands) return;
+            // Case 1: Simple expression (≤maxOperands) that's multiline → collapse to single line
+            if (operands.length <= maxOperands) {
+                if (isMultilineHandler(node)) {
+                    // Skip if any operand is itself multiline (e.g., JSX elements, function calls)
+                    const hasMultilineOperand = operands.some((op) => op.loc.start.line !== op.loc.end.line);
 
+                    if (hasMultilineOperand) return;
+
+                    context.report({
+                        fix(fixer) {
+                            // Build single line: operand1 op operand2 op operand3
+                            const parts = [sourceCode.getText(operands[0])];
+
+                            for (let i = 1; i < operands.length; i++) {
+                                const operator = getOperatorHandler(operands[i - 1], operands[i]);
+                                parts.push(` ${operator} ${sourceCode.getText(operands[i])}`);
+                            }
+
+                            return fixer.replaceText(node, parts.join(""));
+                        },
+                        message: `Logical expression with ${operands.length} operands should be on a single line (max for multiline: ${maxOperands})`,
+                        node,
+                    });
+                }
+
+                return;
+            }
+
+            // Case 2: Complex expression (>maxOperands) → enforce multiline
             // Check if already properly multiline
             if (isMultilineHandler(node)) {
                 // Check if each operand is on its own line
@@ -5361,7 +5387,7 @@ const logicalExpressionMultiline = {
         };
     },
     meta: {
-        docs: { description: "Enforce multiline formatting for logical expressions with more than maxOperands" },
+        docs: { description: "Enforce single line for ≤maxOperands, multiline for >maxOperands logical expressions" },
         fixable: "code",
         schema: [
             {

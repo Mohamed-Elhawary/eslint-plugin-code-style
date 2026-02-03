@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.10.1] - 2026-02-03
+
+**Bug Fix: logical-expression-multiline rule improvements**
+
+**Version Range:** v1.10.0 → v1.10.1
+
+### Fixed
+
+- **`logical-expression-multiline`** - Add collapse to single line for simple expressions (≤3 operands)
+- **`logical-expression-multiline`** - Skip collapsing when any operand is multiline (e.g., JSX elements)
+
+**Full Changelog:** [v1.10.0...v1.10.1](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.0...v1.10.1)
+
+---
+
 ## [1.10.0] - 2026-02-03
 
 **New Rule: logical-expression-multiline + Enhanced no-hardcoded-strings**
@@ -1379,7 +1394,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[1.10.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.0...v1.10.0
+[1.10.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.0...v1.10.1
+[1.10.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.2...v1.10.0
 [1.9.7]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.6...v1.9.7
 [1.9.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.5...v1.9.6
 [1.9.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.4...v1.9.5
