@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.9.5] - 2026-02-03
+
+### Fixed
+
+- **`no-hardcoded-strings`** - Fix bug where strings inside exported components were incorrectly skipped:
+  - Previously: `export const Component = () => { const name = "ahmed" }` was not detected
+  - Now: Strings inside functions are properly detected regardless of export status
+  - Only direct constant exports are skipped: `export const MESSAGE = "value"` or `export const DATA = { key: "value" }`
+
+---
+
 ## [1.9.4] - 2026-02-03
 
 ### Enhanced
@@ -1299,6 +1310,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.9.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.4...v1.9.5
 [1.9.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.3...v1.9.4
 [1.9.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.2...v1.9.3
 [1.9.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.1...v1.9.2

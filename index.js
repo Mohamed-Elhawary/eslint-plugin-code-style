@@ -14421,8 +14421,11 @@ const noHardcodedStrings = {
         // Check if string is in an object that looks like constants definition
         const isInConstantsObjectHandler = (node) => {
             let current = node.parent;
+            let depth = 0;
 
             while (current) {
+                depth++;
+
                 if (current.type === "VariableDeclarator") {
                     const varName = current.id && current.id.name;
 
@@ -14440,9 +14443,34 @@ const noHardcodedStrings = {
                     }
                 }
 
-                // Check for export const CONSTANT_NAME = "value"
-                if (current.type === "ExportNamedDeclaration") {
-                    return true;
+                // Check for export const CONSTANT_NAME = "value" - only direct assignments (depth <= 3)
+                // e.g., export const X = "value" or export const X = { key: "value" }
+                // But NOT strings inside exported functions like export const Component = () => { const x = "value" }
+                if (current.type === "ExportNamedDeclaration" && depth <= 3) {
+                    // Only skip if the export is a direct literal or object, not a function
+                    const declaration = current.declaration;
+
+                    if (declaration && declaration.type === "VariableDeclaration") {
+                        const declarator = declaration.declarations[0];
+
+                        if (declarator && declarator.init) {
+                            const initType = declarator.init.type;
+
+                            // Skip if it's a direct string, object, or array constant
+                            if (initType === "Literal" || initType === "ObjectExpression" || initType === "ArrayExpression") {
+                                return true;
+                            }
+                        }
+                    }
+                }
+
+                // Stop traversing if we hit a function - strings inside functions should be checked
+                if (
+                    current.type === "FunctionDeclaration"
+                    || current.type === "FunctionExpression"
+                    || current.type === "ArrowFunctionExpression"
+                ) {
+                    return false;
                 }
 
                 current = current.parent;
