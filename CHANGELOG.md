@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.9.7] - 2026-02-03
+
+### Fixed
+
+- **`no-hardcoded-strings`** - Fix Tailwind detection being too broad:
+  - Previously: `"ahmed"`, `"not found"` were incorrectly skipped as Tailwind classes
+  - Now: Only strings with Tailwind syntax (hyphens, colons, slashes, brackets) are skipped
+  - Regular strings like `const name = "ahmed"` are now properly detected
+  - Tailwind classes like `"px-5 py-3 w-full"` still correctly skipped
+
+---
+
 ## [1.9.6] - 2026-02-03
 
 ### Enhanced
@@ -1325,6 +1337,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.9.7]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.6...v1.9.7
 [1.9.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.5...v1.9.6
 [1.9.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.4...v1.9.5
 [1.9.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.3...v1.9.4

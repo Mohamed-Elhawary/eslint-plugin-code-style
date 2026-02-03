@@ -14109,6 +14109,26 @@ const noHardcodedStrings = {
         // Tailwind/CSS class pattern - matches individual class names
         const tailwindClassPattern = /^-?[a-z]+(-[a-z0-9]+)*(\/\d+)?$|^-?[a-z]+(-[a-z0-9]+)*-\[.+\]$|^[a-z]+:[a-z][-a-z0-9/[\]]*$/;
 
+        // Known single-word Tailwind utilities (no hyphen required)
+        const singleWordTailwindUtilities = new Set([
+            // Display
+            "block", "contents", "flex", "flow", "grid", "hidden", "inline", "table",
+            // Position
+            "absolute", "fixed", "relative", "static", "sticky",
+            // Visibility
+            "collapse", "invisible", "visible",
+            // Typography
+            "antialiased", "capitalize", "italic", "lowercase", "ordinal", "overline",
+            "subpixel", "truncate", "underline", "uppercase",
+            // Layout
+            "container", "isolate",
+            // Misc
+            "resize", "snap", "touch", "select", "pointer", "transition", "animate",
+            "filter", "backdrop", "transform", "appearance", "cursor", "outline",
+            "ring", "shadow", "opacity", "blur", "invert", "sepia", "grayscale",
+            "hue", "saturate", "brightness", "contrast",
+        ]);
+
         // Check if a string contains only CSS/Tailwind class names
         const isTailwindClassStringHandler = (str) => {
             // Split by whitespace and filter empty strings
@@ -14117,23 +14137,31 @@ const noHardcodedStrings = {
             // Must have at least one token
             if (tokens.length === 0) return false;
 
+            // Must have at least one token with Tailwind-like syntax (hyphen, colon, slash, or brackets)
+            // to be considered a Tailwind class string
+            const hasTailwindSyntax = tokens.some((token) =>
+                token.includes("-") || token.includes(":") || token.includes("/") || token.includes("["));
+
+            if (!hasTailwindSyntax) return false;
+
             // Check if all tokens look like CSS classes
             return tokens.every((token) => {
                 // Skip template literal expressions placeholders if any
                 if (token.includes("${")) return true;
 
-                // Common Tailwind patterns
+                // Known single-word Tailwind utilities
+                if (singleWordTailwindUtilities.has(token)) return true;
+
+                // Common Tailwind patterns - MUST have hyphen, colon, slash, or brackets
                 return (
-                    // Basic kebab-case with numbers: w-5, p-4, pr-12, text-2xl, gap-4
-                    /^-?[a-z]+(-[a-z0-9]+)*$/.test(token)
-                    // With fractions: w-1/2, -translate-y-1/2
+                    // Kebab-case: w-5, p-4, pr-12, text-2xl, gap-4, bg-white, text-error
+                    /^-?[a-z]+(-[a-z0-9]+)+$/.test(token)
+                    // With fractions: w-1/2, -translate-y-1/2, bg-black/50
                     || /^-?[a-z]+(-[a-z0-9]+)*\/\d+$/.test(token)
                     // With modifiers: hover:bg-primary, focus:ring-2, sm:flex
                     || /^[a-z0-9]+:[a-z][-a-z0-9/[\]]*$/.test(token)
                     // Arbitrary values: w-[100px], bg-[#ff0000]
                     || /^-?[a-z]+(-[a-z]+)*-?\[.+\]$/.test(token)
-                    // Single word utilities: flex, hidden, block
-                    || /^[a-z]+$/.test(token)
                 );
             });
         };
