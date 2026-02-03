@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*71 rules (64 auto-fixable) to keep your codebase clean and consistent*
+*73 rules (65 auto-fixable) to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **71 custom rules** (64 auto-fixable) for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **73 custom rules** (65 auto-fixable) for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **71 custom rules** (64 auto-fixable) for code formatting. 
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 64 of 71 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 65 of 73 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-**64 rules** support automatic fixing with `eslint --fix`. 6 rules are report-only (require manual changes).
+**65 rules** support automatic fixing with `eslint --fix`. 6 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -199,6 +199,7 @@ rules: {
     "code-style/comment-format": "error",
     "code-style/component-props-destructure": "error",
     "code-style/component-props-inline-type": "error",
+    "code-style/svg-component-icon-naming": "error",
     "code-style/curried-arrow-same-line": "error",
     "code-style/empty-line-after-block": "error",
     "code-style/enum-format": "error",
@@ -261,7 +262,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **71 rules total** — 64 with auto-fix 🔧, 7 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
+> **73 rules total** — 65 with auto-fix 🔧, 8 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -288,6 +289,7 @@ rules: {
 | **Component Rules** | |
 | `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` 🔧 |
 | `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference 🔧 |
+| `svg-component-icon-naming` | SVG components must end with "Icon" suffix; "Icon" suffix components must return SVG |
 | **Class Rules** | |
 | `class-method-definition-format` | Consistent spacing in class/method definitions: space before `{`, no space before `(` 🔧 |
 | `class-naming-convention` | Class declarations must end with "Class" suffix (e.g., `ApiServiceClass`) 🔧 |
@@ -2965,6 +2967,44 @@ export const Card = ({ a, b } : { a: string, b: string }) => (
 );
 ```
 
+---
+
+### `svg-component-icon-naming`
+
+**What it does:** Enforces naming conventions for SVG icon components:
+- Components that return only an SVG element must have a name ending with "Icon"
+- Components with "Icon" suffix must return an SVG element
+
+**Why use it:** Consistent naming makes it immediately clear which components render icons, improving code readability and making icon components easier to find in large codebases.
+
+```tsx
+// ✅ Good — returns SVG and ends with "Icon"
+export const SuccessIcon = ({ className = "" }: { className?: string }) => (
+    <svg className={className}>
+        <path d="M9 12l2 2 4-4" />
+    </svg>
+);
+
+// ✅ Good — returns non-SVG and doesn't end with "Icon"
+export const Button = ({ children }: { children: React.ReactNode }) => (
+    <button>{children}</button>
+);
+
+// ❌ Bad — returns SVG but doesn't end with "Icon"
+export const Success = ({ className = "" }: { className?: string }) => (
+    <svg className={className}>
+        <path d="M9 12l2 2 4-4" />
+    </svg>
+);
+// Error: Component "Success" returns an SVG element and should end with "Icon" suffix
+
+// ❌ Bad — ends with "Icon" but doesn't return SVG
+export const ButtonIcon = ({ children }: { children: React.ReactNode }) => (
+    <button>{children}</button>
+);
+// Error: Component "ButtonIcon" has "Icon" suffix but doesn't return an SVG element
+```
+
 <br />
 
 ## 🔷 TypeScript Rules
@@ -3541,7 +3581,7 @@ const UseAuth = () => {};          // hooks should be camelCase
 
 ## 🔧 Auto-fixing
 
-64 of 71 rules support auto-fixing. Run ESLint with the `--fix` flag:
+65 of 73 rules support auto-fixing. Run ESLint with the `--fix` flag:
 
 ```bash
 # Fix all files in src directory

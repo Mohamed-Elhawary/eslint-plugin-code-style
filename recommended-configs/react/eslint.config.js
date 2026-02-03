@@ -188,6 +188,7 @@ export default [ // eslint-disable-line
             "code-style/simple-call-single-line": "error",
             "code-style/single-argument-on-one-line": "error",
             "code-style/string-property-spacing": "error",
+            "code-style/svg-component-icon-naming": "error",
             "code-style/ternary-condition-multiline": "error",
             "code-style/variable-naming-convention": "error",
 

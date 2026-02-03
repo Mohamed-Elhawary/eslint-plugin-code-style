@@ -19,6 +19,7 @@ export type RuleNames =
     | "code-style/component-props-destructure"
     | "code-style/react-code-order"
     | "code-style/component-props-inline-type"
+    | "code-style/svg-component-icon-naming"
     | "code-style/curried-arrow-same-line"
     | "code-style/empty-line-after-block"
     | "code-style/enum-type-enforcement"
@@ -113,6 +114,7 @@ interface PluginRules {
     "component-props-destructure": Rule.RuleModule;
     "react-code-order": Rule.RuleModule;
     "component-props-inline-type": Rule.RuleModule;
+    "svg-component-icon-naming": Rule.RuleModule;
     "curried-arrow-same-line": Rule.RuleModule;
     "empty-line-after-block": Rule.RuleModule;
     "enum-type-enforcement": Rule.RuleModule;

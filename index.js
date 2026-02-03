@@ -2540,10 +2540,22 @@ const functionParamsPerLine = {
                     // Check if shorthand (key and value are the same identifier)
                     const isShorthand = prop.shorthand || (prop.value && prop.value.type === "Identifier" && prop.value.name === prop.key.name);
 
-                    return isShorthand ? key : `${key}: ${value}`;
+                    if (isShorthand) {
+                        // For shorthand with default value, use the value (includes default)
+                        return prop.value && prop.value.type === "AssignmentPattern" ? value : key;
+                    }
+
+                    return `${key}: ${value}`;
                 });
 
-                return `{ ${props.join(", ")} }`;
+                let result = `{ ${props.join(", ")} }`;
+
+                // Preserve type annotation if present
+                if (param.typeAnnotation) {
+                    result += sourceCode.getText(param.typeAnnotation);
+                }
+
+                return result;
             }
 
             if (param.type === "ArrayPattern") {
@@ -2581,6 +2593,24 @@ const functionParamsPerLine = {
             if (pattern.type === "ObjectPattern") {
                 // Check if this pattern has 2+ properties
                 if (pattern.properties.length >= 2) return true;
+
+                // Check if type annotation has 2+ members (TSTypeLiteral)
+                if (pattern.typeAnnotation && pattern.typeAnnotation.typeAnnotation) {
+                    const typeAnnotation = pattern.typeAnnotation.typeAnnotation;
+
+                    if (typeAnnotation.type === "TSTypeLiteral" && typeAnnotation.members.length >= 2) {
+                        return true;
+                    }
+
+                    // Also check intersection types for TSTypeLiteral with 2+ members
+                    if (typeAnnotation.type === "TSIntersectionType") {
+                        const typeLiteral = typeAnnotation.types.find((t) => t.type === "TSTypeLiteral");
+
+                        if (typeLiteral && typeLiteral.members.length >= 2) {
+                            return true;
+                        }
+                    }
+                }
 
                 // Check nested patterns
                 for (const prop of pattern.properties) {
@@ -17123,13 +17153,18 @@ const componentPropsInlineType = {
                     // Remove trailing comma for single member on single line
                     if (members.length === 1) {
                         const member = members[0];
-                        const tokenAfterMember = sourceCode.getTokenAfter(member);
+                        const memberText = sourceCode.getText(member);
 
-                        if (tokenAfterMember && tokenAfterMember.value === ",") {
+                        if (memberText.trimEnd().endsWith(",")) {
                             context.report({
-                                fix: (fixer) => fixer.remove(tokenAfterMember),
+                                fix: (fixer) => {
+                                    const lastCommaIndex = memberText.lastIndexOf(",");
+                                    const absolutePos = member.range[0] + lastCommaIndex;
+
+                                    return fixer.removeRange([absolutePos, absolutePos + 1]);
+                                },
                                 message: "Single props type property should not have trailing comma",
-                                node: tokenAfterMember,
+                                node: member,
                             });
                         }
                     }
@@ -17269,6 +17304,22 @@ const componentPropsInlineType = {
                     }
                 }
 
+                // Check closing brace position - should be on its own line for multiple members
+                if (members.length > 1 && closeBraceToken) {
+                    const lastMember = members[members.length - 1];
+
+                    if (closeBraceToken.loc.start.line === lastMember.loc.end.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [lastMember.range[1], closeBraceToken.range[0]],
+                                "\n" + baseIndent,
+                            ),
+                            message: "Closing brace must be on its own line when there are multiple properties",
+                            node: closeBraceToken,
+                        });
+                    }
+                }
+
                 // Check each member for semicolons vs commas and line formatting
                 members.forEach((member, index) => {
                     const memberText = sourceCode.getText(member);
@@ -17374,13 +17425,18 @@ const componentPropsInlineType = {
                 // Remove trailing comma for single member on single line
                 if (members.length === 1) {
                     const member = members[0];
-                    const tokenAfterMember = sourceCode.getTokenAfter(member);
+                    const memberText = sourceCode.getText(member);
 
-                    if (tokenAfterMember && tokenAfterMember.value === ",") {
+                    if (memberText.trimEnd().endsWith(",")) {
                         context.report({
-                            fix: (fixer) => fixer.remove(tokenAfterMember),
+                            fix: (fixer) => {
+                                const lastCommaIndex = memberText.lastIndexOf(",");
+                                const absolutePos = member.range[0] + lastCommaIndex;
+
+                                return fixer.removeRange([absolutePos, absolutePos + 1]);
+                            },
                             message: "Single props type property should not have trailing comma",
-                            node: tokenAfterMember,
+                            node: member,
                         });
                     }
                 }
@@ -17473,6 +17529,140 @@ const componentPropsInlineType = {
     meta: {
         docs: { description: "Enforce inline type annotation for React component props and return types with proper formatting" },
         fixable: "code",
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: SVG Component Icon Naming
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Components that return only an SVG element must have a name
+ *   ending with "Icon". Conversely, components with "Icon" suffix
+ *   must return an SVG element.
+ *
+ * ✓ Good:
+ *   export const SuccessIcon = ({ className }: { className?: string }) => (
+ *       <svg className={className}>...</svg>
+ *   );
+ *
+ *   export const Button = ({ children }: { children: ReactNode }) => (
+ *       <button>{children}</button>
+ *   );
+ *
+ * ✗ Bad:
+ *   // Returns SVG but doesn't end with "Icon"
+ *   export const Success = ({ className }: { className?: string }) => (
+ *       <svg className={className}>...</svg>
+ *   );
+ *
+ *   // Ends with "Icon" but doesn't return SVG
+ *   export const ButtonIcon = ({ children }: { children: ReactNode }) => (
+ *       <button>{children}</button>
+ *   );
+ */
+const svgComponentIconNaming = {
+    create(context) {
+        // Get the component name from node
+        const getComponentNameHandler = (node) => {
+            // Arrow function: const Name = () => ...
+            if (node.parent && node.parent.type === "VariableDeclarator" && node.parent.id && node.parent.id.type === "Identifier") {
+                return node.parent.id.name;
+            }
+
+            // Function declaration: function Name() { ... }
+            if (node.id && node.id.type === "Identifier") {
+                return node.id.name;
+            }
+
+            return null;
+        };
+
+        // Check if component name starts with uppercase (React component convention)
+        const isReactComponentNameHandler = (name) => name && /^[A-Z]/.test(name);
+
+        // Check if name ends with "Icon"
+        const hasIconSuffixHandler = (name) => name && name.endsWith("Icon");
+
+        // Check if the return value is purely an SVG element
+        const returnsSvgOnlyHandler = (node) => {
+            const body = node.body;
+
+            if (!body) return false;
+
+            // Arrow function with expression body: () => <svg>...</svg>
+            if (body.type === "JSXElement") {
+                return body.openingElement && body.openingElement.name && body.openingElement.name.name === "svg";
+            }
+
+            // Arrow function with parenthesized expression: () => (<svg>...</svg>)
+            if (body.type === "ParenthesizedExpression" && body.expression) {
+                if (body.expression.type === "JSXElement") {
+                    return body.expression.openingElement && body.expression.openingElement.name && body.expression.openingElement.name.name === "svg";
+                }
+            }
+
+            // Block body with return statement: () => { return <svg>...</svg>; }
+            if (body.type === "BlockStatement") {
+                // Find all return statements
+                const returnStatements = body.body.filter((stmt) => stmt.type === "ReturnStatement" && stmt.argument);
+
+                // Should have exactly one return statement for a simple SVG component
+                if (returnStatements.length === 1) {
+                    const returnArg = returnStatements[0].argument;
+
+                    if (returnArg.type === "JSXElement") {
+                        return returnArg.openingElement && returnArg.openingElement.name && returnArg.openingElement.name.name === "svg";
+                    }
+
+                    // Parenthesized: return (<svg>...</svg>);
+                    if (returnArg.type === "ParenthesizedExpression" && returnArg.expression && returnArg.expression.type === "JSXElement") {
+                        return returnArg.expression.openingElement && returnArg.expression.openingElement.name && returnArg.expression.openingElement.name.name === "svg";
+                    }
+                }
+            }
+
+            return false;
+        };
+
+        const checkFunctionHandler = (node) => {
+            const componentName = getComponentNameHandler(node);
+
+            // Only check React components (PascalCase)
+            if (!isReactComponentNameHandler(componentName)) return;
+
+            const returnsSvg = returnsSvgOnlyHandler(node);
+            const hasIconSuffix = hasIconSuffixHandler(componentName);
+
+            // Case 1: Returns SVG but doesn't end with "Icon"
+            if (returnsSvg && !hasIconSuffix) {
+                context.report({
+                    message: `Component "${componentName}" returns an SVG element and should end with "Icon" suffix (e.g., "${componentName}Icon")`,
+                    node: node.parent && node.parent.type === "VariableDeclarator" ? node.parent.id : node.id || node,
+                });
+            }
+
+            // Case 2: Ends with "Icon" but doesn't return SVG
+            if (hasIconSuffix && !returnsSvg) {
+                context.report({
+                    message: `Component "${componentName}" has "Icon" suffix but doesn't return an SVG element. Either rename it or make it return an SVG.`,
+                    node: node.parent && node.parent.type === "VariableDeclarator" ? node.parent.id : node.id || node,
+                });
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkFunctionHandler,
+            FunctionDeclaration: checkFunctionHandler,
+            FunctionExpression: checkFunctionHandler,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce SVG components to have 'Icon' suffix and vice versa" },
+        fixable: null,
         schema: [],
         type: "suggestion",
     },
@@ -20255,6 +20445,7 @@ export default {
         // Component rules
         "component-props-destructure": componentPropsDestructure,
         "component-props-inline-type": componentPropsInlineType,
+        "svg-component-icon-naming": svgComponentIconNaming,
 
         // React rules
         "react-code-order": reactCodeOrder,

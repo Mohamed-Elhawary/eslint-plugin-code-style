@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.11.0] - 2026-02-03
+
+**New Rule: svg-component-icon-naming + Multiple Component Props Fixes**
+
+**Version Range:** v1.10.1 → v1.11.0
+
+### Added
+
+**New Rules (1)**
+
+- **`svg-component-icon-naming`** - Enforce SVG components to have 'Icon' suffix and vice versa
+  - Components returning only `<svg>` must end with "Icon" suffix (e.g., `SuccessIcon`)
+  - Components with "Icon" suffix must return an `<svg>` element
+  - Works with arrow functions and function declarations
+
+### Fixed
+
+- **`component-props-inline-type`** - Single prop trailing comma now correctly removed (was not detecting comma in member range)
+- **`component-props-inline-type`** - Closing `})` now properly placed on its own line for multiple type props (was missing for non-intersection types)
+- **`function-params-per-line`** - Type annotations no longer removed when collapsing params (was losing entire type annotation)
+- **`function-params-per-line`** - Default values preserved for shorthand props (e.g., `className = ""` no longer becomes `className`)
+- **`function-params-per-line`** - Type annotation complexity now considered (2+ type props = complex, prevents incorrect collapsing)
+
+### Stats
+
+- Total Rules: 73 (was 72)
+- Auto-fixable: 65 rules
+- Report-only: 8 rules
+
+**Full Changelog:** [v1.10.1...v1.11.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.1...v1.11.0)
+
+---
+
 ## [1.10.3] - 2026-02-03
 
 **Bug Fixes: className template literals and trailing comma removal**
@@ -1428,6 +1461,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.11.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.3...v1.11.0
 [1.10.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.2...v1.10.3
 [1.10.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.1...v1.10.2
 [1.10.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.0...v1.10.1
