@@ -962,9 +962,11 @@ git push origin main --tags
 GitHub Releases group multiple version tags into a single release announcement. Create a release when a significant milestone is reached (new features, major enhancements).
 
 **When to create a GitHub Release:**
-- After multiple PATCH/MINOR versions accumulate significant changes
-- When a new major feature is complete
-- At logical milestones (e.g., v1.2.0 → v1.3.0)
+- **All MINOR versions (x.Y.0)** - Every new MINOR version is a release
+- **All MAJOR versions (X.0.0)** - Every new MAJOR version is a release
+- Optionally after multiple PATCH versions accumulate significant changes
+
+**Note:** All MINOR versions (e.g., v1.7.0, v1.8.0) and MAJOR versions (e.g., v2.0.0) are considered releases and must be added to the "Current releases" list. The Version Range for a release always starts from the first version AFTER the previous release (MINOR or MAJOR) up to the current version.
 
 **Release format:**
 
@@ -1048,7 +1050,7 @@ This project follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 - Full detailed sections with sub-categories
 - Include **Full Changelog** link at the end
 - Content must match the GitHub Release description
-- **Current releases:** v1.6.0, v1.5.0, v1.4.2, v1.3.0, v1.2.0, v1.1.0, v1.0.16, v1.0.14, v1.0.7, v1.0.6
+- **Current releases:** v1.8.0, v1.7.0, v1.6.0, v1.5.0, v1.4.2, v1.3.0, v1.2.0, v1.1.0, v1.0.16, v1.0.14, v1.0.7, v1.0.6
 
 **2. Tags** (between releases)
 - Simpler entries with just the changes

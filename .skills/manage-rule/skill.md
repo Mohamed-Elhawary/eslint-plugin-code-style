@@ -42,7 +42,32 @@ Complete workflow for adding, editing, or removing a rule from the plugin.
    - `recommended-configs/react-ts-tw/README.md`
    - `recommended-configs/react/README.md`
 
-7. **Version bump** — MINOR (x.+1.0)
+7. **Version bump & CHANGELOG** — MINOR (x.+1.0)
+   - Update `package.json` version
+   - Update `CHANGELOG.md` with **release format** (required for MINOR releases):
+     ```markdown
+     ## [X.Y.0] - YYYY-MM-DD
+
+     **Release Title (Brief Description)**
+
+     **Version Range:** vAfterPreviousRelease → vX.Y.0
+
+     ### Added
+
+     **New Rules (N)**
+     - **`rule-name`** - Description 🔧
+
+     ### Stats
+
+     - Total Rules: XX (was YY)
+     - Auto-fixable: ZZ rules 🔧
+     - Report-only: N rules
+
+     **Full Changelog:** [vAfterPreviousRelease...vX.Y.0](compare-url)
+     ```
+   - Add comparison link at bottom of CHANGELOG.md
+   - Update "Current releases" list in AGENTS.md
+   - Create annotated tag: `git tag -a vX.Y.0 -m "message"`
 
 **TypeScript-only rules** (only add to `-ts-tw` configs):
 - `component-props-inline-type`, `enum-format`, `interface-format`

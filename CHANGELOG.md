@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.8.4] - 2026-02-03
+
+### Documentation
+
+- Fix v1.8.0 CHANGELOG entry to include Release Title, Version Range, and Full Changelog link (required for MINOR releases)
+- Add missing comparison links in CHANGELOG.md (v1.3.9 through v1.8.3)
+- Update manage-rule skill with CHANGELOG format requirements for new rules
+- Update Current releases list in AGENTS.md to include v1.8.0
+
+---
+
 ## [1.8.3] - 2026-02-03
 
 ### Fixed
@@ -41,9 +52,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.8.0] - 2026-02-03
 
+**New Rule: no-hardcoded-strings**
+
+**Version Range:** v1.7.1 → v1.8.0
+
 ### Added
 
-- **New Rule: `no-hardcoded-strings`** - Enforce importing strings from constants/strings modules instead of hardcoding them inline. Promotes maintainability, consistency, and easier internationalization.
+**New Rules (1)**
+- **`no-hardcoded-strings`** - Enforce importing strings from constants/strings modules instead of hardcoding them inline 🔧
   - Detects hardcoded strings in JSX text content, attributes, and component logic
   - Configurable `ignoreAttributes`, `extraIgnoreAttributes`, `ignorePatterns` options
   - Automatically ignores technical strings (CSS units, URLs, paths, identifiers, etc.)
@@ -59,6 +75,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Total Rules: 70 (was 69)
 - Auto-fixable: 63 rules 🔧
 - Report-only: 7 rules (was 6)
+
+**Full Changelog:** [v1.7.1...v1.8.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.1...v1.8.0)
 
 ---
 
@@ -1193,6 +1211,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.8.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.3...v1.8.4
+[1.8.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.2...v1.8.3
+[1.8.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.6...v1.8.0
 [1.7.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.5...v1.7.6
