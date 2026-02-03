@@ -12,9 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **`no-hardcoded-strings`** - Fix Tailwind detection being too broad:
-  - Previously: `"ahmed"`, `"not found"` were incorrectly skipped as Tailwind classes
+  - Previously: `"john"`, `"not found"` were incorrectly skipped as Tailwind classes
   - Now: Only strings with Tailwind syntax (hyphens, colons, slashes, brackets) are skipped
-  - Regular strings like `const name = "ahmed"` are now properly detected
+  - Regular strings like `const name = "john"` are now properly detected
   - Tailwind classes like `"px-5 py-3 w-full"` still correctly skipped
 
 ---
@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **`no-hardcoded-strings`** - Fix bug where strings inside exported components were incorrectly skipped:
-  - Previously: `export const Component = () => { const name = "ahmed" }` was not detected
+  - Previously: `export const Component = () => { const name = "john" }` was not detected
   - Now: Strings inside functions are properly detected regardless of export status
   - Only direct constant exports are skipped: `export const MESSAGE = "value"` or `export const DATA = { key: "value" }`
 
