@@ -5305,6 +5305,40 @@ const classNamingConvention = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
+        // Store classes that need renaming and their references
+        const classesToRename = new Map();
+
+        // Collect all Identifier nodes that might be class references
+        const collectReferencesHandler = (programNode, className) => {
+            const references = [];
+
+            const visitHandler = (node) => {
+                if (!node || typeof node !== "object") return;
+
+                // Found a matching Identifier
+                if (node.type === "Identifier" && node.name === className) {
+                    references.push(node);
+                }
+
+                // Recursively visit children
+                for (const key in node) {
+                    if (key === "parent" || key === "range" || key === "loc") continue;
+
+                    const child = node[key];
+
+                    if (Array.isArray(child)) {
+                        child.forEach((c) => visitHandler(c));
+                    } else if (child && typeof child === "object" && child.type) {
+                        visitHandler(child);
+                    }
+                }
+            };
+
+            visitHandler(programNode);
+
+            return references;
+        };
+
         return {
             ClassDeclaration(node) {
                 if (!node.id || !node.id.name) return;
@@ -5312,31 +5346,33 @@ const classNamingConvention = {
                 const className = node.id.name;
 
                 if (!className.endsWith("Class")) {
+                    classesToRename.set(className, {
+                        classIdNode: node.id,
+                        newName: `${className}Class`,
+                    });
+                }
+            },
+
+            "Program:exit"(programNode) {
+                // Process all classes that need renaming
+                classesToRename.forEach(({ classIdNode, newName }, className) => {
+                    // Find all references to this class in the entire program
+                    const allReferences = collectReferencesHandler(programNode, className);
+
                     context.report({
                         fix: (fixer) => {
-                            const newName = `${className}Class`;
+                            const fixes = [];
 
-                            // Find all references to this class and rename them
-                            const scope = context.sourceCode.getScope
-                                ? context.sourceCode.getScope(node)
-                                : context.getScope();
-                            const variable = scope.set.get(className);
-                            const fixes = [fixer.replaceText(node.id, newName)];
-
-                            if (variable && variable.references) {
-                                variable.references.forEach((ref) => {
-                                    if (ref.identifier !== node.id) {
-                                        fixes.push(fixer.replaceText(ref.identifier, newName));
-                                    }
-                                });
-                            }
+                            allReferences.forEach((ref) => {
+                                fixes.push(fixer.replaceText(ref, newName));
+                            });
 
                             return fixes;
                         },
                         message: `Class name "${className}" should end with "Class" suffix`,
-                        node: node.id,
+                        node: classIdNode,
                     });
-                }
+                });
             },
         };
     },
