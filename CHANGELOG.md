@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.8.3] - 2026-02-03
+
+### Fixed
+
+- **`class-naming-convention`** - Auto-fix now renames all references to the class (including instantiations like `new ClassName()` and type annotations), not just the class declaration
+
+---
+
 ## [1.8.2] - 2026-02-03
 
 ### Changed
