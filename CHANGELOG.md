@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.11.3] - 2026-02-04
+
+### Fixed
+
+- **`no-hardcoded-strings`**
+  - Skip CSS values in template literals assigned to style-related variables (e.g., `const lineGradient = \`linear-gradient(...)\``)
+  - Flag exported hardcoded strings like `export const tokenKey = "auth_token"` (non-SCREAMING_SNAKE_CASE exports)
+  - Skip HTML input types in default parameters (e.g., `type = "text"`)
+  - Smarter single-word classification: all lowercase (e.g., `"loading"`) → keyword/enum, capitalized (e.g., `"Loading"`) → UI string
+  - Descriptive error messages: UI strings → `@/strings or @/constants`, keywords → `@/data or @/enums`
+
+- **`opening-brackets-same-line`**
+  - Collapse simple JSX logical expressions (≤2 operands, ≤80 chars) to single line
+  - Ensure closing `}` is on its own line for multiline logical expressions with 3+ operands
+
+---
+
 ## [1.11.2] - 2026-02-04
 
 ### Fixed
@@ -1472,6 +1489,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.11.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.2...v1.11.3
 [1.11.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.1...v1.11.2
 [1.11.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.0...v1.11.1
 [1.11.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.3...v1.11.0

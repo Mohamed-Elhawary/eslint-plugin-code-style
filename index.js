@@ -13251,8 +13251,75 @@ const openingBracketsSameLine = {
                 return;
             }
 
-            // Case 5: LogicalExpression - ensure { and expression start are on same line
+            // Case 5: LogicalExpression - handle based on complexity
             if (expression.type === "LogicalExpression") {
+                // Count total operands in the logical expression
+                const countOperandsHandler = (n) => {
+                    if (n.type === "LogicalExpression") {
+                        return countOperandsHandler(n.left) + countOperandsHandler(n.right);
+                    }
+
+                    return 1;
+                };
+
+                const operandCount = countOperandsHandler(expression);
+                const expressionText = sourceCode.getText(expression);
+                const isMultiLine = expression.loc.start.line !== expression.loc.end.line;
+
+                // Simple expression (2 operands, <= 80 chars) - collapse to single line
+                if (operandCount <= 2 && expressionText.length <= 80) {
+                    const collapsedText = expressionText.replace(/\s*\n\s*/g, " ");
+
+                    if (isMultiLine || openBrace.loc.end.line !== expression.loc.start.line
+                        || expression.loc.end.line !== closeBrace.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBrace.range[1], closeBrace.range[0]],
+                                collapsedText,
+                            ),
+                            message: "Simple logical expression should be on a single line",
+                            node: expression,
+                        });
+                    }
+
+                    return;
+                }
+
+                // Complex expression (3+ operands) - closing } should be on its own line
+                if (operandCount >= 3 && isMultiLine) {
+                    // Ensure opening { and expression start are on same line
+                    if (openBrace.loc.end.line !== expression.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBrace.range[1], expression.range[0]],
+                                "",
+                            ),
+                            message: "Opening brace and logical expression should be on the same line",
+                            node: expression,
+                        });
+
+                        return;
+                    }
+
+                    // Ensure closing } is on its own line after multiline expression
+                    if (expression.loc.end.line === closeBrace.loc.start.line) {
+                        // Get the indentation from the line with the opening brace
+                        const openBraceLine = sourceCode.lines[openBrace.loc.start.line - 1];
+                        const indent = openBraceLine.match(/^\s*/)[0];
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [expression.range[1], closeBrace.range[0]],
+                                "\n" + indent,
+                            ),
+                            message: "Closing brace should be on its own line for multiline logical expression",
+                            node: closeBrace,
+                        });
+                    }
+
+                    return;
+                }
+
                 // First, ensure { and expression start are on same line
                 if (openBrace.loc.end.line !== expression.loc.start.line) {
                     context.report({
@@ -14633,12 +14700,148 @@ const noHardcodedStrings = {
             return false;
         };
 
-        // Get descriptive error message - unified message for all hardcoded strings
+        // CSS/style-related variable name patterns
+        const styleVariablePatterns = [
+            /gradient/i,
+            /transform/i,
+            /animation/i,
+            /transition/i,
+            /color/i,
+            /background/i,
+            /border/i,
+            /shadow/i,
+            /filter/i,
+            /clip/i,
+            /mask/i,
+            /font/i,
+            /^style/i,
+            /Style$/i,
+            /css/i,
+        ];
+
+        // Check if template literal content looks like CSS value
+        const isCssValueHandler = (str) => {
+            // CSS functions: linear-gradient, radial-gradient, rotate, translate, etc.
+            if (/^(linear-gradient|radial-gradient|conic-gradient|repeating-linear-gradient|repeating-radial-gradient|rotate|translate|translateX|translateY|translateZ|translate3d|scale|scaleX|scaleY|scaleZ|scale3d|skew|skewX|skewY|matrix|matrix3d|perspective|calc|var|clamp|min|max|cubic-bezier|steps|url)\(/i.test(str)) {
+                return true;
+            }
+
+            // Color values
+            if (/^(#[0-9a-fA-F]{3,8}|rgb|rgba|hsl|hsla)\(/i.test(str)) return true;
+
+            // CSS value with units
+            if (/^\d+(\.\d+)?(px|em|rem|%|vh|vw|vmin|vmax|deg|rad|turn|s|ms|fr)\s*/.test(str)) return true;
+
+            return false;
+        };
+
+        // Check if a template literal is assigned to a style-related variable
+        const isStyleVariableAssignmentHandler = (node) => {
+            let current = node.parent;
+
+            while (current) {
+                if (current.type === "VariableDeclarator" && current.id && current.id.name) {
+                    const varName = current.id.name;
+
+                    // Check if variable name matches style patterns
+                    if (styleVariablePatterns.some((pattern) => pattern.test(varName))) {
+                        return true;
+                    }
+                }
+
+                // Check for property assignment like: const styles = { gradient: `...` }
+                if (current.type === "Property" && current.key) {
+                    const propName = current.key.name || (current.key.value && String(current.key.value));
+
+                    if (propName && styleVariablePatterns.some((pattern) => pattern.test(propName))) {
+                        return true;
+                    }
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        };
+
+        // Check if string is in a default parameter for input type
+        const isInputTypeDefaultParamHandler = (node) => {
+            // Check if we're in an AssignmentPattern (default param)
+            if (node.parent && node.parent.type === "AssignmentPattern") {
+                const assignPattern = node.parent;
+
+                // Check if the parameter name is "type"
+                if (assignPattern.left && assignPattern.left.type === "Identifier" && assignPattern.left.name === "type") {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        // Check if this is a module-level exported string that should be flagged
+        const isExportedHardcodedStringHandler = (node) => {
+            let current = node.parent;
+            let depth = 0;
+
+            while (current) {
+                depth++;
+
+                // Check for export const name = "value" pattern (NOT in function)
+                if (current.type === "ExportNamedDeclaration" && depth <= 3) {
+                    const declaration = current.declaration;
+
+                    if (declaration && declaration.type === "VariableDeclaration") {
+                        const declarator = declaration.declarations[0];
+
+                        if (declarator && declarator.id && declarator.id.name) {
+                            const varName = declarator.id.name;
+
+                            // Skip SCREAMING_SNAKE_CASE - these are intentional constants
+                            if (/^[A-Z][A-Z0-9_]*$/.test(varName)) return false;
+
+                            // Skip constants-like variable names
+                            if (/^(constants?|strings?|messages?|labels?|texts?|data)$/i.test(varName)) return false;
+
+                            // This is an exported string that looks like a hardcoded value (e.g., tokenKey)
+                            return true;
+                        }
+                    }
+                }
+
+                // Stop if we hit a function - we're inside a function, not module-level
+                if (
+                    current.type === "FunctionDeclaration"
+                    || current.type === "FunctionExpression"
+                    || current.type === "ArrowFunctionExpression"
+                ) {
+                    return false;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        };
+
+        // Get descriptive error message based on string type
         const getErrorMessageHandler = (str, context = "") => {
             const truncatedStr = str.length > 30 ? `${str.substring(0, 30)}...` : str;
             const contextPart = context ? ` in ${context}` : "";
 
-            return `Hardcoded string "${truncatedStr}"${contextPart} should be imported from @/data, @/strings, @/constants, or @/enums`;
+            // Single word detection:
+            // - All lowercase (e.g., "loading", "submit") → keyword/enum/data
+            // - Starts with capital (e.g., "Loading", "Submit") → UI string
+            // - Has spaces or multiple words → UI string
+            const isSingleWord = !/\s/.test(str) && str.length <= 30;
+            const isAllLowercase = /^[a-z_]+$/.test(str);
+
+            if (isSingleWord && isAllLowercase) {
+                return `Hardcoded data keyword or enum "${truncatedStr}"${contextPart} should be imported from @/data or @/enums (e.g., import { StatusEnum } from "@/enums")`;
+            }
+
+            // UI string: starts with capital, has spaces, or multiple words
+            return `Hardcoded UI string "${truncatedStr}"${contextPart} should be imported from @/strings or @/constants or @/@strings or @/@constants (e.g., import { strings } from "@/strings")`;
         };
 
         // Check if a string matches any ignore pattern
@@ -14963,13 +15166,31 @@ const noHardcodedStrings = {
 
                 const str = node.value;
 
-                // Skip if it matches ignore patterns
-                if (shouldIgnoreStringHandler(str)) return;
-
                 // Skip if inside a style object (style={{ transform: "..." }})
                 if (isInsideStyleObjectHandler(node)) return;
 
-                // Skip if not in relevant context
+                // Skip input type default params (e.g., type = "text")
+                if (isInputTypeDefaultParamHandler(node)) return;
+
+                // Check for exported hardcoded strings (e.g., export const tokenKey = "auth_token")
+                // These should be flagged even at module level, regardless of whether the value
+                // looks "technical" - the point is exposing hardcoded strings in exports
+                if (isExportedHardcodedStringHandler(node)) {
+                    // Skip if it doesn't look like user-facing text
+                    if (!/[a-zA-Z]/.test(str)) return;
+
+                    context.report({
+                        message: getErrorMessageHandler(str, "exported constant"),
+                        node,
+                    });
+
+                    return;
+                }
+
+                // Skip if it matches ignore patterns (for strings inside functions)
+                if (shouldIgnoreStringHandler(str)) return;
+
+                // Skip if not in relevant context (must be inside a function)
                 if (!isInRelevantContextHandler(node)) return;
 
                 // Skip if in a constants definition object
@@ -15000,6 +15221,15 @@ const noHardcodedStrings = {
 
                 // Skip if inside a style object (style={{ background: `...` }})
                 if (isInsideStyleObjectHandler(node)) return;
+
+                // Skip if assigned to a style-related variable with CSS value
+                // e.g., const lineGradient = `linear-gradient(...)`
+                if (isStyleVariableAssignmentHandler(node)) {
+                    // Get full template content to check if it's CSS
+                    const fullContent = node.quasis.map((q) => q.value.cooked || q.value.raw).join("");
+
+                    if (isCssValueHandler(fullContent)) return;
+                }
 
                 // Skip if not in relevant context
                 if (!isInRelevantContextHandler(node)) return;
