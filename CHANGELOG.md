@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.8.2] - 2026-02-03
+
+### Changed
+
+- **`multiline-if-conditions`** - Change default `maxNestingLevel` from 1 to 2; add nested group extraction when operand count exceeds `maxOperands`
+- **`ternary-condition-multiline`** - Change default `maxNestingLevel` from 1 to 2; add nested group extraction when operand count exceeds `maxOperands`
+
+### Documentation
+
+- Document `maxNestingLevel` option clearly in JSDoc and README for both rules
+- Add examples showing nested group auto-extraction behavior
+
+---
+
 ## [1.8.1] - 2026-02-03
 
 ### Changed

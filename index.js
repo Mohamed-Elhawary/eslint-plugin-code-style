@@ -3518,26 +3518,29 @@ const ifElseSpacing = {
  * Description:
  *   When an if statement has multiple conditions that span
  *   multiple lines, each condition should be on its own line.
+ *   Also enforces max nesting level for parenthesized groups.
  *
  * Options:
  *   { maxOperands: 3 } - Maximum operands on single line (default: 3)
+ *   { maxNestingLevel: 2 } - Maximum nesting of parenthesized groups (default: 2)
  *
- * ✓ Good:
- *   if (
- *       conditionA &&
- *       conditionB &&
- *       conditionC
- *   ) {}
+ * ✓ Good (≤2 nesting level - within default):
+ *   if ((a && b) || c) {}                    // Level 1
+ *   if ((a && (b || c)) || d) {}             // Level 2
+ *   if ((a && b) || (c && d)) {}             // Level 1 (parallel groups)
  *
- * ✗ Bad:
- *   if (conditionA &&
- *       conditionB && conditionC) {}
+ * ✗ Bad (>2 nesting level - auto-fixed by extraction):
+ *   if ((a && (b || (c && d))) || e) {}
+ *   // Fixed to:
+ *   // const isCAndD = (c && d);
+ *   // if ((a && (b || isCAndD)) || e) {}
  */
 const multilineIfConditions = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
         const options = context.options[0] || {};
         const maxOperands = options.maxOperands !== undefined ? options.maxOperands : 3;
+        const maxNestingLevel = options.maxNestingLevel !== undefined ? options.maxNestingLevel : 2;
 
         const isParenthesizedHandler = (node) => {
             const tokenBefore = sourceCode.getTokenBefore(node);
@@ -3598,6 +3601,138 @@ const multilineIfConditions = {
             return operands;
         };
 
+        // Calculate max nesting depth of parenthesized groups in a logical expression
+        // Level 0: a && b (no groups)
+        // Level 1: (a && b) || c (one group at top)
+        // Level 2: (a && (b || c)) || d (group inside group)
+        const getNestingDepthHandler = (node, currentDepth = 0) => {
+            if (node.type !== "LogicalExpression") return currentDepth;
+
+            let maxDepth = currentDepth;
+
+            // Check left side
+            if (node.left.type === "LogicalExpression") {
+                const leftDepth = isParenthesizedHandler(node.left)
+                    ? getNestingDepthHandler(node.left, currentDepth + 1)
+                    : getNestingDepthHandler(node.left, currentDepth);
+                maxDepth = Math.max(maxDepth, leftDepth);
+            }
+
+            // Check right side
+            if (node.right.type === "LogicalExpression") {
+                const rightDepth = isParenthesizedHandler(node.right)
+                    ? getNestingDepthHandler(node.right, currentDepth + 1)
+                    : getNestingDepthHandler(node.right, currentDepth);
+                maxDepth = Math.max(maxDepth, rightDepth);
+            }
+
+            return maxDepth;
+        };
+
+        // Find the deepest nested parenthesized group that exceeds maxNestingLevel
+        const findDeepNestedGroupHandler = (node, currentDepth = 0, parentInfo = null) => {
+            if (node.type !== "LogicalExpression") return null;
+
+            let deepestGroup = null;
+
+            // Check left side
+            if (node.left.type === "LogicalExpression") {
+                const leftIsParen = isParenthesizedHandler(node.left);
+                const newDepth = leftIsParen ? currentDepth + 1 : currentDepth;
+
+                if (leftIsParen && newDepth > maxNestingLevel) {
+                    // This group exceeds max nesting
+                    deepestGroup = {
+                        node: node.left,
+                        depth: newDepth,
+                        parent: node,
+                        side: "left",
+                    };
+                }
+
+                // Recurse to find even deeper
+                const deeper = findDeepNestedGroupHandler(node.left, newDepth, { node, side: "left" });
+                if (deeper && (!deepestGroup || deeper.depth > deepestGroup.depth)) {
+                    deepestGroup = deeper;
+                }
+            }
+
+            // Check right side
+            if (node.right.type === "LogicalExpression") {
+                const rightIsParen = isParenthesizedHandler(node.right);
+                const newDepth = rightIsParen ? currentDepth + 1 : currentDepth;
+
+                if (rightIsParen && newDepth > maxNestingLevel) {
+                    // This group exceeds max nesting
+                    const rightGroup = {
+                        node: node.right,
+                        depth: newDepth,
+                        parent: node,
+                        side: "right",
+                    };
+                    if (!deepestGroup || rightGroup.depth > deepestGroup.depth) {
+                        deepestGroup = rightGroup;
+                    }
+                }
+
+                // Recurse to find even deeper
+                const deeper = findDeepNestedGroupHandler(node.right, newDepth, { node, side: "right" });
+                if (deeper && (!deepestGroup || deeper.depth > deepestGroup.depth)) {
+                    deepestGroup = deeper;
+                }
+            }
+
+            return deepestGroup;
+        };
+
+        // Count operands inside a group, ignoring the outer parentheses of the group itself
+        // This is used to count operands INSIDE a parenthesized group
+        const countOperandsInsideGroupHandler = (node) => {
+            if (node.type !== "LogicalExpression") return 1;
+
+            let count = 0;
+            const countHelperHandler = (n) => {
+                if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                    countHelperHandler(n.left);
+                    countHelperHandler(n.right);
+                } else {
+                    count += 1;
+                }
+            };
+
+            // Start by recursing into children directly (ignoring outer parens)
+            countHelperHandler(node.left);
+            countHelperHandler(node.right);
+
+            return count;
+        };
+
+        // Find a nested parenthesized group that has >maxOperands operands
+        // Returns the first such group found (for extraction to variable)
+        const findNestedGroupExceedingMaxOperandsHandler = (node) => {
+            if (node.type !== "LogicalExpression") return null;
+
+            // Check if this node is a parenthesized group with >maxOperands
+            if (isParenthesizedHandler(node)) {
+                const insideCount = countOperandsInsideGroupHandler(node);
+                if (insideCount > maxOperands) {
+                    return node;
+                }
+            }
+
+            // Recursively check children
+            if (node.left.type === "LogicalExpression") {
+                const found = findNestedGroupExceedingMaxOperandsHandler(node.left);
+                if (found) return found;
+            }
+            if (node.right.type === "LogicalExpression") {
+                const found = findNestedGroupExceedingMaxOperandsHandler(node.right);
+                if (found) return found;
+            }
+
+            return null;
+        };
+
         const checkIfStatementHandler = (node) => {
             const { test } = node;
 
@@ -3608,6 +3743,81 @@ const multilineIfConditions = {
             const closeParen = sourceCode.getTokenAfter(test);
 
             if (!openParen || !closeParen) return;
+
+            // Check for excessive nesting depth
+            const nestingDepth = getNestingDepthHandler(test);
+
+            if (nestingDepth > maxNestingLevel) {
+                const deepGroup = findDeepNestedGroupHandler(test);
+
+                if (deepGroup) {
+                    const groupText = getSourceTextWithGroupsHandler(deepGroup.node);
+
+                    // Generate a more descriptive variable name based on condition structure
+                    const getConditionNameHandler = (n) => {
+                        if (n.type === "LogicalExpression") {
+                            const leftName = getConditionNameHandler(n.left);
+                            const rightName = getConditionNameHandler(n.right);
+                            const opName = n.operator === "&&" ? "And" : "Or";
+
+                            return `${leftName}${opName}${rightName}`;
+                        }
+                        if (n.type === "Identifier") {
+                            return n.name.charAt(0).toUpperCase() + n.name.slice(1);
+                        }
+                        if (n.type === "BinaryExpression" || n.type === "CallExpression" || n.type === "MemberExpression") {
+                            return "Expr";
+                        }
+
+                        return "Cond";
+                    };
+
+                    // Generate unique variable name
+                    let varName = `is${getConditionNameHandler(deepGroup.node)}`;
+                    // Limit length and sanitize
+                    if (varName.length > 30) {
+                        varName = "isNestedCondition";
+                    }
+
+                    context.report({
+                        fix: (fixer) => {
+                            const fixes = [];
+
+                            // Get the line before the if statement for inserting the variable
+                            const ifLine = node.loc.start.line;
+                            const lineStart = sourceCode.getIndexFromLoc({ line: ifLine, column: 0 });
+                            const lineText = sourceCode.lines[ifLine - 1];
+                            const indent = lineText.match(/^\s*/)[0];
+
+                            // Insert variable declaration before the if statement
+                            fixes.push(fixer.insertTextBeforeRange(
+                                [lineStart, lineStart],
+                                `const ${varName} = ${groupText};\n${indent}`,
+                            ));
+
+                            // Replace the nested group with the variable name in the condition
+                            // We need to replace including the parentheses around the group
+                            const tokenBefore = sourceCode.getTokenBefore(deepGroup.node);
+                            const tokenAfter = sourceCode.getTokenAfter(deepGroup.node);
+
+                            if (tokenBefore && tokenAfter && tokenBefore.value === "(" && tokenAfter.value === ")") {
+                                fixes.push(fixer.replaceTextRange(
+                                    [tokenBefore.range[0], tokenAfter.range[1]],
+                                    varName,
+                                ));
+                            } else {
+                                fixes.push(fixer.replaceText(deepGroup.node, varName));
+                            }
+
+                            return fixes;
+                        },
+                        message: `Condition nesting depth (${nestingDepth}) exceeds maximum (${maxNestingLevel}). Extract deeply nested condition to a variable.`,
+                        node: deepGroup.node,
+                    });
+
+                    return; // Don't process other rules for this statement
+                }
+            }
 
             const isMultiLine = openParen.loc.start.line !== closeParen.loc.end.line;
 
@@ -3639,7 +3849,68 @@ const multilineIfConditions = {
                 return sourceCode.getText(n);
             };
 
-            // maxOperands or fewer operands: keep on single line (operand starts on same line)
+            // Check if any nested parenthesized group has >maxOperands - extract to variable if so
+            const nestedGroupExceeding = findNestedGroupExceedingMaxOperandsHandler(test);
+            if (nestedGroupExceeding) {
+                const groupText = getSourceTextWithGroupsHandler(nestedGroupExceeding);
+
+                // Generate descriptive variable name
+                const getConditionNameHandler = (n) => {
+                    if (n.type === "LogicalExpression") {
+                        const leftName = getConditionNameHandler(n.left);
+                        const rightName = getConditionNameHandler(n.right);
+                        const opName = n.operator === "&&" ? "And" : "Or";
+                        return `${leftName}${opName}${rightName}`;
+                    }
+                    if (n.type === "Identifier") {
+                        return n.name.charAt(0).toUpperCase() + n.name.slice(1);
+                    }
+                    if (n.type === "BinaryExpression" || n.type === "CallExpression" || n.type === "MemberExpression") {
+                        return "Expr";
+                    }
+                    return "Cond";
+                };
+
+                let varName = `is${getConditionNameHandler(nestedGroupExceeding)}`;
+                if (varName.length > 30) {
+                    varName = "isComplexCondition";
+                }
+
+                context.report({
+                    fix: (fixer) => {
+                        const fixes = [];
+                        const ifLine = node.loc.start.line;
+                        const lineStart = sourceCode.getIndexFromLoc({ line: ifLine, column: 0 });
+                        const lineText = sourceCode.lines[ifLine - 1];
+                        const indent = lineText.match(/^\s*/)[0];
+
+                        fixes.push(fixer.insertTextBeforeRange(
+                            [lineStart, lineStart],
+                            `const ${varName} = ${groupText};\n${indent}`,
+                        ));
+
+                        const tokenBefore = sourceCode.getTokenBefore(nestedGroupExceeding);
+                        const tokenAfter = sourceCode.getTokenAfter(nestedGroupExceeding);
+
+                        if (tokenBefore && tokenAfter && tokenBefore.value === "(" && tokenAfter.value === ")") {
+                            fixes.push(fixer.replaceTextRange(
+                                [tokenBefore.range[0], tokenAfter.range[1]],
+                                varName,
+                            ));
+                        } else {
+                            fixes.push(fixer.replaceText(nestedGroupExceeding, varName));
+                        }
+
+                        return fixes;
+                    },
+                    message: `Nested condition has more than ${maxOperands} operands. Extract to a variable for readability.`,
+                    node: nestedGroupExceeding,
+                });
+
+                return;
+            }
+
+            // maxOperands or fewer operands: keep on single line
             if (operands.length <= maxOperands) {
                 // Check if all operands START on the same line
                 const firstOperandStartLine = operands[0].loc.start.line;
@@ -3804,8 +4075,12 @@ const multilineIfConditions = {
                 return sourceCode.getText(n);
             };
 
-            // maxOperands or fewer operands: keep on single line (operand starts on same line)
-            if (operands.length <= maxOperands) {
+            // Check if any nested parenthesized group has >maxOperands
+            // For properties, if nested group exceeds, skip single-line formatting (let multiline handle it)
+            const nestedGroupExceeding = findNestedGroupExceedingMaxOperandsHandler(value);
+
+            // maxOperands or fewer operands AND no nested group exceeds maxOperands: keep on single line
+            if (operands.length <= maxOperands && !nestedGroupExceeding) {
                 // Check if all operands START on the same line
                 const firstOperandStartLine = operands[0].loc.start.line;
                 const allOperandsStartOnSameLine = operands.every(
@@ -3897,9 +4172,15 @@ const multilineIfConditions = {
             {
                 additionalProperties: false,
                 properties: {
+                    maxNestingLevel: {
+                        default: 2,
+                        description: "Maximum nesting level of parenthesized groups (default: 2). Deeper nesting is auto-extracted to variables.",
+                        minimum: 1,
+                        type: "integer",
+                    },
                     maxOperands: {
                         default: 3,
-                        description: "Maximum operands to keep on single line (default: 3)",
+                        description: "Maximum operands to keep on single line (default: 3). Also applies to nested groups within the nesting limit.",
                         minimum: 1,
                         type: "integer",
                     },
@@ -3920,13 +4201,17 @@ const multilineIfConditions = {
  *   Formats ternary expressions based on condition operand count:
  *   - ≤maxOperands (default: 3): Always collapse to single line
  *   - >maxOperands: Format multiline with each operand on its own line
+ *   - Simple parenthesized nested ternaries (≤maxOperands) count as 1 operand
+ *   - Complex nested ternaries (>maxOperands) are skipped (format manually)
  *
  * Options:
  *   { maxOperands: 3 } - Maximum operands to keep on single line (default: 3)
+ *   { maxNestingLevel: 2 } - Maximum nesting of parenthesized groups (default: 2)
  *
  * ✓ Good (≤3 operands - single line):
  *   const x = a && b && c ? "yes" : "no";
  *   const url = lang === "ar" ? "/ar/path" : "/en/path";
+ *   const inputType = showToggle ? (showPwd ? "text" : "password") : type;
  *
  * ✓ Good (>3 operands - multiline):
  *   const x = variant === "ghost"
@@ -3949,6 +4234,7 @@ const ternaryConditionMultiline = {
         const sourceCode = context.sourceCode || context.getSourceCode();
         const options = context.options[0] || {};
         const maxOperands = options.maxOperands ?? 3;
+        const maxNestingLevel = options.maxNestingLevel ?? 2;
 
         // Check if node is wrapped in parentheses
         const isParenthesizedHandler = (node) => {
@@ -3993,6 +4279,157 @@ const ternaryConditionMultiline = {
             collectHelperHandler(node);
 
             return operands;
+        };
+
+        // Calculate max nesting depth of parenthesized groups in a logical expression
+        // Level 0: a && b (no groups)
+        // Level 1: (a && b) || c (one group at top)
+        // Level 2: (a && (b || c)) || d (group inside group)
+        const getNestingDepthHandler = (node, currentDepth = 0) => {
+            if (node.type !== "LogicalExpression") return currentDepth;
+
+            let maxDepth = currentDepth;
+
+            // Check left side
+            if (node.left.type === "LogicalExpression") {
+                const leftDepth = isParenthesizedHandler(node.left)
+                    ? getNestingDepthHandler(node.left, currentDepth + 1)
+                    : getNestingDepthHandler(node.left, currentDepth);
+                maxDepth = Math.max(maxDepth, leftDepth);
+            }
+
+            // Check right side
+            if (node.right.type === "LogicalExpression") {
+                const rightDepth = isParenthesizedHandler(node.right)
+                    ? getNestingDepthHandler(node.right, currentDepth + 1)
+                    : getNestingDepthHandler(node.right, currentDepth);
+                maxDepth = Math.max(maxDepth, rightDepth);
+            }
+
+            return maxDepth;
+        };
+
+        // Find the deepest nested parenthesized group that exceeds maxNestingLevel
+        const findDeepNestedGroupHandler = (node, currentDepth = 0) => {
+            if (node.type !== "LogicalExpression") return null;
+
+            let deepestGroup = null;
+
+            // Check left side
+            if (node.left.type === "LogicalExpression") {
+                const leftIsParen = isParenthesizedHandler(node.left);
+                const newDepth = leftIsParen ? currentDepth + 1 : currentDepth;
+
+                if (leftIsParen && newDepth > maxNestingLevel) {
+                    // This group exceeds max nesting
+                    deepestGroup = {
+                        node: node.left,
+                        depth: newDepth,
+                        parent: node,
+                        side: "left",
+                    };
+                }
+
+                // Recurse to find even deeper
+                const deeper = findDeepNestedGroupHandler(node.left, newDepth);
+                if (deeper && (!deepestGroup || deeper.depth > deepestGroup.depth)) {
+                    deepestGroup = deeper;
+                }
+            }
+
+            // Check right side
+            if (node.right.type === "LogicalExpression") {
+                const rightIsParen = isParenthesizedHandler(node.right);
+                const newDepth = rightIsParen ? currentDepth + 1 : currentDepth;
+
+                if (rightIsParen && newDepth > maxNestingLevel) {
+                    // This group exceeds max nesting
+                    const rightGroup = {
+                        node: node.right,
+                        depth: newDepth,
+                        parent: node,
+                        side: "right",
+                    };
+                    if (!deepestGroup || rightGroup.depth > deepestGroup.depth) {
+                        deepestGroup = rightGroup;
+                    }
+                }
+
+                // Recurse to find even deeper
+                const deeper = findDeepNestedGroupHandler(node.right, newDepth);
+                if (deeper && (!deepestGroup || deeper.depth > deepestGroup.depth)) {
+                    deepestGroup = deeper;
+                }
+            }
+
+            return deepestGroup;
+        };
+
+        // Generate descriptive variable name based on condition structure
+        const getConditionNameHandler = (n) => {
+            if (n.type === "LogicalExpression") {
+                const leftName = getConditionNameHandler(n.left);
+                const rightName = getConditionNameHandler(n.right);
+                const opName = n.operator === "&&" ? "And" : "Or";
+
+                return `${leftName}${opName}${rightName}`;
+            }
+            if (n.type === "Identifier") {
+                return n.name.charAt(0).toUpperCase() + n.name.slice(1);
+            }
+            if (n.type === "BinaryExpression" || n.type === "CallExpression" || n.type === "MemberExpression") {
+                return "Expr";
+            }
+
+            return "Cond";
+        };
+
+        // Count operands inside a group, ignoring the outer parentheses of the group itself
+        // This is used to count operands INSIDE a parenthesized group
+        const countOperandsInsideGroupHandler = (node) => {
+            if (node.type !== "LogicalExpression") return 1;
+
+            let count = 0;
+            const countHelperHandler = (n) => {
+                if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                    countHelperHandler(n.left);
+                    countHelperHandler(n.right);
+                } else {
+                    count += 1;
+                }
+            };
+
+            // Start by recursing into children directly (ignoring outer parens)
+            countHelperHandler(node.left);
+            countHelperHandler(node.right);
+
+            return count;
+        };
+
+        // Find a nested parenthesized group that has >maxOperands operands
+        // Returns the first such group found (for extraction to variable)
+        const findNestedGroupExceedingMaxOperandsHandler = (node) => {
+            if (node.type !== "LogicalExpression") return null;
+
+            // Check if this node is a parenthesized group with >maxOperands
+            if (isParenthesizedHandler(node)) {
+                const insideCount = countOperandsInsideGroupHandler(node);
+                if (insideCount > maxOperands) {
+                    return node;
+                }
+            }
+
+            // Recursively check children
+            if (node.left.type === "LogicalExpression") {
+                const found = findNestedGroupExceedingMaxOperandsHandler(node.left);
+                if (found) return found;
+            }
+            if (node.right.type === "LogicalExpression") {
+                const found = findNestedGroupExceedingMaxOperandsHandler(node.right);
+                if (found) return found;
+            }
+
+            return null;
         };
 
         // Check if a BinaryExpression is split across lines
@@ -4056,18 +4493,22 @@ const ternaryConditionMultiline = {
             if (test.type === "CallExpression") return true;
 
             // Logical expression with ≤maxOperands is still simple
+            // BUT if any nested group has >maxOperands, it's not simple
             if (test.type === "LogicalExpression") {
-                return collectOperandsHandler(test).length <= maxOperands;
+                const operandCount = collectOperandsHandler(test).length;
+                const nestedGroupExceeding = findNestedGroupExceedingMaxOperandsHandler(test);
+                return operandCount <= maxOperands && !nestedGroupExceeding;
             }
 
             return false;
         };
 
-        // Get the full ternary as single line text
+        // Get the full ternary as single line text (preserving parentheses around nested ternaries)
         const getTernarySingleLineHandler = (node) => {
             const testText = sourceCode.getText(node.test).replace(/\s+/g, " ").trim();
-            const consequentText = sourceCode.getText(node.consequent).replace(/\s+/g, " ").trim();
-            const alternateText = sourceCode.getText(node.alternate).replace(/\s+/g, " ").trim();
+            // Use getSourceTextWithGroupsHandler to preserve parentheses around nested expressions
+            const consequentText = getSourceTextWithGroupsHandler(node.consequent).replace(/\s+/g, " ").trim();
+            const alternateText = getSourceTextWithGroupsHandler(node.alternate).replace(/\s+/g, " ").trim();
 
             return `${testText} ? ${consequentText} : ${alternateText}`;
         };
@@ -4088,6 +4529,21 @@ const ternaryConditionMultiline = {
             return false;
         };
 
+        // Check if a nested ternary has complex condition (>maxOperands)
+        const hasComplexNestedTernaryHandler = (node) => {
+            const checkBranch = (branch) => {
+                if (branch.type === "ConditionalExpression" && isParenthesizedHandler(branch)) {
+                    const nestedOperands = collectOperandsHandler(branch.test);
+
+                    return nestedOperands.length > maxOperands;
+                }
+
+                return false;
+            };
+
+            return checkBranch(node.consequent) || checkBranch(node.alternate);
+        };
+
         // Check if ? or : is on its own line without its value
         const isOperatorOnOwnLineHandler = (node) => {
             const questionToken = sourceCode.getTokenAfter(node.test, (t) => t.value === "?");
@@ -4106,16 +4562,16 @@ const ternaryConditionMultiline = {
             return false;
         };
 
-        // Handle simple ternaries (≤maxOperands) - always collapse to single line
+        // Handle simple ternaries (≤maxOperands) - collapse or format with complex nested
         const handleSimpleTernaryHandler = (node) => {
             const isOnSingleLine = node.loc.start.line === node.loc.end.line;
             const hasOperatorOnOwnLine = isOperatorOnOwnLineHandler(node);
 
-            // Skip if already on single line and no formatting issues
-            if (isOnSingleLine && !hasOperatorOnOwnLine) return false;
+            // Skip unparenthesized nested ternaries (parenthesized ones count as 1 operand)
+            const hasUnparenthesizedNestedTernary = (node.consequent.type === "ConditionalExpression" && !isParenthesizedHandler(node.consequent))
+                || (node.alternate.type === "ConditionalExpression" && !isParenthesizedHandler(node.alternate));
 
-            // Skip nested ternaries
-            if (node.consequent.type === "ConditionalExpression" || node.alternate.type === "ConditionalExpression") {
+            if (hasUnparenthesizedNestedTernary) {
                 return false;
             }
 
@@ -4123,6 +4579,15 @@ const ternaryConditionMultiline = {
             if (hasComplexObjectHandler(node.consequent) || hasComplexObjectHandler(node.alternate)) {
                 return false;
             }
+
+            // Skip parenthesized nested ternaries with complex condition (>maxOperands)
+            // These should be formatted manually or stay as-is
+            if (hasComplexNestedTernaryHandler(node)) {
+                return false;
+            }
+
+            // Skip if already on single line and no formatting issues
+            if (isOnSingleLine && !hasOperatorOnOwnLine) return false;
 
             // Calculate what the single line would look like
             const singleLineText = getTernarySingleLineHandler(node);
@@ -4145,15 +4610,85 @@ const ternaryConditionMultiline = {
             const testEndLine = test.loc.end.line;
             const isMultiLine = testStartLine !== testEndLine;
 
-            // ≤maxOperands operands: always collapse to single line (regardless of line length)
+            // Check if any nested parenthesized group has >maxOperands - extract to variable if so
+            const nestedGroupExceeding = findNestedGroupExceedingMaxOperandsHandler(test);
+            if (nestedGroupExceeding) {
+                const groupText = getSourceTextWithGroupsHandler(nestedGroupExceeding);
+
+                // Generate descriptive variable name
+                const getConditionNameForTernaryHandler = (n) => {
+                    if (n.type === "LogicalExpression") {
+                        const leftName = getConditionNameForTernaryHandler(n.left);
+                        const rightName = getConditionNameForTernaryHandler(n.right);
+                        const opName = n.operator === "&&" ? "And" : "Or";
+                        return `${leftName}${opName}${rightName}`;
+                    }
+                    if (n.type === "Identifier") {
+                        return n.name.charAt(0).toUpperCase() + n.name.slice(1);
+                    }
+                    if (n.type === "BinaryExpression" || n.type === "CallExpression" || n.type === "MemberExpression") {
+                        return "Expr";
+                    }
+                    return "Cond";
+                };
+
+                let varName = `is${getConditionNameForTernaryHandler(nestedGroupExceeding)}`;
+                if (varName.length > 30) {
+                    varName = "isComplexCondition";
+                }
+
+                context.report({
+                    fix: (fixer) => {
+                        const fixes = [];
+
+                        // Find the statement containing this ternary
+                        let statementNode = node;
+                        while (statementNode.parent && statementNode.parent.type !== "Program" && statementNode.parent.type !== "BlockStatement") {
+                            statementNode = statementNode.parent;
+                        }
+
+                        const ternaryLine = statementNode.loc.start.line;
+                        const lineStart = sourceCode.getIndexFromLoc({ line: ternaryLine, column: 0 });
+                        const lineText = sourceCode.lines[ternaryLine - 1];
+                        const indent = lineText.match(/^\s*/)[0];
+
+                        fixes.push(fixer.insertTextBeforeRange(
+                            [lineStart, lineStart],
+                            `const ${varName} = ${groupText};\n${indent}`,
+                        ));
+
+                        const tokenBefore = sourceCode.getTokenBefore(nestedGroupExceeding);
+                        const tokenAfter = sourceCode.getTokenAfter(nestedGroupExceeding);
+
+                        if (tokenBefore && tokenAfter && tokenBefore.value === "(" && tokenAfter.value === ")") {
+                            fixes.push(fixer.replaceTextRange(
+                                [tokenBefore.range[0], tokenAfter.range[1]],
+                                varName,
+                            ));
+                        } else {
+                            fixes.push(fixer.replaceText(nestedGroupExceeding, varName));
+                        }
+
+                        return fixes;
+                    },
+                    message: `Nested condition has more than ${maxOperands} operands. Extract to a variable for readability.`,
+                    node: nestedGroupExceeding,
+                });
+
+                return;
+            }
+
+            // ≤maxOperands operands: collapse to single line
             if (operands.length <= maxOperands) {
                 // Skip if branches have complex objects
                 const hasComplexBranches = hasComplexObjectHandler(node.consequent) || hasComplexObjectHandler(node.alternate);
 
-                // Skip nested ternaries
-                const hasNestedTernary = node.consequent.type === "ConditionalExpression" || node.alternate.type === "ConditionalExpression";
+                // Skip unparenthesized nested ternaries (parenthesized ones count as 1 operand)
+                const hasUnparenthesizedNestedTernary = (node.consequent.type === "ConditionalExpression" && !isParenthesizedHandler(node.consequent))
+                    || (node.alternate.type === "ConditionalExpression" && !isParenthesizedHandler(node.alternate));
 
-                if (hasComplexBranches || hasNestedTernary) {
+                // Skip parenthesized nested ternaries with complex condition (>maxOperands)
+                if (hasComplexBranches || hasUnparenthesizedNestedTernary || hasComplexNestedTernaryHandler(node)) {
                     return;
                 }
 
@@ -4312,9 +4847,98 @@ const ternaryConditionMultiline = {
             }
         };
 
+        // Check if this ternary is a nested ternary inside another ternary's branch
+        const isNestedInTernaryBranchHandler = (node) => {
+            let parent = node.parent;
+
+            // Walk up through parentheses
+            while (parent && parent.type === "ParenthesizedExpression") {
+                parent = parent.parent;
+            }
+
+            // Check if parent is a ternary and this node is in consequent or alternate
+            if (parent && parent.type === "ConditionalExpression") {
+                return parent.consequent === node || parent.alternate === node
+                    || (node.parent.type === "ParenthesizedExpression"
+                        && (parent.consequent === node.parent || parent.alternate === node.parent));
+            }
+
+            return false;
+        };
+
         return {
             ConditionalExpression(node) {
                 const { test } = node;
+
+                // Skip nested ternaries that are inside another ternary's branch
+                // They will be formatted by their parent ternary
+                if (isNestedInTernaryBranchHandler(node)) {
+                    return;
+                }
+
+                // Check for excessive nesting depth in the condition
+                if (test.type === "LogicalExpression") {
+                    const nestingDepth = getNestingDepthHandler(test);
+
+                    if (nestingDepth > maxNestingLevel) {
+                        const deepGroup = findDeepNestedGroupHandler(test);
+
+                        if (deepGroup) {
+                            const groupText = getSourceTextWithGroupsHandler(deepGroup.node);
+
+                            // Generate unique variable name
+                            let varName = `is${getConditionNameHandler(deepGroup.node)}`;
+                            // Limit length and sanitize
+                            if (varName.length > 30) {
+                                varName = "isNestedCondition";
+                            }
+
+                            context.report({
+                                fix: (fixer) => {
+                                    const fixes = [];
+
+                                    // Get the line before the ternary statement for inserting the variable
+                                    // Find the statement that contains this ternary
+                                    let statementNode = node;
+                                    while (statementNode.parent && statementNode.parent.type !== "Program" && statementNode.parent.type !== "BlockStatement") {
+                                        statementNode = statementNode.parent;
+                                    }
+
+                                    const ternaryLine = statementNode.loc.start.line;
+                                    const lineStart = sourceCode.getIndexFromLoc({ line: ternaryLine, column: 0 });
+                                    const lineText = sourceCode.lines[ternaryLine - 1];
+                                    const indent = lineText.match(/^\s*/)[0];
+
+                                    // Insert variable declaration before the statement containing the ternary
+                                    fixes.push(fixer.insertTextBeforeRange(
+                                        [lineStart, lineStart],
+                                        `const ${varName} = ${groupText};\n${indent}`,
+                                    ));
+
+                                    // Replace the nested group with the variable name in the condition
+                                    // We need to replace including the parentheses around the group
+                                    const tokenBefore = sourceCode.getTokenBefore(deepGroup.node);
+                                    const tokenAfter = sourceCode.getTokenAfter(deepGroup.node);
+
+                                    if (tokenBefore && tokenAfter && tokenBefore.value === "(" && tokenAfter.value === ")") {
+                                        fixes.push(fixer.replaceTextRange(
+                                            [tokenBefore.range[0], tokenAfter.range[1]],
+                                            varName,
+                                        ));
+                                    } else {
+                                        fixes.push(fixer.replaceText(deepGroup.node, varName));
+                                    }
+
+                                    return fixes;
+                                },
+                                message: `Ternary condition nesting depth (${nestingDepth}) exceeds maximum (${maxNestingLevel}). Extract deeply nested condition to a variable.`,
+                                node: deepGroup.node,
+                            });
+
+                            return; // Don't process other rules for this statement
+                        }
+                    }
+                }
 
                 // First, try to collapse simple ternaries to single line
                 if (isSimpleConditionHandler(test)) {
@@ -4335,9 +4959,15 @@ const ternaryConditionMultiline = {
             {
                 additionalProperties: false,
                 properties: {
+                    maxNestingLevel: {
+                        default: 2,
+                        description: "Maximum nesting depth of parenthesized groups (default: 2). If exceeded, deeply nested conditions are extracted to variables.",
+                        minimum: 1,
+                        type: "integer",
+                    },
                     maxOperands: {
                         default: 3,
-                        description: "Maximum condition operands to keep ternary on single line (default: 3). Ternaries with more operands are formatted multiline.",
+                        description: "Maximum condition operands to keep ternary on single line (default: 3). Also applies to nested groups within the nesting limit.",
                         minimum: 1,
                         type: "integer",
                     },

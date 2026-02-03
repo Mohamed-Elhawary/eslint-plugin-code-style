@@ -1151,11 +1151,37 @@ if (isAuthenticated &&
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `maxOperands` | `integer` | `3` | Maximum operands to keep on single line |
+| `maxOperands` | `integer` | `3` | Maximum operands to keep on single line. Also applies to nested groups within the nesting limit |
+| `maxNestingLevel` | `integer` | `2` | Maximum nesting depth of parenthesized groups. Deeper nesting is auto-extracted to variables |
 
 ```javascript
 // Example: Allow up to 4 operands on single line
 "code-style/multiline-if-conditions": ["error", { maxOperands: 4 }]
+
+// Example: Allow only 1 level of nesting
+"code-style/multiline-if-conditions": ["error", { maxNestingLevel: 1 }]
+```
+
+**Auto-extraction:** Nested groups are auto-extracted to variables when they exceed limits:
+
+1. **Nesting depth exceeds `maxNestingLevel` (default: 2):**
+```javascript
+// ❌ Before (level 3 nesting exceeds default)
+if ((a && (b || (c && d))) || e) {}
+
+// ✅ After auto-fix — extracts deepest nested group
+const isCAndD = (c && d);
+if ((a && (b || isCAndD)) || e) {}
+```
+
+2. **Nested group has more than `maxOperands` (default: 3):**
+```javascript
+// ❌ Before (nested group has 4 operands)
+if ((a || b || c || d) && e) {}
+
+// ✅ After auto-fix — extracts complex nested group
+const isAOrBOrCOrD = (a || b || c || d);
+if (isAOrBOrCOrD && e) {}
 ```
 
 ---
@@ -1217,6 +1243,8 @@ switch (status) {
 **What it does:** Formats ternary expressions based on condition operand count:
 - ≤maxOperands (default: 3): Always collapse to single line regardless of line length
 - \>maxOperands: Expand to multiline with each operand on its own line
+- Simple parenthesized nested ternaries (≤maxOperands) count as 1 operand and collapse
+- Complex nested ternaries (>maxOperands in their condition) are skipped for manual formatting
 
 **Why use it:** Consistent formatting based on complexity, not line length. Simple conditions stay readable on one line; complex conditions get proper multiline formatting.
 
@@ -1224,12 +1252,16 @@ switch (status) {
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `maxOperands` | `integer` | `3` | Maximum condition operands to keep ternary on single line |
+| `maxOperands` | `integer` | `3` | Maximum condition operands to keep ternary on single line. Also applies to nested groups within the nesting limit |
+| `maxNestingLevel` | `integer` | `2` | Maximum nesting depth of parenthesized groups. Deeper nesting is auto-extracted to variables |
 
 ```javascript
 // ✅ Good — ≤3 operands always on single line
 const x = a && b && c ? "yes" : "no";
 const url = lang === "ar" ? `${apiEndpoints.exam.status}/${jobId}?lang=ar` : `${apiEndpoints.exam.status}/${jobId}`;
+
+// ✅ Good — parenthesized nested ternary counts as 1 operand
+const inputType = showToggle ? (showPassword ? "text" : "password") : type;
 
 // ✅ Good — >3 operands formatted multiline
 const style = variant === "ghost"
@@ -1246,6 +1278,28 @@ const x = a && b && c
 
 // ❌ Bad — >3 operands crammed on one line
 const style = variant === "ghost" || variant === "ghost-danger" || variant === "muted" || variant === "primary" ? "transparent" : "solid";
+```
+
+**Auto-extraction:** Nested groups are auto-extracted to variables when they exceed limits:
+
+1. **Nesting depth exceeds `maxNestingLevel` (default: 2):**
+```javascript
+// ❌ Before (level 3 nesting exceeds default)
+const result = (a && (b || (c && d))) || e ? "yes" : "no";
+
+// ✅ After auto-fix — extracts deepest nested group
+const isCAndD = (c && d);
+const result = (a && (b || isCAndD)) || e ? "yes" : "no";
+```
+
+2. **Nested group has more than `maxOperands` (default: 3):**
+```javascript
+// ❌ Before (nested group has 4 operands)
+const result = (a || b || c || d) && e ? "yes" : "no";
+
+// ✅ After auto-fix — extracts complex nested group
+const isAOrBOrCOrD = (a || b || c || d);
+const result = isAOrBOrCOrD && e ? "yes" : "no";
 ```
 
 <br />
