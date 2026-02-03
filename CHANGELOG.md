@@ -9,10 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.11.2] - 2026-02-04
 
-**Bug Fixes: no-hardcoded-strings, ternary-condition-multiline, no-inline-type-definitions**
-
-**Version Range:** v1.11.1 → v1.11.2
-
 ### Fixed
 
 - **`no-hardcoded-strings`**
@@ -29,22 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Skip union types with only built-in/native types (e.g., `Error | null`, `string | null`)
   - Only flag unions with custom inline types like `{ user: string }`
 
-**Full Changelog:** [v1.11.1...v1.11.2](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.1...v1.11.2)
-
 ---
 
 ## [1.11.1] - 2026-02-03
-
-**Bug Fix: Single-property type annotations now collapse to single line**
-
-**Version Range:** v1.11.0 → v1.11.1
 
 ### Fixed
 
 - **`component-props-inline-type`** - Single-property type annotations spanning multiple lines now auto-fix to single line format `{ prop: Type }`
 - **`function-params-per-line`** - Normalize single-member type annotations to prevent circular fix conflicts
-
-**Full Changelog:** [v1.11.0...v1.11.1](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.0...v1.11.1)
 
 ---
 
@@ -83,24 +71,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.10.3] - 2026-02-03
 
-**Bug Fixes: className template literals and trailing comma removal**
-
-**Version Range:** v1.10.2 → v1.10.3
-
 ### Fixed
 
 - **`no-hardcoded-strings`** - Skip template literals inside className/style attributes (Tailwind classes in template literals)
 - **`component-props-inline-type`** - Auto-fix to REMOVE trailing comma for single property (not just skip adding it)
 
-**Full Changelog:** [v1.10.2...v1.10.3](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.2...v1.10.3)
-
 ---
 
 ## [1.10.2] - 2026-02-03
-
-**Bug Fixes: component-props-inline-type and no-hardcoded-strings**
-
-**Version Range:** v1.10.1 → v1.10.2
 
 ### Fixed
 
@@ -111,22 +89,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`no-hardcoded-strings`** - Skip CSS property values (cursor: pointer, display: flex, position: absolute, etc.)
 - **`no-hardcoded-strings`** - Skip SVG filter result identifiers (BackgroundImageFix, SourceGraphic, etc.)
 
-**Full Changelog:** [v1.10.1...v1.10.2](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.1...v1.10.2)
-
 ---
 
 ## [1.10.1] - 2026-02-03
-
-**Bug Fix: logical-expression-multiline rule improvements**
-
-**Version Range:** v1.10.0 → v1.10.1
 
 ### Fixed
 
 - **`logical-expression-multiline`** - Add collapse to single line for simple expressions (≤3 operands)
 - **`logical-expression-multiline`** - Skip collapsing when any operand is multiline (e.g., JSX elements)
-
-**Full Changelog:** [v1.10.0...v1.10.1](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.0...v1.10.1)
 
 ---
 
@@ -1502,6 +1472,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.11.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.1...v1.11.2
 [1.11.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.0...v1.11.1
 [1.11.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.3...v1.11.0
 [1.10.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.2...v1.10.3
