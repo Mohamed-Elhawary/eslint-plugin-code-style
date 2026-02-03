@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*70 rules (63 auto-fixable) to keep your codebase clean and consistent*
+*71 rules (64 auto-fixable) to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **70 custom rules** (63 auto-fixable) for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **71 custom rules** (64 auto-fixable) for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **70 custom rules** (63 auto-fixable) for code formatting. 
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 63 of 70 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 64 of 71 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-**63 rules** support automatic fixing with `eslint --fix`. 6 rules are report-only (require manual changes).
+**64 rules** support automatic fixing with `eslint --fix`. 6 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -190,6 +190,7 @@ rules: {
     "code-style/arrow-function-simplify": "error",
     "code-style/assignment-value-same-line": "error",
     "code-style/block-statement-newlines": "error",
+    "code-style/class-method-definition-format": "error",
     "code-style/class-naming-convention": "error",
     "code-style/classname-dynamic-at-end": "error",
     "code-style/classname-multiline": "error",
@@ -260,7 +261,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **70 rules total** — 63 with auto-fix 🔧, 7 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
+> **71 rules total** — 64 with auto-fix 🔧, 7 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -288,6 +289,7 @@ rules: {
 | `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` 🔧 |
 | `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference 🔧 |
 | **Class Rules** | |
+| `class-method-definition-format` | Consistent spacing in class/method definitions: space before `{`, no space before `(` 🔧 |
 | `class-naming-convention` | Class declarations must end with "Class" suffix (e.g., `ApiServiceClass`) 🔧 |
 | **Control Flow Rules** | |
 | `block-statement-newlines` | Newline after `{` and before `}` in if/for/while/function blocks 🔧 |
@@ -892,6 +894,60 @@ dispatch(
 <br />
 
 ## 🏛️ Class Rules
+
+### `class-method-definition-format`
+
+**What it does:** Enforces consistent spacing in class and method definitions:
+- Space before opening brace `{` in class declarations
+- No space between method name and opening parenthesis `(`
+- Space before opening brace `{` in method definitions
+- Opening brace must be on same line as class/method signature
+
+**Why use it:** Consistent formatting makes code more readable and prevents common spacing inconsistencies in class definitions.
+
+```javascript
+// ✅ Good — proper spacing in class and methods
+class ApiServiceClass {
+    getDataHandler(): string {
+        return "data";
+    }
+
+    async fetchUserHandler(id: string): Promise<User> {
+        return await this.fetch(id);
+    }
+}
+
+// ❌ Bad — missing space before { in class
+class ApiServiceClass{
+    getDataHandler(): string {
+        return "data";
+    }
+}
+
+// ❌ Bad — space between method name and (
+class ApiServiceClass {
+    getDataHandler (): string {
+        return "data";
+    }
+}
+
+// ❌ Bad — missing space before { in method
+class ApiServiceClass {
+    getDataHandler(): string{
+        return "data";
+    }
+}
+
+// ❌ Bad — opening brace on different line
+class ApiServiceClass {
+    getDataHandler(): string
+    {
+        return "data";
+    }
+}
+```
+
+---
 
 ### `class-naming-convention`
 
@@ -3463,7 +3519,7 @@ const UseAuth = () => {};          // hooks should be camelCase
 
 ## 🔧 Auto-fixing
 
-63 of 70 rules support auto-fixing. Run ESLint with the `--fix` flag:
+64 of 71 rules support auto-fixing. Run ESLint with the `--fix` flag:
 
 ```bash
 # Fix all files in src directory

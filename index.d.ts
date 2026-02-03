@@ -13,6 +13,7 @@ export type RuleNames =
     | "code-style/arrow-function-simplify"
     | "code-style/assignment-value-same-line"
     | "code-style/block-statement-newlines"
+    | "code-style/class-method-definition-format"
     | "code-style/class-naming-convention"
     | "code-style/comment-format"
     | "code-style/component-props-destructure"
@@ -105,6 +106,7 @@ interface PluginRules {
     "arrow-function-simplify": Rule.RuleModule;
     "assignment-value-same-line": Rule.RuleModule;
     "block-statement-newlines": Rule.RuleModule;
+    "class-method-definition-format": Rule.RuleModule;
     "class-naming-convention": Rule.RuleModule;
     "comment-format": Rule.RuleModule;
     "component-props-destructure": Rule.RuleModule;

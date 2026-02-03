@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.9.0] - 2026-02-03
+
+**New Rule: class-method-definition-format + Enhanced Spacing Rules**
+
+**Version Range:** v1.8.1 → v1.9.0
+
+### Added
+
+**New Rules (1)**
+- **`class-method-definition-format`** - Enforce consistent spacing in class and method definitions 🔧
+  - Space before opening brace `{` in class declarations
+  - No space between method name and opening parenthesis `(`
+  - Space before opening brace `{` in method definitions
+  - Opening brace must be on same line as class/method signature
+
+### Enhanced
+
+- **`function-call-spacing`** - Now also handles:
+  - `new` expressions (`new Class ()` → `new Class()`)
+  - Generic type calls (`get <Type>()` → `get<Type>()`)
+- **`member-expression-bracket-spacing`** - Now also handles:
+  - TypeScript indexed access types (`Type ["prop"]` → `Type["prop"]`)
+
+### Stats
+
+- Total Rules: 71 (was 70)
+- Auto-fixable: 64 rules 🔧 (was 63)
+- Report-only: 7 rules
+
+**Full Changelog:** [v1.8.1...v1.9.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.1...v1.9.0)
+
+---
+
 ## [1.8.4] - 2026-02-03
 
 ### Documentation
@@ -1211,6 +1244,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.9.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.4...v1.9.0
 [1.8.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.3...v1.8.4
 [1.8.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.2...v1.8.3
 [1.8.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.1...v1.8.2

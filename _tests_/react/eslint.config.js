@@ -127,6 +127,7 @@ export default [ // eslint-disable-line
             "code-style/arrow-function-simplify": "error",
             "code-style/assignment-value-same-line": "error",
             "code-style/block-statement-newlines": "error",
+            "code-style/class-method-definition-format": "error",
             "code-style/class-naming-convention": "error",
             "code-style/classname-dynamic-at-end": "error",
             "code-style/classname-multiline": "error",

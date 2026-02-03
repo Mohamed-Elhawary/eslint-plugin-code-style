@@ -1850,31 +1850,80 @@ const functionCallSpacing = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
+        const checkCallSpacingHandler = (node, callee) => {
+            // Get the last token of the callee (function name or member expression)
+            const calleeLastToken = sourceCode.getLastToken(callee);
+
+            // For calls with type arguments (generics), check space before <
+            // e.g., axiosClient.get <Type>() should be axiosClient.get<Type>()
+            if (node.typeArguments || node.typeParameters) {
+                const typeArgs = node.typeArguments || node.typeParameters;
+                const openAngle = sourceCode.getFirstToken(typeArgs);
+
+                if (openAngle && openAngle.value === "<") {
+                    const textBeforeAngle = sourceCode.text.slice(calleeLastToken.range[1], openAngle.range[0]);
+
+                    if (/\s/.test(textBeforeAngle)) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [calleeLastToken.range[1], openAngle.range[0]],
+                                "",
+                            ),
+                            message: "No space between function name and generic type arguments",
+                            node: openAngle,
+                        });
+                    }
+                }
+
+                // Also check space between closing > and opening (
+                const closeAngle = sourceCode.getLastToken(typeArgs);
+                const openParen = sourceCode.getTokenAfter(typeArgs);
+
+                if (openParen && openParen.value === "(") {
+                    const textBetween = sourceCode.text.slice(closeAngle.range[1], openParen.range[0]);
+
+                    if (/\s/.test(textBetween)) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [closeAngle.range[1], openParen.range[0]],
+                                "",
+                            ),
+                            message: "No space between generic type arguments and opening parenthesis",
+                            node: openParen,
+                        });
+                    }
+                }
+
+                return;
+            }
+
+            // Get the opening parenthesis
+            const openParen = sourceCode.getTokenAfter(callee);
+
+            if (!openParen || openParen.value !== "(") return;
+
+            // Check if there's space between callee and opening paren
+            const textBetween = sourceCode.text.slice(calleeLastToken.range[1], openParen.range[0]);
+
+            if (textBetween.length > 0) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [calleeLastToken.range[1], openParen.range[0]],
+                        "",
+                    ),
+                    message: "No space between function name and opening parenthesis",
+                    node: openParen,
+                });
+            }
+        };
+
         return {
             CallExpression(node) {
-                const { callee } = node;
+                checkCallSpacingHandler(node, node.callee);
+            },
 
-                // Get the last token of the callee (function name or member expression)
-                const calleeLastToken = sourceCode.getLastToken(callee);
-
-                // Get the opening parenthesis
-                const openParen = sourceCode.getTokenAfter(callee);
-
-                if (!openParen || openParen.value !== "(") return;
-
-                // Check if there's space between callee and opening paren
-                const textBetween = sourceCode.text.slice(calleeLastToken.range[1], openParen.range[0]);
-
-                if (textBetween.length > 0) {
-                    context.report({
-                        fix: (fixer) => fixer.replaceTextRange(
-                            [calleeLastToken.range[1], openParen.range[0]],
-                            "",
-                        ),
-                        message: "No space between function name and opening parenthesis",
-                        node: openParen,
-                    });
-                }
+            NewExpression(node) {
+                checkCallSpacingHandler(node, node.callee);
             },
         };
     },
@@ -5381,6 +5430,180 @@ const classNamingConvention = {
         fixable: "code",
         schema: [],
         type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Class/Method Definition Format
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforce consistent spacing in class and method definitions:
+ *   - Space before opening brace { in class declarations
+ *   - No space between method name and opening parenthesis (
+ *   - Space before opening brace { in method definitions
+ *   - Opening brace must be on same line as method signature
+ *
+ * ✓ Good:
+ *   class ApiServiceClass {
+ *       getDataHandler(): string {
+ *           return "data";
+ *       }
+ *       async fetchUserHandler(id: string): Promise<User> {
+ *           return await fetch(id);
+ *       }
+ *   }
+ *
+ * ✗ Bad:
+ *   class ApiServiceClass{  // Missing space before {
+ *   class ApiServiceClass
+ *   {  // Opening brace on different line
+ *       getDataHandler (): string {  // Space before (
+ *       getDataHandler(): string{  // Missing space before {
+ *       getDataHandler(): string
+ *       {  // Opening brace on different line
+ */
+const classMethodDefinitionFormat = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            ClassDeclaration(node) {
+                const classBody = node.body;
+
+                if (!classBody) return;
+
+                // Find the opening brace of the class body
+                const openBrace = sourceCode.getFirstToken(classBody);
+
+                if (!openBrace || openBrace.value !== "{") return;
+
+                // Get the token before the opening brace (class name or extends clause)
+                const tokenBefore = sourceCode.getTokenBefore(openBrace);
+
+                if (!tokenBefore) return;
+
+                // Check if opening brace is on same line as class declaration
+                if (tokenBefore.loc.end.line !== openBrace.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [tokenBefore.range[1], openBrace.range[0]],
+                            " ",
+                        ),
+                        message: "Opening brace should be on the same line as class declaration",
+                        node: openBrace,
+                    });
+
+                    return;
+                }
+
+                // Check for space before opening brace
+                const textBetween = sourceCode.text.slice(tokenBefore.range[1], openBrace.range[0]);
+
+                if (textBetween !== " ") {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [tokenBefore.range[1], openBrace.range[0]],
+                            " ",
+                        ),
+                        message: "Expected single space before opening brace in class declaration",
+                        node: openBrace,
+                    });
+                }
+            },
+
+            MethodDefinition(node) {
+                const methodKey = node.key;
+                const methodValue = node.value;
+
+                if (!methodKey || !methodValue) return;
+
+                // Check for space between method name and opening parenthesis
+                // For computed properties, we need to get the ] token
+                const keyLastToken = node.computed
+                    ? sourceCode.getTokenAfter(methodKey, { filter: (t) => t.value === "]" })
+                    : sourceCode.getLastToken(methodKey);
+
+                if (!keyLastToken) return;
+
+                // Find the opening parenthesis of the parameters
+                let openParen = sourceCode.getTokenAfter(keyLastToken);
+
+                // Skip over async, static, get, set keywords and * for generators
+                while (openParen && openParen.value !== "(") {
+                    openParen = sourceCode.getTokenAfter(openParen);
+                }
+
+                if (!openParen || openParen.value !== "(") return;
+
+                // Get the token immediately before the opening paren (method name or modifier)
+                const tokenBeforeParen = sourceCode.getTokenBefore(openParen);
+
+                if (tokenBeforeParen) {
+                    const textBeforeParen = sourceCode.text.slice(tokenBeforeParen.range[1], openParen.range[0]);
+
+                    if (/\s/.test(textBeforeParen)) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [tokenBeforeParen.range[1], openParen.range[0]],
+                                "",
+                            ),
+                            message: "No space between method name and opening parenthesis",
+                            node: openParen,
+                        });
+                    }
+                }
+
+                // Check for space before opening brace and brace on same line
+                const functionBody = methodValue.body;
+
+                if (!functionBody || functionBody.type !== "BlockStatement") return;
+
+                const openBrace = sourceCode.getFirstToken(functionBody);
+
+                if (!openBrace || openBrace.value !== "{") return;
+
+                // Get the token before the opening brace (return type annotation or closing paren)
+                const tokenBeforeBrace = sourceCode.getTokenBefore(openBrace);
+
+                if (!tokenBeforeBrace) return;
+
+                // Check if opening brace is on same line
+                if (tokenBeforeBrace.loc.end.line !== openBrace.loc.start.line) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [tokenBeforeBrace.range[1], openBrace.range[0]],
+                            " ",
+                        ),
+                        message: "Opening brace should be on the same line as method signature",
+                        node: openBrace,
+                    });
+
+                    return;
+                }
+
+                // Check for space before opening brace
+                const textBeforeBrace = sourceCode.text.slice(tokenBeforeBrace.range[1], openBrace.range[0]);
+
+                if (textBeforeBrace !== " ") {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [tokenBeforeBrace.range[1], openBrace.range[0]],
+                            " ",
+                        ),
+                        message: "Expected single space before opening brace in method definition",
+                        node: openBrace,
+                    });
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce consistent spacing in class and method definitions" },
+        fixable: "whitespace",
+        schema: [],
+        type: "layout",
     },
 };
 
@@ -9921,44 +10144,71 @@ const memberExpressionBracketSpacing = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
+        const checkBracketSpacingHandler = (node, objectPart, indexPart) => {
+            const openBracket = sourceCode.getTokenBefore(indexPart);
+            const closeBracket = sourceCode.getTokenAfter(indexPart);
+
+            if (!openBracket || openBracket.value !== "[") return;
+            if (!closeBracket || closeBracket.value !== "]") return;
+
+            // Check for space before [ (between object and bracket)
+            const objectLastToken = sourceCode.getLastToken(objectPart);
+
+            if (objectLastToken) {
+                const textBeforeOpen = sourceCode.text.slice(objectLastToken.range[1], openBracket.range[0]);
+
+                if (/\s/.test(textBeforeOpen)) {
+                    context.report({
+                        fix: (fixer) => fixer.replaceTextRange(
+                            [objectLastToken.range[1], openBracket.range[0]],
+                            "",
+                        ),
+                        message: "No space before opening bracket in member expression",
+                        node: openBracket,
+                    });
+                }
+            }
+
+            // Check for space after [
+            const textAfterOpen = sourceCode.text.slice(openBracket.range[1], indexPart.range[0]);
+
+            if (textAfterOpen.includes(" ") || textAfterOpen.includes("\n")) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [openBracket.range[1], indexPart.range[0]],
+                        "",
+                    ),
+                    message: "No space after opening bracket in member expression",
+                    node: openBracket,
+                });
+            }
+
+            // Check for space before ]
+            const textBeforeClose = sourceCode.text.slice(indexPart.range[1], closeBracket.range[0]);
+
+            if (textBeforeClose.includes(" ") || textBeforeClose.includes("\n")) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [indexPart.range[1], closeBracket.range[0]],
+                        "",
+                    ),
+                    message: "No space before closing bracket in member expression",
+                    node: closeBracket,
+                });
+            }
+        };
+
         return {
             MemberExpression(node) {
                 // Only check computed member expressions (bracket notation)
                 if (!node.computed) return;
 
-                const openBracket = sourceCode.getTokenBefore(node.property);
-                const closeBracket = sourceCode.getTokenAfter(node.property);
+                checkBracketSpacingHandler(node, node.object, node.property);
+            },
 
-                if (!openBracket || openBracket.value !== "[") return;
-                if (!closeBracket || closeBracket.value !== "]") return;
-
-                // Check for space after [
-                const textAfterOpen = sourceCode.text.slice(openBracket.range[1], node.property.range[0]);
-
-                if (textAfterOpen.includes(" ") || textAfterOpen.includes("\n")) {
-                    context.report({
-                        fix: (fixer) => fixer.replaceTextRange(
-                            [openBracket.range[1], node.property.range[0]],
-                            "",
-                        ),
-                        message: "No space after opening bracket in member expression",
-                        node: openBracket,
-                    });
-                }
-
-                // Check for space before ]
-                const textBeforeClose = sourceCode.text.slice(node.property.range[1], closeBracket.range[0]);
-
-                if (textBeforeClose.includes(" ") || textBeforeClose.includes("\n")) {
-                    context.report({
-                        fix: (fixer) => fixer.replaceTextRange(
-                            [node.property.range[1], closeBracket.range[0]],
-                            "",
-                        ),
-                        message: "No space before closing bracket in member expression",
-                        node: closeBracket,
-                    });
-                }
+            // Handle TypeScript indexed access types: Type["prop"]
+            TSIndexedAccessType(node) {
+                checkBracketSpacingHandler(node, node.objectType, node.indexType);
             },
         };
     },
@@ -19291,6 +19541,7 @@ export default {
         "ternary-condition-multiline": ternaryConditionMultiline,
 
         // Class rules
+        "class-method-definition-format": classMethodDefinitionFormat,
         "class-naming-convention": classNamingConvention,
 
         // Function rules
