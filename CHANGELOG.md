@@ -12,7 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **`function-naming-convention`** - Add `handleXxx` → `xxxHandler` auto-fix (converts `handleClick` to `clickHandler` instead of `handleClickHandler`)
-- **`no-hardcoded-strings`** - Remove `minLength` option (technical strings are handled by ignore patterns)
 
 ---
 
