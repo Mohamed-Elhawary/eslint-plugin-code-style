@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.9.1] - 2026-02-03
+## [1.9.2] - 2026-02-03
 
 ### Enhanced
 
@@ -25,6 +25,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **`no-hardcoded-strings`** - Fixed bug where `isInConstantsObjectHandler` incorrectly matched camelCase variable names due to case-insensitive regex flag
+
+---
+
+## [1.9.1] - 2026-02-03
+
+### Enhanced
+
+- **`no-hardcoded-strings`** - Initial special string detection:
+  - HTTP status codes (4xx, 5xx)
+  - Role/permission names
 
 ---
 
@@ -1265,6 +1275,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.9.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.1...v1.9.2
 [1.9.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.0...v1.9.1
 [1.9.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.4...v1.9.0
 [1.8.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.3...v1.8.4
