@@ -50,6 +50,7 @@ export type RuleNames =
     | "code-style/jsx-simple-element-one-line"
     | "code-style/jsx-string-value-trim"
     | "code-style/jsx-ternary-format"
+    | "code-style/logical-expression-multiline"
     | "code-style/member-expression-bracket-spacing"
     | "code-style/module-index-exports"
     | "code-style/multiline-if-conditions"
@@ -143,6 +144,7 @@ interface PluginRules {
     "jsx-simple-element-one-line": Rule.RuleModule;
     "jsx-string-value-trim": Rule.RuleModule;
     "jsx-ternary-format": Rule.RuleModule;
+    "logical-expression-multiline": Rule.RuleModule;
     "member-expression-bracket-spacing": Rule.RuleModule;
     "module-index-exports": Rule.RuleModule;
     "multiline-if-conditions": Rule.RuleModule;

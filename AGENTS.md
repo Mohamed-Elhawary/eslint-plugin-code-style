@@ -4,9 +4,9 @@ Instructions for AI coding agents working with this codebase.
 
 ## Project Overview
 
-**eslint-plugin-code-style** is an ESLint plugin providing 71 custom formatting rules (64 auto-fixable, 7 report-only) for React/JSX projects. It's designed for ESLint v9+ flat config system.
+**eslint-plugin-code-style** is an ESLint plugin providing 72 custom formatting rules (65 auto-fixable, 7 report-only) for React/JSX projects. It's designed for ESLint v9+ flat config system.
 
-- **Main entry:** `index.js` - Contains all 71 rules in a single file
+- **Main entry:** `index.js` - Contains all 72 rules in a single file
 - **Type definitions:** `index.d.ts` - TypeScript declarations for IDE support
 - **Recommended configs:** `recommended-configs/` - Ready-to-use ESLint configurations
 - **Test apps:** `_tests_/` - Sample apps for testing rules
@@ -86,7 +86,7 @@ index.js
 ├── imports (fs, path, url)
 ├── Rule 1 definition (const ruleName = { create(), meta: {} })
 ├── Rule 2 definition
-├── ... (71 rules total)
+├── ... (72 rules total)
 └── export default { meta: {}, rules: {} }
 ```
 
@@ -686,7 +686,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 ## Documentation Files
 
-- `README.md` - Main documentation with all 71 rules
+- `README.md` - Main documentation with all 72 rules
 - `recommended-configs/<config-name>/README.md` - Config-specific documentation (references main README for rule details)
 - `index.d.ts` - TypeScript types for IDE autocomplete
 
@@ -726,11 +726,11 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 | `README.md` | ~100 | `**63 rules** support automatic fixing` |
 | `README.md` | ~262 | `**70 rules total** — 63 with auto-fix` |
 | `README.md` | ~3309 | `63 of 70 rules support auto-fixing` |
-| `AGENTS.md` | ~7 | `71 custom formatting rules (64 auto-fixable, 7 report-only)` |
-| `AGENTS.md` | ~9 | `Contains all 71 rules` |
+| `AGENTS.md` | ~7 | `72 custom formatting rules (65 auto-fixable, 7 report-only)` |
+| `AGENTS.md` | ~9 | `Contains all 72 rules` |
 | `AGENTS.md` | ~36 | `(64 rules in JS projects, 71 in TS projects)` |
-| `AGENTS.md` | ~89 | `(71 rules total)` |
-| `AGENTS.md` | ~675 | `all 71 rules` |
+| `AGENTS.md` | ~89 | `(72 rules total)` |
+| `AGENTS.md` | ~675 | `all 72 rules` |
 | `AGENTS.md` | ~697 | `64 auto-fixable rules, 7 report-only` |
 | `AGENTS.md` | Rule Count Locations section | Current Counts table |
 | `recommended-configs/react-ts-tw/README.md` | ~396 | `**63 auto-fixable rules** (70 total, 7 report-only)` |
@@ -1052,7 +1052,7 @@ This project follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 - Full detailed sections with sub-categories
 - Include **Full Changelog** link at the end
 - Content must match the GitHub Release description
-- **Current releases:** v1.9.0, v1.8.0, v1.7.0, v1.6.0, v1.5.0, v1.4.2, v1.3.0, v1.2.0, v1.1.0, v1.0.16, v1.0.14, v1.0.7, v1.0.6
+- **Current releases:** v1.10.0, v1.9.0, v1.8.0, v1.7.0, v1.6.0, v1.5.0, v1.4.2, v1.3.0, v1.2.0, v1.1.0, v1.0.16, v1.0.14, v1.0.7, v1.0.6
 
 **2. Tags** (between releases)
 - Simpler entries with just the changes

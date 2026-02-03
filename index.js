@@ -5210,6 +5210,179 @@ const ternaryConditionMultiline = {
 
 /**
  * ───────────────────────────────────────────────────────────────
+ * Rule: Logical Expression Multiline
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforce multiline formatting for logical expressions with more
+ *   than maxOperands. This applies to variable declarations, return
+ *   statements, assignment expressions, and other contexts.
+ *
+ * Options:
+ *   { maxOperands: 3 } - Maximum operands on single line (default: 3)
+ *
+ * ✓ Good:
+ *   const err = data.error
+ *       || data.message
+ *       || data.status
+ *       || data.fallback;
+ *
+ * ✗ Bad:
+ *   const err = data.error || data.message || data.status || data.fallback;
+ */
+const logicalExpressionMultiline = {
+    create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+        const options = context.options[0] || {};
+        const maxOperands = options.maxOperands !== undefined ? options.maxOperands : 3;
+
+        // Check if node is wrapped in parentheses
+        const isParenthesizedHandler = (node) => {
+            const tokenBefore = sourceCode.getTokenBefore(node);
+            const tokenAfter = sourceCode.getTokenAfter(node);
+
+            if (!tokenBefore || !tokenAfter) return false;
+
+            return tokenBefore.value === "(" && tokenAfter.value === ")";
+        };
+
+        // Collect all operands from a logical expression (flattening non-parenthesized ones)
+        const collectOperandsHandler = (node) => {
+            const operands = [];
+
+            const collectHelperHandler = (n) => {
+                if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                    collectHelperHandler(n.left);
+                    collectHelperHandler(n.right);
+                } else {
+                    operands.push(n);
+                }
+            };
+
+            collectHelperHandler(node);
+
+            return operands;
+        };
+
+        // Get the operator between two operands
+        const getOperatorHandler = (leftNode, rightNode) => {
+            const tokens = sourceCode.getTokensBetween(leftNode, rightNode);
+            const opToken = tokens.find((t) => t.value === "||" || t.value === "&&" || t.value === "??" || t.value === "|" || t.value === "&");
+
+            return opToken ? opToken.value : "||";
+        };
+
+        // Check if the expression is already multiline
+        const isMultilineHandler = (node) => node.loc.start.line !== node.loc.end.line;
+
+        // Check if we're inside an if condition or ternary test (handled by other rules)
+        const isInIfOrTernaryHandler = (node) => {
+            let current = node.parent;
+
+            while (current) {
+                if (current.type === "IfStatement" && current.test === node) return true;
+
+                if (current.type === "ConditionalExpression" && current.test === node) return true;
+
+                // Stop if we hit a statement or declaration boundary
+                if (current.type.includes("Statement") || current.type.includes("Declaration")) return false;
+
+                current = current.parent;
+            }
+
+            return false;
+        };
+
+        // Handle logical expression
+        const checkLogicalExpressionHandler = (node) => {
+            // Only process top-level logical expressions (not nested ones)
+            if (node.parent.type === "LogicalExpression" && !isParenthesizedHandler(node)) return;
+
+            // Skip if this is in an if condition or ternary test (handled by other rules)
+            if (isInIfOrTernaryHandler(node)) return;
+
+            // Collect all operands
+            const operands = collectOperandsHandler(node);
+
+            // If operands count is within threshold, skip
+            if (operands.length <= maxOperands) return;
+
+            // Check if already properly multiline
+            if (isMultilineHandler(node)) {
+                // Check if each operand is on its own line
+                let allOnOwnLines = true;
+
+                for (let i = 1; i < operands.length; i++) {
+                    if (operands[i].loc.start.line === operands[i - 1].loc.end.line) {
+                        allOnOwnLines = false;
+                        break;
+                    }
+                }
+
+                if (allOnOwnLines) return;
+            }
+
+            // Report and fix
+            context.report({
+                fix(fixer) {
+                    // Build the formatted expression
+                    const firstOperandText = sourceCode.getText(operands[0]);
+
+                    // Get the line containing the first operand
+                    const firstToken = sourceCode.getFirstToken(operands[0]);
+                    const lineStart = sourceCode.text.lastIndexOf("\n", firstToken.range[0]) + 1;
+                    const lineContent = sourceCode.text.slice(lineStart, firstToken.range[0]);
+
+                    // Extract only the whitespace indentation from the line
+                    const indentMatch = lineContent.match(/^(\s*)/);
+                    const baseIndent = indentMatch ? indentMatch[1] : "";
+
+                    // Build each line: first operand, then operator + operand for each subsequent
+                    const lines = [firstOperandText];
+
+                    for (let i = 1; i < operands.length; i++) {
+                        const operator = getOperatorHandler(operands[i - 1], operands[i]);
+                        const operandText = sourceCode.getText(operands[i]);
+                        lines.push(`${baseIndent}    ${operator} ${operandText}`);
+                    }
+
+                    // Get the full range of the expression
+                    const fullText = lines.join("\n");
+
+                    return fixer.replaceText(node, fullText);
+                },
+                message: `Logical expression with ${operands.length} operands should be on multiple lines (max: ${maxOperands})`,
+                node,
+            });
+        };
+
+        return {
+            LogicalExpression: checkLogicalExpressionHandler,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce multiline formatting for logical expressions with more than maxOperands" },
+        fixable: "code",
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    maxOperands: {
+                        default: 3,
+                        description: "Maximum operands to keep on single line (default: 3)",
+                        minimum: 1,
+                        type: "integer",
+                    },
+                },
+                type: "object",
+            },
+        ],
+        type: "layout",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
  * Rule: Empty Line After Block
  * ───────────────────────────────────────────────────────────────
  *
@@ -19918,6 +20091,7 @@ export default {
         "empty-line-after-block": emptyLineAfterBlock,
         "if-else-spacing": ifElseSpacing,
         "if-statement-format": ifStatementFormat,
+        "logical-expression-multiline": logicalExpressionMultiline,
         "multiline-if-conditions": multilineIfConditions,
         "no-empty-lines-in-switch-cases": noEmptyLinesInSwitchCases,
         "ternary-condition-multiline": ternaryConditionMultiline,

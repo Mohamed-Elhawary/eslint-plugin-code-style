@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.10.0] - 2026-02-03
+
+**New Rule: logical-expression-multiline + Enhanced no-hardcoded-strings**
+
+**Version Range:** v1.9.1 → v1.10.0
+
+### Added
+
+**New Rules (1)**
+
+- **`logical-expression-multiline`** - Enforce multiline formatting for logical expressions with more than maxOperands (default: 3) 🔧
+  - Handles variable declarations: `const err = a || b || c || d || e;`
+  - Handles return statements, assignments, and other contexts
+  - Skips if/ternary conditions (handled by other rules)
+  - Auto-fixes to put each operand on its own line with operator at start
+
+### Enhanced
+
+- **`no-hardcoded-strings`** - Major improvements:
+  - Remove single-word string length limitations (now detects all single-word hardcoded strings)
+  - Add validation strings: `empty`, `invalid`, `missing`, `optional`, `required`, `valid`
+  - Add auth state strings: `anonymous`, `authenticated`, `authed`, `authorized`, `denied`, `forbidden`, etc.
+  - Add more status strings: `done`, `finished`, `inprogress`, `queued`, `ready`, `running`, etc.
+  - Skip UI component patterns in JSX attributes: `variant="ghost"`, `size="md"`, etc.
+  - Skip Tailwind CSS class strings: `"px-5 py-3 w-full"`, `"hover:bg-primary"`, etc.
+  - Make technical patterns stricter to avoid false negatives
+
+### Fixed
+
+- **`no-hardcoded-strings`** - Fix detection of strings inside exported components
+- **`no-hardcoded-strings`** - Fix Tailwind detection being too broad (now requires actual Tailwind syntax)
+
+### Stats
+
+- Total Rules: 72 (was 71)
+- Auto-fixable: 65 rules 🔧 (was 64)
+- Report-only: 7 rules
+
+**Full Changelog:** [v1.9.0...v1.10.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.0...v1.10.0)
+
+---
+
 ## [1.9.7] - 2026-02-03
 
 ### Fixed
@@ -1337,6 +1379,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.10.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.0...v1.10.0
 [1.9.7]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.6...v1.9.7
 [1.9.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.5...v1.9.6
 [1.9.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.4...v1.9.5

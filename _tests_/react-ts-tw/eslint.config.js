@@ -191,6 +191,7 @@ export default [ // eslint-disable-line
             "code-style/jsx-simple-element-one-line": "error",
             "code-style/jsx-string-value-trim": "error",
             "code-style/jsx-ternary-format": "error",
+            "code-style/logical-expression-multiline": "error",
             "code-style/member-expression-bracket-spacing": "error",
             "code-style/module-index-exports": "error",
             "code-style/multiline-if-conditions": "error",
