@@ -3423,9 +3423,18 @@ const YetAnotherBad = ({ title }) => {
 
 ### `no-hardcoded-strings`
 
-**What it does:** Enforces that user-facing strings should be imported from constants/strings modules rather than hardcoded inline. This promotes maintainability, consistency, and enables easier internationalization.
+**What it does:** Enforces that user-facing strings should be imported from constants/strings/data modules rather than hardcoded inline. This promotes maintainability, consistency, and enables easier internationalization.
 
 **Why use it:** Hardcoded strings scattered throughout your codebase are hard to maintain, translate, and keep consistent. Centralizing strings in constants makes them easy to find, update, and potentially translate.
+
+**Special detection (should be imported from `@/enums` or `@/data`):**
+- **HTTP status codes** — 2xx, 4xx, 5xx like "200", "404", "500"
+- **HTTP methods** — "GET", "POST", "PUT", "DELETE", "PATCH", etc.
+- **Role/permission names** — "admin", "user", "moderator", "editor", etc.
+- **Environment names** — "production", "development", "staging", "test", etc.
+- **Log levels** — "debug", "info", "warn", "error", "fatal", etc.
+- **Status strings** — "active", "pending", "approved", "rejected", "completed", etc.
+- **Priority levels** — "high", "medium", "low", "critical", "urgent", etc.
 
 **Options:**
 
@@ -3443,8 +3452,9 @@ const YetAnotherBad = ({ title }) => {
 // ✅ Good — strings imported from constants
 import { BUTTON_LABEL, ERROR_MESSAGE, welcomeText } from "@/constants";
 import { FORM_LABELS } from "@/strings";
+import { HttpStatus, UserRole } from "@/enums";
 
-const Component = () => (
+const ComponentHandler = () => (
     <div>
         <button>{BUTTON_LABEL}</button>
         <span>{ERROR_MESSAGE}</span>
@@ -3452,7 +3462,11 @@ const Component = () => (
     </div>
 );
 
-const getMessage = () => ERROR_MESSAGE;
+const getMessageHandler = () => ERROR_MESSAGE;
+
+// ✅ Good — using enums for status codes and roles
+if (status === HttpStatus.NOT_FOUND) { ... }
+if (role === UserRole.ADMIN) { ... }
 
 // ✅ Good — technical strings are allowed
 <input type="text" className="input-field" />
@@ -3465,6 +3479,10 @@ const size = "100px";
 <span>Something went wrong</span>
 const message = "Welcome to the application";
 return "User not found";
+
+// ❌ Bad — hardcoded status codes and roles
+if (status === "404") { ... }
+if (role === "admin") { ... }
 ```
 
 **Configuration example:**
@@ -3477,10 +3495,14 @@ return "User not found";
 }]
 ```
 
-**Valid import paths for constants:**
-- `@/constants` or `@/@constants`
+**Valid import paths for strings:**
+- `@/data`
 - `@/strings` or `@/@strings`
-- `@/data/constants` or `@/data/strings`
+- `@/constants` or `@/@constants`
+
+**Valid import paths for enums (status codes, roles):**
+- `@/enums`
+- `@/data`
 
 ---
 

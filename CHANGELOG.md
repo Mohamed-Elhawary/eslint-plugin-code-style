@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.9.1] - 2026-02-03
+
+### Enhanced
+
+- **`no-hardcoded-strings`** - Now detects special strings that should be enums:
+  - HTTP status codes (2xx, 4xx, 5xx like "200", "404", "500")
+  - HTTP methods ("GET", "POST", "PUT", "DELETE", etc.)
+  - Role/permission names ("admin", "user", "moderator", etc.)
+  - Environment names ("production", "development", "staging", etc.)
+  - Log levels ("debug", "info", "warn", "error", etc.)
+  - Status strings ("active", "pending", "approved", "rejected", etc.)
+  - Priority levels ("high", "medium", "low", "critical", etc.)
+  - All above → import from `@/enums` or `@/data`
+  - Regular strings → import from `@/data or @/strings or @/constants or @/@constants or @/@strings`
+
+### Fixed
+
+- **`no-hardcoded-strings`** - Fixed bug where `isInConstantsObjectHandler` incorrectly matched camelCase variable names due to case-insensitive regex flag
+
+---
+
 ## [1.9.0] - 2026-02-03
 
 **New Rule: class-method-definition-format + Enhanced Spacing Rules**
@@ -1244,6 +1265,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.9.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.0...v1.9.1
 [1.9.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.4...v1.9.0
 [1.8.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.3...v1.8.4
 [1.8.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.2...v1.8.3

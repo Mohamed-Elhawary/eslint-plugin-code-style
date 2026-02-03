@@ -13822,9 +13822,29 @@ const stringPropertySpacing = {
  *
  * Description:
  *   Enforces that user-facing strings should be imported from
- *   constants/strings modules rather than hardcoded inline.
+ *   constants/strings/data modules rather than hardcoded inline.
  *   This promotes maintainability, consistency, and enables
  *   easier internationalization.
+ *
+ *   The rule also detects special strings that should be enums:
+ *   - HTTP status codes (2xx, 4xx, 5xx like "200", "404", "500")
+ *   - HTTP methods ("GET", "POST", "PUT", "DELETE", etc.)
+ *   - Role/permission names ("admin", "user", "moderator", etc.)
+ *   - Environment names ("production", "development", "staging", etc.)
+ *   - Log levels ("debug", "info", "warn", "error", etc.)
+ *   - Status strings ("active", "pending", "approved", "rejected", etc.)
+ *   - Priority levels ("high", "medium", "low", "critical", etc.)
+ *
+ * Valid import sources for strings:
+ *   - @/data
+ *   - @/strings
+ *   - @/constants
+ *   - @/@strings
+ *   - @/@constants
+ *
+ * Valid import sources for enums:
+ *   - @/enums
+ *   - @/data
  *
  * Options:
  *   { ignoreAttributes: ["className", "id", ...] } - JSX attributes to ignore (replaces defaults)
@@ -13834,16 +13854,21 @@ const stringPropertySpacing = {
  * ✓ Good:
  *   import { BUTTON_LABEL, ERROR_MESSAGE } from "@/constants";
  *   import { welcomeText } from "@/strings";
+ *   import { HttpStatus, UserRole } from "@/enums";
  *
  *   <button>{BUTTON_LABEL}</button>
  *   <span>{ERROR_MESSAGE}</span>
  *   const message = welcomeText;
+ *   if (status === HttpStatus.NOT_FOUND) { ... }
+ *   if (role === UserRole.ADMIN) { ... }
  *
  * ✗ Bad:
  *   <button>Submit</button>
  *   <span>Something went wrong</span>
  *   const message = "Welcome to the app";
  *   return "User not found";
+ *   if (status === "404") { ... }      // HTTP status code
+ *   if (role === "admin") { ... }      // Role name
  */
 const noHardcodedStrings = {
     create(context) {
@@ -14036,8 +14061,6 @@ const noHardcodedStrings = {
             /^[A-Z][A-Z0-9_]*$/,
             // Common technical strings
             /^(true|false|null|undefined|NaN|Infinity)$/,
-            // HTTP methods
-            /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|CONNECT|TRACE)$/,
             // Content types
             /^application\//,
             // Environment variables pattern
@@ -14066,16 +14089,181 @@ const noHardcodedStrings = {
 
         const allIgnorePatterns = [...technicalPatterns, ...extraIgnorePatterns];
 
-        // Check if a string matches any ignore pattern
-        const shouldIgnoreStringHandler = (str) => allIgnorePatterns.some((pattern) => pattern.test(str));
+        // HTTP status codes that should NOT be hardcoded (2xx, 4xx, and 5xx)
+        const httpStatusCodePattern = /^[245]\d{2}$/;
 
-        // Check if we're inside a constants/strings file
+        // Common role/permission names that should be imported from enums/data
+        const rolePermissionNames = new Set([
+            "admin",
+            "administrator",
+            "editor",
+            "guest",
+            "manager",
+            "member",
+            "moderator",
+            "operator",
+            "owner",
+            "reviewer",
+            "subscriber",
+            "superadmin",
+            "supervisor",
+            "user",
+            "viewer",
+        ]);
+
+        // HTTP methods that should be imported from enums/data
+        const httpMethods = new Set([
+            "CONNECT",
+            "DELETE",
+            "GET",
+            "HEAD",
+            "OPTIONS",
+            "PATCH",
+            "POST",
+            "PUT",
+            "TRACE",
+        ]);
+
+        // Environment names that should be imported from enums/data
+        const environmentNames = new Set([
+            "dev",
+            "development",
+            "local",
+            "prod",
+            "production",
+            "qa",
+            "sandbox",
+            "staging",
+            "test",
+            "testing",
+            "uat",
+        ]);
+
+        // Log levels that should be imported from enums/data
+        const logLevels = new Set([
+            "debug",
+            "error",
+            "fatal",
+            "info",
+            "log",
+            "trace",
+            "warn",
+            "warning",
+        ]);
+
+        // Status/state strings that should be imported from enums/data
+        const statusStrings = new Set([
+            "accepted",
+            "active",
+            "approved",
+            "archived",
+            "blocked",
+            "cancelled",
+            "closed",
+            "completed",
+            "declined",
+            "deleted",
+            "disabled",
+            "draft",
+            "enabled",
+            "expired",
+            "failed",
+            "inactive",
+            "open",
+            "paused",
+            "pending",
+            "processing",
+            "published",
+            "rejected",
+            "resolved",
+            "scheduled",
+            "submitted",
+            "success",
+            "suspended",
+            "verified",
+        ]);
+
+        // Priority levels that should be imported from enums/data
+        const priorityLevels = new Set([
+            "critical",
+            "high",
+            "highest",
+            "low",
+            "lowest",
+            "medium",
+            "normal",
+            "urgent",
+        ]);
+
+        // Check functions for each category
+        const isHttpStatusCodeHandler = (str) => httpStatusCodePattern.test(str);
+        const isRoleNameHandler = (str) => rolePermissionNames.has(str.toLowerCase());
+        const isHttpMethodHandler = (str) => httpMethods.has(str.toUpperCase());
+        const isEnvironmentNameHandler = (str) => environmentNames.has(str.toLowerCase());
+        const isLogLevelHandler = (str) => logLevels.has(str.toLowerCase());
+        const isStatusStringHandler = (str) => statusStrings.has(str.toLowerCase());
+        const isPriorityLevelHandler = (str) => priorityLevels.has(str.toLowerCase());
+
+        // Check if string should be flagged even if it matches technical patterns
+        const isFlaggedSpecialStringHandler = (str) => isHttpStatusCodeHandler(str)
+            || isRoleNameHandler(str)
+            || isHttpMethodHandler(str)
+            || isEnvironmentNameHandler(str)
+            || isLogLevelHandler(str)
+            || isStatusStringHandler(str)
+            || isPriorityLevelHandler(str);
+
+        // Get descriptive error message based on string type
+        const getErrorMessageHandler = (str, context = "") => {
+            const truncatedStr = str.length > 30 ? `${str.substring(0, 30)}...` : str;
+            const contextPart = context ? ` in ${context}` : "";
+
+            if (isHttpStatusCodeHandler(str)) {
+                return `Hardcoded HTTP status code "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
+            }
+
+            if (isRoleNameHandler(str)) {
+                return `Hardcoded role/permission "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
+            }
+
+            if (isHttpMethodHandler(str)) {
+                return `Hardcoded HTTP method "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
+            }
+
+            if (isEnvironmentNameHandler(str)) {
+                return `Hardcoded environment name "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
+            }
+
+            if (isLogLevelHandler(str)) {
+                return `Hardcoded log level "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
+            }
+
+            if (isStatusStringHandler(str)) {
+                return `Hardcoded status "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
+            }
+
+            if (isPriorityLevelHandler(str)) {
+                return `Hardcoded priority level "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
+            }
+
+            return `Hardcoded string "${truncatedStr}"${contextPart} should be imported from @/data or @/strings or @/constants or @/@constants or @/@strings`;
+        };
+
+        // Check if a string matches any ignore pattern (but not if it's a flagged special string)
+        const shouldIgnoreStringHandler = (str) => {
+            // Always flag HTTP status codes and role names
+            if (isFlaggedSpecialStringHandler(str)) return false;
+
+            return allIgnorePatterns.some((pattern) => pattern.test(str));
+        };
+
+        // Check if we're inside a constants/strings/data/enums file
         const isConstantsFileHandler = () => {
             const filename = context.filename || context.getFilename();
             const normalizedPath = filename.replace(/\\/g, "/").toLowerCase();
 
-            // Check if file is in constants/strings folders
-            return /\/(constants|strings|@constants|@strings)(\/|\.)/i.test(normalizedPath)
+            // Check if file is in constants/strings/data/enums folders
+            return /\/(constants|strings|@constants|@strings|data|@data|enums|@enums)(\/|\.)/i.test(normalizedPath)
                 || /\/data\/(constants|strings)/i.test(normalizedPath);
         };
 
@@ -14088,8 +14276,8 @@ const noHardcodedStrings = {
 
             if (typeof importPath !== "string") return;
 
-            // Check if import is from constants/strings
-            const isFromConstants = /@?\/?(@?constants|@?strings|data\/constants|data\/strings)/i
+            // Check if import is from constants/strings/data/enums
+            const isFromConstants = /@?\/?(@?constants|@?strings|@?data|@?enums|data\/constants|data\/strings)/i
                 .test(importPath);
 
             if (isFromConstants) {
@@ -14181,9 +14369,17 @@ const noHardcodedStrings = {
                 if (current.type === "VariableDeclarator") {
                     const varName = current.id && current.id.name;
 
-                    // Check if variable name suggests it's a constants object
-                    if (varName && /^[A-Z][A-Z0-9_]*$|CONSTANTS?|STRINGS?|MESSAGES?|LABELS?|TEXTS?/i.test(varName)) {
-                        return true;
+                    if (varName) {
+                        // Check for SCREAMING_SNAKE_CASE (e.g., MY_CONSTANT, API_URL)
+                        if (/^[A-Z][A-Z0-9_]*$/.test(varName)) {
+                            return true;
+                        }
+
+                        // Check for exact keywords or keywords at word boundaries (not in Handler names)
+                        // Match: MESSAGES, Messages, userMessages, but NOT longMessageHandler
+                        if (/^(constants?|strings?|messages?|labels?|texts?|data)$/i.test(varName)) {
+                            return true;
+                        }
                     }
                 }
 
@@ -14210,13 +14406,18 @@ const noHardcodedStrings = {
             JSXText(node) {
                 const text = node.value.trim();
 
-                if (!text || shouldIgnoreStringHandler(text)) return;
+                if (!text) return;
 
-                // Check if it looks like user-facing text (contains letters and spaces)
-                if (!/[a-zA-Z]/.test(text)) return;
+                // Check if it's a flagged special string (status code, role name)
+                const isSpecialString = isFlaggedSpecialStringHandler(text);
+
+                if (!isSpecialString && shouldIgnoreStringHandler(text)) return;
+
+                // Check if it looks like user-facing text (contains letters) - skip for special strings
+                if (!isSpecialString && !/[a-zA-Z]/.test(text)) return;
 
                 context.report({
-                    message: `Hardcoded string "${text.substring(0, 30)}${text.length > 30 ? "..." : ""}" should be imported from constants/strings module`,
+                    message: getErrorMessageHandler(text, "JSX"),
                     node,
                 });
             },
@@ -14232,13 +14433,16 @@ const noHardcodedStrings = {
                 if (expression.type === "Literal" && typeof expression.value === "string") {
                     const str = expression.value;
 
-                    if (shouldIgnoreStringHandler(str)) return;
+                    // Check if it's a flagged special string (status code, role name)
+                    const isSpecialString = isFlaggedSpecialStringHandler(str);
 
-                    // Check if it looks like user-facing text
-                    if (!/[a-zA-Z]/.test(str)) return;
+                    if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
+
+                    // Check if it looks like user-facing text - skip for special strings
+                    if (!isSpecialString && !/[a-zA-Z]/.test(str)) return;
 
                     context.report({
-                        message: `Hardcoded string "${str.substring(0, 30)}${str.length > 30 ? "..." : ""}" should be imported from constants/strings module`,
+                        message: getErrorMessageHandler(str, "JSX expression"),
                         node: expression,
                     });
                 }
@@ -14248,16 +14452,19 @@ const noHardcodedStrings = {
                     expression.quasis.forEach((quasi) => {
                         const str = quasi.value.cooked || quasi.value.raw;
 
-                        if (shouldIgnoreStringHandler(str)) return;
+                        // Check if it's a flagged special string (status code, role name)
+                        const isSpecialString = isFlaggedSpecialStringHandler(str);
 
-                        // Check if it contains user-facing text (more than just variable placeholders)
-                        if (!/[a-zA-Z]{2,}/.test(str)) return;
+                        if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
+
+                        // Check if it contains user-facing text - skip for special strings
+                        if (!isSpecialString && !/[a-zA-Z]{2,}/.test(str)) return;
 
                         // Skip if it looks like a path or URL pattern
                         if (/^[/.]|https?:\/\//.test(str)) return;
 
                         context.report({
-                            message: `Hardcoded string in template literal "${str.substring(0, 30)}${str.length > 30 ? "..." : ""}" should be imported from constants/strings module`,
+                            message: getErrorMessageHandler(str, "template literal"),
                             node: quasi,
                         });
                     });
@@ -14284,15 +14491,19 @@ const noHardcodedStrings = {
                 if (node.value.type === "Literal" && typeof node.value.value === "string") {
                     const str = node.value.value;
 
-                    if (shouldIgnoreStringHandler(str)) return;
+                    // Check if it's a flagged special string (status code, role name)
+                    const isSpecialString = isFlaggedSpecialStringHandler(str);
 
-                    // Check if it looks like user-facing text (contains letters and multiple words or is long)
-                    if (!/[a-zA-Z]/.test(str)) return;
+                    if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
 
-                    if (str.split(/\s+/).length < 2 && str.length < 10) return;
+                    // Check if it looks like user-facing text - skip for special strings
+                    if (!isSpecialString && !/[a-zA-Z]/.test(str)) return;
+
+                    // Require multiple words or reasonable length for non-special strings
+                    if (!isSpecialString && str.split(/\s+/).length < 2 && str.length < 10) return;
 
                     context.report({
-                        message: `Hardcoded string "${str.substring(0, 30)}${str.length > 30 ? "..." : ""}" in attribute "${attrName}" should be imported from constants/strings module`,
+                        message: getErrorMessageHandler(str, `attribute "${attrName}"`),
                         node: node.value,
                     });
                 }
@@ -14307,14 +14518,18 @@ const noHardcodedStrings = {
                     if (expression.type === "Literal" && typeof expression.value === "string") {
                         const str = expression.value;
 
-                        if (shouldIgnoreStringHandler(str)) return;
+                        // Check if it's a flagged special string (status code, role name)
+                        const isSpecialString = isFlaggedSpecialStringHandler(str);
 
-                        if (!/[a-zA-Z]/.test(str)) return;
+                        if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
 
-                        if (str.split(/\s+/).length < 2 && str.length < 10) return;
+                        if (!isSpecialString && !/[a-zA-Z]/.test(str)) return;
+
+                        // Require multiple words or reasonable length for non-special strings
+                        if (!isSpecialString && str.split(/\s+/).length < 2 && str.length < 10) return;
 
                         context.report({
-                            message: `Hardcoded string "${str.substring(0, 30)}${str.length > 30 ? "..." : ""}" in attribute "${attrName}" should be imported from constants/strings module`,
+                            message: getErrorMessageHandler(str, `attribute "${attrName}"`),
                             node: expression,
                         });
                     }
@@ -14328,8 +14543,11 @@ const noHardcodedStrings = {
 
                 const str = node.value;
 
-                // Skip if it matches ignore patterns
-                if (shouldIgnoreStringHandler(str)) return;
+                // Check if it's a flagged special string (status code, role name)
+                const isSpecialString = isFlaggedSpecialStringHandler(str);
+
+                // Skip if it matches ignore patterns (but not special strings)
+                if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
 
                 // Skip if not in relevant context
                 if (!isInRelevantContextHandler(node)) return;
@@ -14346,14 +14564,14 @@ const noHardcodedStrings = {
                 // Skip object property keys
                 if (node.parent.type === "Property" && node.parent.key === node) return;
 
-                // Skip if it doesn't look like user-facing text
-                if (!/[a-zA-Z]/.test(str)) return;
+                // Skip if it doesn't look like user-facing text - but not for special strings
+                if (!isSpecialString && !/[a-zA-Z]/.test(str)) return;
 
-                // Require at least 2 words or be reasonably long to be considered user-facing
-                if (str.split(/\s+/).length < 2 && str.length < 15) return;
+                // Require at least 2 words or be reasonably long - but not for special strings
+                if (!isSpecialString && str.split(/\s+/).length < 2 && str.length < 15) return;
 
                 context.report({
-                    message: `Hardcoded string "${str.substring(0, 30)}${str.length > 30 ? "..." : ""}" should be imported from constants/strings module`,
+                    message: getErrorMessageHandler(str),
                     node,
                 });
             },
@@ -14373,10 +14591,13 @@ const noHardcodedStrings = {
                 node.quasis.forEach((quasi) => {
                     const str = quasi.value.cooked || quasi.value.raw;
 
-                    if (shouldIgnoreStringHandler(str)) return;
+                    // Check if it's a flagged special string (status code, role name)
+                    const isSpecialString = isFlaggedSpecialStringHandler(str);
 
-                    // Check if it contains substantial user-facing text
-                    if (!/[a-zA-Z]{3,}/.test(str)) return;
+                    if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
+
+                    // Check if it contains substantial user-facing text - but not for special strings
+                    if (!isSpecialString && !/[a-zA-Z]{3,}/.test(str)) return;
 
                     // Skip if it looks like a path, URL, or query
                     if (/^[/.]|^https?:\/\/|^[?&]/.test(str)) return;
@@ -14385,7 +14606,7 @@ const noHardcodedStrings = {
                     if (node.expressions.length > node.quasis.length) return;
 
                     context.report({
-                        message: `Hardcoded string in template literal "${str.substring(0, 30)}${str.length > 30 ? "..." : ""}" should be imported from constants/strings module`,
+                        message: getErrorMessageHandler(str, "template literal"),
                         node: quasi,
                     });
                 });
