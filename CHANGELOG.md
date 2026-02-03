@@ -7,13 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.8.1] - 2026-02-03
+
+### Changed
+
+- **`function-naming-convention`** - Add `handleXxx` → `xxxHandler` auto-fix (converts `handleClick` to `clickHandler` instead of `handleClickHandler`)
+- **`no-hardcoded-strings`** - Remove `minLength` option (technical strings are handled by ignore patterns)
+
+---
+
 ## [1.8.0] - 2026-02-03
 
 ### Added
 
 - **New Rule: `no-hardcoded-strings`** - Enforce importing strings from constants/strings modules instead of hardcoding them inline. Promotes maintainability, consistency, and easier internationalization.
   - Detects hardcoded strings in JSX text content, attributes, and component logic
-  - Configurable `minLength` (default: 3), `ignoreAttributes`, `ignorePatterns` options
+  - Configurable `ignoreAttributes`, `extraIgnoreAttributes`, `ignorePatterns` options
   - Automatically ignores technical strings (CSS units, URLs, paths, identifiers, etc.)
   - Valid import paths: `@/constants`, `@/strings`, `@/@constants`, `@/@strings`, `@/data/constants`, `@/data/strings`
 
@@ -1161,6 +1170,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.8.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.6...v1.8.0
 [1.7.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.5...v1.7.6
 [1.7.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.4...v1.7.5

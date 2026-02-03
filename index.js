@@ -1996,19 +1996,21 @@ const functionDeclarationStyle = {
  *
  * Description:
  *   Function names should follow naming conventions: camelCase,
- *   starting with a verb, and handlers ending with "Handler".
- *   Auto-fixes PascalCase functions that start with verbs to camelCase.
+ *   starting with a verb, and ending with "Handler" suffix.
+ *   Auto-fixes PascalCase functions to camelCase.
+ *   Auto-fixes handleXxx to xxxHandler (avoids "handleClickHandler").
  *
  * ✓ Good:
- *   function getUserData() {}
- *   function handleClick() {}
- *   function isValidEmail() {}
- *   const submitHandler = () => {}
+ *   function getUserDataHandler() {}
+ *   function clickHandler() {}
+ *   function isValidEmailHandler() {}
+ *   const submitHandler = () => {};
  *
  * ✗ Bad (auto-fixed):
- *   function GetUserData() {}   // → getUserData
- *   const FetchStatus = () => {} // → fetchStatus
- *   function user_data() {}
+ *   function GetUserData() {}    // → getUserDataHandler
+ *   function handleClick() {}    // → clickHandler (not handleClickHandler)
+ *   function getUserData() {}    // → getUserDataHandler
+ *   const FetchStatus = () => {} // → fetchStatusHandler
  */
 const functionNamingConvention = {
     create(context) {
@@ -2071,8 +2073,8 @@ const functionNamingConvention = {
             // Performance
             "debounce", "throttle", "memoize", "cache", "batch", "queue", "defer", "delay",
             "schedule", "preload", "prefetch", "lazy",
-            // Events
-            "handle", "on", "click", "change", "input", "press", "drag", "drop",
+            // Events (note: "handle" is NOT included - handleXxx is auto-fixed to xxxHandler)
+            "on", "click", "change", "input", "press", "drag", "drop",
             "hover", "enter", "leave", "touch", "swipe", "pinch", "tap",
             // Comparison
             "compare", "diff", "equal", "differ", "overlap", "intersect", "union", "exclude",
@@ -2212,10 +2214,57 @@ const functionNamingConvention = {
 
             const hasVerbPrefix = startsWithVerbHandler(name);
             const hasHandlerSuffix = endsWithHandler(name);
+            const startsWithHandle = /^handle[A-Z]/.test(name);
+
+            // Special case: handleXxx -> xxxHandler (to avoid handleClickHandler)
+            if (startsWithHandle && !hasHandlerSuffix) {
+                const identifierNode = node.id || node.parent.id;
+                // Remove "handle" prefix and add "Handler" suffix: handleClick -> clickHandler
+                const baseName = name.slice(6); // Remove "handle"
+                const newName = baseName[0].toLowerCase() + baseName.slice(1) + "Handler";
+
+                context.report({
+                    fix(fixer) {
+                        const scope = context.sourceCode
+                            ? context.sourceCode.getScope(node)
+                            : context.getScope();
+
+                        const variable = scope.variables.find((v) => v.name === name)
+                            || (scope.upper && scope.upper.variables.find((v) => v.name === name));
+
+                        if (!variable) return fixer.replaceText(identifierNode, newName);
+
+                        const fixes = [];
+                        const fixedRanges = new Set();
+
+                        const addFixHandler = (nodeToFix) => {
+                            const rangeKey = `${nodeToFix.range[0]}-${nodeToFix.range[1]}`;
+
+                            if (!fixedRanges.has(rangeKey)) {
+                                fixedRanges.add(rangeKey);
+                                fixes.push(fixer.replaceText(nodeToFix, newName));
+                            }
+                        };
+
+                        variable.defs.forEach((def) => {
+                            addFixHandler(def.name);
+                        });
+
+                        variable.references.forEach((ref) => {
+                            addFixHandler(ref.identifier);
+                        });
+
+                        return fixes;
+                    },
+                    message: `Function "${name}" should be "${newName}" (handleXxx → xxxHandler to avoid redundant "handleXxxHandler")`,
+                    node: identifierNode,
+                });
+                return;
+            }
 
             if (!hasVerbPrefix && !hasHandlerSuffix) {
                 context.report({
-                    message: `Function "${name}" should start with a verb (get, set, fetch, handle, etc.) AND end with "Handler" (e.g., getDataHandler, handleClickHandler)`,
+                    message: `Function "${name}" should start with a verb (get, set, fetch, etc.) AND end with "Handler" (e.g., getDataHandler, clickHandler)`,
                     node: node.id || node.parent.id,
                 });
             } else if (!hasVerbPrefix) {
@@ -12658,9 +12707,9 @@ const stringPropertySpacing = {
  *   easier internationalization.
  *
  * Options:
- *   { ignoreAttributes: ["className", "id", ...] } - JSX attributes to ignore
+ *   { ignoreAttributes: ["className", "id", ...] } - JSX attributes to ignore (replaces defaults)
+ *   { extraIgnoreAttributes: ["tooltip", ...] } - Additional JSX attributes to ignore (extends defaults)
  *   { ignorePatterns: [/^[A-Z_]+$/, ...] } - Regex patterns for strings to ignore
- *   { minLength: 3 } - Minimum string length to check (default: 3)
  *
  * ✓ Good:
  *   import { BUTTON_LABEL, ERROR_MESSAGE } from "@/constants";
@@ -12679,9 +12728,6 @@ const stringPropertySpacing = {
 const noHardcodedStrings = {
     create(context) {
         const options = context.options[0] || {};
-
-        // Minimum string length to check (shorter strings are often technical)
-        const minLength = options.minLength ?? 3;
 
         // JSX attributes that commonly contain non-translatable values
         const defaultIgnoreAttributes = [
@@ -12901,11 +12947,7 @@ const noHardcodedStrings = {
         const allIgnorePatterns = [...technicalPatterns, ...extraIgnorePatterns];
 
         // Check if a string matches any ignore pattern
-        const shouldIgnoreStringHandler = (str) => {
-            if (str.length < minLength) return true;
-
-            return allIgnorePatterns.some((pattern) => pattern.test(str));
-        };
+        const shouldIgnoreStringHandler = (str) => allIgnorePatterns.some((pattern) => pattern.test(str));
 
         // Check if we're inside a constants/strings file
         const isConstantsFileHandler = () => {
@@ -13252,12 +13294,6 @@ const noHardcodedStrings = {
                         description: "Regex patterns for strings to ignore",
                         items: { type: "string" },
                         type: "array",
-                    },
-                    minLength: {
-                        default: 3,
-                        description: "Minimum string length to check (default: 3)",
-                        minimum: 1,
-                        type: "integer",
                     },
                 },
                 type: "object",

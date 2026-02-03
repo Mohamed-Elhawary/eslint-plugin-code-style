@@ -300,7 +300,7 @@ rules: {
 | **Function Rules** | |
 | `function-call-spacing` | No space between function name and `(`: `fn()` not `fn ()` 🔧 |
 | `function-declaration-style` | Auto-fix for `func-style`: converts function declarations to arrow expressions 🔧 |
-| `function-naming-convention` | Functions use camelCase, start with verb (get/set/handle/is/has), handlers end with Handler 🔧 |
+| `function-naming-convention` | Functions use camelCase, start with verb, end with Handler suffix; handleXxx → xxxHandler 🔧 |
 | `function-object-destructure` | Non-component functions: use typed params (not destructured), destructure in body; report dot notation access 🔧 |
 | `function-params-per-line` | When multiline, each param on own line with consistent indentation 🔧 |
 | `no-empty-lines-in-function-params` | No empty lines between parameters or after `(`/before `)` 🔧 |
@@ -1319,33 +1319,37 @@ function isAuthenticated(): boolean {
 
 **What it does:** Enforces naming conventions for functions:
 - **camelCase** required
-- **Verb prefix** recommended (get, set, handle, is, has, can, should, etc.)
-- **Event handlers** can use `handle` prefix or `Handler` suffix
+- **Verb prefix** required (get, set, fetch, is, has, can, should, click, submit, etc.)
+- **Handler suffix** required (all functions must end with `Handler`)
+- **Auto-fixes** `handleXxx` to `xxxHandler` (avoids redundant `handleClickHandler`)
+- **Auto-fixes** PascalCase to camelCase for verb-prefixed functions
 
-**Why use it:** Function names should describe actions. Verb prefixes make the purpose immediately clear.
+**Why use it:** Function names should describe actions. Verb prefixes make the purpose immediately clear, and consistent Handler suffix makes event handlers easy to identify.
 
 ```javascript
-// ✅ Good — clear verb prefixes
-function getUserData() {}
-function setUserName(name) {}
-function handleClick() {}
-function handleSubmit() {}
-function isValidEmail(email) {}
-function hasPermission(user) {}
-function canAccess(resource) {}
-function shouldUpdate(props) {}
-const fetchUsers = async () => {};
-const submitHandler = () => {};
+// ✅ Good — verb prefix + Handler suffix
+function getUserDataHandler() {}
+function setUserNameHandler(name) {}
+function clickHandler() {}
+function submitHandler() {}
+function isValidEmailHandler(email) {}
+function hasPermissionHandler(user) {}
+function canAccessHandler(resource) {}
+const fetchUsersHandler = async () => {};
 
-// ❌ Bad — no verb, unclear purpose
-function userData() {}
-function userName(name) {}
-function click() {}
-function valid(email) {}
+// ❌ Bad (auto-fixed) — handleXxx → xxxHandler
+function handleClick() {}    // → clickHandler
+function handleSubmit() {}   // → submitHandler
+function handleChange() {}   // → changeHandler
 
-// ❌ Bad — wrong case
-function GetUserData() {}
-function get_user_data() {}
+// ❌ Bad (auto-fixed) — missing Handler suffix
+function getUserData() {}    // → getUserDataHandler
+function setUserName() {}    // → setUserNameHandler
+function fetchUsers() {}     // → fetchUsersHandler
+
+// ❌ Bad (auto-fixed) — PascalCase to camelCase
+function GetUserData() {}    // → getUserDataHandler
+function FetchStatus() {}    // → fetchStatusHandler
 ```
 
 ---
@@ -3293,7 +3297,6 @@ const YetAnotherBad = ({ title }) => {
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `minLength` | `integer` | `3` | Minimum string length to check |
 | `ignoreAttributes` | `string[]` | See below | JSX attributes to ignore (replaces defaults) |
 | `extraIgnoreAttributes` | `string[]` | `[]` | Additional JSX attributes to ignore (extends defaults) |
 | `ignorePatterns` | `string[]` | `[]` | Regex patterns for strings to ignore |
@@ -3335,7 +3338,6 @@ return "User not found";
 ```javascript
 // Allow more attributes, add custom ignore patterns
 "code-style/no-hardcoded-strings": ["error", {
-    minLength: 5,
     extraIgnoreAttributes: ["tooltip", "placeholder"],
     ignorePatterns: ["^TODO:", "^FIXME:"]
 }]
