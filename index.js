@@ -14070,6 +14070,22 @@ const noHardcodedStrings = {
             /^[a-z][a-zA-Z0-9_]*=/,
             // CSS property-like (kebab-case): must have hyphen (e.g., font-size, background-color)
             /^[a-z]+-[a-z]+(-[a-z]+)*$/,
+            // Tailwind CSS utility classes
+            // With numbers: w-5, p-4, pr-12, mt-1, text-2xl, gap-4, h-5, rounded-lg, etc.
+            /^-?[a-z]+-\d+(\.\d+)?(\/\d+)?$/,
+            /^-?[a-z]+-[a-z]+-\d+(\.\d+)?(\/\d+)?$/,
+            // With modifiers: hover:bg-primary, focus:ring-2, sm:flex, disabled:opacity-50, etc.
+            /^[a-z]+:[a-z][-a-z0-9/]*$/,
+            // With opacity: bg-white/50, text-black/80, placeholder-error/50, etc.
+            /^[a-z]+-[a-z]+(-[a-z]+)*\/\d+$/,
+            // Arbitrary values: w-[100px], bg-[#ff0000], translate-x-[50%], etc.
+            /^-?[a-z]+(-[a-z]+)*-\[.+\]$/,
+            // Negative transforms: -translate-y-1/2, -rotate-45, -skew-x-12, etc.
+            /^-[a-z]+-[a-z]+-\d+\/\d+$/,
+            // Common Tailwind patterns with full/auto/screen/none/inherit etc.
+            /^[a-z]+-(full|auto|screen|none|inherit|initial|px|fit|min|max)$/,
+            // Responsive/state prefixes with values: sm:w-full, md:flex, lg:hidden, etc.
+            /^(sm|md|lg|xl|2xl|hover|focus|active|disabled|first|last|odd|even|group-hover|dark|motion-safe|motion-reduce):[a-z][-a-z0-9/[\]]*$/,
             // Numbers with separators
             /^[\d,._]+$/,
             // Semantic version
@@ -14089,6 +14105,38 @@ const noHardcodedStrings = {
         });
 
         const allIgnorePatterns = [...technicalPatterns, ...extraIgnorePatterns];
+
+        // Tailwind/CSS class pattern - matches individual class names
+        const tailwindClassPattern = /^-?[a-z]+(-[a-z0-9]+)*(\/\d+)?$|^-?[a-z]+(-[a-z0-9]+)*-\[.+\]$|^[a-z]+:[a-z][-a-z0-9/[\]]*$/;
+
+        // Check if a string contains only CSS/Tailwind class names
+        const isTailwindClassStringHandler = (str) => {
+            // Split by whitespace and filter empty strings
+            const tokens = str.trim().split(/\s+/).filter(Boolean);
+
+            // Must have at least one token
+            if (tokens.length === 0) return false;
+
+            // Check if all tokens look like CSS classes
+            return tokens.every((token) => {
+                // Skip template literal expressions placeholders if any
+                if (token.includes("${")) return true;
+
+                // Common Tailwind patterns
+                return (
+                    // Basic kebab-case with numbers: w-5, p-4, pr-12, text-2xl, gap-4
+                    /^-?[a-z]+(-[a-z0-9]+)*$/.test(token)
+                    // With fractions: w-1/2, -translate-y-1/2
+                    || /^-?[a-z]+(-[a-z0-9]+)*\/\d+$/.test(token)
+                    // With modifiers: hover:bg-primary, focus:ring-2, sm:flex
+                    || /^[a-z0-9]+:[a-z][-a-z0-9/[\]]*$/.test(token)
+                    // Arbitrary values: w-[100px], bg-[#ff0000]
+                    || /^-?[a-z]+(-[a-z]+)*-?\[.+\]$/.test(token)
+                    // Single word utilities: flex, hidden, block
+                    || /^[a-z]+$/.test(token)
+                );
+            });
+        };
 
         // UI component patterns - only ignored in JSX attributes, not in logic
         const uiComponentPattern = /^(primary|secondary|tertiary|ghost|outline|link|muted|danger|warning|info|success|error|default|subtle|solid|soft|plain|flat|elevated|filled|tonal|text|contained|standard|xs|sm|md|lg|xl|2xl|3xl|4xl|5xl|xxs|xxl|small|medium|large|tiny|huge|compact|comfortable|spacious|left|right|center|top|bottom|start|end|middle|baseline|stretch|between|around|evenly|horizontal|vertical|row|column|inline|block|flex|grid|auto|none|hidden|visible|static|relative|absolute|fixed|sticky|on|off|hover|focus|click|blur|always|never)$/;
@@ -14310,6 +14358,9 @@ const noHardcodedStrings = {
         const shouldIgnoreStringHandler = (str) => {
             // Always flag HTTP status codes and role names
             if (isFlaggedSpecialStringHandler(str)) return false;
+
+            // Skip Tailwind/CSS class strings
+            if (isTailwindClassStringHandler(str)) return true;
 
             return allIgnorePatterns.some((pattern) => pattern.test(str));
         };

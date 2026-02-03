@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.9.6] - 2026-02-03
+
+### Enhanced
+
+- **`no-hardcoded-strings`** - Skip Tailwind CSS class strings:
+  - Multi-class strings like `"px-5 py-3 w-full bg-white"` are now ignored
+  - Individual classes: `w-5`, `p-4`, `pr-12`, `text-2xl`, `gap-4`, etc.
+  - State modifiers: `hover:bg-primary`, `focus:ring-2`, `disabled:opacity-50`
+  - Responsive prefixes: `sm:flex`, `md:hidden`, `lg:grid`
+  - Opacity values: `bg-white/50`, `text-black/80`, `placeholder-error/50`
+  - Arbitrary values: `w-[100px]`, `bg-[#ff0000]`
+  - Negative values: `-translate-y-1/2`, `-rotate-45`
+
+---
+
 ## [1.9.5] - 2026-02-03
 
 ### Fixed
@@ -1310,6 +1325,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.9.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.5...v1.9.6
 [1.9.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.4...v1.9.5
 [1.9.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.3...v1.9.4
 [1.9.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.2...v1.9.3
