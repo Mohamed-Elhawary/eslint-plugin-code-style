@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.10.2] - 2026-02-03
+
+**Bug Fixes: component-props-inline-type and no-hardcoded-strings**
+
+**Version Range:** v1.10.1 → v1.10.2
+
+### Fixed
+
+- **`component-props-inline-type`** - Don't require trailing comma for single property in inline type definitions
+- **`no-hardcoded-strings`** - Skip 40+ SVG attributes (strokeLinecap, strokeLinejoin, filter, result, in, in2, mode, colorInterpolationFilters, etc.)
+- **`no-hardcoded-strings`** - Skip SVG standard attribute values (round, butt, square, miter, bevel, none, normal, sRGB, userSpaceOnUse, etc.)
+- **`no-hardcoded-strings`** - Skip URL references (url(#...)) and scientific notation numbers
+- **`no-hardcoded-strings`** - Skip CSS property values (cursor: pointer, display: flex, position: absolute, etc.)
+- **`no-hardcoded-strings`** - Skip SVG filter result identifiers (BackgroundImageFix, SourceGraphic, etc.)
+
+**Full Changelog:** [v1.10.1...v1.10.2](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.1...v1.10.2)
+
+---
+
 ## [1.10.1] - 2026-02-03
 
 **Bug Fix: logical-expression-multiline rule improvements**
@@ -1394,6 +1413,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.10.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.1...v1.10.2
 [1.10.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.0...v1.10.1
 [1.10.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.7...v1.10.0
 [1.9.7]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.6...v1.9.7

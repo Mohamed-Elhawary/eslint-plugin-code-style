@@ -14095,6 +14095,10 @@ const noHardcodedStrings = {
             "cellSpacing",
             "charSet",
             "className",
+            "clipPath", // SVG
+            "clipRule", // SVG
+            "colorInterpolation", // SVG
+            "colorInterpolationFilters", // SVG
             "classNames",
             "colSpan",
             "contentEditable",
@@ -14116,7 +14120,12 @@ const noHardcodedStrings = {
             "encType",
             "enterKeyHint",
             "fill", // SVG
+            "fillOpacity", // SVG
             "fillRule", // SVG
+            "filter", // SVG filter reference
+            "filterUnits", // SVG
+            "floodColor", // SVG
+            "floodOpacity", // SVG
             "for",
             "form",
             "formAction",
@@ -14133,8 +14142,12 @@ const noHardcodedStrings = {
             "hrefLang",
             "htmlFor",
             "httpEquiv",
+            "gradientTransform", // SVG
+            "gradientUnits", // SVG
             "icon",
             "id",
+            "in", // SVG filter input
+            "in2", // SVG filter input
             "imagesizes",
             "imagesrcset",
             "inputMode",
@@ -14156,7 +14169,13 @@ const noHardcodedStrings = {
             "low",
             "marginHeight",
             "marginWidth",
+            "markerEnd", // SVG
+            "markerMid", // SVG
+            "markerStart", // SVG
+            "markerUnits", // SVG
+            "mask", // SVG
             "max",
+            "mode", // SVG blend mode
             "maxLength",
             "media",
             "mediaGroup",
@@ -14172,7 +14191,11 @@ const noHardcodedStrings = {
             "open",
             "optimum",
             "pattern",
+            "patternContentUnits", // SVG
+            "patternTransform", // SVG
+            "patternUnits", // SVG
             "ping",
+            "preserveAspectRatio", // SVG
             "playsInline",
             "poster",
             "preload",
@@ -14181,7 +14204,10 @@ const noHardcodedStrings = {
             "readOnly",
             "referrerPolicy",
             "rel",
+            "repeatCount", // SVG
+            "repeatDur", // SVG
             "required",
+            "result", // SVG filter result
             "reversed",
             "role",
             "rowSpan",
@@ -14203,23 +14229,86 @@ const noHardcodedStrings = {
             "srcSet",
             "start",
             "step",
+            "spreadMethod", // SVG
+            "stdDeviation", // SVG filter blur
+            "stopColor", // SVG gradient
+            "stopOpacity", // SVG gradient
             "stroke", // SVG
+            "strokeDasharray", // SVG
+            "strokeDashoffset", // SVG
+            "strokeLinecap", // SVG
+            "strokeLinejoin", // SVG
+            "strokeMiterlimit", // SVG
+            "strokeOpacity", // SVG
             "strokeWidth", // SVG
             "style",
             "summary",
             "tabIndex",
             "target",
             "testId",
+            "textAnchor", // SVG
+            "textDecoration", // SVG
             "transform", // SVG
             "translate",
             "type",
+            "vectorEffect", // SVG
             "useMap",
             "value",
             "viewBox", // SVG
             "width",
             "wmode",
             "wrap",
+            "x", // SVG coordinate
+            "x1", // SVG line coordinate
+            "x2", // SVG line coordinate
             "xmlns",
+            "y", // SVG coordinate
+            "y1", // SVG line coordinate
+            "y2", // SVG line coordinate
+            // SVG filter primitive attributes
+            "baseFrequency",
+            "numOctaves",
+            "seed",
+            "stitchTiles",
+            "operator",
+            "k1",
+            "k2",
+            "k3",
+            "k4",
+            "surfaceScale",
+            "diffuseConstant",
+            "specularConstant",
+            "specularExponent",
+            "kernelMatrix",
+            "order",
+            "targetX",
+            "targetY",
+            "edgeMode",
+            "kernelUnitLength",
+            "bias",
+            "divisor",
+            "preserveAlpha",
+            "radius",
+            "azimuth",
+            "elevation",
+            "limitingConeAngle",
+            "pointsAtX",
+            "pointsAtY",
+            "pointsAtZ",
+            // SVG shape attributes
+            "cx", // circle/ellipse center x
+            "cy", // circle/ellipse center y
+            "r", // circle radius
+            "rx", // ellipse radius x
+            "ry", // ellipse radius y
+            "points", // polygon/polyline points
+            "pathLength",
+            "offset", // gradient offset
+            "dx", // text offset
+            "dy", // text offset
+            "rotate", // text rotate
+            "lengthAdjust",
+            "textLength",
         ];
 
         const ignoreAttributes = options.ignoreAttributes
@@ -14233,9 +14322,27 @@ const noHardcodedStrings = {
             /^.$/,
             // CSS units and values
             /^-?\d+(\.\d+)?(px|em|rem|%|vh|vw|vmin|vmax|ch|ex|cm|mm|in|pt|pc|deg|rad|turn|s|ms|fr)?$/,
+            // Scientific notation numbers (common in SVG coordinates)
+            /^-?\d+(\.\d+)?e[+-]?\d+$/i,
             // Colors (hex, rgb, hsl)
             /^#[0-9a-fA-F]{3,8}$/,
             /^(rgb|rgba|hsl|hsla)\(.+\)$/,
+            // URL references (SVG filters, clips, etc.)
+            /^url\(#?.+\)$/,
+            // SVG standard attribute values
+            /^(round|butt|square|miter|bevel|none|normal|evenodd|nonzero|sRGB|linearRGB|userSpaceOnUse|objectBoundingBox|pad|reflect|repeat|auto|inherit|currentColor|meet|slice|xMinYMin|xMidYMin|xMaxYMin|xMinYMid|xMidYMid|xMaxYMid|xMinYMax|xMidYMax|xMaxYMax|stitch|noStitch|duplicate|wrap|arithmetic|atop|in|out|over|xor|dilate|erode|matrix|saturate|hueRotate|luminanceToAlpha|discrete|linear|gamma|table|identity|SourceGraphic|SourceAlpha|BackgroundImage|BackgroundAlpha|FillPaint|StrokePaint)$/,
+            // SVG filter result/internal identifiers (patterns like effect1_foregroundBlur, filter0_f_21_211, BackgroundImageFix)
+            /^[a-zA-Z]+\d*[_a-zA-Z0-9]*(_[a-zA-Z0-9]+)+$/,
+            // Color names (CSS named colors used in SVG)
+            /^(white|black|red|green|blue|yellow|orange|purple|pink|brown|gray|grey|cyan|magenta|transparent)$/i,
+            // CSS cursor values
+            /^(auto|default|none|context-menu|help|pointer|progress|wait|cell|crosshair|text|vertical-text|alias|copy|move|no-drop|not-allowed|grab|grabbing|all-scroll|col-resize|row-resize|n-resize|e-resize|s-resize|w-resize|ne-resize|nw-resize|se-resize|sw-resize|ew-resize|ns-resize|nesw-resize|nwse-resize|zoom-in|zoom-out)$/,
+            // CSS display/visibility values
+            /^(block|inline|inline-block|flex|inline-flex|grid|inline-grid|flow-root|contents|table|table-row|table-cell|list-item|none|visible|hidden|collapse)$/,
+            // CSS position values
+            /^(static|relative|absolute|fixed|sticky)$/,
+            // CSS overflow values
+            /^(visible|hidden|scroll|auto|clip)$/,
             // URLs and paths
             /^(https?:\/\/|\/\/|\/|\.\/|\.\.\/)/,
             // Data URLs
@@ -16987,8 +17094,8 @@ const componentPropsInlineType = {
                         }
                     });
 
-                    // Check that last member has trailing comma
-                    if (members.length > 0) {
+                    // Check that last member has trailing comma (only for multiple members)
+                    if (members.length > 1) {
                         const lastMember = members[members.length - 1];
                         const lastMemberText = sourceCode.getText(lastMember);
 
@@ -17224,8 +17331,8 @@ const componentPropsInlineType = {
                     }
                 });
 
-                // Check that last member has trailing comma
-                if (members.length > 0) {
+                // Check that last member has trailing comma (only for multiple members)
+                if (members.length > 1) {
                     const lastMember = members[members.length - 1];
                     const lastMemberText = sourceCode.getText(lastMember);
 
