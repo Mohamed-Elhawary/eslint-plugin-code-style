@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.9.3] - 2026-02-03
+
+### Enhanced
+
+- **`no-hardcoded-strings`** - Remove single-word string length limitations and add more special cases:
+  - Removed length restrictions (now detects all single-word hardcoded strings)
+  - Added validation strings: `empty`, `invalid`, `missing`, `optional`, `required`, `valid`
+  - Added auth state strings: `anonymous`, `authenticated`, `authed`, `authorized`, `denied`, `forbidden`, `granted`, `locked`, `loggedin`, `loggedout`, `revoked`, `unauthenticated`, `unauthorized`, `unlocked`, `unverified`, `verified`
+  - Added more status strings: `done`, `finished`, `inprogress`, `queued`, `ready`, `running`, `started`, `stopped`, `successful`, `waiting`
+  - Made technical patterns stricter to avoid false negatives (camelCase requires uppercase in middle, snake_case requires underscore, kebab-case requires hyphen)
+
+---
+
 ## [1.9.2] - 2026-02-03
 
 ### Enhanced
@@ -1275,6 +1288,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.9.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.2...v1.9.3
 [1.9.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.1...v1.9.2
 [1.9.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.0...v1.9.1
 [1.9.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.4...v1.9.0

@@ -14055,20 +14055,21 @@ const noHardcodedStrings = {
             /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?/,
             // Time formats
             /^\d{1,2}:\d{2}(:\d{2})?(\s?(AM|PM|am|pm))?$/,
-            // JSON keys (camelCase, snake_case, SCREAMING_SNAKE_CASE)
-            /^[a-z][a-zA-Z0-9]*$/,
-            /^[a-z][a-z0-9_]*$/,
-            /^[A-Z][A-Z0-9_]*$/,
+            // JSON keys - require actual naming convention markers (underscore/uppercase in middle)
+            // camelCase: must have uppercase letter in middle (e.g., userId, firstName)
+            /^[a-z]+[A-Z][a-zA-Z0-9]*$/,
+            // snake_case: must have underscore (e.g., user_id, first_name)
+            /^[a-z][a-z0-9]*_[a-z0-9_]*$/,
+            // SCREAMING_SNAKE_CASE: must have underscore (e.g., MAX_VALUE, API_URL)
+            /^[A-Z][A-Z0-9]*_[A-Z0-9_]+$/,
             // Common technical strings
             /^(true|false|null|undefined|NaN|Infinity)$/,
             // Content types
             /^application\//,
-            // Environment variables pattern
-            /^[A-Z][A-Z0-9_]*$/,
             // Query parameters
             /^[a-z][a-zA-Z0-9_]*=/,
-            // CSS property-like
-            /^[a-z]+(-[a-z]+)*$/,
+            // CSS property-like (kebab-case): must have hyphen (e.g., font-size, background-color)
+            /^[a-z]+-[a-z]+(-[a-z]+)*$/,
             // Numbers with separators
             /^[\d,._]+$/,
             // Semantic version
@@ -14164,22 +14165,63 @@ const noHardcodedStrings = {
             "declined",
             "deleted",
             "disabled",
+            "done",
             "draft",
             "enabled",
             "expired",
             "failed",
+            "finished",
             "inactive",
+            "inprogress",
             "open",
             "paused",
             "pending",
             "processing",
             "published",
+            "queued",
+            "ready",
             "rejected",
             "resolved",
+            "running",
             "scheduled",
+            "started",
+            "stopped",
             "submitted",
             "success",
+            "successful",
             "suspended",
+            "verified",
+            "waiting",
+        ]);
+
+        // Validation/form strings that should be imported from enums/data
+        const validationStrings = new Set([
+            "empty",
+            "invalid",
+            "missing",
+            "optional",
+            "required",
+            "valid",
+        ]);
+
+        // Auth/permission state strings that should be imported from enums/data
+        const authStrings = new Set([
+            "anonymous",
+            "authenticated",
+            "authed",
+            "authorized",
+            "denied",
+            "expired",
+            "forbidden",
+            "granted",
+            "locked",
+            "loggedin",
+            "loggedout",
+            "revoked",
+            "unauthenticated",
+            "unauthorized",
+            "unlocked",
+            "unverified",
             "verified",
         ]);
 
@@ -14203,6 +14245,8 @@ const noHardcodedStrings = {
         const isLogLevelHandler = (str) => logLevels.has(str.toLowerCase());
         const isStatusStringHandler = (str) => statusStrings.has(str.toLowerCase());
         const isPriorityLevelHandler = (str) => priorityLevels.has(str.toLowerCase());
+        const isValidationStringHandler = (str) => validationStrings.has(str.toLowerCase());
+        const isAuthStringHandler = (str) => authStrings.has(str.toLowerCase());
 
         // Check if string should be flagged even if it matches technical patterns
         const isFlaggedSpecialStringHandler = (str) => isHttpStatusCodeHandler(str)
@@ -14211,7 +14255,9 @@ const noHardcodedStrings = {
             || isEnvironmentNameHandler(str)
             || isLogLevelHandler(str)
             || isStatusStringHandler(str)
-            || isPriorityLevelHandler(str);
+            || isPriorityLevelHandler(str)
+            || isValidationStringHandler(str)
+            || isAuthStringHandler(str);
 
         // Get descriptive error message based on string type
         const getErrorMessageHandler = (str, context = "") => {
@@ -14244,6 +14290,14 @@ const noHardcodedStrings = {
 
             if (isPriorityLevelHandler(str)) {
                 return `Hardcoded priority level "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
+            }
+
+            if (isValidationStringHandler(str)) {
+                return `Hardcoded validation string "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
+            }
+
+            if (isAuthStringHandler(str)) {
+                return `Hardcoded auth state "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
             }
 
             return `Hardcoded string "${truncatedStr}"${contextPart} should be imported from @/data or @/strings or @/constants or @/@constants or @/@strings`;
@@ -14499,9 +14553,6 @@ const noHardcodedStrings = {
                     // Check if it looks like user-facing text - skip for special strings
                     if (!isSpecialString && !/[a-zA-Z]/.test(str)) return;
 
-                    // Require multiple words or reasonable length for non-special strings
-                    if (!isSpecialString && str.split(/\s+/).length < 2 && str.length < 10) return;
-
                     context.report({
                         message: getErrorMessageHandler(str, `attribute "${attrName}"`),
                         node: node.value,
@@ -14524,9 +14575,6 @@ const noHardcodedStrings = {
                         if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
 
                         if (!isSpecialString && !/[a-zA-Z]/.test(str)) return;
-
-                        // Require multiple words or reasonable length for non-special strings
-                        if (!isSpecialString && str.split(/\s+/).length < 2 && str.length < 10) return;
 
                         context.report({
                             message: getErrorMessageHandler(str, `attribute "${attrName}"`),
@@ -14566,9 +14614,6 @@ const noHardcodedStrings = {
 
                 // Skip if it doesn't look like user-facing text - but not for special strings
                 if (!isSpecialString && !/[a-zA-Z]/.test(str)) return;
-
-                // Require at least 2 words or be reasonably long - but not for special strings
-                if (!isSpecialString && str.split(/\s+/).length < 2 && str.length < 15) return;
 
                 context.report({
                     message: getErrorMessageHandler(str),
