@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-fixable: 65 rules 🔧 (was 64)
 - Report-only: 7 rules
 
-**Full Changelog:** [v1.9.0...v1.10.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.0...v1.10.0)
+**Full Changelog:** [v1.9.1...v1.10.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.1...v1.10.0)
 
 ---
 
