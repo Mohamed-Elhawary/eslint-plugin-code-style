@@ -70,7 +70,7 @@ Complete workflow for adding, editing, or removing a rule from the plugin.
    - Create annotated tag: `git tag -a vX.Y.0 -m "message"`
 
 **TypeScript-only rules** (only add to `-ts-tw` configs):
-- `component-props-inline-type`, `enum-format`, `interface-format`
+- `component-props-inline-type`, `enum-format`, `enum-type-enforcement`, `interface-format`
 - `no-inline-type-definitions`, `type-annotation-spacing`, `type-format`
 - `typescript-definition-location`
 
@@ -79,7 +79,21 @@ Complete workflow for adding, editing, or removing a rule from the plugin.
 ### Editing an Existing Rule
 
 **Bug fix (PATCH x.x.+1):**
-- Fix in `index.js` → Test → Commit: `fix: description`
+- Fix in `index.js` → Test
+- Update `package.json` version (x.x.+1)
+- Update `CHANGELOG.md` with **simple tag format** (NO title, NO version range, NO full changelog in entry):
+  ```markdown
+  ## [X.Y.Z] - YYYY-MM-DD
+
+  ### Fixed
+
+  - **`rule-name`** - What was fixed
+
+  ---
+  ```
+- Add link reference at bottom of CHANGELOG.md: `[X.Y.Z]: https://github.com/.../compare/vA.B.C...vX.Y.Z`
+- Commit: `fix: description`
+- Create tag: `git tag -a vX.Y.Z -m "message"`
 
 **Behavior change (PATCH/MINOR):**
 - Update `index.js` logic and JSDoc

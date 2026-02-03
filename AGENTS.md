@@ -1054,9 +1054,13 @@ This project follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 - Content must match the GitHub Release description
 - **Current releases:** v1.11.0, v1.10.0, v1.9.0, v1.8.0, v1.7.0, v1.6.0, v1.5.0, v1.4.2, v1.3.0, v1.2.0, v1.1.0, v1.0.16, v1.0.14, v1.0.7, v1.0.6
 
-**2. Tags** (between releases)
+**2. Tags/PATCH versions** (between releases)
 - Simpler entries with just the changes
-- No Version Range or Full Changelog link needed
+- **NO title** (bold description line after date)
+- **NO Version Range**
+- **NO Full Changelog link** in the entry body
+- **MUST add link reference** at bottom of CHANGELOG.md: `[X.Y.Z]: https://github.com/.../compare/vA.B.C...vX.Y.Z`
+- Just `### Fixed`, `### Enhanced`, or other section headers directly
 
 #### When to Create a Release
 
@@ -1111,23 +1115,19 @@ After creating a release:
 **Full Changelog:** [v1.3.1...v1.4.2](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.3.1...v1.4.2)
 ```
 
-#### Tag Format
+#### Tag Format (PATCH versions)
+
+PATCH versions (x.y.+1) have a simpler format - NO title, NO version range, NO full changelog in entry:
 
 ```markdown
-## [1.3.11] - 2026-01-30
-
-### Enhanced
-
-- Dependency-aware ordering for react-code-order
-- Auto-fix for module-level constants
-
----
-
-## [1.3.10] - 2026-01-30
+## [1.11.2] - 2026-02-04
 
 ### Fixed
 
-- `function-naming-convention` - Skip React components
+- **`rule-name`** - What was fixed
+- **`another-rule`** - Another fix
+
+---
 ```
 
 For version bumps with no changes:
@@ -1135,6 +1135,14 @@ For version bumps with no changes:
 ## [1.0.19] - 2026-01-11
 
 - Version bump
+
+---
+```
+
+**IMPORTANT:** Even though PATCH entries don't have Full Changelog links in the body, you MUST still add the link reference at the bottom of CHANGELOG.md:
+```markdown
+[1.11.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.1...v1.11.2
+[1.11.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.0...v1.11.1
 ```
 
 #### Section Types
