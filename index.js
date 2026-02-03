@@ -14090,6 +14090,9 @@ const noHardcodedStrings = {
 
         const allIgnorePatterns = [...technicalPatterns, ...extraIgnorePatterns];
 
+        // UI component patterns - only ignored in JSX attributes, not in logic
+        const uiComponentPattern = /^(primary|secondary|tertiary|ghost|outline|link|muted|danger|warning|info|success|error|default|subtle|solid|soft|plain|flat|elevated|filled|tonal|text|contained|standard|xs|sm|md|lg|xl|2xl|3xl|4xl|5xl|xxs|xxl|small|medium|large|tiny|huge|compact|comfortable|spacious|left|right|center|top|bottom|start|end|middle|baseline|stretch|between|around|evenly|horizontal|vertical|row|column|inline|block|flex|grid|auto|none|hidden|visible|static|relative|absolute|fixed|sticky|on|off|hover|focus|click|blur|always|never)$/;
+
         // HTTP status codes that should NOT be hardcoded (2xx, 4xx, and 5xx)
         const httpStatusCodePattern = /^[245]\d{2}$/;
 
@@ -14545,6 +14548,9 @@ const noHardcodedStrings = {
                 if (node.value.type === "Literal" && typeof node.value.value === "string") {
                     const str = node.value.value;
 
+                    // Skip UI component patterns in JSX attributes (variant, size, position props)
+                    if (uiComponentPattern.test(str)) return;
+
                     // Check if it's a flagged special string (status code, role name)
                     const isSpecialString = isFlaggedSpecialStringHandler(str);
 
@@ -14568,6 +14574,9 @@ const noHardcodedStrings = {
 
                     if (expression.type === "Literal" && typeof expression.value === "string") {
                         const str = expression.value;
+
+                        // Skip UI component patterns in JSX attributes (variant, size, position props)
+                        if (uiComponentPattern.test(str)) return;
 
                         // Check if it's a flagged special string (status code, role name)
                         const isSpecialString = isFlaggedSpecialStringHandler(str);

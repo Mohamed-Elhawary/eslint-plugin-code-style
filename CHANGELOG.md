@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.9.4] - 2026-02-03
+
+### Enhanced
+
+- **`no-hardcoded-strings`** - Skip UI component patterns only in JSX attributes:
+  - In JSX attributes: `<Button variant="ghost" />` is now ignored
+  - In logic: `const status = "success"` or `setValue("primary")` is still detected
+  - UI patterns: `primary`, `secondary`, `ghost`, `outline`, `link`, `muted`, `danger`, `warning`, `success`, `error`, `sm`, `md`, `lg`, `xl`, `left`, `right`, `center`, `top`, `bottom`, `hover`, `focus`, `click`, etc.
+
+---
+
 ## [1.9.3] - 2026-02-03
 
 ### Enhanced
@@ -1288,6 +1299,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.9.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.3...v1.9.4
 [1.9.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.2...v1.9.3
 [1.9.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.1...v1.9.2
 [1.9.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.0...v1.9.1
