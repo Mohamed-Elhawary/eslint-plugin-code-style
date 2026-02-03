@@ -1151,37 +1151,57 @@ if (isAuthenticated &&
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `maxOperands` | `integer` | `3` | Maximum operands to keep on single line. Also applies to nested groups within the nesting limit |
-| `maxNestingLevel` | `integer` | `2` | Maximum nesting depth of parenthesized groups. Deeper nesting is auto-extracted to variables |
+| `maxOperands` | `integer` | `3` | Maximum operands to keep on single line. Also applies to nested groups |
 
 ```javascript
 // Example: Allow up to 4 operands on single line
 "code-style/multiline-if-conditions": ["error", { maxOperands: 4 }]
-
-// Example: Allow only 1 level of nesting
-"code-style/multiline-if-conditions": ["error", { maxNestingLevel: 1 }]
 ```
 
-**Auto-extraction:** Nested groups are auto-extracted to variables when they exceed limits:
+**Auto-formatting:** Nested groups with >maxOperands are formatted multiline inline:
 
-1. **Nesting depth exceeds `maxNestingLevel` (default: 2):**
 ```javascript
-// ❌ Before (level 3 nesting exceeds default)
+// ❌ Before (nested group has 4 operands)
+if ((a || b || c || d) && e) {}
+
+// ✅ After auto-fix — formats nested group multiline
+if ((
+    a
+    || b
+    || c
+    || d
+) && e) {}
+```
+
+**Double nesting:** Both levels expand when both exceed maxOperands:
+
+```javascript
+// ❌ Before (both parent and nested have 4 operands)
+if ((a || (c && d && a && b) || c || d) && e) {}
+
+// ✅ After auto-fix — both levels formatted multiline
+if ((
+    a
+    || (
+        c
+        && d
+        && a
+        && b
+    )
+    || c
+    || d
+) && e) {}
+```
+
+**Extraction:** Groups exceeding nesting level 2 are extracted to variables:
+
+```javascript
+// ❌ Before (level 3 nesting)
 if ((a && (b || (c && d))) || e) {}
 
 // ✅ After auto-fix — extracts deepest nested group
 const isCAndD = (c && d);
 if ((a && (b || isCAndD)) || e) {}
-```
-
-2. **Nested group has more than `maxOperands` (default: 3):**
-```javascript
-// ❌ Before (nested group has 4 operands)
-if ((a || b || c || d) && e) {}
-
-// ✅ After auto-fix — extracts complex nested group
-const isAOrBOrCOrD = (a || b || c || d);
-if (isAOrBOrCOrD && e) {}
 ```
 
 ---
@@ -1245,6 +1265,7 @@ switch (status) {
 - \>maxOperands: Expand to multiline with each operand on its own line
 - Simple parenthesized nested ternaries (≤maxOperands) count as 1 operand and collapse
 - Complex nested ternaries (>maxOperands in their condition) are skipped for manual formatting
+- Nesting level is fixed at 2 to prevent overly complex conditions
 
 **Why use it:** Consistent formatting based on complexity, not line length. Simple conditions stay readable on one line; complex conditions get proper multiline formatting.
 
@@ -1252,8 +1273,7 @@ switch (status) {
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `maxOperands` | `integer` | `3` | Maximum condition operands to keep ternary on single line. Also applies to nested groups within the nesting limit |
-| `maxNestingLevel` | `integer` | `2` | Maximum nesting depth of parenthesized groups. Deeper nesting is auto-extracted to variables |
+| `maxOperands` | `integer` | `3` | Maximum condition operands to keep ternary on single line. Also applies to nested groups |
 
 ```javascript
 // ✅ Good — ≤3 operands always on single line
@@ -1271,6 +1291,19 @@ const style = variant === "ghost"
     ? "transparent"
     : "solid";
 
+// ✅ Good — nested group with >3 operands formatted multiline inline
+const result = (
+    a
+    || (
+        c
+        && d
+        && a
+        && b
+    )
+    || c
+    || d
+) && e ? "yes" : "no";
+
 // ❌ Bad — ≤3 operands split across lines
 const x = a && b && c
     ? "yes"
@@ -1280,11 +1313,10 @@ const x = a && b && c
 const style = variant === "ghost" || variant === "ghost-danger" || variant === "muted" || variant === "primary" ? "transparent" : "solid";
 ```
 
-**Auto-extraction:** Nested groups are auto-extracted to variables when they exceed limits:
+**Auto-extraction:** Nested groups are auto-extracted to variables only when nesting depth exceeds 2 levels:
 
-1. **Nesting depth exceeds `maxNestingLevel` (default: 2):**
 ```javascript
-// ❌ Before (level 3 nesting exceeds default)
+// ❌ Before (level 3 nesting exceeds limit)
 const result = (a && (b || (c && d))) || e ? "yes" : "no";
 
 // ✅ After auto-fix — extracts deepest nested group
@@ -1292,15 +1324,7 @@ const isCAndD = (c && d);
 const result = (a && (b || isCAndD)) || e ? "yes" : "no";
 ```
 
-2. **Nested group has more than `maxOperands` (default: 3):**
-```javascript
-// ❌ Before (nested group has 4 operands)
-const result = (a || b || c || d) && e ? "yes" : "no";
-
-// ✅ After auto-fix — extracts complex nested group
-const isAOrBOrCOrD = (a || b || c || d);
-const result = isAOrBOrCOrD && e ? "yes" : "no";
-```
+**Note:** When nested groups exceed `maxOperands` but stay within the 2-level nesting limit, they are formatted multiline inline (not extracted).
 
 <br />
 

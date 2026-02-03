@@ -3258,8 +3258,15 @@ const ifStatementFormat = {
             }
 
             // LogicalExpression - collapse if it's short enough to fit on one line
-            // "Short enough" means under 80 characters for the condition itself
+            // BUT skip if it has intentional multiline formatting (operator at start of line)
             if (testNode.type === "LogicalExpression") {
+                // Check for intentional multiline format (operator at start of line after newline)
+                // This pattern indicates multiline-if-conditions has intentionally formatted it
+                if (/\n\s*(\|\||&&)/.test(testText)) {
+                    return false; // Intentionally multilined, don't collapse
+                }
+
+                // "Short enough" means under 80 characters for the condition itself
                 const conditionLength = testText.replace(/\s+/g, " ").trim().length;
 
                 return conditionLength <= 80;
@@ -3518,16 +3525,23 @@ const ifElseSpacing = {
  * Description:
  *   When an if statement has multiple conditions that span
  *   multiple lines, each condition should be on its own line.
- *   Also enforces max nesting level for parenthesized groups.
+ *   Nested groups with >maxOperands are formatted multiline inline.
+ *   Groups exceeding nesting level 2 are extracted to variables.
  *
  * Options:
  *   { maxOperands: 3 } - Maximum operands on single line (default: 3)
- *   { maxNestingLevel: 2 } - Maximum nesting of parenthesized groups (default: 2)
  *
- * ✓ Good (≤2 nesting level - within default):
+ * ✓ Good (nested group with >3 operands - multiline inline):
+ *   if ((
+ *       a
+ *       || b
+ *       || c
+ *       || d
+ *   ) && e) {}
+ *
+ * ✓ Good (≤2 nesting level):
  *   if ((a && b) || c) {}                    // Level 1
  *   if ((a && (b || c)) || d) {}             // Level 2
- *   if ((a && b) || (c && d)) {}             // Level 1 (parallel groups)
  *
  * ✗ Bad (>2 nesting level - auto-fixed by extraction):
  *   if ((a && (b || (c && d))) || e) {}
@@ -3540,7 +3554,7 @@ const multilineIfConditions = {
         const sourceCode = context.sourceCode || context.getSourceCode();
         const options = context.options[0] || {};
         const maxOperands = options.maxOperands !== undefined ? options.maxOperands : 3;
-        const maxNestingLevel = options.maxNestingLevel !== undefined ? options.maxNestingLevel : 2;
+        const maxNestingLevel = 2; // Fixed at 2 - not configurable to avoid overly complex conditions
 
         const isParenthesizedHandler = (node) => {
             const tokenBefore = sourceCode.getTokenBefore(node);
@@ -3849,69 +3863,146 @@ const multilineIfConditions = {
                 return sourceCode.getText(n);
             };
 
-            // Check if any nested parenthesized group has >maxOperands - extract to variable if so
+            // Check if any nested parenthesized group has >maxOperands - format multiline inline
             const nestedGroupExceeding = findNestedGroupExceedingMaxOperandsHandler(test);
             if (nestedGroupExceeding) {
-                const groupText = getSourceTextWithGroupsHandler(nestedGroupExceeding);
+                // Get indentation for formatting
+                const lineText = sourceCode.lines[node.loc.start.line - 1];
+                const parenIndent = lineText.match(/^\s*/)[0];
+                const contentIndent = parenIndent + "    ";
 
-                // Generate descriptive variable name
-                const getConditionNameHandler = (n) => {
-                    if (n.type === "LogicalExpression") {
-                        const leftName = getConditionNameHandler(n.left);
-                        const rightName = getConditionNameHandler(n.right);
-                        const opName = n.operator === "&&" ? "And" : "Or";
-                        return `${leftName}${opName}${rightName}`;
+                // Build multiline text for operands inside a nested group
+                // isOuterGroup=true means we're at the target group itself (ignore its own parentheses)
+                // Also recursively expands any inner nested groups with >maxOperands
+                const buildNestedMultilineHandler = (n, isOuterGroup = false, currentIndent = contentIndent) => {
+                    if (n.type === "LogicalExpression" && (isOuterGroup || !isParenthesizedHandler(n))) {
+                        const leftText = buildNestedMultilineHandler(n.left, false, currentIndent);
+                        const rightText = buildNestedMultilineHandler(n.right, false, currentIndent);
+
+                        return `${leftText}\n${currentIndent}${n.operator} ${rightText}`;
                     }
-                    if (n.type === "Identifier") {
-                        return n.name.charAt(0).toUpperCase() + n.name.slice(1);
+
+                    // Check if this is a parenthesized group with >maxOperands - also expand it
+                    if (n.type === "LogicalExpression" && isParenthesizedHandler(n)) {
+                        const innerCount = countOperandsInsideGroupHandler(n);
+                        if (innerCount > maxOperands) {
+                            const innerIndent = currentIndent + "    ";
+                            const buildInner = (inner) => {
+                                if (inner.type === "LogicalExpression" && !isParenthesizedHandler(inner)) {
+                                    const l = buildInner(inner.left);
+                                    const r = buildInner(inner.right);
+
+                                    return `${l}\n${innerIndent}${inner.operator} ${r}`;
+                                }
+
+                                return getSourceTextWithGroupsHandler(inner);
+                            };
+
+                            const innerLeft = buildInner(n.left);
+                            const innerRight = buildInner(n.right);
+
+                            return `(\n${innerIndent}${innerLeft}\n${innerIndent}${n.operator} ${innerRight}\n${currentIndent})`;
+                        }
                     }
-                    if (n.type === "BinaryExpression" || n.type === "CallExpression" || n.type === "MemberExpression") {
-                        return "Expr";
-                    }
-                    return "Cond";
+
+                    return getSourceTextWithGroupsHandler(n);
                 };
 
-                let varName = `is${getConditionNameHandler(nestedGroupExceeding)}`;
-                if (varName.length > 30) {
-                    varName = "isComplexCondition";
-                }
+                // Build the full condition with nested group formatted multiline
+                const buildFullConditionHandler = (n, targetNode) => {
+                    if (n === targetNode) {
+                        // This is the nested group - format it multiline
+                        // Pass true to ignore outer parentheses check
+                        const nestedText = buildNestedMultilineHandler(n, true);
 
-                context.report({
-                    fix: (fixer) => {
-                        const fixes = [];
-                        const ifLine = node.loc.start.line;
-                        const lineStart = sourceCode.getIndexFromLoc({ line: ifLine, column: 0 });
-                        const lineText = sourceCode.lines[ifLine - 1];
-                        const indent = lineText.match(/^\s*/)[0];
+                        return `(\n${contentIndent}${nestedText}\n${parenIndent})`;
+                    }
 
-                        fixes.push(fixer.insertTextBeforeRange(
-                            [lineStart, lineStart],
-                            `const ${varName} = ${groupText};\n${indent}`,
-                        ));
+                    if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                        const leftText = buildFullConditionHandler(n.left, targetNode);
+                        const rightText = buildFullConditionHandler(n.right, targetNode);
 
-                        const tokenBefore = sourceCode.getTokenBefore(nestedGroupExceeding);
-                        const tokenAfter = sourceCode.getTokenAfter(nestedGroupExceeding);
+                        return `${leftText} ${n.operator} ${rightText}`;
+                    }
 
-                        if (tokenBefore && tokenAfter && tokenBefore.value === "(" && tokenAfter.value === ")") {
-                            fixes.push(fixer.replaceTextRange(
-                                [tokenBefore.range[0], tokenAfter.range[1]],
-                                varName,
-                            ));
-                        } else {
-                            fixes.push(fixer.replaceText(nestedGroupExceeding, varName));
+                    if (n.type === "LogicalExpression" && isParenthesizedHandler(n)) {
+                        // Check if this contains the target
+                        const containsTargetHandler = (node, target) => {
+                            if (node === target) return true;
+                            if (node.type === "LogicalExpression") {
+                                return containsTargetHandler(node.left, target) || containsTargetHandler(node.right, target);
+                            }
+
+                            return false;
+                        };
+
+                        if (containsTargetHandler(n, targetNode)) {
+                            const innerText = buildFullConditionHandler(n, targetNode);
+
+                            return `(${innerText})`;
                         }
+                    }
 
-                        return fixes;
-                    },
-                    message: `Nested condition has more than ${maxOperands} operands. Extract to a variable for readability.`,
-                    node: nestedGroupExceeding,
+                    return getSourceTextWithGroupsHandler(n);
+                };
+
+                // Check if already correctly formatted
+                // Collect operands INSIDE the nested group (not treating the group itself as 1 operand)
+                const collectInsideGroupHandler = (node) => {
+                    const operands = [];
+                    const collectHelper = (n) => {
+                        if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                            collectHelper(n.left);
+                            collectHelper(n.right);
+                        } else {
+                            operands.push(n);
+                        }
+                    };
+
+                    // Start from children directly, ignoring outer parentheses
+                    if (node.type === "LogicalExpression") {
+                        collectHelper(node.left);
+                        collectHelper(node.right);
+                    }
+
+                    return operands;
+                };
+
+                const nestedOperands = collectInsideGroupHandler(nestedGroupExceeding);
+                const allOnDifferentLines = nestedOperands.every((op, i) => {
+                    if (i === 0) return true;
+
+                    return op.loc.start.line !== nestedOperands[i - 1].loc.start.line;
                 });
 
-                return;
+                if (!allOnDifferentLines) {
+                    context.report({
+                        fix: (fixer) => {
+                            const newCondition = buildFullConditionHandler(test, nestedGroupExceeding);
+
+                            // Replace just the content between if statement's parens
+                            return fixer.replaceTextRange(
+                                [openParen.range[1], closeParen.range[0]],
+                                newCondition,
+                            );
+                        },
+                        message: `Nested condition with >${maxOperands} operands should be formatted multiline`,
+                        node: nestedGroupExceeding,
+                    });
+
+                    return;
+                }
             }
 
             // maxOperands or fewer operands: keep on single line
+            // BUT skip if any nested group has >maxOperands (already expanded or needs expansion)
             if (operands.length <= maxOperands) {
+                // Check if any nested parenthesized group has >maxOperands (should stay multiline)
+                const hasExpandedNestedGroup = findNestedGroupExceedingMaxOperandsHandler(test);
+                if (hasExpandedNestedGroup) {
+                    return; // Don't collapse - nested group needs multiline
+                }
+
                 // Check if all operands START on the same line
                 const firstOperandStartLine = operands[0].loc.start.line;
                 const allOperandsStartOnSameLine = operands.every(
@@ -4009,13 +4100,39 @@ const multilineIfConditions = {
                         const lineText = sourceCode.lines[node.loc.start.line - 1];
                         const parenIndent = lineText.match(/^\s*/)[0];
                         const indent = parenIndent + "    ";
+                        const nestedIndent = indent + "    ";
 
-                        const buildMultilineHandler = (n) => {
+                        // Build multiline, also expanding nested groups with >maxOperands
+                        const buildMultilineHandler = (n, currentIndent) => {
                             if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
-                                const leftText = buildMultilineHandler(n.left);
-                                const rightText = buildMultilineHandler(n.right);
+                                const leftText = buildMultilineHandler(n.left, currentIndent);
+                                const rightText = buildMultilineHandler(n.right, currentIndent);
 
-                                return `${leftText}\n${indent}${n.operator} ${rightText}`;
+                                return `${leftText}\n${currentIndent}${n.operator} ${rightText}`;
+                            }
+
+                            // Check if this is a parenthesized group with >maxOperands - expand it too
+                            if (n.type === "LogicalExpression" && isParenthesizedHandler(n)) {
+                                const innerCount = countOperandsInsideGroupHandler(n);
+                                if (innerCount > maxOperands) {
+                                    // Expand this nested group
+                                    const innerIndent = currentIndent + "    ";
+                                    const buildInnerHandler = (inner) => {
+                                        if (inner.type === "LogicalExpression" && !isParenthesizedHandler(inner)) {
+                                            const l = buildInnerHandler(inner.left);
+                                            const r = buildInnerHandler(inner.right);
+
+                                            return `${l}\n${innerIndent}${inner.operator} ${r}`;
+                                        }
+
+                                        return getSourceTextWithGroupsHandler(inner);
+                                    };
+
+                                    const innerLeft = buildInnerHandler(n.left);
+                                    const innerRight = buildInnerHandler(n.right);
+
+                                    return `(\n${innerIndent}${innerLeft}\n${innerIndent}${n.operator} ${innerRight}\n${currentIndent})`;
+                                }
                             }
 
                             return getSourceTextWithGroupsHandler(n);
@@ -4023,7 +4140,7 @@ const multilineIfConditions = {
 
                         return fixer.replaceTextRange(
                             [openParen.range[0], closeParen.range[1]],
-                            `(\n${indent}${buildMultilineHandler(test)}\n${parenIndent})`,
+                            `(\n${indent}${buildMultilineHandler(test, indent)}\n${parenIndent})`,
                         );
                     },
                     message: `If conditions with more than ${maxOperands} operands should be multiline, with each operand on its own line`,
@@ -4172,15 +4289,9 @@ const multilineIfConditions = {
             {
                 additionalProperties: false,
                 properties: {
-                    maxNestingLevel: {
-                        default: 2,
-                        description: "Maximum nesting level of parenthesized groups (default: 2). Deeper nesting is auto-extracted to variables.",
-                        minimum: 1,
-                        type: "integer",
-                    },
                     maxOperands: {
                         default: 3,
-                        description: "Maximum operands to keep on single line (default: 3). Also applies to nested groups within the nesting limit.",
+                        description: "Maximum operands to keep on single line (default: 3). Also applies to nested groups.",
                         minimum: 1,
                         type: "integer",
                     },
@@ -4203,10 +4314,11 @@ const multilineIfConditions = {
  *   - >maxOperands: Format multiline with each operand on its own line
  *   - Simple parenthesized nested ternaries (≤maxOperands) count as 1 operand
  *   - Complex nested ternaries (>maxOperands) are skipped (format manually)
+ *   - Nested groups with >maxOperands are formatted multiline inline
+ *   - Groups exceeding nesting level 2 are extracted to variables
  *
  * Options:
  *   { maxOperands: 3 } - Maximum operands to keep on single line (default: 3)
- *   { maxNestingLevel: 2 } - Maximum nesting of parenthesized groups (default: 2)
  *
  * ✓ Good (≤3 operands - single line):
  *   const x = a && b && c ? "yes" : "no";
@@ -4234,7 +4346,7 @@ const ternaryConditionMultiline = {
         const sourceCode = context.sourceCode || context.getSourceCode();
         const options = context.options[0] || {};
         const maxOperands = options.maxOperands ?? 3;
-        const maxNestingLevel = options.maxNestingLevel ?? 2;
+        const maxNestingLevel = 2; // Fixed at 2 - not configurable to avoid overly complex conditions
 
         // Check if node is wrapped in parentheses
         const isParenthesizedHandler = (node) => {
@@ -4610,76 +4722,150 @@ const ternaryConditionMultiline = {
             const testEndLine = test.loc.end.line;
             const isMultiLine = testStartLine !== testEndLine;
 
-            // Check if any nested parenthesized group has >maxOperands - extract to variable if so
+            // Check if any nested parenthesized group has >maxOperands - format multiline inline
             const nestedGroupExceeding = findNestedGroupExceedingMaxOperandsHandler(test);
             if (nestedGroupExceeding) {
-                const groupText = getSourceTextWithGroupsHandler(nestedGroupExceeding);
+                // Get indentation for formatting
+                const parent = node.parent;
+                let parenIndent = "";
 
-                // Generate descriptive variable name
-                const getConditionNameForTernaryHandler = (n) => {
-                    if (n.type === "LogicalExpression") {
-                        const leftName = getConditionNameForTernaryHandler(n.left);
-                        const rightName = getConditionNameForTernaryHandler(n.right);
-                        const opName = n.operator === "&&" ? "And" : "Or";
-                        return `${leftName}${opName}${rightName}`;
-                    }
-                    if (n.type === "Identifier") {
-                        return n.name.charAt(0).toUpperCase() + n.name.slice(1);
-                    }
-                    if (n.type === "BinaryExpression" || n.type === "CallExpression" || n.type === "MemberExpression") {
-                        return "Expr";
-                    }
-                    return "Cond";
-                };
-
-                let varName = `is${getConditionNameForTernaryHandler(nestedGroupExceeding)}`;
-                if (varName.length > 30) {
-                    varName = "isComplexCondition";
+                if (parent && parent.loc) {
+                    const parentLineText = sourceCode.lines[parent.loc.start.line - 1];
+                    parenIndent = parentLineText.match(/^\s*/)[0];
                 }
 
-                context.report({
-                    fix: (fixer) => {
-                        const fixes = [];
+                const contentIndent = parenIndent + "    ";
 
-                        // Find the statement containing this ternary
-                        let statementNode = node;
-                        while (statementNode.parent && statementNode.parent.type !== "Program" && statementNode.parent.type !== "BlockStatement") {
-                            statementNode = statementNode.parent;
+                // Build multiline text for operands inside a nested group
+                // isOuterGroup=true means we're at the target group itself (ignore its own parentheses)
+                // Also recursively expands any inner nested groups with >maxOperands
+                const buildNestedMultilineHandler = (n, isOuterGroup = false, currentIndent = contentIndent) => {
+                    if (n.type === "LogicalExpression" && (isOuterGroup || !isParenthesizedHandler(n))) {
+                        const leftText = buildNestedMultilineHandler(n.left, false, currentIndent);
+                        const rightText = buildNestedMultilineHandler(n.right, false, currentIndent);
+
+                        return `${leftText}\n${currentIndent}${n.operator} ${rightText}`;
+                    }
+
+                    // Check if this is a parenthesized group with >maxOperands - also expand it
+                    if (n.type === "LogicalExpression" && isParenthesizedHandler(n)) {
+                        const innerCount = countOperandsInsideGroupHandler(n);
+                        if (innerCount > maxOperands) {
+                            const innerIndent = currentIndent + "    ";
+                            const buildInner = (inner) => {
+                                if (inner.type === "LogicalExpression" && !isParenthesizedHandler(inner)) {
+                                    const l = buildInner(inner.left);
+                                    const r = buildInner(inner.right);
+
+                                    return `${l}\n${innerIndent}${inner.operator} ${r}`;
+                                }
+
+                                return getSourceTextWithGroupsHandler(inner);
+                            };
+
+                            const innerLeft = buildInner(n.left);
+                            const innerRight = buildInner(n.right);
+
+                            return `(\n${innerIndent}${innerLeft}\n${innerIndent}${n.operator} ${innerRight}\n${currentIndent})`;
                         }
+                    }
 
-                        const ternaryLine = statementNode.loc.start.line;
-                        const lineStart = sourceCode.getIndexFromLoc({ line: ternaryLine, column: 0 });
-                        const lineText = sourceCode.lines[ternaryLine - 1];
-                        const indent = lineText.match(/^\s*/)[0];
+                    return getSourceTextWithGroupsHandler(n);
+                };
 
-                        fixes.push(fixer.insertTextBeforeRange(
-                            [lineStart, lineStart],
-                            `const ${varName} = ${groupText};\n${indent}`,
-                        ));
+                // Build the full condition with nested group formatted multiline
+                const buildFullConditionHandler = (n, targetNode) => {
+                    if (n === targetNode) {
+                        // This is the nested group - format it multiline
+                        // Pass true to ignore outer parentheses check
+                        const nestedText = buildNestedMultilineHandler(n, true);
 
-                        const tokenBefore = sourceCode.getTokenBefore(nestedGroupExceeding);
-                        const tokenAfter = sourceCode.getTokenAfter(nestedGroupExceeding);
+                        return `(\n${contentIndent}${nestedText}\n${parenIndent})`;
+                    }
 
-                        if (tokenBefore && tokenAfter && tokenBefore.value === "(" && tokenAfter.value === ")") {
-                            fixes.push(fixer.replaceTextRange(
-                                [tokenBefore.range[0], tokenAfter.range[1]],
-                                varName,
-                            ));
+                    if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                        const leftText = buildFullConditionHandler(n.left, targetNode);
+                        const rightText = buildFullConditionHandler(n.right, targetNode);
+
+                        return `${leftText} ${n.operator} ${rightText}`;
+                    }
+
+                    if (n.type === "LogicalExpression" && isParenthesizedHandler(n)) {
+                        // Check if this contains the target
+                        const containsTargetHandler = (node, target) => {
+                            if (node === target) return true;
+                            if (node.type === "LogicalExpression") {
+                                return containsTargetHandler(node.left, target) || containsTargetHandler(node.right, target);
+                            }
+
+                            return false;
+                        };
+
+                        if (containsTargetHandler(n, targetNode)) {
+                            const innerText = buildFullConditionHandler(n, targetNode);
+
+                            return `(${innerText})`;
+                        }
+                    }
+
+                    return getSourceTextWithGroupsHandler(n);
+                };
+
+                // Check if already correctly formatted
+                // Collect operands INSIDE the nested group (not treating the group itself as 1 operand)
+                const collectInsideGroupHandler = (node) => {
+                    const operands = [];
+                    const collectHelper = (n) => {
+                        if (n.type === "LogicalExpression" && !isParenthesizedHandler(n)) {
+                            collectHelper(n.left);
+                            collectHelper(n.right);
                         } else {
-                            fixes.push(fixer.replaceText(nestedGroupExceeding, varName));
+                            operands.push(n);
                         }
+                    };
 
-                        return fixes;
-                    },
-                    message: `Nested condition has more than ${maxOperands} operands. Extract to a variable for readability.`,
-                    node: nestedGroupExceeding,
+                    // Start from children directly, ignoring outer parentheses
+                    if (node.type === "LogicalExpression") {
+                        collectHelper(node.left);
+                        collectHelper(node.right);
+                    }
+
+                    return operands;
+                };
+
+                const nestedOperands = collectInsideGroupHandler(nestedGroupExceeding);
+                const allOnDifferentLines = nestedOperands.every((op, i) => {
+                    if (i === 0) return true;
+
+                    return op.loc.start.line !== nestedOperands[i - 1].loc.start.line;
                 });
 
-                return;
+                if (!allOnDifferentLines) {
+                    const newCondition = buildFullConditionHandler(test, nestedGroupExceeding);
+
+                    // Get consequent and alternate text
+                    const consequentText = getSourceTextWithGroupsHandler(node.consequent).replace(/\s+/g, " ").trim();
+                    const alternateText = getSourceTextWithGroupsHandler(node.alternate).replace(/\s+/g, " ").trim();
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(node, `${newCondition} ? ${consequentText} : ${alternateText}`),
+                        message: `Nested condition with >${maxOperands} operands should be formatted multiline`,
+                        node: nestedGroupExceeding,
+                    });
+
+                    return;
+                }
             }
 
             // ≤maxOperands operands: collapse to single line
+            // BUT skip if any nested group has >maxOperands (already expanded or needs expansion)
             if (operands.length <= maxOperands) {
+                // Check if any nested parenthesized group has >maxOperands (should stay multiline)
+                const hasExpandedNestedGroup = findNestedGroupExceedingMaxOperandsHandler(test);
+                if (hasExpandedNestedGroup) {
+                    return; // Don't collapse - nested group needs multiline
+                }
+
                 // Skip if branches have complex objects
                 const hasComplexBranches = hasComplexObjectHandler(node.consequent) || hasComplexObjectHandler(node.alternate);
 
@@ -4959,15 +5145,9 @@ const ternaryConditionMultiline = {
             {
                 additionalProperties: false,
                 properties: {
-                    maxNestingLevel: {
-                        default: 2,
-                        description: "Maximum nesting depth of parenthesized groups (default: 2). If exceeded, deeply nested conditions are extracted to variables.",
-                        minimum: 1,
-                        type: "integer",
-                    },
                     maxOperands: {
                         default: 3,
-                        description: "Maximum condition operands to keep ternary on single line (default: 3). Also applies to nested groups within the nesting limit.",
+                        description: "Maximum condition operands to keep ternary on single line (default: 3). Also applies to nested groups.",
                         minimum: 1,
                         type: "integer",
                     },
@@ -12519,6 +12699,7 @@ const openingBracketsSameLine = {
 
                 // Check if a condition expression is split incorrectly across lines
                 // (operator and operands should be on the same line)
+                // BUT skip if it's intentionally formatted multiline (operator at start of line pattern)
                 const checkConditionSplitHandler = (conditionNode) => {
                     // Handle LogicalExpression (&&, ||) and BinaryExpression (===, !==, etc.)
                     if (conditionNode.type !== "LogicalExpression" && conditionNode.type !== "BinaryExpression") {
@@ -12529,19 +12710,31 @@ const openingBracketsSameLine = {
 
                     // Check if this expression spans multiple lines
                     if (conditionNode.loc.start.line !== conditionNode.loc.end.line) {
-                        // For BinaryExpression, always collapse if split
-                        // For LogicalExpression, check if operator is on different line
+                        // Check if this is intentionally formatted multiline
+                        // (pattern: operator at start of line, e.g., multiline-if-conditions format)
                         const condOperator = sourceCode.getTokenAfter(
                             left,
                             (t) => ["&&", "||", "===", "!==", "==", "!=", ">", "<", ">=", "<="].includes(t.value),
                         );
 
                         if (condOperator) {
+                            // Check for intentional multiline format: operator at start of line with proper indentation
+                            // This pattern indicates multiline-if-conditions has formatted it this way
+                            const textBetween = sourceCode.text.slice(left.range[1], condOperator.range[0]);
+                            const hasNewlineBeforeOperator = textBetween.includes("\n");
+                            const operatorIsAtLineStart = hasNewlineBeforeOperator
+                                && /\n\s*$/.test(textBetween);
+
+                            // Skip collapsing if operator is intentionally at the start of a line
+                            if (operatorIsAtLineStart) {
+                                return false;
+                            }
+
                             const leftEndLine = left.loc.end.line;
                             const operatorLine = condOperator.loc.start.line;
                             const rightStartLine = right.loc.start.line;
 
-                            // Bad: operator or operands on different lines
+                            // Bad: operator or operands on different lines (not intentional format)
                             if (leftEndLine !== operatorLine || operatorLine !== rightStartLine) {
                                 const tokenBefore = sourceCode.getTokenBefore(conditionNode);
                                 const tokenAfter = sourceCode.getTokenAfter(conditionNode);
@@ -12912,6 +13105,9 @@ const openingBracketsSameLine = {
             // Skip if this is the test of an IfStatement - those are handled by multiline-if-conditions
             if (node.parent && node.parent.type === "IfStatement" && node.parent.test === node) return;
 
+            // Skip if this is the test of a ConditionalExpression (ternary) - those are handled by ternary-condition-multiline
+            if (node.parent && node.parent.type === "ConditionalExpression" && node.parent.test === node) return;
+
             // Check if operands are valid for same-line formatting
             const isValidOperand = (n) => n.type === "CallExpression"
                 || n.type === "LogicalExpression"
@@ -12949,6 +13145,14 @@ const openingBracketsSameLine = {
                 // Correct: ) || canDoHandler(  (all on same line)
                 // Wrong: ) ||\n    canDoHandler(  or  )\n    || canDoHandler(
                 if (leftEndLine !== operatorLine || operatorLine !== rightStartLine) {
+                    // Check for intentional multiline format (operator at start of line)
+                    // This indicates multiline-if-conditions or ternary-condition-multiline has formatted it this way
+                    const textBetween = sourceCode.text.slice(left.range[1], operatorToken.range[0]);
+                    const operatorIsAtLineStart = textBetween.includes("\n") && /\n\s*$/.test(textBetween);
+
+                    // Skip if intentionally formatted with operator at start of line
+                    if (operatorIsAtLineStart) return;
+
                     // Get the end of left operand (might end with closing paren)
                     const leftEndToken = sourceCode.getLastToken(left);
 

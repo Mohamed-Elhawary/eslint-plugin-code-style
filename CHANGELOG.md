@@ -11,13 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **`multiline-if-conditions`** - Change default `maxNestingLevel` from 1 to 2; add nested group extraction when operand count exceeds `maxOperands`
-- **`ternary-condition-multiline`** - Change default `maxNestingLevel` from 1 to 2; add nested group extraction when operand count exceeds `maxOperands`
+- **`multiline-if-conditions`** - Remove configurable `maxNestingLevel` option; nesting level is now fixed at 2 to prevent overly complex conditions. Nested groups with >maxOperands are formatted multiline inline (not extracted). Extraction only occurs when nesting exceeds 2 levels.
+- **`ternary-condition-multiline`** - Remove configurable `maxNestingLevel` option; nesting level is now fixed at 2 to prevent overly complex conditions. Nested groups with >maxOperands are formatted multiline inline (not extracted). Extraction only occurs when nesting exceeds 2 levels.
+- **`opening-brackets-same-line`** - Skip ternary condition tests and detect intentional multiline format to prevent rule conflicts
+- **`if-statement-format`** - Detect intentional multiline conditions to prevent collapsing formatted conditions
 
 ### Documentation
 
-- Document `maxNestingLevel` option clearly in JSDoc and README for both rules
-- Add examples showing nested group auto-extraction behavior
+- Update both rules to show multiline inline formatting examples instead of extraction
+- Remove `maxNestingLevel` option from documentation (now fixed internally)
 
 ---
 
