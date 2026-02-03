@@ -4734,6 +4734,25 @@ const ternaryConditionMultiline = {
             return lineText.match(/^\s*/)[0].length;
         };
 
+        // Check if a node contains JSX elements (recursively)
+        const containsJsxHandler = (n) => {
+            if (!n) return false;
+
+            if (n.type === "JSXElement" || n.type === "JSXFragment") return true;
+
+            if (n.type === "ParenthesizedExpression") return containsJsxHandler(n.expression);
+
+            if (n.type === "ConditionalExpression") {
+                return containsJsxHandler(n.consequent) || containsJsxHandler(n.alternate);
+            }
+
+            if (n.type === "LogicalExpression") {
+                return containsJsxHandler(n.left) || containsJsxHandler(n.right);
+            }
+
+            return false;
+        };
+
         // Check if branches have complex objects (should stay multiline)
         const hasComplexObjectHandler = (n) => {
             if (n.type === "ObjectExpression" && n.properties.length >= 2) return true;
@@ -4742,6 +4761,9 @@ const ternaryConditionMultiline = {
 
             return false;
         };
+
+        // Check if branches contain JSX (should stay multiline)
+        const hasJsxBranchesHandler = (node) => containsJsxHandler(node.consequent) || containsJsxHandler(node.alternate);
 
         // Check if a nested ternary has complex condition (>maxOperands)
         const hasComplexNestedTernaryHandler = (node) => {
@@ -4791,6 +4813,11 @@ const ternaryConditionMultiline = {
 
             // Skip if branches have complex objects
             if (hasComplexObjectHandler(node.consequent) || hasComplexObjectHandler(node.alternate)) {
+                return false;
+            }
+
+            // Skip ternaries with JSX branches (should stay multiline for readability)
+            if (hasJsxBranchesHandler(node)) {
                 return false;
             }
 
@@ -4968,8 +4995,13 @@ const ternaryConditionMultiline = {
                     return; // Don't collapse - nested group needs multiline
                 }
 
-                // Skip if branches have complex objects
+                // Skip if branches have complex objects or JSX elements
                 const hasComplexBranches = hasComplexObjectHandler(node.consequent) || hasComplexObjectHandler(node.alternate);
+
+                // Skip ternaries with JSX branches (should stay multiline for readability)
+                if (hasJsxBranchesHandler(node)) {
+                    return;
+                }
 
                 // Skip unparenthesized nested ternaries (parenthesized ones count as 1 operand)
                 const hasUnparenthesizedNestedTernary = (node.consequent.type === "ConditionalExpression" && !isParenthesizedHandler(node.consequent))
@@ -14455,6 +14487,24 @@ const noHardcodedStrings = {
             /^&[a-z]+;$/,
             // Punctuation only
             /^[.!?,;:'"()\[\]{}]+$/,
+            // CSS transform functions: rotate(), translate(), scale(), skew(), matrix(), etc.
+            /^(rotate|translate|translateX|translateY|translateZ|translate3d|scale|scaleX|scaleY|scaleZ|scale3d|skew|skewX|skewY|matrix|matrix3d|perspective)\(.+\)$/,
+            // CSS transform values with multiple functions: "rotate(90deg) scaleX(-1)"
+            /^(rotate|translate|translateX|translateY|scale|scaleX|scaleY|skew|skewX|skewY|matrix)\([^)]+\)(\s+(rotate|translate|translateX|translateY|scale|scaleX|scaleY|skew|skewX|skewY|matrix)\([^)]+\))+$/,
+            // CSS gradient functions
+            /^(linear-gradient|radial-gradient|conic-gradient|repeating-linear-gradient|repeating-radial-gradient)\(.+\)$/,
+            // CSS animation shorthand: "spin 2s linear infinite"
+            /^[a-zA-Z][\w-]*\s+[\d.]+m?s\s+[\w-]+(\s+[\w-]+)*$/,
+            // CSS transform-origin values: "50% 50%", "center center", "top left"
+            /^(\d+%|center|top|bottom|left|right)(\s+(\d+%|center|top|bottom|left|right))?$/,
+            // CSS calc() function
+            /^calc\(.+\)$/,
+            // CSS var() function
+            /^var\(.+\)$/,
+            // CSS clamp() function
+            /^clamp\(.+\)$/,
+            // CSS min/max functions
+            /^(min|max)\(.+\)$/,
         ];
 
         const extraIgnorePatterns = (options.ignorePatterns || []).map((p) => {
@@ -14528,223 +14578,73 @@ const noHardcodedStrings = {
         // UI component patterns - only ignored in JSX attributes, not in logic
         const uiComponentPattern = /^(primary|secondary|tertiary|ghost|outline|link|muted|danger|warning|info|success|error|default|subtle|solid|soft|plain|flat|elevated|filled|tonal|text|contained|standard|xs|sm|md|lg|xl|2xl|3xl|4xl|5xl|xxs|xxl|small|medium|large|tiny|huge|compact|comfortable|spacious|left|right|center|top|bottom|start|end|middle|baseline|stretch|between|around|evenly|horizontal|vertical|row|column|inline|block|flex|grid|auto|none|hidden|visible|static|relative|absolute|fixed|sticky|on|off|hover|focus|click|blur|always|never)$/;
 
-        // HTTP status codes that should NOT be hardcoded (2xx, 4xx, and 5xx)
-        const httpStatusCodePattern = /^[245]\d{2}$/;
-
-        // Common role/permission names that should be imported from enums/data
-        const rolePermissionNames = new Set([
-            "admin",
-            "administrator",
-            "editor",
-            "guest",
-            "manager",
-            "member",
-            "moderator",
-            "operator",
-            "owner",
-            "reviewer",
-            "subscriber",
-            "superadmin",
-            "supervisor",
-            "user",
-            "viewer",
+        // HTML input types - standard browser input types, not hardcoded strings
+        const htmlInputTypes = new Set([
+            "button",
+            "checkbox",
+            "color",
+            "date",
+            "datetime-local",
+            "email",
+            "file",
+            "hidden",
+            "image",
+            "month",
+            "number",
+            "password",
+            "radio",
+            "range",
+            "reset",
+            "search",
+            "submit",
+            "tel",
+            "text",
+            "time",
+            "url",
+            "week",
         ]);
 
-        // HTTP methods that should be imported from enums/data
-        const httpMethods = new Set([
-            "CONNECT",
-            "DELETE",
-            "GET",
-            "HEAD",
-            "OPTIONS",
-            "PATCH",
-            "POST",
-            "PUT",
-            "TRACE",
-        ]);
+        // Check if string is an HTML input type
+        const isHtmlInputTypeHandler = (str) => htmlInputTypes.has(str.toLowerCase());
 
-        // Environment names that should be imported from enums/data
-        const environmentNames = new Set([
-            "dev",
-            "development",
-            "local",
-            "prod",
-            "production",
-            "qa",
-            "sandbox",
-            "staging",
-            "test",
-            "testing",
-            "uat",
-        ]);
+        // Check if node is inside a style object expression (style={{ ... }})
+        const isInsideStyleObjectHandler = (node) => {
+            let current = node.parent;
 
-        // Log levels that should be imported from enums/data
-        const logLevels = new Set([
-            "debug",
-            "error",
-            "fatal",
-            "info",
-            "log",
-            "trace",
-            "warn",
-            "warning",
-        ]);
+            while (current) {
+                // Check if we're in a Property inside an ObjectExpression inside a JSXAttribute named "style"
+                if (current.type === "Property" && current.parent && current.parent.type === "ObjectExpression") {
+                    const objExpr = current.parent;
 
-        // Status/state strings that should be imported from enums/data
-        const statusStrings = new Set([
-            "accepted",
-            "active",
-            "approved",
-            "archived",
-            "blocked",
-            "cancelled",
-            "closed",
-            "completed",
-            "declined",
-            "deleted",
-            "disabled",
-            "done",
-            "draft",
-            "enabled",
-            "expired",
-            "failed",
-            "finished",
-            "inactive",
-            "inprogress",
-            "open",
-            "paused",
-            "pending",
-            "processing",
-            "published",
-            "queued",
-            "ready",
-            "rejected",
-            "resolved",
-            "running",
-            "scheduled",
-            "started",
-            "stopped",
-            "submitted",
-            "success",
-            "successful",
-            "suspended",
-            "verified",
-            "waiting",
-        ]);
+                    if (objExpr.parent && objExpr.parent.type === "JSXExpressionContainer") {
+                        const jsxExprContainer = objExpr.parent;
 
-        // Validation/form strings that should be imported from enums/data
-        const validationStrings = new Set([
-            "empty",
-            "invalid",
-            "missing",
-            "optional",
-            "required",
-            "valid",
-        ]);
+                        if (jsxExprContainer.parent && jsxExprContainer.parent.type === "JSXAttribute") {
+                            const attrName = jsxExprContainer.parent.name && jsxExprContainer.parent.name.name;
 
-        // Auth/permission state strings that should be imported from enums/data
-        const authStrings = new Set([
-            "anonymous",
-            "authenticated",
-            "authed",
-            "authorized",
-            "denied",
-            "expired",
-            "forbidden",
-            "granted",
-            "locked",
-            "loggedin",
-            "loggedout",
-            "revoked",
-            "unauthenticated",
-            "unauthorized",
-            "unlocked",
-            "unverified",
-            "verified",
-        ]);
+                            if (attrName === "style") return true;
+                        }
+                    }
+                }
 
-        // Priority levels that should be imported from enums/data
-        const priorityLevels = new Set([
-            "critical",
-            "high",
-            "highest",
-            "low",
-            "lowest",
-            "medium",
-            "normal",
-            "urgent",
-        ]);
+                current = current.parent;
+            }
 
-        // Check functions for each category
-        const isHttpStatusCodeHandler = (str) => httpStatusCodePattern.test(str);
-        const isRoleNameHandler = (str) => rolePermissionNames.has(str.toLowerCase());
-        const isHttpMethodHandler = (str) => httpMethods.has(str.toUpperCase());
-        const isEnvironmentNameHandler = (str) => environmentNames.has(str.toLowerCase());
-        const isLogLevelHandler = (str) => logLevels.has(str.toLowerCase());
-        const isStatusStringHandler = (str) => statusStrings.has(str.toLowerCase());
-        const isPriorityLevelHandler = (str) => priorityLevels.has(str.toLowerCase());
-        const isValidationStringHandler = (str) => validationStrings.has(str.toLowerCase());
-        const isAuthStringHandler = (str) => authStrings.has(str.toLowerCase());
+            return false;
+        };
 
-        // Check if string should be flagged even if it matches technical patterns
-        const isFlaggedSpecialStringHandler = (str) => isHttpStatusCodeHandler(str)
-            || isRoleNameHandler(str)
-            || isHttpMethodHandler(str)
-            || isEnvironmentNameHandler(str)
-            || isLogLevelHandler(str)
-            || isStatusStringHandler(str)
-            || isPriorityLevelHandler(str)
-            || isValidationStringHandler(str)
-            || isAuthStringHandler(str);
-
-        // Get descriptive error message based on string type
+        // Get descriptive error message - unified message for all hardcoded strings
         const getErrorMessageHandler = (str, context = "") => {
             const truncatedStr = str.length > 30 ? `${str.substring(0, 30)}...` : str;
             const contextPart = context ? ` in ${context}` : "";
 
-            if (isHttpStatusCodeHandler(str)) {
-                return `Hardcoded HTTP status code "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
-            }
-
-            if (isRoleNameHandler(str)) {
-                return `Hardcoded role/permission "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
-            }
-
-            if (isHttpMethodHandler(str)) {
-                return `Hardcoded HTTP method "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
-            }
-
-            if (isEnvironmentNameHandler(str)) {
-                return `Hardcoded environment name "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
-            }
-
-            if (isLogLevelHandler(str)) {
-                return `Hardcoded log level "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
-            }
-
-            if (isStatusStringHandler(str)) {
-                return `Hardcoded status "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
-            }
-
-            if (isPriorityLevelHandler(str)) {
-                return `Hardcoded priority level "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
-            }
-
-            if (isValidationStringHandler(str)) {
-                return `Hardcoded validation string "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
-            }
-
-            if (isAuthStringHandler(str)) {
-                return `Hardcoded auth state "${truncatedStr}"${contextPart} should be imported from @/enums or @/data`;
-            }
-
-            return `Hardcoded string "${truncatedStr}"${contextPart} should be imported from @/data or @/strings or @/constants or @/@constants or @/@strings`;
+            return `Hardcoded string "${truncatedStr}"${contextPart} should be imported from @/data, @/strings, @/constants, or @/enums`;
         };
 
-        // Check if a string matches any ignore pattern (but not if it's a flagged special string)
+        // Check if a string matches any ignore pattern
         const shouldIgnoreStringHandler = (str) => {
-            // Always flag HTTP status codes and role names
-            if (isFlaggedSpecialStringHandler(str)) return false;
+            // Skip HTML input types (text, password, email, etc.)
+            if (isHtmlInputTypeHandler(str)) return true;
 
             // Skip Tailwind/CSS class strings
             if (isTailwindClassStringHandler(str)) return true;
@@ -14931,13 +14831,10 @@ const noHardcodedStrings = {
 
                 if (!text) return;
 
-                // Check if it's a flagged special string (status code, role name)
-                const isSpecialString = isFlaggedSpecialStringHandler(text);
+                if (shouldIgnoreStringHandler(text)) return;
 
-                if (!isSpecialString && shouldIgnoreStringHandler(text)) return;
-
-                // Check if it looks like user-facing text (contains letters) - skip for special strings
-                if (!isSpecialString && !/[a-zA-Z]/.test(text)) return;
+                // Check if it looks like user-facing text (contains letters)
+                if (!/[a-zA-Z]/.test(text)) return;
 
                 context.report({
                     message: getErrorMessageHandler(text, "JSX"),
@@ -14968,13 +14865,10 @@ const noHardcodedStrings = {
                 if (expression.type === "Literal" && typeof expression.value === "string") {
                     const str = expression.value;
 
-                    // Check if it's a flagged special string (status code, role name)
-                    const isSpecialString = isFlaggedSpecialStringHandler(str);
+                    if (shouldIgnoreStringHandler(str)) return;
 
-                    if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
-
-                    // Check if it looks like user-facing text - skip for special strings
-                    if (!isSpecialString && !/[a-zA-Z]/.test(str)) return;
+                    // Check if it looks like user-facing text
+                    if (!/[a-zA-Z]/.test(str)) return;
 
                     context.report({
                         message: getErrorMessageHandler(str, "JSX expression"),
@@ -14987,13 +14881,10 @@ const noHardcodedStrings = {
                     expression.quasis.forEach((quasi) => {
                         const str = quasi.value.cooked || quasi.value.raw;
 
-                        // Check if it's a flagged special string (status code, role name)
-                        const isSpecialString = isFlaggedSpecialStringHandler(str);
+                        if (shouldIgnoreStringHandler(str)) return;
 
-                        if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
-
-                        // Check if it contains user-facing text - skip for special strings
-                        if (!isSpecialString && !/[a-zA-Z]{2,}/.test(str)) return;
+                        // Check if it contains user-facing text
+                        if (!/[a-zA-Z]{2,}/.test(str)) return;
 
                         // Skip if it looks like a path or URL pattern
                         if (/^[/.]|https?:\/\//.test(str)) return;
@@ -15029,13 +14920,10 @@ const noHardcodedStrings = {
                     // Skip UI component patterns in JSX attributes (variant, size, position props)
                     if (uiComponentPattern.test(str)) return;
 
-                    // Check if it's a flagged special string (status code, role name)
-                    const isSpecialString = isFlaggedSpecialStringHandler(str);
+                    if (shouldIgnoreStringHandler(str)) return;
 
-                    if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
-
-                    // Check if it looks like user-facing text - skip for special strings
-                    if (!isSpecialString && !/[a-zA-Z]/.test(str)) return;
+                    // Check if it looks like user-facing text
+                    if (!/[a-zA-Z]/.test(str)) return;
 
                     context.report({
                         message: getErrorMessageHandler(str, `attribute "${attrName}"`),
@@ -15056,12 +14944,9 @@ const noHardcodedStrings = {
                         // Skip UI component patterns in JSX attributes (variant, size, position props)
                         if (uiComponentPattern.test(str)) return;
 
-                        // Check if it's a flagged special string (status code, role name)
-                        const isSpecialString = isFlaggedSpecialStringHandler(str);
+                        if (shouldIgnoreStringHandler(str)) return;
 
-                        if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
-
-                        if (!isSpecialString && !/[a-zA-Z]/.test(str)) return;
+                        if (!/[a-zA-Z]/.test(str)) return;
 
                         context.report({
                             message: getErrorMessageHandler(str, `attribute "${attrName}"`),
@@ -15078,11 +14963,11 @@ const noHardcodedStrings = {
 
                 const str = node.value;
 
-                // Check if it's a flagged special string (status code, role name)
-                const isSpecialString = isFlaggedSpecialStringHandler(str);
+                // Skip if it matches ignore patterns
+                if (shouldIgnoreStringHandler(str)) return;
 
-                // Skip if it matches ignore patterns (but not special strings)
-                if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
+                // Skip if inside a style object (style={{ transform: "..." }})
+                if (isInsideStyleObjectHandler(node)) return;
 
                 // Skip if not in relevant context
                 if (!isInRelevantContextHandler(node)) return;
@@ -15099,8 +14984,8 @@ const noHardcodedStrings = {
                 // Skip object property keys
                 if (node.parent.type === "Property" && node.parent.key === node) return;
 
-                // Skip if it doesn't look like user-facing text - but not for special strings
-                if (!isSpecialString && !/[a-zA-Z]/.test(str)) return;
+                // Skip if it doesn't look like user-facing text
+                if (!/[a-zA-Z]/.test(str)) return;
 
                 context.report({
                     message: getErrorMessageHandler(str),
@@ -15113,6 +14998,9 @@ const noHardcodedStrings = {
                 // Skip if in JSX (handled separately)
                 if (node.parent.type === "JSXExpressionContainer") return;
 
+                // Skip if inside a style object (style={{ background: `...` }})
+                if (isInsideStyleObjectHandler(node)) return;
+
                 // Skip if not in relevant context
                 if (!isInRelevantContextHandler(node)) return;
 
@@ -15123,13 +15011,10 @@ const noHardcodedStrings = {
                 node.quasis.forEach((quasi) => {
                     const str = quasi.value.cooked || quasi.value.raw;
 
-                    // Check if it's a flagged special string (status code, role name)
-                    const isSpecialString = isFlaggedSpecialStringHandler(str);
+                    if (shouldIgnoreStringHandler(str)) return;
 
-                    if (!isSpecialString && shouldIgnoreStringHandler(str)) return;
-
-                    // Check if it contains substantial user-facing text - but not for special strings
-                    if (!isSpecialString && !/[a-zA-Z]{3,}/.test(str)) return;
+                    // Check if it contains substantial user-facing text
+                    if (!/[a-zA-Z]{3,}/.test(str)) return;
 
                     // Skip if it looks like a path, URL, or query
                     if (/^[/.]|^https?:\/\/|^[?&]/.test(str)) return;
@@ -17763,6 +17648,81 @@ const noInlineTypeDefinitions = {
         const maxUnionMembers = options.maxUnionMembers ?? 2;
         const maxLength = options.maxLength ?? 50;
 
+        // Built-in type keywords that don't need to be extracted
+        const builtInTypeKeywords = new Set([
+            "any",
+            "bigint",
+            "boolean",
+            "never",
+            "null",
+            "number",
+            "object",
+            "string",
+            "symbol",
+            "undefined",
+            "unknown",
+            "void",
+        ]);
+
+        // Built-in type references (classes/interfaces that are built-in)
+        const builtInTypeReferences = new Set([
+            "Array",
+            "BigInt",
+            "Boolean",
+            "Date",
+            "Error",
+            "Function",
+            "Map",
+            "Number",
+            "Object",
+            "Promise",
+            "ReadonlyArray",
+            "RegExp",
+            "Set",
+            "String",
+            "Symbol",
+            "WeakMap",
+            "WeakSet",
+        ]);
+
+        // Check if a type node is a built-in type
+        const isBuiltInTypeHandler = (node) => {
+            if (!node) return false;
+
+            // Keyword types: string, number, boolean, null, undefined, etc.
+            if (node.type === "TSStringKeyword" || node.type === "TSNumberKeyword"
+                || node.type === "TSBooleanKeyword" || node.type === "TSNullKeyword"
+                || node.type === "TSUndefinedKeyword" || node.type === "TSVoidKeyword"
+                || node.type === "TSAnyKeyword" || node.type === "TSUnknownKeyword"
+                || node.type === "TSNeverKeyword" || node.type === "TSObjectKeyword"
+                || node.type === "TSSymbolKeyword" || node.type === "TSBigIntKeyword") {
+                return true;
+            }
+
+            // Type reference: Error, Promise, Array, etc.
+            if (node.type === "TSTypeReference" && node.typeName) {
+                const typeName = node.typeName.name || (node.typeName.type === "Identifier" && node.typeName.name);
+
+                if (typeName && builtInTypeReferences.has(typeName)) {
+                    return true;
+                }
+            }
+
+            // Literal types: true, false, specific strings/numbers
+            if (node.type === "TSLiteralType") {
+                return true;
+            }
+
+            return false;
+        };
+
+        // Check if all members of a union are built-in types
+        const isBuiltInUnionHandler = (unionNode) => {
+            if (unionNode.type !== "TSUnionType") return false;
+
+            return unionNode.types.every((type) => isBuiltInTypeHandler(type));
+        };
+
         // Count union type members
         const countUnionMembersHandler = (node) => {
             if (node.type !== "TSUnionType") return 1;
@@ -17782,6 +17742,9 @@ const noInlineTypeDefinitions = {
 
             // Handle union types directly
             if (typeNode.type === "TSUnionType") {
+                // Skip union types with only built-in types (e.g., string | null, Error | null)
+                if (isBuiltInUnionHandler(typeNode)) return;
+
                 const memberCount = countUnionMembersHandler(typeNode);
                 const typeText = sourceCode.getText(typeNode);
 

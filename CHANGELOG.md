@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.11.2] - 2026-02-04
+
+**Bug Fixes: no-hardcoded-strings, ternary-condition-multiline, no-inline-type-definitions**
+
+**Version Range:** v1.11.1 → v1.11.2
+
+### Fixed
+
+- **`no-hardcoded-strings`**
+  - Skip strings inside style object expressions (CSS values like `radial-gradient(...)`, `rotate(90deg)`, etc.)
+  - Skip HTML input types (`text`, `password`, `email`, `number`, etc.)
+  - Add CSS function patterns (transform, gradient, animation) to ignore list
+  - Simplify error message to unified format: "should be imported from @/data, @/strings, @/constants, or @/enums"
+  - Remove forced flagging of status codes, roles, HTTP methods (user intent is ambiguous)
+
+- **`ternary-condition-multiline`**
+  - Skip collapsing ternaries with JSX branches (JSX ternaries should stay multiline for readability)
+
+- **`no-inline-type-definitions`**
+  - Skip union types with only built-in/native types (e.g., `Error | null`, `string | null`)
+  - Only flag unions with custom inline types like `{ user: string }`
+
+**Full Changelog:** [v1.11.1...v1.11.2](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.1...v1.11.2)
+
+---
+
 ## [1.11.1] - 2026-02-03
 
 **Bug Fix: Single-property type annotations now collapse to single line**
