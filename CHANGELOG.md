@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.10.3] - 2026-02-03
+
+**Bug Fixes: className template literals and trailing comma removal**
+
+**Version Range:** v1.10.2 → v1.10.3
+
+### Fixed
+
+- **`no-hardcoded-strings`** - Skip template literals inside className/style attributes (Tailwind classes in template literals)
+- **`component-props-inline-type`** - Auto-fix to REMOVE trailing comma for single property (not just skip adding it)
+
+**Full Changelog:** [v1.10.2...v1.10.3](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.2...v1.10.3)
+
+---
+
 ## [1.10.2] - 2026-02-03
 
 **Bug Fixes: component-props-inline-type and no-hardcoded-strings**
@@ -1413,6 +1428,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.10.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.2...v1.10.3
 [1.10.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.1...v1.10.2
 [1.10.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.0...v1.10.1
 [1.10.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.7...v1.10.0

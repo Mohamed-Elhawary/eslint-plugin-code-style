@@ -14899,6 +14899,18 @@ const noHardcodedStrings = {
                 // Skip if it's a reference to an imported constant
                 if (isImportedConstantHandler(expression)) return;
 
+                // Check if we're inside a JSX attribute that should be ignored (like className)
+                if (node.parent && node.parent.type === "JSXAttribute") {
+                    const attrName = node.parent.name.name
+                        || (node.parent.name.namespace && `${node.parent.name.namespace.name}:${node.parent.name.name.name}`);
+
+                    // Skip if attribute is in ignore list (className, style, etc.)
+                    if (ignoreAttributes.includes(attrName)) return;
+
+                    // Skip data-* and aria-* attributes
+                    if (attrName && (attrName.startsWith("data-") || attrName.startsWith("aria-"))) return;
+                }
+
                 // Check string literals
                 if (expression.type === "Literal" && typeof expression.value === "string") {
                     const str = expression.value;
@@ -17108,6 +17120,20 @@ const componentPropsInlineType = {
                         }
                     }
 
+                    // Remove trailing comma for single member on single line
+                    if (members.length === 1) {
+                        const member = members[0];
+                        const tokenAfterMember = sourceCode.getTokenAfter(member);
+
+                        if (tokenAfterMember && tokenAfterMember.value === ",") {
+                            context.report({
+                                fix: (fixer) => fixer.remove(tokenAfterMember),
+                                message: "Single props type property should not have trailing comma",
+                                node: tokenAfterMember,
+                            });
+                        }
+                    }
+
                     // Check for empty lines before closing brace
                     if (members.length > 0 && closeBraceToken) {
                         const lastMember = members[members.length - 1];
@@ -17341,6 +17367,20 @@ const componentPropsInlineType = {
                             fix: (fixer) => fixer.insertTextAfter(lastMember, ","),
                             message: "Last props type property must have trailing comma",
                             node: lastMember,
+                        });
+                    }
+                }
+
+                // Remove trailing comma for single member on single line
+                if (members.length === 1) {
+                    const member = members[0];
+                    const tokenAfterMember = sourceCode.getTokenAfter(member);
+
+                    if (tokenAfterMember && tokenAfterMember.value === ",") {
+                        context.report({
+                            fix: (fixer) => fixer.remove(tokenAfterMember),
+                            message: "Single props type property should not have trailing comma",
+                            node: tokenAfterMember,
                         });
                     }
                 }
