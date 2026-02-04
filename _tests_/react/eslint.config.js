@@ -135,6 +135,7 @@ export default [ // eslint-disable-line
             "code-style/classname-order": "error",
             "code-style/comment-format": "error",
             "code-style/component-props-destructure": "error",
+            "code-style/folder-component-suffix": "error",
             "code-style/curried-arrow-same-line": "error",
             "code-style/empty-line-after-block": "error",
             "code-style/export-format": "error",

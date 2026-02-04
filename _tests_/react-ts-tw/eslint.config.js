@@ -162,6 +162,7 @@ export default [ // eslint-disable-line
             "code-style/comment-format": "error",
             "code-style/component-props-destructure": "error",
             "code-style/component-props-inline-type": "error",
+            "code-style/folder-component-suffix": "error",
             "code-style/curried-arrow-same-line": "error",
             "code-style/empty-line-after-block": "error",
             "code-style/enum-format": "error",

@@ -17998,6 +17998,153 @@ const svgComponentIconNaming = {
 
 /**
  * ───────────────────────────────────────────────────────────────
+ * Rule: Folder Component Suffix
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforces naming conventions for components based on folder location:
+ *   - Components in "views" folder must end with "View" suffix
+ *   - Components in "pages" folder must end with "Page" suffix
+ *
+ * ✓ Good:
+ *   // In views/dashboard-view.tsx:
+ *   export const DashboardView = () => <div>Dashboard</div>;
+ *
+ *   // In pages/home-page.tsx:
+ *   export const HomePage = () => <div>Home</div>;
+ *
+ * ✗ Bad:
+ *   // In views/dashboard.tsx:
+ *   export const Dashboard = () => <div>Dashboard</div>;  // Should be "DashboardView"
+ *
+ *   // In pages/home.tsx:
+ *   export const Home = () => <div>Home</div>;  // Should be "HomePage"
+ */
+const folderComponentSuffix = {
+    create(context) {
+        const filename = context.filename || context.getFilename();
+        const normalizedFilename = filename.replace(/\\/g, "/");
+
+        // Folder-to-suffix mapping
+        const folderSuffixMap = {
+            pages: "Page",
+            views: "View",
+        };
+
+        // Check which folder the file is in
+        const getFolderSuffixHandler = () => {
+            for (const [folder, suffix] of Object.entries(folderSuffixMap)) {
+                const pattern = new RegExp(`/${folder}/[^/]+\\.(jsx?|tsx?)$`);
+
+                if (pattern.test(normalizedFilename)) {
+                    return { folder, suffix };
+                }
+            }
+
+            return null;
+        };
+
+        // Get the component name from node
+        const getComponentNameHandler = (node) => {
+            // Arrow function: const Name = () => ...
+            if (node.parent && node.parent.type === "VariableDeclarator" && node.parent.id && node.parent.id.type === "Identifier") {
+                return { name: node.parent.id.name, identifierNode: node.parent.id };
+            }
+
+            // Function declaration: function Name() { ... }
+            if (node.id && node.id.type === "Identifier") {
+                return { name: node.id.name, identifierNode: node.id };
+            }
+
+            return null;
+        };
+
+        // Check if component name starts with uppercase (React component convention)
+        const isReactComponentNameHandler = (name) => name && /^[A-Z]/.test(name);
+
+        // Check if the function returns JSX
+        const returnsJsxHandler = (node) => {
+            const body = node.body;
+
+            if (!body) return false;
+
+            // Arrow function with expression body: () => <div>...</div>
+            if (body.type === "JSXElement" || body.type === "JSXFragment") {
+                return true;
+            }
+
+            // Parenthesized expression
+            if (body.type === "ParenthesizedExpression" && body.expression) {
+                if (body.expression.type === "JSXElement" || body.expression.type === "JSXFragment") {
+                    return true;
+                }
+            }
+
+            // Block body with return statement
+            if (body.type === "BlockStatement") {
+                const hasJsxReturn = body.body.some((stmt) => {
+                    if (stmt.type === "ReturnStatement" && stmt.argument) {
+                        const arg = stmt.argument;
+
+                        return arg.type === "JSXElement" || arg.type === "JSXFragment"
+                            || (arg.type === "ParenthesizedExpression" && arg.expression
+                                && (arg.expression.type === "JSXElement" || arg.expression.type === "JSXFragment"));
+                    }
+
+                    return false;
+                });
+
+                return hasJsxReturn;
+            }
+
+            return false;
+        };
+
+        const checkFunctionHandler = (node) => {
+            const folderInfo = getFolderSuffixHandler();
+
+            // Not in a folder that requires specific suffix
+            if (!folderInfo) return;
+
+            const componentInfo = getComponentNameHandler(node);
+
+            if (!componentInfo) return;
+
+            const { name, identifierNode } = componentInfo;
+
+            // Only check React components (PascalCase)
+            if (!isReactComponentNameHandler(name)) return;
+
+            // Only check functions that return JSX
+            if (!returnsJsxHandler(node)) return;
+
+            const { folder, suffix } = folderInfo;
+
+            // Check if component name ends with the required suffix
+            if (!name.endsWith(suffix)) {
+                context.report({
+                    message: `Component "${name}" in "${folder}" folder must end with "${suffix}" suffix (e.g., "${name}${suffix}")`,
+                    node: identifierNode,
+                });
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkFunctionHandler,
+            FunctionDeclaration: checkFunctionHandler,
+            FunctionExpression: checkFunctionHandler,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce components in 'views' folder end with 'View' and components in 'pages' folder end with 'Page'" },
+        fixable: null,
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
  * Rule: No Inline Type Definitions
  * ───────────────────────────────────────────────────────────────
  *
@@ -20851,6 +20998,7 @@ export default {
         // Component rules
         "component-props-destructure": componentPropsDestructure,
         "component-props-inline-type": componentPropsInlineType,
+        "folder-component-suffix": folderComponentSuffix,
         "svg-component-icon-naming": svgComponentIconNaming,
 
         // React rules

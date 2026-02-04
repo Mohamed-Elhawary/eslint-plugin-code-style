@@ -24,6 +24,7 @@ export type RuleNames =
     | "code-style/empty-line-after-block"
     | "code-style/enum-type-enforcement"
     | "code-style/export-format"
+    | "code-style/folder-component-suffix"
     | "code-style/function-arguments-format"
     | "code-style/function-call-spacing"
     | "code-style/function-declaration-style"
@@ -119,6 +120,7 @@ interface PluginRules {
     "empty-line-after-block": Rule.RuleModule;
     "enum-type-enforcement": Rule.RuleModule;
     "export-format": Rule.RuleModule;
+    "folder-component-suffix": Rule.RuleModule;
     "function-arguments-format": Rule.RuleModule;
     "function-call-spacing": Rule.RuleModule;
     "function-declaration-style": Rule.RuleModule;
