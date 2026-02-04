@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New Rule: Folder Component Suffix**
 
-**Version Range:** v1.11.10 → v1.12.0
+**Version Range:** v1.11.1 → v1.12.0
 
 ### Added
 
@@ -70,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-fixable: 65 rules 🔧
 - Report-only: 9 rules
 
-**Full Changelog:** [v1.11.10...v1.12.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.10...v1.12.0)
+**Full Changelog:** [v1.11.1...v1.12.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.1...v1.12.0)
 
 ---
 
