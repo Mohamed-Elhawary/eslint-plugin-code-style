@@ -15733,7 +15733,7 @@ const variableNamingConvention = {
 
             const name = node.key.name;
 
-            if (name.startsWith("_") || constantRegex.test(name) || allowedIdentifiers.includes(name)) return;
+            if (name.startsWith("_") || allowedIdentifiers.includes(name)) return;
 
             // Allow PascalCase for properties that hold component references
             // e.g., Icon: AdminPanelSettingsIcon, FormComponent: UpdateEventForm
@@ -15753,8 +15753,11 @@ const variableNamingConvention = {
             if (name.startsWith("Mui")) return;
 
             if (!camelCaseRegex.test(name)) {
+                const camelCaseName = toCamelCaseHandler(name);
+
                 context.report({
-                    message: `Property "${name}" should be camelCase`,
+                    fix: (fixer) => fixer.replaceText(node.key, camelCaseName),
+                    message: `Property "${name}" should be camelCase (e.g., ${camelCaseName} instead of ${name})`,
                     node: node.key,
                 });
             }
