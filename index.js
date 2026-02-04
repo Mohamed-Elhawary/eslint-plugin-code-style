@@ -14646,8 +14646,8 @@ const noHardcodedStrings = {
             /^[a-zA-Z]+\d*[_a-zA-Z0-9]*(_[a-zA-Z0-9]+)+$/,
             // Color names (CSS named colors used in SVG)
             /^(white|black|red|green|blue|yellow|orange|purple|pink|brown|gray|grey|cyan|magenta|transparent)$/i,
-            // CSS cursor values
-            /^(auto|default|none|context-menu|help|pointer|progress|wait|cell|crosshair|text|vertical-text|alias|copy|move|no-drop|not-allowed|grab|grabbing|all-scroll|col-resize|row-resize|n-resize|e-resize|s-resize|w-resize|ne-resize|nw-resize|se-resize|sw-resize|ew-resize|ns-resize|nesw-resize|nwse-resize|zoom-in|zoom-out)$/,
+            // CSS cursor values (excluding "text" as it conflicts with input type)
+            /^(auto|default|none|context-menu|help|pointer|progress|wait|cell|crosshair|vertical-text|alias|copy|move|no-drop|not-allowed|grab|grabbing|all-scroll|col-resize|row-resize|n-resize|e-resize|s-resize|w-resize|ne-resize|nw-resize|se-resize|sw-resize|ew-resize|ns-resize|nesw-resize|nwse-resize|zoom-in|zoom-out)$/,
             // CSS display/visibility values
             /^(block|inline|inline-block|flex|inline-flex|grid|inline-grid|flow-root|contents|table|table-row|table-cell|list-item|none|visible|hidden|collapse)$/,
             // CSS position values
@@ -14923,21 +14923,6 @@ const noHardcodedStrings = {
             return false;
         };
 
-        // Check if string is in a default parameter for input type
-        const isInputTypeDefaultParamHandler = (node) => {
-            // Check if we're in an AssignmentPattern (default param)
-            if (node.parent && node.parent.type === "AssignmentPattern") {
-                const assignPattern = node.parent;
-
-                // Check if the parameter name is "type"
-                if (assignPattern.left && assignPattern.left.type === "Identifier" && assignPattern.left.name === "type") {
-                    return true;
-                }
-            }
-
-            return false;
-        };
-
         // Check if this is a module-level exported string that should be flagged
         const isExportedHardcodedStringHandler = (node) => {
             let current = node.parent;
@@ -15005,9 +14990,6 @@ const noHardcodedStrings = {
 
         // Check if a string matches any ignore pattern
         const shouldIgnoreStringHandler = (str) => {
-            // Skip HTML input types (text, password, email, etc.)
-            if (isHtmlInputTypeHandler(str)) return true;
-
             // Skip Tailwind/CSS class strings
             if (isTailwindClassStringHandler(str)) return true;
 
@@ -15327,9 +15309,6 @@ const noHardcodedStrings = {
 
                 // Skip if inside a style object (style={{ transform: "..." }})
                 if (isInsideStyleObjectHandler(node)) return;
-
-                // Skip input type default params (e.g., type = "text")
-                if (isInputTypeDefaultParamHandler(node)) return;
 
                 // Check for exported hardcoded strings (e.g., export const tokenKey = "auth_token")
                 // These should be flagged even at module level, regardless of whether the value

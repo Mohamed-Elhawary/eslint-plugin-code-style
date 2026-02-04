@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.11.5] - 2026-02-04
+
+### Fixed
+
+- **`no-hardcoded-strings`**
+  - Flag hardcoded strings in component default params (e.g., `type = "text"`, `variant = "ghost"`)
+  - Flag hardcoded strings in ternary expressions (e.g., `showPassword ? "text" : "password"`)
+  - Remove overly broad HTML input type exemption from general string checks
+  - Remove "text" from CSS cursor pattern (conflicts with common input type usage)
+
+---
+
 ## [1.11.4] - 2026-02-04
 
 ### Fixed
@@ -1504,6 +1516,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.11.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.4...v1.11.5
 [1.11.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.3...v1.11.4
 [1.11.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.2...v1.11.3
 [1.11.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.1...v1.11.2
