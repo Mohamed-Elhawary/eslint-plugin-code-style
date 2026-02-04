@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.11.6] - 2026-02-04
+
+### Changed
+
+- **`no-hardcoded-strings`**
+  - Flag `type` attribute in JSX elements (e.g., `<input type="text" />`) - should use enums to prevent typos
+  - Remove `type` from default ignored attributes list
+  - Remove "text" from UI component pattern (conflicts with input type)
+  - Update error message for JSX attributes: "should be imported from @/enums (preferred) or @/data to prevent typos"
+
+---
+
 ## [1.11.5] - 2026-02-04
 
 ### Fixed
@@ -1516,6 +1528,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.11.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.5...v1.11.6
 [1.11.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.4...v1.11.5
 [1.11.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.3...v1.11.4
 [1.11.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.2...v1.11.3

@@ -14561,7 +14561,7 @@ const noHardcodedStrings = {
             "textDecoration", // SVG
             "transform", // SVG
             "translate",
-            "type",
+            // "type" removed - should use enums for input/button types to prevent typos
             "vectorEffect", // SVG
             "useMap",
             "value",
@@ -14802,7 +14802,8 @@ const noHardcodedStrings = {
         };
 
         // UI component patterns - only ignored in JSX attributes, not in logic
-        const uiComponentPattern = /^(primary|secondary|tertiary|ghost|outline|link|muted|danger|warning|info|success|error|default|subtle|solid|soft|plain|flat|elevated|filled|tonal|text|contained|standard|xs|sm|md|lg|xl|2xl|3xl|4xl|5xl|xxs|xxl|small|medium|large|tiny|huge|compact|comfortable|spacious|left|right|center|top|bottom|start|end|middle|baseline|stretch|between|around|evenly|horizontal|vertical|row|column|inline|block|flex|grid|auto|none|hidden|visible|static|relative|absolute|fixed|sticky|on|off|hover|focus|click|blur|always|never)$/;
+        // Note: "text" removed as it conflicts with input type (should use enum)
+        const uiComponentPattern = /^(primary|secondary|tertiary|ghost|outline|link|muted|danger|warning|info|success|error|default|subtle|solid|soft|plain|flat|elevated|filled|tonal|contained|standard|xs|sm|md|lg|xl|2xl|3xl|4xl|5xl|xxs|xxl|small|medium|large|tiny|huge|compact|comfortable|spacious|left|right|center|top|bottom|start|end|middle|baseline|stretch|between|around|evenly|horizontal|vertical|row|column|inline|block|flex|grid|auto|none|hidden|visible|static|relative|absolute|fixed|sticky|on|off|hover|focus|click|blur|always|never)$/;
 
         // HTML input types - standard browser input types, not hardcoded strings
         const htmlInputTypes = new Set([
@@ -14980,12 +14981,19 @@ const noHardcodedStrings = {
             const isSingleWord = !/\s/.test(str) && str.length <= 30;
             const isAllLowercase = /^[a-z_]+$/.test(str);
 
+            // For JSX attributes (type, variant, etc.), prefer enums to prevent typos
+            const isJsxAttribute = context.includes("attribute");
+
             if (isSingleWord && isAllLowercase) {
-                return `Hardcoded data keyword or enum "${truncatedStr}"${contextPart} should be imported from @/data or @/enums (e.g., import { StatusEnum } from "@/enums")`;
+                if (isJsxAttribute) {
+                    return `Hardcoded "${truncatedStr}"${contextPart} should be imported from @/enums (preferred) or @/data to prevent typos (e.g., import { InputTypeEnum } from "@/enums")`;
+                }
+
+                return `Hardcoded "${truncatedStr}"${contextPart} should be imported from @/enums (preferred) or @/data (e.g., import { StatusEnum } from "@/enums")`;
             }
 
             // UI string: starts with capital, has spaces, or multiple words
-            return `Hardcoded UI string "${truncatedStr}"${contextPart} should be imported from @/strings or @/constants or @/@strings or @/@constants (e.g., import { strings } from "@/strings")`;
+            return `Hardcoded UI string "${truncatedStr}"${contextPart} should be imported from @/strings or @/constants (e.g., import { strings } from "@/strings")`;
         };
 
         // Check if a string matches any ignore pattern
