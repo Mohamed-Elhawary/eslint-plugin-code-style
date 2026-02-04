@@ -117,7 +117,7 @@ export default [ // eslint-disable-line
             // Check file rules
             "check-file/filename-naming-convention": [
                 "error",
-                { "**/!(App|app).{js,jsx}": "KEBAB_CASE" },
+                { "**/*.{js,jsx}": "KEBAB_CASE" },
                 { ignoreMiddleExtensions: true },
             ],
             "check-file/folder-naming-convention": [

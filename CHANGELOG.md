@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.11.9] - 2026-02-04
+
+### Fixed
+
+- **`variable-naming-convention`** - Enforce camelCase for object property keys (no longer allows SCREAMING_SNAKE_CASE like `APP_NAME`)
+- **`variable-naming-convention`** - Add auto-fix to convert property names to camelCase (e.g., `APP_NAME` → `appName`)
+
+---
+
 ## [1.11.8] - 2026-02-04
 
 ### Fixed
@@ -1546,6 +1555,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.11.9]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.8...v1.11.9
 [1.11.8]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.7...v1.11.8
 [1.11.7]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.6...v1.11.7
 [1.11.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.5...v1.11.6

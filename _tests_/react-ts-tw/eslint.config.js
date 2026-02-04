@@ -137,7 +137,7 @@ export default [ // eslint-disable-line
             "capitalized-comments": ["error"],
             "check-file/filename-naming-convention": [
                 "error",
-                { "**/!(App|app).{js,jsx,ts,tsx}": "KEBAB_CASE" },
+                { "**/*.{js,jsx,ts,tsx}": "KEBAB_CASE" },
                 { ignoreMiddleExtensions: true },
             ],
             "check-file/folder-naming-convention": [
