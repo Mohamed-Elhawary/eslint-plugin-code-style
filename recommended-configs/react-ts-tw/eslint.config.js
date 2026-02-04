@@ -13,9 +13,9 @@ import simpleImportSort from "eslint-plugin-simple-import-sort";
 import tailwind from "eslint-plugin-tailwindcss";
 import globals from "globals";
 /*
-    - Tailwind CSS v4 only: Resolve __dirname and set the tailwindcss config path in the tailwind.configs map below.
-    - For Tailwind CSS v3, remove the .map() and use just: ...tailwind.configs["flat/recommended"],
-    - Also for v3, use "eslint-plugin-tailwindcss": "^3.18.2" instead of "^4.0.0-beta.0"
+* Tailwind CSS v4 only: Resolve __dirname and set the tailwindcss config path in the tailwind.configs map below.
+* For Tailwind CSS v3, remove the .map() and use just: ...tailwind.configs["flat/recommended"],
+* Also for v3, use "eslint-plugin-tailwindcss": "^3.18.2" instead of "^4.0.0-beta.0"
 */
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
