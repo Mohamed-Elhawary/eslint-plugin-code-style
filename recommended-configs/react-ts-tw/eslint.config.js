@@ -12,12 +12,12 @@ import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import tailwind from "eslint-plugin-tailwindcss";
 import globals from "globals";
-/* 
-    - Tailwind CSS v4 only: Resolve __dirname and set the tailwindcss config path in the settings below.
-    - For Tailwind CSS v3, these are not needed.
-    - Also for v3, use "eslint-plugin-tailwindcss": "^3.18.2" instead of "^4.0.0-beta.0" 
+/*
+    - Tailwind CSS v4 only: Resolve __dirname and set the tailwindcss config path in the tailwind.configs map below.
+    - For Tailwind CSS v3, remove the .map() and use just: ...tailwind.configs["flat/recommended"],
+    - Also for v3, use "eslint-plugin-tailwindcss": "^3.18.2" instead of "^4.0.0-beta.0"
 */
-import { dirname } from "path";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -35,7 +35,19 @@ export default [ // eslint-disable-line
         ],
     },
     js.configs.recommended,
-    ...tailwind.configs["flat/recommended"],
+    ...tailwind.configs["flat/recommended"].map(config => ({
+        ...config,
+        settings: {
+            ...config.settings,
+            tailwindcss: {
+                config: join(
+                    __dirname,
+                    "src", // eslint-disable-line
+                    "index.css", // eslint-disable-line
+                ),
+            },
+        },
+    })),
     {
         files: ["**/*.{js,jsx,ts,tsx}"],
         languageOptions: {
@@ -451,7 +463,6 @@ export default [ // eslint-disable-line
                 },
             },
             react: { version: "detect" },
-            tailwindcss: { config: __dirname + "/src/index.css" }, // Tailwind CSS v4 only — remove this line for v3
         },
     },
 ];

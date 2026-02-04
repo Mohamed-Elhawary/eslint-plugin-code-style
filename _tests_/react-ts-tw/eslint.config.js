@@ -12,7 +12,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import tailwind from "eslint-plugin-tailwindcss";
 import globals from "globals";
-import { dirname } from "path";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -30,7 +30,19 @@ export default [ // eslint-disable-line
         ],
     },
     js.configs.recommended,
-    ...tailwind.configs["flat/recommended"],
+    ...tailwind.configs["flat/recommended"].map(config => ({
+        ...config,
+        settings: {
+            ...config.settings,
+            tailwindcss: {
+                config: join(
+                    __dirname,
+                    "src", // eslint-disable-line
+                    "index.css", // eslint-disable-line
+                ),
+            },
+        },
+    })),
     {
         files: ["**/*.{js,jsx,ts,tsx}"],
         languageOptions: {
@@ -421,7 +433,6 @@ export default [ // eslint-disable-line
                 },
             },
             react: { version: "detect" },
-            tailwindcss: { config: __dirname + "/src/index.css" }, 
         },
     },
 ];
