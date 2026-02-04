@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.11.8] - 2026-02-04
+
+### Fixed
+
+- **`comment-format`** - Allow `/* */` syntax for ESLint directive comments (`/* eslint-disable ... */`, `/* eslint-enable ... */`, etc.) since these must use block comment syntax
+
+---
+
 ## [1.11.7] - 2026-02-04
 
 ### Changed
@@ -1538,6 +1546,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.11.8]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.7...v1.11.8
 [1.11.7]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.6...v1.11.7
 [1.11.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.5...v1.11.6
 [1.11.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.4...v1.11.5
