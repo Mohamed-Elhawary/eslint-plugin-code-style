@@ -1709,9 +1709,16 @@ const commentFormat = {
                         const isSingleLine = !value.includes("\n");
 
                         if (isSingleLine) {
-                            // Single-line block comment should use // syntax
+                            // Skip ESLint directive comments (eslint-disable, eslint-enable, etc.)
                             const trimmedValue = value.trim();
+                            const isEslintDirective = /^eslint-disable|^eslint-enable|^eslint-disable-next-line|^eslint-disable-line/.test(trimmedValue);
 
+                            if (isEslintDirective) {
+                                // Allow /* */ syntax for ESLint directives
+                                return;
+                            }
+
+                            // Single-line block comment should use // syntax
                             context.report({
                                 fix: (fixer) => fixer.replaceText(comment, `// ${trimmedValue}`),
                                 loc: comment.loc,
