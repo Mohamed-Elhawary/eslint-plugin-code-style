@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.12.0] - 2026-02-04
+
+**New Rule: Folder Component Suffix**
+
+**Version Range:** v1.11.10 → v1.12.0
+
+### Added
+
+**New Rules (1)**
+- `folder-component-suffix` - Enforce naming conventions based on folder location:
+  - Components in `views/` folder must end with `View` suffix
+  - Components in `pages/` folder must end with `Page` suffix
+
+### Stats
+
+- Total Rules: 74 (was 73)
+- Auto-fixable: 65 rules 🔧
+- Report-only: 9 rules
+
+**Full Changelog:** [v1.11.10...v1.12.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.10...v1.12.0)
+
+---
+
 ## [1.11.9] - 2026-02-04
 
 ### Fixed
@@ -1555,6 +1578,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.12.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.9...v1.12.0
 [1.11.9]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.8...v1.11.9
 [1.11.8]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.7...v1.11.8
 [1.11.7]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.6...v1.11.7
