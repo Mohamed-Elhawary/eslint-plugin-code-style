@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.11.4] - 2026-02-04
+
+### Fixed
+
+- **`opening-brackets-same-line`**
+  - Collapse JSX elements with simple children to single line (e.g., `<span>{strings.label}</span>`)
+  - Handle simple LogicalExpression children (e.g., `<p>{user?.email || fallback}</p>`)
+
+- **`jsx-children-on-new-line`** / **`jsx-element-child-new-line`**
+  - Recognize simple LogicalExpression (≤2 operands) as simple children
+  - Recognize ChainExpression (optional chaining like `user?.name`) as simple expression
+  - Prevent circular fix conflicts with `opening-brackets-same-line`
+
+---
+
 ## [1.11.3] - 2026-02-04
 
 ### Fixed
@@ -1489,6 +1504,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.11.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.3...v1.11.4
 [1.11.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.2...v1.11.3
 [1.11.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.1...v1.11.2
 [1.11.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.0...v1.11.1

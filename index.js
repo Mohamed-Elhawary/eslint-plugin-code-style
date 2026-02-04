@@ -7683,6 +7683,12 @@ const jsxChildrenOnNewLine = {
 
             if (expr.type === "Identifier") return true;
             if (expr.type === "Literal") return true;
+
+            // Handle ChainExpression (optional chaining like user?.name)
+            if (expr.type === "ChainExpression") {
+                return isSimpleExpressionHandler(expr.expression);
+            }
+
             if (expr.type === "MemberExpression") {
                 // Allow nested member expressions like row.original.currency or row[field]
                 let current = expr;
@@ -7698,6 +7704,11 @@ const jsxChildrenOnNewLine = {
                     }
 
                     current = current.object;
+                }
+
+                // Handle ChainExpression at the end of the chain
+                if (current.type === "ChainExpression") {
+                    return isSimpleExpressionHandler(current.expression);
                 }
 
                 return current.type === "Identifier";
@@ -7717,6 +7728,32 @@ const jsxChildrenOnNewLine = {
                 if (expr.arguments.length === 1 && isSimpleArgHandler(expr.arguments[0])) return true;
 
                 return false;
+            }
+
+            // Allow simple LogicalExpression (2 operands with simple left/right)
+            if (expr.type === "LogicalExpression") {
+                // Count operands - if more than 2, not simple
+                const countOperands = (n) => {
+                    if (n.type === "LogicalExpression") {
+                        return countOperands(n.left) + countOperands(n.right);
+                    }
+
+                    return 1;
+                };
+
+                if (countOperands(expr) > 2) return false;
+
+                // Check if left and right are simple
+                const isSimpleSide = (n) => {
+                    if (n.type === "Identifier") return true;
+                    if (n.type === "Literal") return true;
+                    if (n.type === "MemberExpression") return isSimpleExpressionHandler(n);
+                    if (n.type === "ChainExpression" && n.expression) return isSimpleSide(n.expression);
+
+                    return false;
+                };
+
+                return isSimpleSide(expr.left) && isSimpleSide(expr.right);
             }
 
             return false;
@@ -7944,6 +7981,12 @@ const jsxElementChildNewLine = {
 
             if (expr.type === "Identifier") return true;
             if (expr.type === "Literal") return true;
+
+            // Handle ChainExpression (optional chaining like user?.name)
+            if (expr.type === "ChainExpression") {
+                return isSimpleExpressionHandler(expr.expression);
+            }
+
             if (expr.type === "MemberExpression") {
                 // Allow nested member expressions like row.original.currency or row[field]
                 let current = expr;
@@ -7959,6 +8002,11 @@ const jsxElementChildNewLine = {
                     }
 
                     current = current.object;
+                }
+
+                // Handle ChainExpression at the end of the chain
+                if (current.type === "ChainExpression") {
+                    return isSimpleExpressionHandler(current.expression);
                 }
 
                 return current.type === "Identifier";
@@ -7978,6 +8026,32 @@ const jsxElementChildNewLine = {
                 if (expr.arguments.length === 1 && isSimpleArgHandler(expr.arguments[0])) return true;
 
                 return false;
+            }
+
+            // Allow simple LogicalExpression (2 operands with simple left/right)
+            if (expr.type === "LogicalExpression") {
+                // Count operands - if more than 2, not simple
+                const countOperands = (n) => {
+                    if (n.type === "LogicalExpression") {
+                        return countOperands(n.left) + countOperands(n.right);
+                    }
+
+                    return 1;
+                };
+
+                if (countOperands(expr) > 2) return false;
+
+                // Check if left and right are simple
+                const isSimpleSide = (n) => {
+                    if (n.type === "Identifier") return true;
+                    if (n.type === "Literal") return true;
+                    if (n.type === "MemberExpression") return isSimpleExpressionHandler(n);
+                    if (n.type === "ChainExpression" && n.expression) return isSimpleSide(n.expression);
+
+                    return false;
+                };
+
+                return isSimpleSide(expr.left) && isSimpleSide(expr.right);
             }
 
             return false;
@@ -13117,6 +13191,49 @@ const openingBracketsSameLine = {
                         message: "Simple expression should be on single line in JSX attribute",
                         node: expression,
                     });
+
+                    return;
+                }
+
+                // Check if parent JSX element should be collapsed to single line
+                // e.g., <span>\n    {strings.label}\n</span> → <span>{strings.label}</span>
+                const parent = node.parent;
+
+                if (parent && parent.type === "JSXElement") {
+                    const children = parent.children.filter(
+                        (child) => !(child.type === "JSXText" && /^\s*$/.test(child.value)),
+                    );
+
+                    // Only collapse if this expression is the only meaningful child
+                    if (children.length === 1 && children[0] === node) {
+                        const openingTag = parent.openingElement;
+                        const closingTag = parent.closingElement;
+
+                        if (closingTag) {
+                            const openTagEnd = openingTag.loc.end.line;
+                            const closeTagStart = closingTag.loc.start.line;
+
+                            // Check if element spans multiple lines but content is simple
+                            if (openTagEnd !== closeTagStart) {
+                                const openTagText = sourceCode.getText(openingTag);
+                                const closeTagText = sourceCode.getText(closingTag);
+                                const expressionText = sourceCode.getText(node);
+                                const collapsedLength = openTagText.length + expressionText.length + closeTagText.length;
+
+                                // Only collapse if total length is reasonable
+                                if (collapsedLength <= 120) {
+                                    context.report({
+                                        fix: (fixer) => fixer.replaceTextRange(
+                                            [openingTag.range[1], closingTag.range[0]],
+                                            expressionText,
+                                        ),
+                                        message: "JSX element with simple expression should be on single line",
+                                        node: parent,
+                                    });
+                                }
+                            }
+                        }
+                    }
                 }
 
                 return;
@@ -13280,6 +13397,48 @@ const openingBracketsSameLine = {
                             message: "Simple logical expression should be on a single line",
                             node: expression,
                         });
+
+                        return;
+                    }
+
+                    // Check if parent JSX element should be collapsed to single line
+                    const parent = node.parent;
+
+                    if (parent && parent.type === "JSXElement") {
+                        const children = parent.children.filter(
+                            (child) => !(child.type === "JSXText" && /^\s*$/.test(child.value)),
+                        );
+
+                        // Only collapse if this expression is the only meaningful child
+                        if (children.length === 1 && children[0] === node) {
+                            const openingTag = parent.openingElement;
+                            const closingTag = parent.closingElement;
+
+                            if (closingTag) {
+                                const openTagEnd = openingTag.loc.end.line;
+                                const closeTagStart = closingTag.loc.start.line;
+
+                                // Check if element spans multiple lines but content is simple
+                                if (openTagEnd !== closeTagStart) {
+                                    const openTagText = sourceCode.getText(openingTag);
+                                    const closeTagText = sourceCode.getText(closingTag);
+                                    const collapsedExpr = "{" + collapsedText + "}";
+                                    const collapsedLength = openTagText.length + collapsedExpr.length + closeTagText.length;
+
+                                    // Only collapse if total length is reasonable
+                                    if (collapsedLength <= 120) {
+                                        context.report({
+                                            fix: (fixer) => fixer.replaceTextRange(
+                                                [openingTag.range[1], closingTag.range[0]],
+                                                collapsedExpr,
+                                            ),
+                                            message: "JSX element with simple logical expression should be on single line",
+                                            node: parent,
+                                        });
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     return;
