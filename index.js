@@ -14801,10 +14801,6 @@ const noHardcodedStrings = {
             });
         };
 
-        // UI component patterns - only ignored in JSX attributes, not in logic
-        // Note: "text" removed as it conflicts with input type (should use enum)
-        const uiComponentPattern = /^(primary|secondary|tertiary|ghost|outline|link|muted|danger|warning|info|success|error|default|subtle|solid|soft|plain|flat|elevated|filled|tonal|contained|standard|xs|sm|md|lg|xl|2xl|3xl|4xl|5xl|xxs|xxl|small|medium|large|tiny|huge|compact|comfortable|spacious|left|right|center|top|bottom|start|end|middle|baseline|stretch|between|around|evenly|horizontal|vertical|row|column|inline|block|flex|grid|auto|none|hidden|visible|static|relative|absolute|fixed|sticky|on|off|hover|focus|click|blur|always|never)$/;
-
         // HTML input types - standard browser input types, not hardcoded strings
         const htmlInputTypes = new Set([
             "button",
@@ -15269,9 +15265,6 @@ const noHardcodedStrings = {
                 if (node.value.type === "Literal" && typeof node.value.value === "string") {
                     const str = node.value.value;
 
-                    // Skip UI component patterns in JSX attributes (variant, size, position props)
-                    if (uiComponentPattern.test(str)) return;
-
                     if (shouldIgnoreStringHandler(str)) return;
 
                     // Check if it looks like user-facing text
@@ -15292,9 +15285,6 @@ const noHardcodedStrings = {
 
                     if (expression.type === "Literal" && typeof expression.value === "string") {
                         const str = expression.value;
-
-                        // Skip UI component patterns in JSX attributes (variant, size, position props)
-                        if (uiComponentPattern.test(str)) return;
 
                         if (shouldIgnoreStringHandler(str)) return;
 

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.11.7] - 2026-02-04
+
+### Changed
+
+- **`no-hardcoded-strings`**
+  - Remove UI component pattern exemption - ALL enum-like attribute values are now flagged (e.g., `variant="primary"`, `size="large"`, `color="danger"`)
+  - Enforce consistent use of enums for component props to prevent typos
+
+---
+
 ## [1.11.6] - 2026-02-04
 
 ### Changed
@@ -1528,6 +1538,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.11.7]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.6...v1.11.7
 [1.11.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.5...v1.11.6
 [1.11.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.4...v1.11.5
 [1.11.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.3...v1.11.4
