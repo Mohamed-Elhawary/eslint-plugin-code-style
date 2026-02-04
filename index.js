@@ -7825,16 +7825,6 @@ const jsxChildrenOnNewLine = {
                     message: "JSX child should be on its own line",
                     node: firstChild,
                 });
-            } else if (openingTag.loc.end.line < firstChild.loc.start.line - 1) {
-                // Check for extra blank lines after opening tag (more than 1 newline)
-                context.report({
-                    fix: (fixer) => fixer.replaceTextRange(
-                        [openingTag.range[1], firstChild.range[0]],
-                        "\n" + childIndent,
-                    ),
-                    message: "Remove blank lines after opening tag",
-                    node: firstChild,
-                });
             }
 
             // Check if closing tag is on same line as last child
@@ -11148,39 +11138,42 @@ const noEmptyLinesInFunctionParams = {
             const firstParam = params[0];
             const lastParam = params[params.length - 1];
 
-            // Find opening paren (could be after async keyword for async functions)
-            let openParen = sourceCode.getFirstToken(node);
+            // Find opening paren - must be WITHIN this function's range (not from an outer call expression)
+            const tokenBeforeFirstParam = sourceCode.getTokenBefore(firstParam);
+            // Check that the ( is within this function's range (not from .map( or similar)
+            const hasParenAroundParams = tokenBeforeFirstParam
+                && tokenBeforeFirstParam.value === "("
+                && tokenBeforeFirstParam.range[0] >= node.range[0];
 
-            while (openParen && openParen.value !== "(") {
-                openParen = sourceCode.getTokenAfter(openParen);
-            }
+            // Only check open/close paren spacing if params are wrapped in parentheses
+            if (hasParenAroundParams) {
+                const openParen = tokenBeforeFirstParam;
+                const closeParen = sourceCode.getTokenAfter(lastParam);
 
-            if (!openParen) return;
+                // Verify closeParen is actually a ) right after lastParam AND within this function's range
+                if (closeParen && closeParen.value === ")" && closeParen.range[1] <= (node.body ? node.body.range[0] : node.range[1])) {
+                    if (firstParam.loc.start.line - openParen.loc.end.line > 1) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openParen.range[1], firstParam.range[0]],
+                                "\n" + " ".repeat(firstParam.loc.start.column),
+                            ),
+                            message: "No empty line after opening parenthesis in function parameters",
+                            node: firstParam,
+                        });
+                    }
 
-            const closeParen = sourceCode.getTokenAfter(lastParam, (t) => t.value === ")");
-
-            if (!closeParen) return;
-
-            if (firstParam.loc.start.line - openParen.loc.end.line > 1) {
-                context.report({
-                    fix: (fixer) => fixer.replaceTextRange(
-                        [openParen.range[1], firstParam.range[0]],
-                        "\n" + " ".repeat(firstParam.loc.start.column),
-                    ),
-                    message: "No empty line after opening parenthesis in function parameters",
-                    node: firstParam,
-                });
-            }
-
-            if (closeParen.loc.start.line - lastParam.loc.end.line > 1) {
-                context.report({
-                    fix: (fixer) => fixer.replaceTextRange(
-                        [lastParam.range[1], closeParen.range[0]],
-                        "\n" + " ".repeat(closeParen.loc.start.column),
-                    ),
-                    message: "No empty line before closing parenthesis in function parameters",
-                    node: lastParam,
-                });
+                    if (closeParen.loc.start.line - lastParam.loc.end.line > 1) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [lastParam.range[1], closeParen.range[0]],
+                                "\n" + " ".repeat(closeParen.loc.start.column),
+                            ),
+                            message: "No empty line before closing parenthesis in function parameters",
+                            node: lastParam,
+                        });
+                    }
+                }
             }
 
             for (let i = 0; i < params.length - 1; i += 1) {
@@ -16550,24 +16543,52 @@ const functionObjectDestructure = {
                     if (param.type !== "Identifier") return;
 
                     const paramName = param.name;
+
+                    // Check if param is used in a spread operation - skip because destructuring would break it
+                    let usedInSpread = false;
+                    const checkSpread = (n, parent) => {
+                        if (!n || typeof n !== "object") return;
+                        if (n.type === "SpreadElement" && n.argument && n.argument.type === "Identifier" && n.argument.name === paramName) {
+                            usedInSpread = true;
+
+                            return;
+                        }
+                        for (const key of Object.keys(n)) {
+                            if (key === "parent") continue;
+                            const child = n[key];
+                            if (Array.isArray(child)) child.forEach((c) => checkSpread(c, n));
+                            else if (child && typeof child === "object" && child.type) checkSpread(child, n);
+                        }
+                    };
+                    checkSpread(body, null);
+
+                    if (usedInSpread) return;
+
                     const accesses = findObjectAccessesHandler(body, paramName);
 
                     if (accesses.length > 0) {
                         const accessedProps = [...new Set(accesses.map((a) => a.property))];
 
-                        // Count all references to paramName in the body to check if it's used beyond dot notation
+                        // Count all actual references to paramName (excluding object property keys)
                         const allRefs = [];
-                        const countRefs = (n) => {
+                        const countRefs = (n, parent) => {
                             if (!n || typeof n !== "object") return;
-                            if (n.type === "Identifier" && n.name === paramName) allRefs.push(n);
+                            if (n.type === "Identifier" && n.name === paramName) {
+                                // Exclude object property keys (non-computed)
+                                const isPropertyKey = parent && parent.type === "Property" && parent.key === n && !parent.computed;
+
+                                if (!isPropertyKey) {
+                                    allRefs.push(n);
+                                }
+                            }
                             for (const key of Object.keys(n)) {
                                 if (key === "parent") continue;
                                 const child = n[key];
-                                if (Array.isArray(child)) child.forEach(countRefs);
-                                else if (child && typeof child === "object" && child.type) countRefs(child);
+                                if (Array.isArray(child)) child.forEach((c) => countRefs(c, n));
+                                else if (child && typeof child === "object" && child.type) countRefs(child, n);
                             }
                         };
-                        countRefs(body);
+                        countRefs(body, null);
 
                         // Only auto-fix if all references are covered by the detected dot notation accesses
                         const canAutoFix = allRefs.length === accesses.length;
