@@ -8557,6 +8557,350 @@ const jsxPropNamingConvention = {
 
 /**
  * ───────────────────────────────────────────────────────────────
+ * Rule: Prop Naming Convention
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforces naming conventions for boolean and callback/method props:
+ *   - Boolean props must start with: is, has, with, without (followed by capital letter)
+ *   - Callback props must start with: on (followed by capital letter)
+ *
+ *   Applies to: interfaces, type aliases, inline types, and nested object types
+ *   at any nesting level. Does NOT apply to JSX element attributes.
+ *
+ * Options:
+ *   { booleanPrefixes: ["is", "has"] } - Replace default prefixes entirely
+ *   { extendBooleanPrefixes: ["should", "can"] } - Add to default prefixes
+ *   { allowPastVerbBoolean: false } - Allow past verb booleans (disabled, selected, checked, opened, etc.)
+ *   { allowContinuousVerbBoolean: false } - Allow continuous verb booleans (loading, saving, closing, etc.)
+ *   { callbackPrefix: "on" } - Required prefix for callbacks
+ *   { allowActionSuffix: false } - Allow "xxxAction" pattern for callbacks
+ *
+ * ✓ Good:
+ *   interface PropsInterface {
+ *       isLoading: boolean,
+ *       hasError: boolean,
+ *       onClick: () => void,
+ *       onSubmit: (data: Data) => void,
+ *       config: {
+ *           isEnabled: boolean,
+ *           onToggle: () => void,
+ *       },
+ *   }
+ *
+ * ✗ Bad:
+ *   interface PropsInterface {
+ *       loading: boolean,      // Should be isLoading
+ *       error: boolean,        // Should be hasError
+ *       click: () => void,     // Should be onClick
+ *       handleSubmit: () => void, // Should be onSubmit
+ *       config: {
+ *           enabled: boolean,  // Should be isEnabled (nested)
+ *           toggle: () => void, // Should be onToggle (nested)
+ *       },
+ *   }
+ *
+ * ✓ Good (with allowPastVerbBoolean: true):
+ *   interface PropsInterface {
+ *       disabled: boolean,     // Past verb - allowed
+ *       selected: boolean,     // Past verb - allowed
+ *       checked: boolean,      // Past verb - allowed
+ *   }
+ *
+ * ✓ Good (with allowContinuousVerbBoolean: true):
+ *   interface PropsInterface {
+ *       loading: boolean,      // Continuous verb - allowed
+ *       saving: boolean,       // Continuous verb - allowed
+ *       fetching: boolean,     // Continuous verb - allowed
+ *   }
+ */
+const propNamingConvention = {
+    create(context) {
+        const options = context.options[0] || {};
+
+        // Boolean prefixes handling (like module-index-exports pattern)
+        const defaultBooleanPrefixes = ["is", "has", "with", "without"];
+        const booleanPrefixes = options.booleanPrefixes || [
+            ...defaultBooleanPrefixes,
+            ...(options.extendBooleanPrefixes || []),
+        ];
+
+        const allowPastVerbBoolean = options.allowPastVerbBoolean || false;
+        const allowContinuousVerbBoolean = options.allowContinuousVerbBoolean || false;
+        const callbackPrefix = options.callbackPrefix || "on";
+        const allowActionSuffix = options.allowActionSuffix || false;
+
+        // Pattern to check if name starts with valid boolean prefix followed by capital letter
+        const booleanPrefixPattern = new RegExp(`^(${booleanPrefixes.join("|")})[A-Z]`);
+
+        // Pattern for callback prefix
+        const callbackPrefixPattern = new RegExp(`^${callbackPrefix}[A-Z]`);
+
+        // Pattern for past verb booleans (ends with -ed: disabled, selected, checked, opened, closed, etc.)
+        const pastVerbPattern = /^[a-z]+ed$/;
+
+        // Pattern for continuous verb booleans (ends with -ing: loading, saving, closing, etc.)
+        const continuousVerbPattern = /^[a-z]+ing$/;
+
+        // Words that suggest "has" prefix instead of "is"
+        const hasKeywords = [
+            "children", "content", "data", "error", "errors", "items",
+            "permission", "permissions", "value", "values",
+        ];
+
+        // Convert name to appropriate boolean prefix
+        const toBooleanNameHandler = (name) => {
+            const lowerName = name.toLowerCase();
+            const prefix = hasKeywords.some((k) => lowerName.includes(k)) ? "has" : "is";
+
+            return prefix + name[0].toUpperCase() + name.slice(1);
+        };
+
+        // Convert name to callback format (add "on" prefix)
+        const toCallbackNameHandler = (name) => {
+            // Handle "handleXxx" pattern -> "onXxx"
+            if (name.startsWith("handle") && name.length > 6) {
+                const rest = name.slice(6);
+
+                return callbackPrefix + rest[0].toUpperCase() + rest.slice(1);
+            }
+
+            // Handle "xxxHandler" pattern -> "onXxx"
+            if (name.endsWith("Handler") && name.length > 7) {
+                const rest = name.slice(0, -7);
+
+                return callbackPrefix + rest[0].toUpperCase() + rest.slice(1);
+            }
+
+            // Simple case: just add "on" prefix
+            return callbackPrefix + name[0].toUpperCase() + name.slice(1);
+        };
+
+        // Check if type annotation indicates boolean
+        const isBooleanTypeHandler = (typeAnnotation) => {
+            if (!typeAnnotation) return false;
+            const type = typeAnnotation.typeAnnotation;
+
+            if (!type) return false;
+            if (type.type === "TSBooleanKeyword") return true;
+            // Check for union with boolean (e.g., boolean | undefined)
+            if (type.type === "TSUnionType") {
+                return type.types.some((t) => t.type === "TSBooleanKeyword");
+            }
+
+            return false;
+        };
+
+        // React event handler type names
+        const reactEventHandlerTypes = [
+            "MouseEventHandler",
+            "ChangeEventHandler",
+            "FormEventHandler",
+            "KeyboardEventHandler",
+            "FocusEventHandler",
+            "TouchEventHandler",
+            "PointerEventHandler",
+            "DragEventHandler",
+            "WheelEventHandler",
+            "AnimationEventHandler",
+            "TransitionEventHandler",
+            "ClipboardEventHandler",
+            "CompositionEventHandler",
+            "UIEventHandler",
+            "ScrollEventHandler",
+            "EventHandler",
+        ];
+
+        // Check if type annotation indicates function/callback
+        const isCallbackTypeHandler = (typeAnnotation) => {
+            if (!typeAnnotation) return false;
+            const type = typeAnnotation.typeAnnotation;
+
+            if (!type) return false;
+            if (type.type === "TSFunctionType") return true;
+            if (type.type === "TSTypeReference") {
+                const typeName = type.typeName?.name;
+
+                // Check for Function, VoidFunction, or React event handler types
+                if (typeName === "Function" || typeName === "VoidFunction") return true;
+                if (reactEventHandlerTypes.includes(typeName)) return true;
+            }
+
+            // Check for union with function (e.g., (() => void) | undefined)
+            if (type.type === "TSUnionType") {
+                return type.types.some((t) =>
+                    t.type === "TSFunctionType" ||
+                    (t.type === "TSTypeReference" && (
+                        t.typeName?.name === "Function" ||
+                        t.typeName?.name === "VoidFunction" ||
+                        reactEventHandlerTypes.includes(t.typeName?.name)
+                    )));
+            }
+
+            return false;
+        };
+
+        // Check if type annotation is a nested object type (TSTypeLiteral)
+        const isNestedObjectTypeHandler = (typeAnnotation) => {
+            if (!typeAnnotation) return false;
+            const type = typeAnnotation.typeAnnotation;
+
+            if (!type) return false;
+
+            return type.type === "TSTypeLiteral";
+        };
+
+        // Check if name is a valid boolean prop name
+        const isValidBooleanNameHandler = (name) => {
+            // Starts with valid prefix
+            if (booleanPrefixPattern.test(name)) return true;
+
+            // Allow past verb booleans if option is enabled (disabled, selected, checked, etc.)
+            if (allowPastVerbBoolean && pastVerbPattern.test(name)) return true;
+
+            // Allow continuous verb booleans if option is enabled (loading, saving, etc.)
+            if (allowContinuousVerbBoolean && continuousVerbPattern.test(name)) return true;
+
+            return false;
+        };
+
+        // Check if name is a valid callback prop name
+        const isValidCallbackNameHandler = (name) => {
+            // Starts with "on" prefix
+            if (callbackPrefixPattern.test(name)) return true;
+
+            // Allow "xxxAction" suffix if option is enabled
+            if (allowActionSuffix && name.endsWith("Action") && name.length > 6) return true;
+
+            return false;
+        };
+
+        // Check a property signature (interface/type member) - recursive for nested types
+        const checkPropertySignatureHandler = (member) => {
+            if (member.type !== "TSPropertySignature") return;
+            if (!member.key || member.key.type !== "Identifier") return;
+
+            const propName = member.key.name;
+
+            // Skip private properties (starting with _)
+            if (propName.startsWith("_")) return;
+
+            // Check for nested object types and recursively check their members
+            if (isNestedObjectTypeHandler(member.typeAnnotation)) {
+                const nestedType = member.typeAnnotation.typeAnnotation;
+
+                if (nestedType && nestedType.members) {
+                    nestedType.members.forEach(checkPropertySignatureHandler);
+                }
+
+                return;
+            }
+
+            // Check boolean props
+            if (isBooleanTypeHandler(member.typeAnnotation)) {
+                if (!isValidBooleanNameHandler(propName)) {
+                    const suggestedName = toBooleanNameHandler(propName);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(member.key, suggestedName),
+                        message: `Boolean prop "${propName}" should start with a valid prefix (${booleanPrefixes.join(", ")}). Use "${suggestedName}" instead.`,
+                        node: member.key,
+                    });
+                }
+
+                return;
+            }
+
+            // Check callback props
+            if (isCallbackTypeHandler(member.typeAnnotation)) {
+                if (!isValidCallbackNameHandler(propName)) {
+                    const suggestedName = toCallbackNameHandler(propName);
+
+                    context.report({
+                        fix: (fixer) => fixer.replaceText(member.key, suggestedName),
+                        message: `Callback prop "${propName}" should start with "${callbackPrefix}" prefix. Use "${suggestedName}" instead.`,
+                        node: member.key,
+                    });
+                }
+            }
+        };
+
+        // Check members of a type literal (inline types, type aliases)
+        const checkTypeLiteralHandler = (node) => {
+            if (!node.members) return;
+            node.members.forEach(checkPropertySignatureHandler);
+        };
+
+        return {
+            // Interface declarations
+            TSInterfaceDeclaration(node) {
+                if (!node.body || !node.body.body) return;
+                node.body.body.forEach(checkPropertySignatureHandler);
+            },
+
+            // Type alias declarations with object type
+            TSTypeAliasDeclaration(node) {
+                if (node.typeAnnotation?.type === "TSTypeLiteral") {
+                    checkTypeLiteralHandler(node.typeAnnotation);
+                }
+            },
+
+            // Inline type literals (e.g., in function parameters)
+            TSTypeLiteral(node) {
+                // Skip if already handled by TSTypeAliasDeclaration
+                if (node.parent?.type === "TSTypeAliasDeclaration") return;
+                checkTypeLiteralHandler(node);
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce naming conventions: boolean props must start with is/has/with/without, callback props must start with on" },
+        fixable: "code",
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    allowActionSuffix: {
+                        default: false,
+                        description: "Allow 'xxxAction' pattern for callback props (e.g., submitAction, copyAction)",
+                        type: "boolean",
+                    },
+                    allowContinuousVerbBoolean: {
+                        default: false,
+                        description: "Allow continuous verb boolean props without prefix (e.g., loading, saving, fetching, closing)",
+                        type: "boolean",
+                    },
+                    allowPastVerbBoolean: {
+                        default: false,
+                        description: "Allow past verb boolean props without prefix (e.g., disabled, selected, checked, opened)",
+                        type: "boolean",
+                    },
+                    booleanPrefixes: {
+                        description: "Replace default boolean prefixes entirely. If not provided, defaults are used with extendBooleanPrefixes",
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    callbackPrefix: {
+                        default: "on",
+                        description: "Required prefix for callback props",
+                        type: "string",
+                    },
+                    extendBooleanPrefixes: {
+                        default: [],
+                        description: "Add additional prefixes to the defaults (is, has, with, without)",
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                },
+                type: "object",
+            },
+        ],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
  * Rule: JSX Simple Element On One Line
  * ───────────────────────────────────────────────────────────────
  *
@@ -18416,9 +18760,31 @@ const noInlineTypeDefinitions = {
 const typeFormat = {
     create(context) {
         const sourceCode = context.sourceCode || context.getSourceCode();
+        const options = context.options[0] || {};
+        const minUnionMembersForMultiline = options.minUnionMembersForMultiline !== undefined ? options.minUnionMembersForMultiline : 5;
 
         const pascalCaseRegex = /^[A-Z][a-zA-Z0-9]*$/;
         const camelCaseRegex = /^[a-z][a-zA-Z0-9]*$/;
+
+        // Convert PascalCase/SCREAMING_SNAKE_CASE/snake_case to camelCase
+        const toCamelCaseHandler = (name) => {
+            // Handle SCREAMING_SNAKE_CASE (e.g., USER_NAME -> userName)
+            if (/^[A-Z][A-Z0-9_]*$/.test(name)) {
+                return name.toLowerCase().replace(/_([a-z0-9])/g, (_, char) => char.toUpperCase());
+            }
+
+            // Handle snake_case (e.g., user_name -> userName)
+            if (/_/.test(name)) {
+                return name.toLowerCase().replace(/_([a-z0-9])/g, (_, char) => char.toUpperCase());
+            }
+
+            // Handle PascalCase (e.g., UserName -> userName)
+            if (/^[A-Z]/.test(name)) {
+                return name[0].toLowerCase() + name.slice(1);
+            }
+
+            return name;
+        };
 
         const checkTypeLiteralHandler = (declarationNode, typeLiteralNode, members) => {
             if (members.length === 0) return;
@@ -18478,10 +18844,43 @@ const typeFormat = {
                     const propName = member.key.name;
 
                     if (!camelCaseRegex.test(propName)) {
+                        const fixedName = toCamelCaseHandler(propName);
+
                         context.report({
-                            message: `Type property "${propName}" must be camelCase`,
+                            fix: (fixer) => fixer.replaceText(member.key, fixedName),
+                            message: `Type property "${propName}" must be camelCase. Use "${fixedName}" instead.`,
                             node: member.key,
                         });
+                    }
+                }
+
+                // Collapse single-member nested object types to one line
+                if (member.type === "TSPropertySignature" && member.typeAnnotation?.typeAnnotation?.type === "TSTypeLiteral") {
+                    const nestedType = member.typeAnnotation.typeAnnotation;
+
+                    if (nestedType.members && nestedType.members.length === 1) {
+                        const nestedOpenBrace = sourceCode.getFirstToken(nestedType);
+                        const nestedCloseBrace = sourceCode.getLastToken(nestedType);
+                        const isNestedMultiLine = nestedOpenBrace.loc.end.line !== nestedCloseBrace.loc.start.line;
+
+                        if (isNestedMultiLine) {
+                            const nestedMember = nestedType.members[0];
+                            let nestedMemberText = sourceCode.getText(nestedMember).trim();
+
+                            // Remove trailing punctuation
+                            if (nestedMemberText.endsWith(",") || nestedMemberText.endsWith(";")) {
+                                nestedMemberText = nestedMemberText.slice(0, -1);
+                            }
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [nestedOpenBrace.range[0], nestedCloseBrace.range[1]],
+                                    `{ ${nestedMemberText} }`,
+                                ),
+                                message: "Single property nested object type should be on one line",
+                                node: nestedType,
+                            });
+                        }
                     }
                 }
 
@@ -18852,13 +19251,166 @@ const typeFormat = {
                         }
                     });
                 }
+
+                // Check union types formatting (e.g., "a" | "b" | "c")
+                if (node.typeAnnotation && node.typeAnnotation.type === "TSUnionType") {
+                    const unionType = node.typeAnnotation;
+                    const types = unionType.types;
+                    const minMembersForMultiline = minUnionMembersForMultiline;
+
+                    // Get line info
+                    const typeLine = sourceCode.lines[node.loc.start.line - 1];
+                    const baseIndent = typeLine.match(/^\s*/)[0];
+                    const memberIndent = baseIndent + "    ";
+
+                    // Get the = token
+                    const equalToken = sourceCode.getTokenAfter(node.id);
+                    const firstType = types[0];
+                    const lastType = types[types.length - 1];
+
+                    // Check if currently on single line
+                    const isCurrentlySingleLine = firstType.loc.start.line === lastType.loc.end.line &&
+                        equalToken.loc.end.line === firstType.loc.start.line;
+
+                    // Check if currently properly multiline (= on its own conceptually, first type on new line)
+                    const isFirstTypeOnNewLine = firstType.loc.start.line > equalToken.loc.end.line;
+
+                    if (types.length >= minMembersForMultiline) {
+                        // Should be multiline format
+                        // Check if needs reformatting
+                        let needsReformat = false;
+
+                        // Check if first type is on new line after =
+                        if (!isFirstTypeOnNewLine) {
+                            needsReformat = true;
+                        }
+
+                        // Check if each type is on its own line
+                        if (!needsReformat) {
+                            for (let i = 1; i < types.length; i++) {
+                                if (types[i].loc.start.line === types[i - 1].loc.end.line) {
+                                    needsReformat = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Check proper indentation and | placement
+                        if (!needsReformat) {
+                            for (let i = 1; i < types.length; i++) {
+                                const pipeToken = sourceCode.getTokenBefore(types[i]);
+
+                                if (pipeToken && pipeToken.value === "|") {
+                                    // | should be at start of line (after indent)
+                                    if (pipeToken.loc.start.line !== types[i].loc.start.line) {
+                                        needsReformat = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (needsReformat) {
+                            // Build the correct multiline format
+                            const formattedTypes = types.map((type, index) => {
+                                const typeText = sourceCode.getText(type);
+
+                                if (index === 0) {
+                                    return memberIndent + typeText;
+                                }
+
+                                return memberIndent + "| " + typeText;
+                            }).join("\n");
+
+                            const newTypeText = `= \n${formattedTypes}`;
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [equalToken.range[0], lastType.range[1]],
+                                    newTypeText,
+                                ),
+                                message: `Union type with ${types.length} members should be multiline with each member on its own line`,
+                                node: unionType,
+                            });
+                        }
+                    } else {
+                        // Should be single line format (less than 5 members)
+                        if (!isCurrentlySingleLine) {
+                            // Build single line format
+                            const typeTexts = types.map((type) => sourceCode.getText(type));
+                            const singleLineText = `= ${typeTexts.join(" | ")}`;
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [equalToken.range[0], lastType.range[1]],
+                                    singleLineText,
+                                ),
+                                message: `Union type with ${types.length} members should be on a single line`,
+                                node: unionType,
+                            });
+                        }
+                    }
+                }
+            },
+            // Handle inline type literals (e.g., in function parameters)
+            TSTypeLiteral(node) {
+                // Skip if already handled by TSTypeAliasDeclaration or TSAsExpression
+                if (node.parent?.type === "TSTypeAliasDeclaration") return;
+                if (node.parent?.type === "TSAsExpression") return;
+
+                // Check for single-member nested object types that should be collapsed
+                if (node.members) {
+                    node.members.forEach((member) => {
+                        if (member.type === "TSPropertySignature" && member.typeAnnotation?.typeAnnotation?.type === "TSTypeLiteral") {
+                            const nestedType = member.typeAnnotation.typeAnnotation;
+
+                            if (nestedType.members && nestedType.members.length === 1) {
+                                const nestedOpenBrace = sourceCode.getFirstToken(nestedType);
+                                const nestedCloseBrace = sourceCode.getLastToken(nestedType);
+                                const isNestedMultiLine = nestedOpenBrace.loc.end.line !== nestedCloseBrace.loc.start.line;
+
+                                if (isNestedMultiLine) {
+                                    const nestedMember = nestedType.members[0];
+                                    let nestedMemberText = sourceCode.getText(nestedMember).trim();
+
+                                    // Remove trailing punctuation
+                                    if (nestedMemberText.endsWith(",") || nestedMemberText.endsWith(";")) {
+                                        nestedMemberText = nestedMemberText.slice(0, -1);
+                                    }
+
+                                    context.report({
+                                        fix: (fixer) => fixer.replaceTextRange(
+                                            [nestedOpenBrace.range[0], nestedCloseBrace.range[1]],
+                                            `{ ${nestedMemberText} }`,
+                                        ),
+                                        message: "Single property nested object type should be on one line",
+                                        node: nestedType,
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
             },
         };
     },
     meta: {
-        docs: { description: "Enforce type naming (PascalCase + Type suffix), camelCase properties, proper formatting, and trailing commas" },
+        docs: { description: "Enforce type naming (PascalCase + Type suffix), camelCase properties, proper formatting, union type formatting, and trailing commas" },
         fixable: "code",
-        schema: [],
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    minUnionMembersForMultiline: {
+                        default: 5,
+                        description: "Minimum number of union members to require multiline format",
+                        minimum: 2,
+                        type: "integer",
+                    },
+                },
+                type: "object",
+            },
+        ],
         type: "suggestion",
     },
 };
@@ -20471,14 +21023,27 @@ const enumFormat = {
                     });
                 }
 
+                // Convert camelCase/PascalCase to UPPER_SNAKE_CASE
+                const toUpperSnakeCaseHandler = (name) => {
+                    // Insert underscore before each uppercase letter (except the first)
+                    // Then convert to uppercase
+                    return name
+                        .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+                        .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
+                        .toUpperCase();
+                };
+
                 members.forEach((member, index) => {
                     // Check member name is UPPER_CASE
                     if (member.id && member.id.type === "Identifier") {
                         const memberName = member.id.name;
 
                         if (!upperCaseRegex.test(memberName)) {
+                            const fixedName = toUpperSnakeCaseHandler(memberName);
+
                             context.report({
-                                message: `Enum member "${memberName}" must be UPPER_CASE (e.g., ${memberName.toUpperCase()})`,
+                                fix: (fixer) => fixer.replaceText(member.id, fixedName),
+                                message: `Enum member "${memberName}" must be UPPER_CASE (e.g., ${fixedName})`,
                                 node: member.id,
                             });
                         }
@@ -20631,6 +21196,26 @@ const interfaceFormat = {
         const pascalCaseRegex = /^[A-Z][a-zA-Z0-9]*$/;
         const camelCaseRegex = /^[a-z][a-zA-Z0-9]*$/;
 
+        // Convert PascalCase/SCREAMING_SNAKE_CASE/snake_case to camelCase
+        const toCamelCaseHandler = (name) => {
+            // Handle SCREAMING_SNAKE_CASE (e.g., USER_NAME -> userName)
+            if (/^[A-Z][A-Z0-9_]*$/.test(name)) {
+                return name.toLowerCase().replace(/_([a-z0-9])/g, (_, char) => char.toUpperCase());
+            }
+
+            // Handle snake_case (e.g., user_name -> userName)
+            if (/_/.test(name)) {
+                return name.toLowerCase().replace(/_([a-z0-9])/g, (_, char) => char.toUpperCase());
+            }
+
+            // Handle PascalCase (e.g., UserName -> userName)
+            if (/^[A-Z]/.test(name)) {
+                return name[0].toLowerCase() + name.slice(1);
+            }
+
+            return name;
+        };
+
         return {
             TSInterfaceDeclaration(node) {
                 const interfaceName = node.id.name;
@@ -20708,17 +21293,41 @@ const interfaceFormat = {
                 }
 
                 // For single member, should be on one line without trailing punctuation
+                // But skip if the property has a nested object type with 2+ members
                 if (members.length === 1) {
                     const member = members[0];
-                    const memberText = sourceCode.getText(member);
                     const isMultiLine = openBraceToken.loc.end.line !== closeBraceToken.loc.start.line;
 
-                    if (isMultiLine) {
-                        // Collapse to single line without trailing punctuation
-                        let cleanText = memberText.trim();
+                    // Check if property has nested object type
+                    const nestedType = member.typeAnnotation?.typeAnnotation;
+                    const hasNestedType = nestedType?.type === "TSTypeLiteral";
+                    const hasMultiMemberNestedType = hasNestedType && nestedType.members?.length >= 2;
+                    const hasSingleMemberNestedType = hasNestedType && nestedType.members?.length === 1;
 
-                        if (cleanText.endsWith(",") || cleanText.endsWith(";")) {
-                            cleanText = cleanText.slice(0, -1);
+                    if (isMultiLine && !hasMultiMemberNestedType) {
+                        // Build the collapsed text, handling nested types specially
+                        let cleanText;
+
+                        if (hasSingleMemberNestedType) {
+                            // Collapse nested type first, then build the member text
+                            const nestedMember = nestedType.members[0];
+                            let nestedMemberText = sourceCode.getText(nestedMember).trim();
+
+                            if (nestedMemberText.endsWith(",") || nestedMemberText.endsWith(";")) {
+                                nestedMemberText = nestedMemberText.slice(0, -1);
+                            }
+
+                            // Build: propName: { nestedProp: type }
+                            const propName = member.key.name;
+                            const optionalMark = member.optional ? "?" : "";
+
+                            cleanText = `${propName}${optionalMark}: { ${nestedMemberText} }`;
+                        } else {
+                            cleanText = sourceCode.getText(member).trim();
+
+                            if (cleanText.endsWith(",") || cleanText.endsWith(";")) {
+                                cleanText = cleanText.slice(0, -1);
+                            }
                         }
 
                         const newInterfaceText = `{ ${cleanText} }`;
@@ -20736,6 +21345,8 @@ const interfaceFormat = {
                     }
 
                     // Check for trailing comma/semicolon in single-line single member
+                    const memberText = sourceCode.getText(member);
+
                     if (memberText.trimEnd().endsWith(",") || memberText.trimEnd().endsWith(";")) {
                         const punctIndex = Math.max(memberText.lastIndexOf(","), memberText.lastIndexOf(";"));
 
@@ -20767,10 +21378,43 @@ const interfaceFormat = {
                         const propName = member.key.name;
 
                         if (!camelCaseRegex.test(propName)) {
+                            const fixedName = toCamelCaseHandler(propName);
+
                             context.report({
-                                message: `Interface property "${propName}" must be camelCase`,
+                                fix: (fixer) => fixer.replaceText(member.key, fixedName),
+                                message: `Interface property "${propName}" must be camelCase. Use "${fixedName}" instead.`,
                                 node: member.key,
                             });
+                        }
+                    }
+
+                    // Collapse single-member nested object types to one line
+                    if (member.type === "TSPropertySignature" && member.typeAnnotation?.typeAnnotation?.type === "TSTypeLiteral") {
+                        const nestedType = member.typeAnnotation.typeAnnotation;
+
+                        if (nestedType.members && nestedType.members.length === 1) {
+                            const nestedOpenBrace = sourceCode.getFirstToken(nestedType);
+                            const nestedCloseBrace = sourceCode.getLastToken(nestedType);
+                            const isNestedMultiLine = nestedOpenBrace.loc.end.line !== nestedCloseBrace.loc.start.line;
+
+                            if (isNestedMultiLine) {
+                                const nestedMember = nestedType.members[0];
+                                let nestedMemberText = sourceCode.getText(nestedMember).trim();
+
+                                // Remove trailing punctuation
+                                if (nestedMemberText.endsWith(",") || nestedMemberText.endsWith(";")) {
+                                    nestedMemberText = nestedMemberText.slice(0, -1);
+                                }
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange(
+                                        [nestedOpenBrace.range[0], nestedCloseBrace.range[1]],
+                                        `{ ${nestedMemberText} }`,
+                                    ),
+                                    message: "Single property nested object type should be on one line",
+                                    node: nestedType,
+                                });
+                            }
                         }
                     }
 
@@ -21091,6 +21735,7 @@ export default {
         "enum-format": enumFormat,
         "interface-format": interfaceFormat,
         "no-inline-type-definitions": noInlineTypeDefinitions,
+        "prop-naming-convention": propNamingConvention,
         "type-annotation-spacing": typeAnnotationSpacing,
         "type-format": typeFormat,
         "typescript-definition-location": typescriptDefinitionLocation,

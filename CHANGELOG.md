@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.13.0] - 2026-02-05
+
+**New Rule: Prop Naming Convention & Auto-Fix Enhancements**
+
+**Version Range:** v1.12.1 → v1.13.0
+
+### Added
+
+**New Rules (1)**
+- `prop-naming-convention` - Enforce naming conventions for boolean and callback props 🔧
+  - Boolean props must start with: `is`, `has`, `with`, `without` (configurable)
+  - Callback props must start with: `on` (configurable)
+  - Detects React event handler types (`MouseEventHandler`, `ChangeEventHandler`, `FormEventHandler`, etc.)
+  - Supports nested types at any depth
+  - Applies to interfaces, type aliases, and inline types (NOT JSX attributes)
+  - Options: `booleanPrefixes`, `extendBooleanPrefixes`, `allowPastVerbBoolean`, `allowContinuousVerbBoolean`, `callbackPrefix`, `allowActionSuffix`
+
+### Enhanced
+
+- **`enum-format`** - Add auto-fix for member names (convert to UPPER_SNAKE_CASE)
+- **`interface-format`** - Add auto-fix for property names (convert to camelCase); collapse single-member nested object types to one line
+- **`type-format`** - Add auto-fix for property names (convert to camelCase); collapse single-member nested object types to one line; union type formatting with configurable threshold (`minUnionMembersForMultiline` option, default 5)
+
+### Stats
+
+- Total Rules: 75 (was 74)
+- Auto-fixable: 66 rules 🔧
+- Configurable: 17 rules ⚙️
+- Report-only: 9 rules
+
+**Full Changelog:** [v1.12.1...v1.13.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.12.1...v1.13.0)
+
+---
+
 ## [1.12.1] - 2026-02-04
 
 ### Fixed
@@ -1588,6 +1622,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.13.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.12.1...v1.13.0
 [1.12.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.12.0...v1.12.1
 [1.12.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.9...v1.12.0
 [1.11.9]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.8...v1.11.9

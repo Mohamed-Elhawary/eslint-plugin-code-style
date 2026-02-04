@@ -283,7 +283,7 @@ These are native ESLint rules for code quality and best practices.
 
 ## eslint-plugin-code-style Rules
 
-Our custom plugin provides **65 auto-fixable rules** (73 total, 8 report-only) that fill the gaps not covered by ESLint's built-in rules or other plugins.
+Our custom plugin provides **66 auto-fixable rules** (75 total, 17 configurable, 9 report-only) that fill the gaps not covered by ESLint's built-in rules or other plugins.
 
 For complete rule descriptions, examples, and configuration options, see the [main README](../../README.md#-rules-summary).
 

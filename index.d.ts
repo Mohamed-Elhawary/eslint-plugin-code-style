@@ -68,6 +68,7 @@ export type RuleNames =
     | "code-style/object-property-value-brace"
     | "code-style/object-property-value-format"
     | "code-style/opening-brackets-same-line"
+    | "code-style/prop-naming-convention"
     | "code-style/simple-call-single-line"
     | "code-style/single-argument-on-one-line"
     | "code-style/string-property-spacing"
@@ -164,6 +165,7 @@ interface PluginRules {
     "object-property-value-brace": Rule.RuleModule;
     "object-property-value-format": Rule.RuleModule;
     "opening-brackets-same-line": Rule.RuleModule;
+    "prop-naming-convention": Rule.RuleModule;
     "simple-call-single-line": Rule.RuleModule;
     "single-argument-on-one-line": Rule.RuleModule;
     "string-property-spacing": Rule.RuleModule;

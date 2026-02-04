@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*73 rules (65 auto-fixable) to keep your codebase clean and consistent*
+*75 rules (66 auto-fixable, 17 configurable) to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **73 custom rules** (65 auto-fixable) for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **75 custom rules** (66 auto-fixable, 17 configurable) for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **73 custom rules** (65 auto-fixable) for code formatting. 
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 65 of 73 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 66 of 75 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-**65 rules** support automatic fixing with `eslint --fix`. 6 rules are report-only (require manual changes).
+**66 rules** support automatic fixing with `eslint --fix`. **17 rules** have configurable options. 9 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -205,6 +205,7 @@ rules: {
     "code-style/enum-format": "error",
     "code-style/enum-type-enforcement": "error",
     "code-style/export-format": "error",
+    "code-style/folder-component-suffix": "error",
     "code-style/function-arguments-format": "error",
     "code-style/function-call-spacing": "error",
     "code-style/function-declaration-style": "error",
@@ -229,6 +230,7 @@ rules: {
     "code-style/jsx-simple-element-one-line": "error",
     "code-style/jsx-string-value-trim": "error",
     "code-style/jsx-ternary-format": "error",
+    "code-style/logical-expression-multiline": "error",
     "code-style/member-expression-bracket-spacing": "error",
     "code-style/module-index-exports": "error",
     "code-style/multiline-if-conditions": "error",
@@ -244,6 +246,7 @@ rules: {
     "code-style/object-property-value-brace": "error",
     "code-style/object-property-value-format": "error",
     "code-style/opening-brackets-same-line": "error",
+    "code-style/prop-naming-convention": "error",
     "code-style/react-code-order": "error",
     "code-style/simple-call-single-line": "error",
     "code-style/single-argument-on-one-line": "error",
@@ -262,7 +265,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **73 rules total** — 65 with auto-fix 🔧, 8 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
+> **75 rules total** — 66 with auto-fix 🔧, 17 configurable ⚙️, 9 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -289,6 +292,7 @@ rules: {
 | **Component Rules** | |
 | `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` 🔧 |
 | `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference 🔧 |
+| `folder-component-suffix` | Components in `views/` folder must end with "View", components in `pages/` folder must end with "Page" |
 | `svg-component-icon-naming` | SVG components must end with "Icon" suffix; "Icon" suffix components must return SVG |
 | **Class Rules** | |
 | `class-method-definition-format` | Consistent spacing in class/method definitions: space before `{`, no space before `(` 🔧 |
@@ -298,6 +302,7 @@ rules: {
 | `empty-line-after-block` | Empty line required between closing `}` of block and next statement 🔧 |
 | `if-else-spacing` | Empty line between consecutive if blocks, no empty line between single-line if/else 🔧 |
 | `if-statement-format` | `{` on same line as `if`/`else if`, `else` on same line as `}`, proper spacing 🔧 |
+| `logical-expression-multiline` | Logical expressions (&&, \|\|) with >maxOperands get one operand per line (default: >3) 🔧 ⚙️ |
 | `multiline-if-conditions` | Conditions exceeding threshold get one operand per line with proper indentation (default: >3) 🔧 ⚙️ |
 | `no-empty-lines-in-switch-cases` | No empty line after `case X:` before code, no empty lines between cases 🔧 |
 | `ternary-condition-multiline` | ≤maxOperands always single line; >maxOperands multiline (based on operand count, not line length) 🔧 ⚙️ |
@@ -348,8 +353,9 @@ rules: {
 | `enum-type-enforcement` | Enforce using enum values instead of string literals for variables typed with `*Type` (e.g., use `ButtonVariantEnum.PRIMARY` not `"primary"`) 🔧 |
 | `interface-format` | Enforce interface naming (PascalCase + Interface suffix), camelCase properties, no empty lines, and trailing commas 🔧 |
 | `no-inline-type-definitions` | Inline union types in function params should be extracted to named types ⚙️ |
+| `prop-naming-convention` | Enforce boolean props start with is/has/with/without, callback props start with on 🔧 ⚙️ |
 | `type-annotation-spacing` | Enforce consistent spacing in type annotations: no space before colon/generic/array brackets, one space after colon 🔧 |
-| `type-format` | Enforce type naming (PascalCase + Type suffix), camelCase properties, no empty lines, and trailing commas 🔧 |
+| `type-format` | Enforce type naming (PascalCase + Type suffix), camelCase properties, union type formatting, and trailing commas 🔧 ⚙️ |
 | `typescript-definition-location` | Enforce TypeScript definitions (interfaces, types, enums) to be in designated folders ⚙️ |
 | **React Rules** | |
 | `react-code-order` | Enforce consistent ordering in components and hooks: props destructure → refs → state → redux → router → context → custom hooks → derived → memo → callback → handlers → effects → return 🔧 |
@@ -1162,6 +1168,45 @@ else
 
     doAnother();
 }
+```
+
+---
+
+### `logical-expression-multiline`
+
+**What it does:** When a logical expression (`&&`, `||`) has more operands than the threshold (default: 3), each operand goes on its own line with the operator at the start.
+
+**Why use it:** Long logical expressions are hard to read on one line. One operand per line makes each part clear and easy to modify.
+
+```javascript
+// ✅ Good — 3 or fewer operands stay inline
+const isValid = a && b && c;
+const result = x || y;
+
+// ✅ Good — 4+ operands get one per line
+const err = data.error
+    || data.message
+    || data.status
+    || data.fallback;
+
+const isComplete = hasName
+    && hasEmail
+    && hasPhone
+    && hasAddress;
+
+// ❌ Bad — 4+ operands on single line
+const err = data.error || data.message || data.status || data.fallback;
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxOperands` | `integer` | `3` | Maximum operands allowed on a single line |
+
+```javascript
+// Configuration example - allow up to 4 operands on single line
+"code-style/logical-expression-multiline": ["error", { maxOperands: 4 }]
 ```
 
 ---
@@ -2969,6 +3014,30 @@ export const Card = ({ a, b } : { a: string, b: string }) => (
 
 ---
 
+### `folder-component-suffix`
+
+**What it does:** Enforces naming conventions for components based on folder location:
+- Components in `views/` folder must end with "View" suffix
+- Components in `pages/` folder must end with "Page" suffix
+
+**Why use it:** Consistent naming based on folder structure makes component purpose immediately clear. View components and page components have different responsibilities, and the suffix reflects this.
+
+```tsx
+// ✅ Good — in views/dashboard-view.tsx
+export const DashboardView = () => <div>Dashboard</div>;
+
+// ✅ Good — in pages/home-page.tsx
+export const HomePage = () => <div>Home</div>;
+
+// ❌ Bad — in views/dashboard.tsx (missing "View" suffix)
+export const Dashboard = () => <div>Dashboard</div>;
+
+// ❌ Bad — in pages/home.tsx (missing "Page" suffix)
+export const Home = () => <div>Home</div>;
+```
+
+---
+
 ### `svg-component-icon-naming`
 
 **What it does:** Enforces naming conventions for SVG icon components:
@@ -3161,6 +3230,172 @@ export const Button = ({
 
 ---
 
+### `prop-naming-convention`
+
+**What it does:** Enforces naming conventions for boolean and callback props in TypeScript interfaces, types, and inline type definitions:
+- Boolean props must start with: `is`, `has`, `with`, or `without` (followed by capital letter)
+- Callback props must start with: `on` (followed by capital letter)
+- Detects React event handler types: `MouseEventHandler`, `ChangeEventHandler`, `FormEventHandler`, `KeyboardEventHandler`, etc.
+- Applies to all nesting levels (nested object types are checked recursively)
+- Does NOT apply to JSX element attributes (external components have their own props)
+
+**Why use it:** Consistent prop naming makes props self-documenting. Boolean prefixes clarify intent (`isLoading` vs `loading`), and `on` prefix clearly identifies event handlers.
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `booleanPrefixes` | `string[]` | - | Replace default prefixes entirely (overrides defaults) |
+| `extendBooleanPrefixes` | `string[]` | `[]` | Add to default prefixes (`is`, `has`, `with`, `without`) |
+| `allowPastVerbBoolean` | `boolean` | `false` | Allow past verb booleans (e.g., `disabled`, `selected`, `checked`, `opened`) |
+| `allowContinuousVerbBoolean` | `boolean` | `false` | Allow continuous verb booleans (e.g., `loading`, `saving`, `fetching`) |
+| `callbackPrefix` | `string` | `"on"` | Required prefix for callback props |
+| `allowActionSuffix` | `boolean` | `false` | Allow `xxxAction` pattern for callbacks |
+
+```typescript
+// ✅ Good — proper prop naming
+interface ButtonPropsInterface {
+    isDisabled: boolean,
+    isLoading: boolean,
+    hasError: boolean,
+    onClick: () => void,
+    onSubmit: (data: FormData) => void,
+}
+
+type CardPropsType = {
+    isExpanded: boolean,
+    hasChildren: boolean,
+    onToggle: () => void,
+};
+
+// ✅ Good — nested types are also checked
+interface FormPropsInterface {
+    isValid: boolean,
+    config: {
+        isEnabled: boolean,      // Nested - checked
+        onValidate: () => void,  // Nested - checked
+        settings: {
+            isActive: boolean,   // Deep nested - also checked
+        },
+    },
+}
+
+// ✅ Good — inline component props
+const Button = ({
+    isLoading,
+    onClick,
+}: {
+    isLoading: boolean,
+    onClick: () => void,
+}) => { ... };
+
+// ❌ Bad — missing prefixes
+interface ButtonPropsInterface {
+    disabled: boolean,    // Should be isDisabled
+    loading: boolean,     // Should be isLoading
+    error: boolean,       // Should be hasError
+    click: () => void,    // Should be onClick
+    handleSubmit: () => void,  // Should be onSubmit
+}
+
+// ❌ Bad — nested types also checked
+type PropsType = {
+    config: {
+        enabled: boolean,  // Should be isEnabled
+        toggle: () => void, // Should be onToggle
+    },
+};
+```
+
+**Past Verb Booleans** (`allowPastVerbBoolean: true`):
+
+When enabled, allows boolean props that are past tense verbs (ending in `-ed`):
+
+```typescript
+// ✅ Allowed with allowPastVerbBoolean: true
+interface PropsInterface {
+    disabled: boolean,    // Past verb - ends with -ed
+    selected: boolean,    // Past verb - ends with -ed
+    checked: boolean,     // Past verb - ends with -ed
+    opened: boolean,      // Past verb - ends with -ed
+    closed: boolean,      // Past verb - ends with -ed
+    expanded: boolean,    // Past verb - ends with -ed
+    collapsed: boolean,   // Past verb - ends with -ed
+    focused: boolean,     // Past verb - ends with -ed
+    hidden: boolean,      // Past verb - ends with -ed
+    connected: boolean,   // Past verb - ends with -ed
+}
+```
+
+**Continuous Verb Booleans** (`allowContinuousVerbBoolean: true`):
+
+When enabled, allows boolean props that are continuous tense verbs (ending in `-ing`):
+
+```typescript
+// ✅ Allowed with allowContinuousVerbBoolean: true
+interface PropsInterface {
+    loading: boolean,     // Continuous verb - ends with -ing
+    saving: boolean,      // Continuous verb - ends with -ing
+    fetching: boolean,    // Continuous verb - ends with -ing
+    closing: boolean,     // Continuous verb - ends with -ing
+    opening: boolean,     // Continuous verb - ends with -ing
+    submitting: boolean,  // Continuous verb - ends with -ing
+    processing: boolean,  // Continuous verb - ends with -ing
+    updating: boolean,    // Continuous verb - ends with -ing
+    deleting: boolean,    // Continuous verb - ends with -ing
+    pending: boolean,     // Continuous verb - ends with -ing
+}
+```
+
+**Configuration Examples:**
+
+```javascript
+// Default configuration (strict)
+"code-style/prop-naming-convention": "error"
+
+// Allow past verb booleans (disabled, selected, checked, etc.)
+"code-style/prop-naming-convention": ["error", {
+    allowPastVerbBoolean: true,
+}]
+
+// Allow continuous verb booleans (loading, saving, fetching, etc.)
+"code-style/prop-naming-convention": ["error", {
+    allowContinuousVerbBoolean: true,
+}]
+
+// Allow both past and continuous verb booleans
+"code-style/prop-naming-convention": ["error", {
+    allowPastVerbBoolean: true,
+    allowContinuousVerbBoolean: true,
+}]
+
+// Extend default prefixes with additional ones
+"code-style/prop-naming-convention": ["error", {
+    extendBooleanPrefixes: ["should", "can", "will", "did"],
+}]
+
+// Replace default prefixes entirely
+"code-style/prop-naming-convention": ["error", {
+    booleanPrefixes: ["is", "has"],  // Only these prefixes allowed
+}]
+
+// Allow "xxxAction" suffix for callbacks
+"code-style/prop-naming-convention": ["error", {
+    allowActionSuffix: true,  // Allows: submitAction, copyAction, deleteAction
+}]
+
+// Full custom configuration
+"code-style/prop-naming-convention": ["error", {
+    extendBooleanPrefixes: ["should", "can"],
+    allowPastVerbBoolean: true,
+    allowContinuousVerbBoolean: true,
+    callbackPrefix: "on",
+    allowActionSuffix: true,
+}]
+```
+
+---
+
 ### `type-format`
 
 **What it does:** Enforces consistent formatting for TypeScript type aliases:
@@ -3168,6 +3403,8 @@ export const Button = ({
 - Properties must be camelCase
 - No empty lines between properties
 - Properties must end with commas, not semicolons
+- Union types with 5+ members must be multiline (one per line)
+- Union types with <5 members must be single line
 
 **Why use it:** Consistent type naming makes types instantly recognizable. The suffix clearly distinguishes types from interfaces and classes.
 
@@ -3185,6 +3422,26 @@ export type ApiResponseType<T> = {
     status: number,
 };
 
+// ✅ Good — union type with 6 members (multiline)
+export type ButtonVariantType =
+    "danger"
+    | "ghost"
+    | "ghost-danger"
+    | "link"
+    | "muted"
+    | "primary";
+
+// ✅ Good — union type with 2 members (single line)
+export type CodeLayoutVariantType = "default" | "error";
+
+// ❌ Bad — 6 members should be multiline
+export type BadUnionType = "a" | "b" | "c" | "d" | "e" | "f";
+
+// ❌ Bad — 2 members should be single line
+export type BadSingleType =
+    "default"
+    | "error";
+
 // ❌ Bad — wrong naming
 export type User = {           // Missing Type suffix
     Email: string;             // Should be camelCase
@@ -3197,6 +3454,17 @@ export type ConfigType = {
 
     port: number,              // Empty line not allowed
 };
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `minUnionMembersForMultiline` | `integer` | `5` | Minimum number of union members to require multiline format |
+
+```javascript
+// Configuration example - require multiline for 4+ union members
+"code-style/type-format": ["error", { minUnionMembersForMultiline: 4 }]
 ```
 
 ---
@@ -3581,7 +3849,7 @@ const UseAuth = () => {};          // hooks should be camelCase
 
 ## 🔧 Auto-fixing
 
-65 of 73 rules support auto-fixing. Run ESLint with the `--fix` flag:
+66 of 75 rules support auto-fixing. Run ESLint with the `--fix` flag:
 
 ```bash
 # Fix all files in src directory

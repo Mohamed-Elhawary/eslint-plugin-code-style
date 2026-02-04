@@ -223,6 +223,7 @@ export default [ // eslint-disable-line
             "code-style/object-property-value-brace": "error",
             "code-style/object-property-value-format": "error",
             "code-style/opening-brackets-same-line": "error",
+            "code-style/prop-naming-convention": "error",
             "code-style/react-code-order": "error",
             "code-style/simple-call-single-line": "error",
             "code-style/single-argument-on-one-line": "error",
