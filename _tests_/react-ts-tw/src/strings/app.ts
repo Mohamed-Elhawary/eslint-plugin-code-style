@@ -37,5 +37,9 @@ export const strings = {
         modalContent: "Modal Content",
         welcome: "Welcome, ",
     },
+    layout: {
+        footer: "Footer",
+        header: "Header",
+    },
     user: { defaultName: "John Doe" },
 };

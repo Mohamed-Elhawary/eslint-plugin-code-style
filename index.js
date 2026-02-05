@@ -18863,6 +18863,7 @@ const svgComponentIconNaming = {
  *   Enforces naming conventions for components based on folder location:
  *   - Components in "views" folder must end with "View" suffix
  *   - Components in "pages" folder must end with "Page" suffix
+ *   - Components in "layouts" folder must end with "Layout" suffix
  *
  * ✓ Good:
  *   // In views/dashboard-view.tsx:
@@ -18871,12 +18872,18 @@ const svgComponentIconNaming = {
  *   // In pages/home-page.tsx:
  *   export const HomePage = () => <div>Home</div>;
  *
+ *   // In layouts/main-layout.tsx:
+ *   export const MainLayout = () => <div>Main</div>;
+ *
  * ✗ Bad:
  *   // In views/dashboard.tsx:
  *   export const Dashboard = () => <div>Dashboard</div>;  // Should be "DashboardView"
  *
  *   // In pages/home.tsx:
  *   export const Home = () => <div>Home</div>;  // Should be "HomePage"
+ *
+ *   // In layouts/main.tsx:
+ *   export const Main = () => <div>Main</div>;  // Should be "MainLayout"
  */
 const folderComponentSuffix = {
     create(context) {
@@ -18885,6 +18892,7 @@ const folderComponentSuffix = {
 
         // Folder-to-suffix mapping
         const folderSuffixMap = {
+            layouts: "Layout",
             pages: "Page",
             views: "View",
         };
@@ -19040,7 +19048,7 @@ const folderComponentSuffix = {
         };
     },
     meta: {
-        docs: { description: "Enforce components in 'views' folder end with 'View' and components in 'pages' folder end with 'Page'" },
+        docs: { description: "Enforce components in 'views' folder end with 'View', components in 'pages' folder end with 'Page', and components in 'layouts' folder end with 'Layout'" },
         fixable: "code",
         schema: [],
         type: "suggestion",

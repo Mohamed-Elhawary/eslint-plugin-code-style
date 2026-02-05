@@ -293,7 +293,7 @@ rules: {
 | **Component Rules** | |
 | `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` 🔧 |
 | `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference 🔧 |
-| `folder-component-suffix` | Components in `views/` folder must end with "View", components in `pages/` folder must end with "Page" |
+| `folder-component-suffix` | Components in `views/` folder must end with "View", `pages/` with "Page", `layouts/` with "Layout" |
 | `svg-component-icon-naming` | SVG components must end with "Icon" suffix; "Icon" suffix components must return SVG |
 | **Class Rules** | |
 | `class-method-definition-format` | Consistent spacing in class/method definitions: space before `{`, no space before `(` 🔧 |
@@ -3064,8 +3064,9 @@ export const Card = ({ a, b } : { a: string, b: string }) => (
 **What it does:** Enforces naming conventions for components based on folder location:
 - Components in `views/` folder must end with "View" suffix
 - Components in `pages/` folder must end with "Page" suffix
+- Components in `layouts/` folder must end with "Layout" suffix
 
-**Why use it:** Consistent naming based on folder structure makes component purpose immediately clear. View components and page components have different responsibilities, and the suffix reflects this.
+**Why use it:** Consistent naming based on folder structure makes component purpose immediately clear. View components, page components, and layout components have different responsibilities, and the suffix reflects this.
 
 ```tsx
 // ✅ Good — in views/dashboard-view.tsx
@@ -3074,11 +3075,17 @@ export const DashboardView = () => <div>Dashboard</div>;
 // ✅ Good — in pages/home-page.tsx
 export const HomePage = () => <div>Home</div>;
 
+// ✅ Good — in layouts/main-layout.tsx
+export const MainLayout = () => <div>Main</div>;
+
 // ❌ Bad — in views/dashboard.tsx (missing "View" suffix)
 export const Dashboard = () => <div>Dashboard</div>;
 
 // ❌ Bad — in pages/home.tsx (missing "Page" suffix)
 export const Home = () => <div>Home</div>;
+
+// ❌ Bad — in layouts/main.tsx (missing "Layout" suffix)
+export const Main = () => <div>Main</div>;
 ```
 
 ---
