@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.14.2] - 2026-02-05
+
+### Enhanced
+
+- **`type-annotation-spacing`** - Add spacing rules for async keyword and function types:
+  - Enforce space after `async` keyword: `async()` → `async ()`
+  - Enforce space after `=>` in function types: `() =>void` → `() => void`
+  - Format function types with 3+ params on multiple lines
+- **`interface-format`** - Skip collapsing single-property interfaces when property has function type with 3+ params
+
+---
+
 ## [1.14.1] - 2026-02-05
 
 ### Enhanced
@@ -1666,6 +1678,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.14.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.1...v1.14.2
 [1.14.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.0...v1.14.1
 [1.14.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.13.0...v1.14.0
 [1.13.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.12.1...v1.13.0
