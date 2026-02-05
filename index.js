@@ -2115,6 +2115,7 @@ const functionNamingConvention = {
             "build", "make", "generate", "compute", "calculate", "process", "execute", "run",
             "evaluate", "analyze", "measure", "benchmark", "profile", "optimize",
             "count", "sum", "avg", "min", "max", "clamp", "round", "floor", "ceil", "abs",
+            "increment", "decrement", "multiply", "divide", "mod", "negate",
             // Invocation
             "apply", "call", "invoke", "trigger", "fire", "dispatch", "emit", "raise", "signal",
             // Auth
@@ -2216,6 +2217,23 @@ const functionNamingConvention = {
                 if (node.parent && node.parent.type === "VariableDeclarator" && node.parent.id) {
                     name = node.parent.id.name;
                     identifierNode = node.parent.id;
+                } else if (node.parent && node.parent.type === "CallExpression") {
+                    // Check for useCallback wrapped functions: const login = useCallback(() => {...}, [])
+                    // Note: Skip useMemo - it returns computed values, not action functions
+                    const callExpr = node.parent;
+                    const callee = callExpr.callee;
+
+                    // Only check useCallback (not useMemo, useEffect, etc.)
+                    if (callee && callee.type === "Identifier" && callee.name === "useCallback") {
+                        // Check if the function is the first argument to useCallback
+                        if (callExpr.arguments && callExpr.arguments[0] === node) {
+                            // Check if the CallExpression is the init of a VariableDeclarator
+                            if (callExpr.parent && callExpr.parent.type === "VariableDeclarator" && callExpr.parent.id) {
+                                name = callExpr.parent.id.name;
+                                identifierNode = callExpr.parent.id;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -2321,15 +2339,14 @@ const functionNamingConvention = {
             if (!hasVerbPrefix && !hasHandlerSuffix) {
                 context.report({
                     message: `Function "${name}" should start with a verb (get, set, fetch, etc.) AND end with "Handler" (e.g., getDataHandler, clickHandler)`,
-                    node: node.id || node.parent.id,
+                    node: identifierNode,
                 });
             } else if (!hasVerbPrefix) {
                 context.report({
                     message: `Function "${name}" should start with a verb (get, set, fetch, handle, click, submit, etc.)`,
-                    node: node.id || node.parent.id,
+                    node: identifierNode,
                 });
             } else if (!hasHandlerSuffix) {
-                const identifierNode = node.id || node.parent.id;
                 const newName = `${name}Handler`;
 
                 context.report({
@@ -8775,6 +8792,111 @@ const propNamingConvention = {
             return false;
         };
 
+        // Find the containing function for inline type annotations
+        const findContainingFunctionHandler = (node) => {
+            let current = node;
+
+            while (current) {
+                if (current.type === "ArrowFunctionExpression" ||
+                    current.type === "FunctionExpression" ||
+                    current.type === "FunctionDeclaration") {
+                    return current;
+                }
+
+                current = current.parent;
+            }
+
+            return null;
+        };
+
+        // Find matching property in ObjectPattern (destructured params)
+        const findDestructuredPropertyHandler = (funcNode, propName) => {
+            if (!funcNode || !funcNode.params || funcNode.params.length === 0) return null;
+
+            const firstParam = funcNode.params[0];
+
+            if (firstParam.type !== "ObjectPattern") return null;
+
+            // Find the property in the ObjectPattern
+            for (const prop of firstParam.properties) {
+                if (prop.type === "Property" && prop.key && prop.key.type === "Identifier") {
+                    if (prop.key.name === propName) {
+                        return prop;
+                    }
+                }
+            }
+
+            return null;
+        };
+
+        // Create fix that renames type annotation, destructured prop, and all references
+        const createRenamingFixHandler = (fixer, member, propName, suggestedName) => {
+            const fixes = [fixer.replaceText(member.key, suggestedName)];
+
+            // Find the containing function
+            const funcNode = findContainingFunctionHandler(member);
+
+            if (!funcNode) return fixes;
+
+            // Find the matching destructured property
+            const destructuredProp = findDestructuredPropertyHandler(funcNode, propName);
+
+            if (!destructuredProp) return fixes;
+
+            // Get the value node (the actual variable being declared)
+            const valueNode = destructuredProp.value || destructuredProp.key;
+
+            if (!valueNode || valueNode.type !== "Identifier") return fixes;
+
+            // If key and value are the same (shorthand: { copied }), we need to expand and rename
+            // If different (renamed: { copied: isCopied }), just rename the value
+            const isShorthand = destructuredProp.shorthand !== false &&
+                destructuredProp.key === destructuredProp.value;
+
+            if (isShorthand) {
+                // Shorthand syntax: { copied } -> { copied: isCopied }
+                // We need to keep the key (for the type match) and add the renamed value
+                fixes.push(fixer.replaceText(destructuredProp, `${propName}: ${suggestedName}`));
+            } else {
+                // Already renamed syntax or explicit: just update the value
+                fixes.push(fixer.replaceText(valueNode, suggestedName));
+            }
+
+            // Find all references to the variable and rename them
+            const scope = context.sourceCode
+                ? context.sourceCode.getScope(funcNode)
+                : context.getScope();
+
+            // Find the variable in the scope
+            const findVariableHandler = (s, name) => {
+                const v = s.variables.find((variable) => variable.name === name);
+
+                if (v) return v;
+                if (s.upper) return findVariableHandler(s.upper, name);
+
+                return null;
+            };
+
+            const variable = findVariableHandler(scope, propName);
+
+            if (variable) {
+                const fixedRanges = new Set();
+
+                variable.references.forEach((ref) => {
+                    // Skip the definition itself
+                    if (ref.identifier === valueNode) return;
+                    // Skip if already fixed
+                    const rangeKey = `${ref.identifier.range[0]}-${ref.identifier.range[1]}`;
+
+                    if (fixedRanges.has(rangeKey)) return;
+                    fixedRanges.add(rangeKey);
+                    fixes.push(fixer.replaceText(ref.identifier, suggestedName));
+                });
+            }
+
+            return fixes;
+        };
+
         // Check a property signature (interface/type member) - recursive for nested types
         const checkPropertySignatureHandler = (member) => {
             if (member.type !== "TSPropertySignature") return;
@@ -8802,7 +8924,7 @@ const propNamingConvention = {
                     const suggestedName = toBooleanNameHandler(propName);
 
                     context.report({
-                        fix: (fixer) => fixer.replaceText(member.key, suggestedName),
+                        fix: (fixer) => createRenamingFixHandler(fixer, member, propName, suggestedName),
                         message: `Boolean prop "${propName}" should start with a valid prefix (${booleanPrefixes.join(", ")}). Use "${suggestedName}" instead.`,
                         node: member.key,
                     });
@@ -8817,7 +8939,7 @@ const propNamingConvention = {
                     const suggestedName = toCallbackNameHandler(propName);
 
                     context.report({
-                        fix: (fixer) => fixer.replaceText(member.key, suggestedName),
+                        fix: (fixer) => createRenamingFixHandler(fixer, member, propName, suggestedName),
                         message: `Callback prop "${propName}" should start with "${callbackPrefix}" prefix. Use "${suggestedName}" instead.`,
                         node: member.key,
                     });
