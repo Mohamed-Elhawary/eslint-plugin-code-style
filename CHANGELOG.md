@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.14.1] - 2026-02-05
+
+### Enhanced
+
+- **`function-naming-convention`** - Detect functions destructured from hooks without proper naming
+  - Flags: `const { logout } = useAuth()` (should be `logoutHandler`)
+  - Auto-fixes to: `const { logout: logoutHandler } = useAuth()`
+  - Renames all usages of the local variable
+  - Only flags clear action verbs (login, logout, toggle, increment, etc.)
+
+---
+
 ## [1.14.0] - 2026-02-05
 
 **New Rule: useState Naming Convention**
@@ -1654,6 +1666,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.14.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.0...v1.14.1
 [1.14.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.13.0...v1.14.0
 [1.13.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.12.1...v1.13.0
 [1.12.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.12.0...v1.12.1
