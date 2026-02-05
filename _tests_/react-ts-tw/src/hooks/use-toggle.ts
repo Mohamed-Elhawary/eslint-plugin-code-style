@@ -29,9 +29,9 @@ export const useToggle = (initialValue: boolean = false): UseToggleReturnInterfa
     );
 
     return {
-        setFalse: setFalseHandler,
-        setTrue: setTrueHandler,
-        toggle: toggleHandler,
-        value,
+        hasValue: value,
+        onSetFalse: setFalseHandler,
+        onSetTrue: setTrueHandler,
+        onToggle: toggleHandler,
     };
 };

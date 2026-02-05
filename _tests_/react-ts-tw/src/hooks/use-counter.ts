@@ -32,8 +32,8 @@ export const useCounter = (initialValue: number = 0): UseCounterReturnInterface 
 
     return {
         count,
-        decrement: decrementHandler,
-        increment: incrementHandler,
-        reset: resetHandler,
+        onDecrement: decrementHandler,
+        onIncrement: incrementHandler,
+        onReset: resetHandler,
     };
 };

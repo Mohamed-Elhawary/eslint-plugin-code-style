@@ -2500,11 +2500,83 @@ const functionNamingConvention = {
             }
         };
 
+        // Check functions destructured from custom hooks: const { logout } = useAuth()
+        // Valid: onLogout, logoutAction, logoutHandler
+        // Invalid: logout (should be onLogout or logoutHandler)
+        const checkDestructuredHookFunctionHandler = (node) => {
+            // Check if this is destructuring from a hook call: const { ... } = useXxx()
+            if (!node.init || node.init.type !== "CallExpression") return;
+            if (!node.id || node.id.type !== "ObjectPattern") return;
+
+            const callee = node.init.callee;
+
+            // Check if it's a hook call (starts with "use")
+            if (!callee || callee.type !== "Identifier" || !hookRegex.test(callee.name)) return;
+
+            // Action verbs that are clearly function names (not noun-like)
+            // These are verbs that when used alone as a name, clearly indicate an action/function
+            const actionVerbs = [
+                // Auth actions
+                "login", "logout", "authenticate", "authorize", "signup", "signout", "signin",
+                // CRUD actions (when standalone, not as prefix)
+                "submit", "reset", "clear", "refresh", "reload", "retry",
+                // Toggle/state actions
+                "toggle", "enable", "disable", "activate", "deactivate",
+                "show", "hide", "open", "close", "expand", "collapse",
+                // Navigation
+                "navigate", "redirect", "goBack", "goForward",
+                // Increment/decrement
+                "increment", "decrement", "increase", "decrease",
+                // Other common hook function names
+                "connect", "disconnect", "subscribe", "unsubscribe",
+                "start", "stop", "pause", "resume", "cancel", "abort",
+                "select", "deselect", "check", "uncheck",
+                "add", "remove", "insert", "delete", "update",
+            ];
+
+            // Check each destructured property
+            node.id.properties.forEach((prop) => {
+                if (prop.type !== "Property" || prop.key.type !== "Identifier") return;
+
+                const name = prop.key.name;
+
+                // Skip if it starts with "on" (like onLogout, onClick)
+                if (/^on[A-Z]/.test(name)) return;
+
+                // Skip if it ends with "Action" (like logoutAction)
+                if (/Action$/.test(name)) return;
+
+                // Skip if it ends with "Handler" (like logoutHandler)
+                if (handlerRegex.test(name)) return;
+
+                // Skip boolean-like names (is, has, can, should, etc.)
+                const booleanPrefixes = ["is", "has", "can", "should", "will", "did", "was", "were", "does"];
+
+                if (booleanPrefixes.some((prefix) => name.startsWith(prefix) && name.length > prefix.length && /[A-Z]/.test(name[prefix.length]))) return;
+
+                // Only flag if the name is exactly an action verb or starts with one followed by uppercase
+                const isActionVerb = actionVerbs.some((verb) =>
+                    name === verb || (name.startsWith(verb) && name.length > verb.length && /[A-Z]/.test(name[verb.length])));
+
+                if (!isActionVerb) return;
+
+                // This is a function name without proper prefix/suffix
+                // Suggest adding "on" prefix (most common for hook returns)
+                const suggestedName = "on" + name[0].toUpperCase() + name.slice(1);
+
+                context.report({
+                    message: `Function "${name}" destructured from hook should start with "on" prefix (e.g., "${suggestedName}") or end with "Handler"/"Action" suffix`,
+                    node: prop.key,
+                });
+            });
+        };
+
         return {
             ArrowFunctionExpression: checkFunctionHandler,
             FunctionDeclaration: checkFunctionHandler,
             FunctionExpression: checkFunctionHandler,
             MethodDefinition: checkMethodHandler,
+            VariableDeclarator: checkDestructuredHookFunctionHandler,
         };
     },
     meta: {

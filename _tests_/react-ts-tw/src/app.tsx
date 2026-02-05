@@ -18,13 +18,13 @@ import { formatCurrencyHandler, formatDateHandler } from "@/utils";
 export const App = () => {
     const {
         count,
-        decrement,
-        increment,
+        onDecrement,
+        onIncrement,
     } = useCounter(0);
 
     const {
-        toggle,
-        value: isModalOpen,
+        hasValue: isModalOpen,
+        onToggle,
     } = useToggle(false);
 
     // Test: TypeScript variable with type annotation
@@ -67,12 +67,12 @@ export const App = () => {
                     <Button
                         label={strings.actions.decrement}
                         variant={ButtonVariantEnum.DANGER}
-                        onClick={decrement}
+                        onClick={onDecrement}
                     />
                     <Button
                         label={strings.actions.increment}
                         variant={ButtonVariantEnum.PRIMARY}
-                        onClick={increment}
+                        onClick={onIncrement}
                     />
                 </div>
             </Card>
@@ -80,7 +80,7 @@ export const App = () => {
                 className="mt-4"
                 label={isModalOpen ? strings.actions.close : strings.actions.open}
                 variant={ButtonVariantEnum.SECONDARY}
-                onClick={toggle}
+                onClick={onToggle}
             />
             {isModalOpen && (
                 <div
