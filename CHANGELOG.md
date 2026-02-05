@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.14.4] - 2026-02-06
+
+### Enhanced
+
+- **`folder-component-suffix`** - Add `layouts` folder support: components in `layouts/` must end with "Layout" suffix (with auto-fix)
+
+---
+
 ## [1.14.3] - 2026-02-05
 
 ### Enhanced
@@ -1687,6 +1695,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.14.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.3...v1.14.4
 [1.14.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.2...v1.14.3
 [1.14.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.1...v1.14.2
 [1.14.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.0...v1.14.1
