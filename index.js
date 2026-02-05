@@ -19980,6 +19980,57 @@ const typeAnnotationSpacing = {
         const sourceCode = context.sourceCode || context.getSourceCode();
 
         return {
+            ArrowFunctionExpression(node) {
+                // Check for space after async keyword: async() => -> async () =>
+                if (node.async) {
+                    const asyncToken = sourceCode.getFirstToken(node, (t) => t.value === "async");
+                    const openParen = sourceCode.getTokenAfter(asyncToken, (t) => t.value === "(");
+
+                    if (asyncToken && openParen) {
+                        const textBetween = sourceCode.text.slice(asyncToken.range[1], openParen.range[0]);
+
+                        // Should have exactly one space after async
+                        if (textBetween === "") {
+                            context.report({
+                                fix: (fixer) => fixer.insertTextAfter(asyncToken, " "),
+                                message: "Missing space after async keyword",
+                                node: asyncToken,
+                            });
+                        } else if (textBetween !== " " && !textBetween.includes("\n")) {
+                            // Has extra spaces but not newline
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange([asyncToken.range[1], openParen.range[0]], " "),
+                                message: "Should have exactly one space after async keyword",
+                                node: asyncToken,
+                            });
+                        }
+                    }
+                }
+            },
+            FunctionExpression(node) {
+                // Check for space after async keyword in function expressions: async function() -> async function ()
+                if (node.async) {
+                    const asyncToken = sourceCode.getFirstToken(node, (t) => t.value === "async");
+                    const functionToken = sourceCode.getTokenAfter(asyncToken, (t) => t.value === "function");
+
+                    if (functionToken) {
+                        const openParen = sourceCode.getTokenAfter(functionToken, (t) => t.value === "(");
+
+                        if (openParen) {
+                            const textBetween = sourceCode.text.slice(functionToken.range[1], openParen.range[0]);
+
+                            // Should have exactly one space after function keyword
+                            if (textBetween === "") {
+                                context.report({
+                                    fix: (fixer) => fixer.insertTextAfter(functionToken, " "),
+                                    message: "Missing space after function keyword",
+                                    node: functionToken,
+                                });
+                            }
+                        }
+                    }
+                }
+            },
             TSArrayType(node) {
                 // Check for space before [] like: Type []
                 const elementType = node.elementType;
@@ -20362,6 +20413,76 @@ const typeAnnotationSpacing = {
                             message: "Semicolon should be on the same line as statement",
                             node: lastToken,
                         });
+                    }
+                }
+            },
+            TSFunctionType(node) {
+                // Check for space after => in function types: () =>void -> () => void
+                // Find the arrow token by searching all tokens in the node
+                const tokens = sourceCode.getTokens(node);
+                const arrowToken = tokens.find((t) => t.value === "=>");
+
+                if (arrowToken) {
+                    const nextToken = sourceCode.getTokenAfter(arrowToken);
+
+                    if (nextToken) {
+                        const textAfterArrow = sourceCode.text.slice(arrowToken.range[1], nextToken.range[0]);
+
+                        // Should have exactly one space after =>
+                        if (textAfterArrow === "") {
+                            context.report({
+                                fix: (fixer) => fixer.insertTextAfter(arrowToken, " "),
+                                message: "Missing space after => in function type",
+                                node: arrowToken,
+                            });
+                        } else if (textAfterArrow !== " " && !textAfterArrow.includes("\n")) {
+                            // Has extra spaces but not newline
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange([arrowToken.range[1], nextToken.range[0]], " "),
+                                message: "Should have exactly one space after => in function type",
+                                node: arrowToken,
+                            });
+                        }
+                    }
+                }
+
+                // Check function type params formatting (3+ params should be multiline)
+                const params = node.params;
+
+                if (params && params.length >= 3) {
+                    const tokens = sourceCode.getTokens(node);
+                    const openParen = tokens.find((t) => t.value === "(");
+                    const arrowTok = tokens.find((t) => t.value === "=>");
+
+                    if (openParen && arrowTok) {
+                        const closeParen = sourceCode.getTokenBefore(arrowTok, (t) => t.value === ")");
+
+                        if (closeParen && openParen.loc.start.line === closeParen.loc.end.line) {
+                            // All params are on one line - need to format
+
+                            // Get the indentation from the line
+                            const lineStart = sourceCode.text.lastIndexOf("\n", node.range[0]) + 1;
+                            const lineText = sourceCode.text.slice(lineStart, node.range[0]);
+                            const match = lineText.match(/^(\s*)/);
+                            const baseIndent = match ? match[1] : "";
+                            const paramIndent = baseIndent + "    ";
+
+                            // Format params on multiple lines
+                            const formattedParams = params.map((p) => {
+                                const paramText = sourceCode.getText(p);
+
+                                return paramIndent + paramText;
+                            }).join(",\n");
+
+                            // Only replace the params section (openParen to closeParen)
+                            const newParamsText = `(\n${formattedParams},\n${baseIndent})`;
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange([openParen.range[0], closeParen.range[1]], newParamsText),
+                                message: "Function type with 3+ parameters should have each parameter on its own line",
+                                node,
+                            });
+                        }
                     }
                 }
             },
@@ -21833,6 +21954,7 @@ const interfaceFormat = {
 
                 // For single member, should be on one line without trailing punctuation
                 // But skip if the property has a nested object type with 2+ members
+                // Or if the property has a function type with 3+ params
                 if (members.length === 1) {
                     const member = members[0];
                     const isMultiLine = openBraceToken.loc.end.line !== closeBraceToken.loc.start.line;
@@ -21843,7 +21965,10 @@ const interfaceFormat = {
                     const hasMultiMemberNestedType = hasNestedType && nestedType.members?.length >= 2;
                     const hasSingleMemberNestedType = hasNestedType && nestedType.members?.length === 1;
 
-                    if (isMultiLine && !hasMultiMemberNestedType) {
+                    // Check if property has function type with 3+ params
+                    const hasFunctionWith3PlusParams = nestedType?.type === "TSFunctionType" && nestedType.params?.length >= 3;
+
+                    if (isMultiLine && !hasMultiMemberNestedType && !hasFunctionWith3PlusParams) {
                         // Build the collapsed text, handling nested types specially
                         let cleanText;
 
