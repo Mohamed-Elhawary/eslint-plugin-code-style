@@ -18609,8 +18609,54 @@ const folderComponentSuffix = {
 
             // Check if component name ends with the required suffix
             if (!name.endsWith(suffix)) {
+                const newName = `${name}${suffix}`;
+
                 context.report({
-                    message: `Component "${name}" in "${folder}" folder must end with "${suffix}" suffix (e.g., "${name}${suffix}")`,
+                    fix(fixer) {
+                        const scope = context.sourceCode
+                            ? context.sourceCode.getScope(node)
+                            : context.getScope();
+
+                        // Find the variable in scope
+                        const findVariableHandler = (s, varName) => {
+                            const v = s.variables.find((variable) => variable.name === varName);
+
+                            if (v) return v;
+                            if (s.upper) return findVariableHandler(s.upper, varName);
+
+                            return null;
+                        };
+
+                        const variable = findVariableHandler(scope, name);
+
+                        if (!variable) return fixer.replaceText(identifierNode, newName);
+
+                        const fixes = [];
+                        const fixedRanges = new Set();
+
+                        // Fix definition
+                        variable.defs.forEach((def) => {
+                            const rangeKey = `${def.name.range[0]}-${def.name.range[1]}`;
+
+                            if (!fixedRanges.has(rangeKey)) {
+                                fixedRanges.add(rangeKey);
+                                fixes.push(fixer.replaceText(def.name, newName));
+                            }
+                        });
+
+                        // Fix all references
+                        variable.references.forEach((ref) => {
+                            const rangeKey = `${ref.identifier.range[0]}-${ref.identifier.range[1]}`;
+
+                            if (!fixedRanges.has(rangeKey)) {
+                                fixedRanges.add(rangeKey);
+                                fixes.push(fixer.replaceText(ref.identifier, newName));
+                            }
+                        });
+
+                        return fixes;
+                    },
+                    message: `Component "${name}" in "${folder}" folder must end with "${suffix}" suffix (e.g., "${newName}")`,
                     node: identifierNode,
                 });
             }
@@ -18624,7 +18670,7 @@ const folderComponentSuffix = {
     },
     meta: {
         docs: { description: "Enforce components in 'views' folder end with 'View' and components in 'pages' folder end with 'Page'" },
-        fixable: null,
+        fixable: "code",
         schema: [],
         type: "suggestion",
     },
