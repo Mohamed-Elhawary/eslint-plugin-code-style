@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.14.3] - 2026-02-05
+
+### Enhanced
+
+- **`type-annotation-spacing`** - Add auto-fix to collapse function types with 2 or fewer params to one line
+- **`interface-format`** - Fix circular fix conflict by skipping collapse when property has multi-line function type
+
+---
+
 ## [1.14.2] - 2026-02-05
 
 ### Enhanced
@@ -1678,6 +1687,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.14.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.2...v1.14.3
 [1.14.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.1...v1.14.2
 [1.14.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.0...v1.14.1
 [1.14.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.13.0...v1.14.0

@@ -20446,40 +20446,47 @@ const typeAnnotationSpacing = {
                     }
                 }
 
-                // Check function type params formatting (3+ params should be multiline)
+                // Check function type params formatting
+                // - 3+ params should be multiline
+                // - 0-2 params should be on one line
                 const params = node.params;
+                const openParen = tokens.find((t) => t.value === "(");
 
-                if (params && params.length >= 3) {
-                    const tokens = sourceCode.getTokens(node);
-                    const openParen = tokens.find((t) => t.value === "(");
-                    const arrowTok = tokens.find((t) => t.value === "=>");
+                if (openParen && arrowToken) {
+                    const closeParen = sourceCode.getTokenBefore(arrowToken, (t) => t.value === ")");
 
-                    if (openParen && arrowTok) {
-                        const closeParen = sourceCode.getTokenBefore(arrowTok, (t) => t.value === ")");
+                    if (closeParen) {
+                        const isMultiLine = openParen.loc.start.line !== closeParen.loc.end.line;
 
-                        if (closeParen && openParen.loc.start.line === closeParen.loc.end.line) {
-                            // All params are on one line - need to format
-
-                            // Get the indentation from the line
+                        if (params && params.length >= 3 && !isMultiLine) {
+                            // 3+ params on one line - expand to multiple lines
                             const lineStart = sourceCode.text.lastIndexOf("\n", node.range[0]) + 1;
                             const lineText = sourceCode.text.slice(lineStart, node.range[0]);
                             const match = lineText.match(/^(\s*)/);
                             const baseIndent = match ? match[1] : "";
                             const paramIndent = baseIndent + "    ";
 
-                            // Format params on multiple lines
                             const formattedParams = params.map((p) => {
                                 const paramText = sourceCode.getText(p);
 
                                 return paramIndent + paramText;
                             }).join(",\n");
 
-                            // Only replace the params section (openParen to closeParen)
                             const newParamsText = `(\n${formattedParams},\n${baseIndent})`;
 
                             context.report({
                                 fix: (fixer) => fixer.replaceTextRange([openParen.range[0], closeParen.range[1]], newParamsText),
                                 message: "Function type with 3+ parameters should have each parameter on its own line",
+                                node,
+                            });
+                        } else if (params && params.length <= 2 && isMultiLine) {
+                            // 0-2 params on multiple lines - collapse to one line
+                            const formattedParams = params.map((p) => sourceCode.getText(p).trim()).join(", ");
+                            const newParamsText = `(${formattedParams})`;
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange([openParen.range[0], closeParen.range[1]], newParamsText),
+                                message: "Function type with 2 or fewer parameters should be on one line",
                                 node,
                             });
                         }
@@ -21954,7 +21961,7 @@ const interfaceFormat = {
 
                 // For single member, should be on one line without trailing punctuation
                 // But skip if the property has a nested object type with 2+ members
-                // Or if the property has a function type with 3+ params
+                // Or if the property has a multi-line function type (let type-annotation-spacing handle it first)
                 if (members.length === 1) {
                     const member = members[0];
                     const isMultiLine = openBraceToken.loc.end.line !== closeBraceToken.loc.start.line;
@@ -21965,10 +21972,11 @@ const interfaceFormat = {
                     const hasMultiMemberNestedType = hasNestedType && nestedType.members?.length >= 2;
                     const hasSingleMemberNestedType = hasNestedType && nestedType.members?.length === 1;
 
-                    // Check if property has function type with 3+ params
-                    const hasFunctionWith3PlusParams = nestedType?.type === "TSFunctionType" && nestedType.params?.length >= 3;
+                    // Check if property has function type that spans multiple lines
+                    const hasMultiLineFunctionType = nestedType?.type === "TSFunctionType" &&
+                        nestedType.loc.start.line !== nestedType.loc.end.line;
 
-                    if (isMultiLine && !hasMultiMemberNestedType && !hasFunctionWith3PlusParams) {
+                    if (isMultiLine && !hasMultiMemberNestedType && !hasMultiLineFunctionType) {
                         // Build the collapsed text, handling nested types specially
                         let cleanText;
 
