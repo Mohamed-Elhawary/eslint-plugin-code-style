@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.14.0] - 2026-02-05
+
+**New Rule: useState Naming Convention**
+
+**Version Range:** v1.13.0 → v1.14.0
+
+### Added
+
+**New Rules (1)**
+- `use-state-naming-convention` - Enforce boolean useState variables to start with valid prefixes 🔧
+  - Boolean state must start with: `is`, `has`, `with`, `without` (configurable)
+  - Auto-fixes both state variable and setter function names, plus all usages
+  - Detects boolean literals (`useState(false)`) and type annotations (`useState<boolean>()`)
+  - Options: `booleanPrefixes`, `extendBooleanPrefixes`, `allowPastVerbBoolean`, `allowContinuousVerbBoolean`
+
+### Enhanced
+
+- **`folder-component-suffix`** - Add auto-fix to rename component and all references in the file
+- **`function-naming-convention`** - Detect useCallback-wrapped functions in custom hooks
+- **`prop-naming-convention`** - Auto-fix now renames both type annotation AND destructured parameter with all usages
+
+### Stats
+
+- Total Rules: 76 (was 75)
+- Auto-fixable: 67 rules 🔧
+- Configurable: 17 rules ⚙️
+- Report-only: 9 rules
+
+**Full Changelog:** [v1.13.0...v1.14.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.13.0...v1.14.0)
+
+---
+
 ## [1.13.0] - 2026-02-05
 
 **New Rule: Prop Naming Convention & Auto-Fix Enhancements**
@@ -1622,6 +1654,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.14.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.13.0...v1.14.0
 [1.13.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.12.1...v1.13.0
 [1.12.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.12.0...v1.12.1
 [1.12.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.9...v1.12.0

@@ -4,9 +4,9 @@ Instructions for AI coding agents working with this codebase.
 
 ## Project Overview
 
-**eslint-plugin-code-style** is an ESLint plugin providing 75 custom formatting rules (66 auto-fixable, 17 configurable, 9 report-only) for React/JSX projects. It's designed for ESLint v9+ flat config system.
+**eslint-plugin-code-style** is an ESLint plugin providing 76 custom formatting rules (67 auto-fixable, 17 configurable, 9 report-only) for React/JSX projects. It's designed for ESLint v9+ flat config system.
 
-- **Main entry:** `index.js` - Contains all 75 rules in a single file
+- **Main entry:** `index.js` - Contains all 76 rules in a single file
 - **Type definitions:** `index.d.ts` - TypeScript declarations for IDE support
 - **Recommended configs:** `recommended-configs/` - Ready-to-use ESLint configurations
 - **Test apps:** `_tests_/` - Sample apps for testing rules
@@ -33,7 +33,7 @@ Each test project in `_tests_/` corresponds to a specific tech stack. Rules shou
 | **TypeScript rules** | ❌ | ✅ | ✅ | ❌ |
 | **Tailwind rules** | ❌ | ✅ | ❌ | ✅ |
 
-**TypeScript-only rules** (67 rules in JS projects, 75 in TS projects):
+**TypeScript-only rules** (68 rules in JS projects, 76 in TS projects):
 - `component-props-inline-type`
 - `enum-format`
 - `interface-format`
@@ -87,7 +87,7 @@ index.js
 ├── imports (fs, path, url)
 ├── Rule 1 definition (const ruleName = { create(), meta: {} })
 ├── Rule 2 definition
-├── ... (75 rules total)
+├── ... (76 rules total)
 └── export default { meta: {}, rules: {} }
 ```
 
@@ -687,7 +687,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 ## Documentation Files
 
-- `README.md` - Main documentation with all 75 rules
+- `README.md` - Main documentation with all 76 rules
 - `recommended-configs/<config-name>/README.md` - Config-specific documentation (references main README for rule details)
 - `index.d.ts` - TypeScript types for IDE autocomplete
 
@@ -695,7 +695,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 - Most rules should be auto-fixable (`fixable: "code"` or `fixable: "whitespace"` in meta)
 - Rules that require file creation/movement or architectural decisions may be report-only
-- Currently: 66 auto-fixable rules, 17 configurable rules, 9 report-only rules
+- Currently: 67 auto-fixable rules, 17 configurable rules, 9 report-only rules
 - Use 4-space indentation throughout
 - Object properties in `context.report()` must be alphabetically sorted
 - Keep rules self-sufficient (no dependencies on other ESLint rules)
@@ -722,21 +722,21 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 | File | Line(s) | What to Update |
 |------|---------|----------------|
-| `README.md` | ~22 | `*75 rules (66 auto-fixable, 17 configurable)*` |
-| `README.md` | ~30 | `**75 custom rules** (66 auto-fixable, 17 configurable)` |
-| `README.md` | ~39 | `66 of 75 rules support auto-fix` |
-| `README.md` | ~100 | `**66 rules** support automatic fixing. **17 rules** have configurable options` |
-| `README.md` | ~266 | `**75 rules total** — 66 with auto-fix, 17 configurable` |
-| `README.md` | ~3650 | `66 of 75 rules support auto-fixing` |
-| `AGENTS.md` | ~7 | `75 custom formatting rules (66 auto-fixable, 17 configurable, 9 report-only)` |
-| `AGENTS.md` | ~9 | `Contains all 75 rules` |
-| `AGENTS.md` | ~36 | `(67 rules in JS projects, 75 in TS projects)` |
-| `AGENTS.md` | ~89 | `(75 rules total)` |
-| `AGENTS.md` | ~675 | `all 75 rules` |
-| `AGENTS.md` | ~697 | `66 auto-fixable rules, 17 configurable rules, 9 report-only` |
+| `README.md` | ~22 | `*76 rules (67 auto-fixable, 17 configurable)*` |
+| `README.md` | ~30 | `**76 custom rules** (67 auto-fixable, 17 configurable)` |
+| `README.md` | ~39 | `67 of 76 rules support auto-fix` |
+| `README.md` | ~100 | `**67 rules** support automatic fixing. **17 rules** have configurable options` |
+| `README.md` | ~266 | `**76 rules total** — 67 with auto-fix, 17 configurable` |
+| `README.md` | ~3650 | `67 of 76 rules support auto-fixing` |
+| `AGENTS.md` | ~7 | `76 custom formatting rules (67 auto-fixable, 17 configurable, 9 report-only)` |
+| `AGENTS.md` | ~9 | `Contains all 76 rules` |
+| `AGENTS.md` | ~36 | `(68 rules in JS projects, 76 in TS projects)` |
+| `AGENTS.md` | ~89 | `(76 rules total)` |
+| `AGENTS.md` | ~675 | `all 76 rules` |
+| `AGENTS.md` | ~697 | `67 auto-fixable rules, 17 configurable rules, 9 report-only` |
 | `AGENTS.md` | Rule Count Locations section | Current Counts table |
-| `recommended-configs/react-ts-tw/README.md` | ~396 | `**66 auto-fixable rules** (75 total, 17 configurable, 9 report-only)` |
-| `recommended-configs/react/README.md` | ~286 | `**66 auto-fixable rules** (75 total, 17 configurable, 9 report-only)` |
+| `recommended-configs/react-ts-tw/README.md` | ~396 | `**67 auto-fixable rules** (76 total, 17 configurable, 9 report-only)` |
+| `recommended-configs/react/README.md` | ~286 | `**67 auto-fixable rules** (76 total, 17 configurable, 9 report-only)` |
 
 ### Quick Verification Commands
 

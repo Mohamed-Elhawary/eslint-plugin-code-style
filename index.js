@@ -3331,6 +3331,249 @@ const hookDepsPerLine = {
 
 /**
  * ───────────────────────────────────────────────────────────────
+ * Rule: useState Naming Convention
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   When useState holds a boolean value, the state variable name
+ *   should start with a valid boolean prefix (is, has, with, without).
+ *
+ * ✓ Good:
+ *   const [isLoading, setIsLoading] = useState(false);
+ *   const [hasError, setHasError] = useState(false);
+ *   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => checkAuth());
+ *
+ * ✗ Bad:
+ *   const [loading, setLoading] = useState(false);
+ *   const [authenticated, setAuthenticated] = useState<boolean>(true);
+ *   const [error, setError] = useState<boolean>(false);
+ */
+const useStateNamingConvention = {
+    create(context) {
+        const options = context.options[0] || {};
+
+        // Boolean prefixes handling (same pattern as prop-naming-convention)
+        const defaultBooleanPrefixes = ["is", "has", "with", "without"];
+        const booleanPrefixes = options.booleanPrefixes || [
+            ...defaultBooleanPrefixes,
+            ...(options.extendBooleanPrefixes || []),
+        ];
+
+        const allowPastVerbBoolean = options.allowPastVerbBoolean || false;
+        const allowContinuousVerbBoolean = options.allowContinuousVerbBoolean || false;
+
+        // Pattern to check if name starts with valid boolean prefix followed by capital letter
+        const booleanPrefixPattern = new RegExp(`^(${booleanPrefixes.join("|")})[A-Z]`);
+
+        // Pattern for past verb booleans (ends with -ed: disabled, selected, checked, etc.)
+        const pastVerbPattern = /^[a-z]+ed$/;
+
+        // Pattern for continuous verb booleans (ends with -ing: loading, saving, etc.)
+        const continuousVerbPattern = /^[a-z]+ing$/;
+
+        // Words that suggest "has" prefix instead of "is"
+        const hasKeywords = [
+            "children", "content", "data", "error", "errors", "items",
+            "permission", "permissions", "value", "values",
+        ];
+
+        // Convert name to appropriate boolean prefix
+        const toBooleanNameHandler = (name) => {
+            const lowerName = name.toLowerCase();
+            const prefix = hasKeywords.some((k) => lowerName.includes(k)) ? "has" : "is";
+
+            return prefix + name[0].toUpperCase() + name.slice(1);
+        };
+
+        // Convert setter name based on new state name
+        const toSetterNameHandler = (stateName) => "set" + stateName[0].toUpperCase() + stateName.slice(1);
+
+        // Check if name is a valid boolean state name
+        const isValidBooleanNameHandler = (name) => {
+            // Starts with valid prefix
+            if (booleanPrefixPattern.test(name)) return true;
+
+            // Allow past verb booleans if option is enabled (disabled, selected, checked, etc.)
+            if (allowPastVerbBoolean && pastVerbPattern.test(name)) return true;
+
+            // Allow continuous verb booleans if option is enabled (loading, saving, etc.)
+            if (allowContinuousVerbBoolean && continuousVerbPattern.test(name)) return true;
+
+            return false;
+        };
+
+        // Check if the useState initial value indicates boolean
+        const isBooleanValueHandler = (arg) => {
+            if (!arg) return false;
+
+            // Direct boolean literal: useState(false) or useState(true)
+            if (arg.type === "Literal" && typeof arg.value === "boolean") return true;
+
+            // Arrow function returning boolean: useState(() => checkAuth())
+            // We can't reliably determine return type, so skip these unless typed
+            return false;
+        };
+
+        // Check if the useState has boolean type annotation
+        const hasBooleanTypeAnnotationHandler = (node) => {
+            // useState<boolean>(...) or useState<boolean | null>(...)
+            if (node.typeParameters && node.typeParameters.params && node.typeParameters.params.length > 0) {
+                const typeParam = node.typeParameters.params[0];
+
+                if (typeParam.type === "TSBooleanKeyword") return true;
+
+                // Check union types: boolean | null, boolean | undefined
+                if (typeParam.type === "TSUnionType") {
+                    return typeParam.types.some((t) => t.type === "TSBooleanKeyword");
+                }
+            }
+
+            return false;
+        };
+
+        return {
+            CallExpression(node) {
+                // Check if it's a useState call
+                if (node.callee.type !== "Identifier" || node.callee.name !== "useState") return;
+
+                // Check if it's in a variable declaration with array destructuring
+                if (!node.parent || node.parent.type !== "VariableDeclarator") return;
+                if (!node.parent.id || node.parent.id.type !== "ArrayPattern") return;
+
+                const arrayPattern = node.parent.id;
+
+                // Must have at least the state variable (first element)
+                if (!arrayPattern.elements || arrayPattern.elements.length < 1) return;
+
+                const stateElement = arrayPattern.elements[0];
+                const setterElement = arrayPattern.elements[1];
+
+                if (!stateElement || stateElement.type !== "Identifier") return;
+
+                const stateName = stateElement.name;
+
+                // Check if this is a boolean useState
+                const isBooleanState = (node.arguments && node.arguments.length > 0 && isBooleanValueHandler(node.arguments[0]))
+                    || hasBooleanTypeAnnotationHandler(node);
+
+                if (!isBooleanState) return;
+
+                // Check if state name follows boolean naming convention
+                if (isValidBooleanNameHandler(stateName)) return;
+
+                const suggestedStateName = toBooleanNameHandler(stateName);
+                const suggestedSetterName = toSetterNameHandler(suggestedStateName);
+
+                context.report({
+                    fix(fixer) {
+                        const fixes = [];
+                        const scope = context.sourceCode
+                            ? context.sourceCode.getScope(node)
+                            : context.getScope();
+
+                        // Helper to find variable in scope
+                        const findVariableHandler = (s, name) => {
+                            const v = s.variables.find((variable) => variable.name === name);
+
+                            if (v) return v;
+                            if (s.upper) return findVariableHandler(s.upper, name);
+
+                            return null;
+                        };
+
+                        // Fix state variable
+                        const stateVar = findVariableHandler(scope, stateName);
+                        const stateFixedRanges = new Set();
+
+                        // Fix definition first
+                        const stateDefRangeKey = `${stateElement.range[0]}-${stateElement.range[1]}`;
+
+                        stateFixedRanges.add(stateDefRangeKey);
+                        fixes.push(fixer.replaceText(stateElement, suggestedStateName));
+
+                        // Fix all usages
+                        if (stateVar) {
+                            stateVar.references.forEach((ref) => {
+                                const rangeKey = `${ref.identifier.range[0]}-${ref.identifier.range[1]}`;
+
+                                if (!stateFixedRanges.has(rangeKey)) {
+                                    stateFixedRanges.add(rangeKey);
+                                    fixes.push(fixer.replaceText(ref.identifier, suggestedStateName));
+                                }
+                            });
+                        }
+
+                        // Fix setter if exists
+                        if (setterElement && setterElement.type === "Identifier") {
+                            const setterName = setterElement.name;
+                            const setterVar = findVariableHandler(scope, setterName);
+                            const setterFixedRanges = new Set();
+
+                            // Fix definition first
+                            const setterDefRangeKey = `${setterElement.range[0]}-${setterElement.range[1]}`;
+
+                            setterFixedRanges.add(setterDefRangeKey);
+                            fixes.push(fixer.replaceText(setterElement, suggestedSetterName));
+
+                            // Fix all usages
+                            if (setterVar) {
+                                setterVar.references.forEach((ref) => {
+                                    const rangeKey = `${ref.identifier.range[0]}-${ref.identifier.range[1]}`;
+
+                                    if (!setterFixedRanges.has(rangeKey)) {
+                                        setterFixedRanges.add(rangeKey);
+                                        fixes.push(fixer.replaceText(ref.identifier, suggestedSetterName));
+                                    }
+                                });
+                            }
+                        }
+
+                        return fixes;
+                    },
+                    message: `Boolean state "${stateName}" should start with a valid prefix (${booleanPrefixes.join(", ")}). Use "${suggestedStateName}" instead.`,
+                    node: stateElement,
+                });
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce boolean useState variables to start with is/has/with/without prefix" },
+        fixable: "code",
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    allowContinuousVerbBoolean: {
+                        default: false,
+                        description: "Allow continuous verb boolean state without prefix (e.g., loading, saving)",
+                        type: "boolean",
+                    },
+                    allowPastVerbBoolean: {
+                        default: false,
+                        description: "Allow past verb boolean state without prefix (e.g., disabled, selected)",
+                        type: "boolean",
+                    },
+                    booleanPrefixes: {
+                        description: "Replace default boolean prefixes entirely",
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    extendBooleanPrefixes: {
+                        default: [],
+                        description: "Add additional prefixes to the defaults (is, has, with, without)",
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                },
+                type: "object",
+            },
+        ],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
  * Rule: If Statement Format
  * ───────────────────────────────────────────────────────────────
  *
@@ -21862,6 +22105,7 @@ export default {
         // Hook rules
         "hook-callback-format": hookCallbackFormat,
         "hook-deps-per-line": hookDepsPerLine,
+        "use-state-naming-convention": useStateNamingConvention,
 
         // Import/Export rules
         "absolute-imports-only": absoluteImportsOnly,

@@ -24,7 +24,7 @@ import { strings } from "@/strings";
 export const useUserActions = () => {
     const [users, setUsers] = useState<UserInterface[]>([]);
 
-    const [loading, setLoading] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +40,7 @@ export const useUserActions = () => {
             name,
         } = data;
 
-        setLoading(true);
+        setIsLoading(true);
 
         try {
             const newUser: UserInterface = {
@@ -55,7 +55,7 @@ export const useUserActions = () => {
         } catch (err) {
             setError(err instanceof Error ? err.message : strings.common.unknownError);
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -69,7 +69,7 @@ export const useUserActions = () => {
             name,
         } = data;
 
-        setLoading(true);
+        setIsLoading(true);
 
         try {
             setUsers((prev) => prev.map(({ id: currentId, ...rest }) =>
@@ -91,7 +91,7 @@ export const useUserActions = () => {
         } catch (err) {
             setError(err instanceof Error ? err.message : strings.common.unknownError);
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -102,7 +102,7 @@ export const useUserActions = () => {
             id,
         } = data;
 
-        setLoading(true);
+        setIsLoading(true);
 
         try {
             if (force) setUsers((prev) => prev.filter(({ id: currentId }) => currentId !== id));
@@ -122,7 +122,7 @@ export const useUserActions = () => {
         } catch (err) {
             setError(err instanceof Error ? err.message : strings.common.unknownError);
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -130,7 +130,7 @@ export const useUserActions = () => {
         createUserHandler,
         deleteUserHandler,
         error,
-        loading,
+        isLoading,
         updateUserHandler,
         users,
     };

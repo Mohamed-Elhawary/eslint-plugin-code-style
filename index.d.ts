@@ -33,6 +33,7 @@ export type RuleNames =
     | "code-style/function-params-per-line"
     | "code-style/hook-callback-format"
     | "code-style/hook-deps-per-line"
+    | "code-style/use-state-naming-convention"
     | "code-style/if-else-spacing"
     | "code-style/if-statement-format"
     | "code-style/import-format"

@@ -245,6 +245,7 @@ export default [ // eslint-disable-line
             "code-style/type-annotation-spacing": "error",
             "code-style/type-format": "error",
             "code-style/typescript-definition-location": "error",
+            "code-style/use-state-naming-convention": "error",
             "code-style/variable-naming-convention": "error",
 
             // General rules

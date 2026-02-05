@@ -191,6 +191,7 @@ export default [ // eslint-disable-line
             "code-style/string-property-spacing": "error",
             "code-style/svg-component-icon-naming": "error",
             "code-style/ternary-condition-multiline": "error",
+            "code-style/use-state-naming-convention": "error",
             "code-style/variable-naming-convention": "error",
 
             // General rules

@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*75 rules (66 auto-fixable, 17 configurable) to keep your codebase clean and consistent*
+*76 rules (67 auto-fixable, 17 configurable) to keep your codebase clean and consistent*
 
 </div>
 
@@ -36,7 +36,7 @@ This plugin provides **75 custom rules** (66 auto-fixable, 17 configurable) for 
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 66 of 75 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 67 of 76 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-**66 rules** support automatic fixing with `eslint --fix`. **17 rules** have configurable options. 9 rules are report-only (require manual changes).
+**67 rules** support automatic fixing with `eslint --fix`. **17 rules** have configurable options. 9 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -214,6 +214,7 @@ rules: {
     "code-style/function-params-per-line": "error",
     "code-style/hook-callback-format": "error",
     "code-style/hook-deps-per-line": "error",
+    "code-style/use-state-naming-convention": "error",
     "code-style/if-else-spacing": "error",
     "code-style/if-statement-format": "error",
     "code-style/import-format": "error",
@@ -265,7 +266,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **75 rules total** — 66 with auto-fix 🔧, 17 configurable ⚙️, 9 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
+> **76 rules total** — 67 with auto-fix 🔧, 17 configurable ⚙️, 9 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -316,6 +317,7 @@ rules: {
 | **Hook Rules** | |
 | `hook-callback-format` | React hooks: callback on new line, deps array on separate line, proper indentation 🔧 |
 | `hook-deps-per-line` | Collapse deps ≤ threshold to one line; expand larger arrays with each dep on own line (default: >2) 🔧 ⚙️ |
+| `use-state-naming-convention` | Boolean useState variables must start with is/has/with/without prefix 🔧 ⚙️ |
 | **Import/Export Rules** | |
 | `absolute-imports-only` | Use alias imports from index files only (not deep paths), no relative imports (default: `@/`) ⚙️ |
 | `export-format` | `export {` on same line; collapse ≤ threshold to one line; expand larger with each specifier on own line (default: ≤3) 🔧 ⚙️ |
@@ -1757,6 +1759,49 @@ useEffect(() => {}, [
 ```javascript
 // Example: Allow up to 3 dependencies on single line
 "code-style/hook-deps-per-line": ["error", { maxDeps: 3 }]
+```
+
+<br />
+
+### `use-state-naming-convention`
+
+**What it does:** Enforces boolean useState variables to start with valid prefixes (is, has, with, without).
+
+**Why use it:** Consistent boolean state naming makes code more predictable and self-documenting. When you see `isLoading`, you immediately know it's a boolean state.
+
+```typescript
+// ✅ Good — boolean state with proper prefix
+const [isLoading, setIsLoading] = useState(false);
+const [hasError, setHasError] = useState<boolean>(false);
+const [isAuthenticated, setIsAuthenticated] = useState(true);
+const [withBorder, setWithBorder] = useState(false);
+
+// ❌ Bad — boolean state without prefix
+const [loading, setLoading] = useState(false);
+const [authenticated, setAuthenticated] = useState<boolean>(true);
+const [error, setError] = useState<boolean>(false);
+```
+
+**Customization Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `booleanPrefixes` | `string[]` | `["is", "has", "with", "without"]` | Replace default prefixes entirely |
+| `extendBooleanPrefixes` | `string[]` | `[]` | Add additional prefixes to defaults |
+| `allowPastVerbBoolean` | `boolean` | `false` | Allow past verb names without prefix (disabled, selected) |
+| `allowContinuousVerbBoolean` | `boolean` | `false` | Allow continuous verb names without prefix (loading, saving) |
+
+```javascript
+// Example: Allow "loading" and "disabled" without prefix
+"code-style/use-state-naming-convention": ["error", {
+    allowPastVerbBoolean: true,
+    allowContinuousVerbBoolean: true
+}]
+
+// Example: Add "should" prefix
+"code-style/use-state-naming-convention": ["error", {
+    extendBooleanPrefixes: ["should"]
+}]
 ```
 
 <br />
@@ -3849,7 +3894,7 @@ const UseAuth = () => {};          // hooks should be camelCase
 
 ## 🔧 Auto-fixing
 
-66 of 75 rules support auto-fixing. Run ESLint with the `--fix` flag:
+67 of 76 rules support auto-fixing. Run ESLint with the `--fix` flag:
 
 ```bash
 # Fix all files in src directory
