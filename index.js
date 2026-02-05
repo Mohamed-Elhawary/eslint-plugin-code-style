@@ -2502,7 +2502,7 @@ const functionNamingConvention = {
 
         // Check functions destructured from custom hooks: const { logout } = useAuth()
         // Valid: onLogout, logoutAction, logoutHandler
-        // Invalid: logout (should be onLogout or logoutHandler)
+        // Invalid: logout (should be logoutHandler)
         const checkDestructuredHookFunctionHandler = (node) => {
             // Check if this is destructuring from a hook call: const { ... } = useXxx()
             if (!node.init || node.init.type !== "CallExpression") return;
@@ -2540,33 +2540,89 @@ const functionNamingConvention = {
 
                 const name = prop.key.name;
 
-                // Skip if it starts with "on" (like onLogout, onClick)
-                if (/^on[A-Z]/.test(name)) return;
+                // Get the local variable name (value node for non-shorthand, key for shorthand)
+                const valueNode = prop.value || prop.key;
+                const localName = valueNode.type === "Identifier" ? valueNode.name : name;
 
-                // Skip if it ends with "Action" (like logoutAction)
-                if (/Action$/.test(name)) return;
+                // Skip if local name starts with "on" (like onLogout, onClick)
+                if (/^on[A-Z]/.test(localName)) return;
 
-                // Skip if it ends with "Handler" (like logoutHandler)
-                if (handlerRegex.test(name)) return;
+                // Skip if local name ends with "Action" (like logoutAction)
+                if (/Action$/.test(localName)) return;
+
+                // Skip if local name ends with "Handler" (like logoutHandler)
+                if (handlerRegex.test(localName)) return;
 
                 // Skip boolean-like names (is, has, can, should, etc.)
                 const booleanPrefixes = ["is", "has", "can", "should", "will", "did", "was", "were", "does"];
 
-                if (booleanPrefixes.some((prefix) => name.startsWith(prefix) && name.length > prefix.length && /[A-Z]/.test(name[prefix.length]))) return;
+                if (booleanPrefixes.some((prefix) => localName.startsWith(prefix) && localName.length > prefix.length && /[A-Z]/.test(localName[prefix.length]))) return;
 
                 // Only flag if the name is exactly an action verb or starts with one followed by uppercase
                 const isActionVerb = actionVerbs.some((verb) =>
-                    name === verb || (name.startsWith(verb) && name.length > verb.length && /[A-Z]/.test(name[verb.length])));
+                    localName === verb || (localName.startsWith(verb) && localName.length > verb.length && /[A-Z]/.test(localName[verb.length])));
 
                 if (!isActionVerb) return;
 
                 // This is a function name without proper prefix/suffix
-                // Suggest adding "on" prefix (most common for hook returns)
-                const suggestedName = "on" + name[0].toUpperCase() + name.slice(1);
+                // Add Handler suffix: logout -> logoutHandler
+                const suggestedName = localName + "Handler";
 
                 context.report({
-                    message: `Function "${name}" destructured from hook should start with "on" prefix (e.g., "${suggestedName}") or end with "Handler"/"Action" suffix`,
-                    node: prop.key,
+                    fix(fixer) {
+                        const fixes = [];
+                        const sourceCode = context.sourceCode || context.getSourceCode();
+
+                        if (prop.shorthand) {
+                            // Shorthand: { logout } -> { logout: logoutHandler }
+                            // Replace the entire property with key: newValue format
+                            fixes.push(fixer.replaceText(prop, `${name}: ${suggestedName}`));
+                        } else {
+                            // Non-shorthand: { logout: myVar } -> { logout: myVarHandler }
+                            // Just replace the value identifier
+                            fixes.push(fixer.replaceText(valueNode, suggestedName));
+                        }
+
+                        // Find and rename all usages of the local variable
+                        const scope = sourceCode.getScope
+                            ? sourceCode.getScope(node)
+                            : context.getScope();
+
+                        // Helper to find variable in scope chain
+                        const findVariableHandler = (s, varName) => {
+                            const v = s.variables.find((variable) => variable.name === varName);
+
+                            if (v) return v;
+                            if (s.upper) return findVariableHandler(s.upper, varName);
+
+                            return null;
+                        };
+
+                        const variable = findVariableHandler(scope, localName);
+
+                        if (variable) {
+                            const fixedRanges = new Set();
+
+                            // Add the definition range to avoid double-fixing
+                            if (valueNode.range) {
+                                fixedRanges.add(`${valueNode.range[0]}-${valueNode.range[1]}`);
+                            }
+
+                            // Fix all references
+                            variable.references.forEach((ref) => {
+                                const rangeKey = `${ref.identifier.range[0]}-${ref.identifier.range[1]}`;
+
+                                if (!fixedRanges.has(rangeKey)) {
+                                    fixedRanges.add(rangeKey);
+                                    fixes.push(fixer.replaceText(ref.identifier, suggestedName));
+                                }
+                            });
+                        }
+
+                        return fixes;
+                    },
+                    message: `Function "${localName}" destructured from hook should end with "Handler" suffix. Use "${suggestedName}" instead`,
+                    node: valueNode,
                 });
             });
         };
