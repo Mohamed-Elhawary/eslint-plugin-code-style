@@ -1,1 +1,7 @@
-export type ButtonVariantType = "danger" | "primary" | "secondary";
+export type ButtonVariantType =
+    "danger"
+    | "ghost"
+    | "link"
+    | "muted"
+    | "primary"
+    | "secondary";

@@ -10,13 +10,19 @@
  *- code-style/no-empty-lines-in-jsx (no empty lines between JSX attributes)
  */
 
-import type { ButtonVariantType } from "src/types";
+import { ButtonVariantEnum, InputTypeEnum } from "@/enums";
+import type { ButtonVariantType } from "@/types";
 
 export const Button = ({
     className = "",
     label,
     onClick,
     variant = ButtonVariantEnum.PRIMARY,
+}: {
+    className?: string,
+    label: string,
+    onClick: () => void,
+    variant?: ButtonVariantType,
 }) => {
     const variantClasses = {
         danger: "bg-red-500 hover:bg-red-600",
@@ -40,7 +46,7 @@ export const Button = ({
     return (
         <button
             className={buttonClasses}
-            type="button"
+            type={InputTypeEnum.BUTTON}
             onClick={onClick}
         >
             {label}

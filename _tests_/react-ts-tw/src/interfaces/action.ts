@@ -21,6 +21,6 @@ export interface UpdateUserParamsInterface {
 }
 
 export interface DeleteUserParamsInterface {
-    force?: boolean,
     id: string,
+    isForce?: boolean,
 }

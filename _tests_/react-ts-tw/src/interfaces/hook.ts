@@ -12,9 +12,9 @@ export interface FormInitialDataInterface {
 
 export interface UseCounterReturnInterface {
     count: number,
-    decrement: () => void,
-    increment: () => void,
-    reset: () => void,
+    onDecrement: () => void,
+    onIncrement: () => void,
+    onReset: () => void,
 }
 
 export interface UseFormSubmissionReturnInterface {
@@ -25,15 +25,15 @@ export interface UseFormSubmissionReturnInterface {
     isFormValid: boolean,
     isSubmitting: boolean,
     isSuccess: boolean,
-    resetForm: () => void,
-    submit: () => Promise<void>,
-    updateField: (field: "name" | "email", value: string) => void,
-    validateField: (field: "name" | "email") => boolean,
+    onResetForm: () => void,
+    onSubmit: () => Promise<void>,
+    onUpdateField: (field: "name" | "email", value: string) => void,
+    onValidateField: (field: "name" | "email") => boolean,
 }
 
 export interface UseToggleReturnInterface {
-    setFalse: () => void,
-    setTrue: () => void,
-    toggle: () => void,
-    value: boolean,
+    hasValue: boolean,
+    onSetFalse: () => void,
+    onSetTrue: () => void,
+    onToggle: () => void,
 }

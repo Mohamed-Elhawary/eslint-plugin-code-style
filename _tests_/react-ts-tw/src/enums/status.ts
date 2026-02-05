@@ -39,3 +39,13 @@ export enum UserStatusEnum {
     PENDING = "pending",
     SUSPENDED = "suspended",
 }
+
+// Test: enum for button variants
+export enum ButtonVariantEnum {
+    DANGER = "danger",
+    GHOST = "ghost",
+    LINK = "link",
+    MUTED = "muted",
+    PRIMARY = "primary",
+    SECONDARY = "secondary",
+}

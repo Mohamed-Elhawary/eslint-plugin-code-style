@@ -31,7 +31,10 @@ import {
     useState,
 } from "react";
 
+import { FormFieldEnum } from "@/enums";
 import type { FormInitialDataInterface, UseFormSubmissionReturnInterface } from "@/interfaces";
+import { strings } from "@/strings";
+import type { FormFieldNameType } from "@/types";
 
 export const useFormSubmission = (initialData: FormInitialDataInterface): UseFormSubmissionReturnInterface => {
     // 1. useRef declarations
@@ -77,7 +80,7 @@ export const useFormSubmission = (initialData: FormInitialDataInterface): UseFor
 
     const updateFieldHandler = useCallback(
         (
-            field: "name" | "email",
+            field: FormFieldNameType,
             value: string,
         ) => setFormData((prev) => ({
             ...prev,
@@ -89,7 +92,7 @@ export const useFormSubmission = (initialData: FormInitialDataInterface): UseFor
     // 6. Handler functions
     const submitHandler = async () => {
         if (!isFormValid) {
-            setError("Please fill in all required fields");
+            setError(strings.form.requiredFieldsError);
 
             return;
         }
@@ -110,16 +113,16 @@ export const useFormSubmission = (initialData: FormInitialDataInterface): UseFor
 
             setIsSuccess(true);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Submission failed");
+            setError(err instanceof Error ? err.message : strings.form.submissionFailed);
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const validateFieldHandler = (field: "name" | "email") => {
-        if (field === "name") return formData.name.length > 0;
+    const validateFieldHandler = (field: FormFieldNameType) => {
+        if (field === FormFieldEnum.NAME) return formData.name.length > 0;
 
-        if (field === "email") return formData.email.includes("@");
+        if (field === FormFieldEnum.EMAIL) return formData.email.includes("@");
 
         return false;
     };

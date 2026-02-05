@@ -17,16 +17,16 @@ export interface UserInterface {
 export interface ApiResponseInterface<T> {
     data: T,
     error: string | null,
+    isSuccess: boolean,
     status: number,
-    success: boolean,
     timestamp: Date,
 }
 
 // Test: interface with optional properties - all camelCase
 export interface UserSettingsInterface {
-    darkMode?: boolean,
+    isDarkMode?: boolean,
+    isNotifications: boolean,
     language: string,
-    notifications: boolean,
     timezone?: string,
 }
 
@@ -39,10 +39,10 @@ export interface AdminUserInterface extends UserInterface {
 
 // Test: interface with function properties - camelCase method names
 export interface UserActionsInterface {
-    deleteUser: (id: string) => Promise<void>,
-    getUser: (id: string) => Promise<UserInterface>,
-    listUsers: () => Promise<UserInterface[]>,
-    updateUser: (id: string, data: Partial<UserInterface>) => Promise<UserInterface>,
+    onDeleteUser: (id: string) => Promise<void>,
+    onGetUser: (id: string) => Promise<UserInterface>,
+    onListUsers: () => Promise<UserInterface[]>,
+    onUpdateUser: (id: string, data: Partial<UserInterface>) => Promise<UserInterface>,
 }
 
 // Test: interface with index signature

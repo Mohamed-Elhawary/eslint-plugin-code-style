@@ -8,7 +8,9 @@
 // Test: type imports separated from value imports
 
 import { Button, Card } from "@/components";
+import { ButtonVariantEnum } from "@/enums";
 import { useCounter, useToggle } from "@/hooks";
+import { strings } from "@/strings";
 import type { User } from "@/types";
 import { formatCurrencyHandler, formatDateHandler } from "@/utils";
 
@@ -28,10 +30,10 @@ export const App = () => {
     // Test: TypeScript variable with type annotation
     const user: User = {
         age: 25,
-        email: "john@example.com",
+        email: strings.form.placeholderEmail,
         id: "1",
         isActive: true,
-        name: "John Doe",
+        name: strings.user.defaultName,
     };
 
     const currentDate = new Date();
@@ -51,8 +53,8 @@ export const App = () => {
         >
             <Card
                 className="w-full max-w-md"
-                description={`Welcome, ${user.name}`}
-                title="Counter App"
+                description={`${strings.labels.welcome}${user.name}`}
+                title={strings.labels.counterApp}
             >
                 <div className="mb-4 text-center">
                     <p className="text-2xl font-bold text-gray-800">{count}</p>
@@ -63,21 +65,21 @@ export const App = () => {
                 </div>
                 <div className="flex gap-4">
                     <Button
-                        label="Decrement"
-                        variant="danger"
+                        label={strings.actions.decrement}
+                        variant={ButtonVariantEnum.DANGER}
                         onClick={decrement}
                     />
                     <Button
-                        label="Increment"
-                        variant="primary"
+                        label={strings.actions.increment}
+                        variant={ButtonVariantEnum.PRIMARY}
                         onClick={increment}
                     />
                 </div>
             </Card>
             <Button
                 className="mt-4"
-                label={isModalOpen ? "Close Modal" : "Open Modal"}
-                variant="secondary"
+                label={isModalOpen ? strings.actions.close : strings.actions.open}
+                variant={ButtonVariantEnum.SECONDARY}
                 onClick={toggle}
             />
             {isModalOpen && (
@@ -90,7 +92,7 @@ export const App = () => {
                         shadow-lg
                     "
                 >
-                    <p>Modal Content</p>
+                    <p>{strings.labels.modalContent}</p>
                 </div>
             )}
         </div>

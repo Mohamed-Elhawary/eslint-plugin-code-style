@@ -10,6 +10,8 @@
  *- code-style/member-expression-bracket-spacing (no space inside brackets)
  */
 
+import { NumberSignEnum } from "@/enums";
+
 export const formatValueHandler = (value: string): string => value.trim();
 
 // Test: variable-naming-convention - camelCase for variables
@@ -45,12 +47,12 @@ export const calculateTotalHandler = (items: number[]): number => {
 };
 
 // Test: block-statement-newlines - empty line after multi-line if/else blocks
-export const processValueHandler = (value: number): string => {
-    if (value < 0) return "negative";
+export const processValueHandler = (value: number): NumberSignEnum => {
+    if (value < 0) return NumberSignEnum.NEGATIVE;
 
-    if (value === 0) return "zero";
+    if (value === 0) return NumberSignEnum.ZERO;
 
-    return "positive";
+    return NumberSignEnum.POSITIVE;
 };
 
 // Test: export-format - export on same line as declaration (not on separate line)
@@ -73,7 +75,8 @@ export const fetchDataHandler = async (url: string): Promise<unknown> => {
 export const getItemHandler = (arr: string[], index: number): string | undefined => arr[index];
 
 // Test: type-annotation-spacing with array types - no space before []
-export const filterNumbersHandler = (values: Array<string | number>): number[] => values.filter((v): v is number => typeof v === "number");
+export const filterNumbersHandler = (values: Array<string | number>): number[] => values.filter((v): v is number => typeof v === "number", // eslint-disable-line code-style/no-hardcoded-strings -- typeof check
+);
 
 // Export constants for use in tests
 export { apiBaseUrl, defaultTimeout, maxRetries };

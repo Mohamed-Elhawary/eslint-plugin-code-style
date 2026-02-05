@@ -37,9 +37,15 @@ import {
     useState,
 } from "react";
 
-export const UserDashboard = ({
+import { InputTypeEnum } from "@/enums";
+import { strings } from "@/strings";
+
+export const UserDashboardView = ({
     initialCount = 0,
     title,
+}: {
+    initialCount?: number,
+    title: string,
 }) => {
     // 1. useRef declarations
     const inputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +67,7 @@ export const UserDashboard = ({
     // 4. useMemo declarations
     const filteredItems = useMemo(
         () => {
-            const items = ["Apple", "Banana", "Cherry"];
+            const items = [strings.items.apple, strings.items.banana, strings.items.cherry];
 
             return items.filter((item) => item.toLowerCase().includes(searchTerm.toLowerCase()));
         },
@@ -126,18 +132,18 @@ export const UserDashboard = ({
             <div className="mb-4">
                 <input
                     className="rounded border p-2"
-                    placeholder="Search..."
+                    placeholder={strings.form.placeholderSearch}
                     ref={inputRef}
-                    type="text"
+                    type={InputTypeEnum.TEXT}
                     onChange={({ target }) => setSearchTerm(target.value)}
                 />
             </div>
             <div className="mb-4">
                 <span className="mr-4">
-                    {`Count: ${countStats.display}`}
+                    {`${strings.labels.count}${countStats.display}`}
                 </span>
                 <button
-                    type="button"
+                    type={InputTypeEnum.BUTTON}
                     className="
                         mr-2
                         rounded
@@ -151,7 +157,7 @@ export const UserDashboard = ({
                     -
                 </button>
                 <button
-                    type="button"
+                    type={InputTypeEnum.BUTTON}
                     className="
                         rounded
                         bg-blue-500
@@ -172,7 +178,7 @@ export const UserDashboard = ({
             <div className="flex gap-2">
                 <button
                     disabled={isLoading}
-                    type="button"
+                    type={InputTypeEnum.BUTTON}
                     className="
                         rounded
                         bg-green-500
@@ -182,10 +188,10 @@ export const UserDashboard = ({
                     "
                     onClick={submitHandler}
                 >
-                    {isLoading ? "Loading..." : "Submit"}
+                    {isLoading ? strings.common.loading : strings.actions.submit}
                 </button>
                 <button
-                    type="button"
+                    type={InputTypeEnum.BUTTON}
                     className="
                         rounded
                         bg-gray-500
@@ -195,7 +201,7 @@ export const UserDashboard = ({
                     "
                     onClick={resetHandler}
                 >
-                    Reset
+                    {strings.actions.reset}
                 </button>
             </div>
         </div>

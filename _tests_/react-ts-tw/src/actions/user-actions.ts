@@ -18,6 +18,7 @@ import type {
     UpdateUserParamsInterface,
     UserInterface,
 } from "@/interfaces";
+import { strings } from "@/strings";
 
 // Test: TypeScript generics are preserved in function calls
 export const useUserActions = () => {
@@ -52,7 +53,7 @@ export const useUserActions = () => {
 
             setUsers((prev) => [...prev, newUser]);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Unknown error");
+            setError(err instanceof Error ? err.message : strings.common.unknownError);
         } finally {
             setLoading(false);
         }
@@ -88,7 +89,7 @@ export const useUserActions = () => {
             ),
             );
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Unknown error");
+            setError(err instanceof Error ? err.message : strings.common.unknownError);
         } finally {
             setLoading(false);
         }
@@ -119,7 +120,7 @@ export const useUserActions = () => {
                 );
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Unknown error");
+            setError(err instanceof Error ? err.message : strings.common.unknownError);
         } finally {
             setLoading(false);
         }

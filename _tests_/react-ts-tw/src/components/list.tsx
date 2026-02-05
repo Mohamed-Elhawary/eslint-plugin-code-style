@@ -12,12 +12,18 @@
 
 import { useMemo, useState } from "react";
 
+import { StatusEnum } from "@/enums";
 import type { ListItemInterface } from "@/interfaces";
+import { strings } from "@/strings";
 
 export const List = ({
-    emptyMessage = "No items",
+    emptyMessage = strings.common.noItems,
     items,
     title,
+}: {
+    emptyMessage?: string,
+    items: ListItemInterface[],
+    title: string,
 }) => {
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -25,11 +31,11 @@ export const List = ({
     const defaultItems: ListItemInterface[] = [
         {
             id: "1",
-            label: "First",
+            label: strings.items.first,
         },
         {
             id: "2",
-            label: "Second",
+            label: strings.items.second,
         },
     ];
 
@@ -40,10 +46,10 @@ export const List = ({
     const testData = {
         currentStep: 1,
         errorMessage: null,
-        status: "active",
+        status: StatusEnum.ACTIVE,
     };
 
-    const err = testData.errorMessage || testData.currentStep || testData.status;
+    const _err = testData.errorMessage || testData.currentStep || testData.status;
 
     // Test: object-property-per-line - each property on its own line when 2+ properties
     const listStyle = useMemo(

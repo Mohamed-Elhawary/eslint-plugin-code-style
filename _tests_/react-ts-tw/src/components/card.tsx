@@ -14,6 +14,11 @@ export const Card = ({
     className = "",
     description,
     title,
+}: {
+    children: ReactNode,
+    className?: string,
+    description?: string,
+    title: string,
 }) => (
     <div
         className={`
