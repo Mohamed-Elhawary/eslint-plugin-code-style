@@ -3983,6 +3983,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+Copyright (c) 2026 Eslint Plugin Code Style. All rights reserved. 
+
 <br />
 
 ---
