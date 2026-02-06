@@ -7,7 +7,7 @@ This is the **recommended ESLint flat configuration** for React projects using T
 - **Third-party plugins** — React, accessibility, import sorting, etc.
 - **[@typescript-eslint/eslint-plugin](https://typescript-eslint.io/)** — TypeScript-specific linting rules
 - **[eslint-plugin-tailwindcss](https://github.com/francoismassart/eslint-plugin-tailwindcss)** — Tailwind CSS linting rules
-- **eslint-plugin-code-style** — Our 61 custom formatting rules
+- **eslint-plugin-code-style** — Our 77 custom formatting rules
 
 > **Why @stylistic?** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0, moving them to `@stylistic/eslint-plugin`. This config uses @stylistic as the modern replacement.
 

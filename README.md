@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **76 custom rules** (66 auto-fixable, 17 configurable) for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **77 custom rules** (67 auto-fixable, 17 configurable) for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -60,7 +60,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 
 ### 💡 Why Use These Configs?
 
-- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 69 code-style rules
+- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 77 code-style rules
 - **Ready-to-Use** — Copy the config file and start linting immediately
 - **Battle-Tested** — These configurations have been refined through real-world usage
 - **Fully Documented** — Each config includes detailed instructions and explanations

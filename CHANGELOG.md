@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.15.0] - 2026-02-06
+
+**New Rule: no-redundant-folder-suffix**
+
+**Version Range:** v1.14.1 → v1.15.0
+
+### Added
+
+**New Rules (1)**
+- `no-redundant-folder-suffix` - Disallow file names that redundantly include the parent or ancestor folder name as a suffix
+  - Flags files like `layouts/main-layout.tsx` (redundant "-layout" since already in `layouts/`)
+  - Checks all ancestor folders from `src/` onwards
+  - Singularizes folder names automatically (layouts→layout, categories→category, classes→class)
+  - Skips index files
+
+### Enhanced
+
+- **`folder-component-suffix`** - Add `layouts` folder support: components in `layouts/` must end with "Layout" suffix (with auto-fix) (v1.14.4)
+- **`type-annotation-spacing`** - Add auto-fix to collapse function types with ≤2 params to one line; add spacing rules for async keyword and function types (v1.14.2–v1.14.3)
+- **`interface-format`** - Fix circular fix conflict by skipping collapse when property has multi-line function type (v1.14.3)
+- **`function-naming-convention`** - Detect functions destructured from hooks without proper naming, with auto-fix (v1.14.1)
+
+### Stats
+
+- Total Rules: 77 (was 76)
+- Auto-fixable: 67 rules 🔧
+- Configurable: 17 rules ⚙️
+- Report-only: 10 rules (was 9)
+
+**Full Changelog:** [v1.14.1...v1.15.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.1...v1.15.0)
+
+---
+
 ## [1.14.4] - 2026-02-06
 
 ### Enhanced
@@ -1695,6 +1728,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.15.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.4...v1.15.0
 [1.14.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.3...v1.14.4
 [1.14.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.2...v1.14.3
 [1.14.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.1...v1.14.2
