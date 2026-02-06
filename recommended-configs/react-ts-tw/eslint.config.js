@@ -195,6 +195,7 @@ export default [ // eslint-disable-line
             "code-style/enum-type-enforcement": "error",
             "code-style/export-format": "error",
             "code-style/folder-component-suffix": "error",
+            "code-style/no-redundant-folder-suffix": "error",
             "code-style/function-arguments-format": "error",
             "code-style/function-call-spacing": "error",
             "code-style/function-declaration-style": "error",

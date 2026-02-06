@@ -1,3 +1,3 @@
 // Test: index-export-style (shorthand exports in index files)
 
-export { MainLayout } from "./main-layout";
+export { MainLayout } from "./main";

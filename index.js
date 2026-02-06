@@ -19057,6 +19057,99 @@ const folderComponentSuffix = {
 
 /**
  * ───────────────────────────────────────────────────────────────
+ * Rule: No Redundant Folder Suffix
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Flags files whose name redundantly includes the parent (or ancestor)
+ *   folder name as a suffix. Since the folder already provides context,
+ *   the file name doesn't need to repeat it.
+ *
+ *   Checks all ancestor folders from "src/" onwards.
+ *   Skips index files (index.ts, index.js, etc.).
+ *
+ * ✓ Good:
+ *   layouts/main.tsx           → file "main" has no redundant suffix
+ *   atoms/button.tsx           → file "button" has no redundant suffix
+ *   views/dashboard.tsx        → file "dashboard" has no redundant suffix
+ *   hooks/use-auth.ts          → file "use-auth" has no redundant suffix
+ *
+ * ✗ Bad:
+ *   layouts/main-layout.tsx    → redundant "-layout" (already in layouts/)
+ *   atoms/button-atom.tsx      → redundant "-atom" (already in atoms/)
+ *   views/dashboard-view.tsx   → redundant "-view" (already in views/)
+ *   hooks/use-auth-hook.ts     → redundant "-hook" (already in hooks/)
+ *   atoms/forms/input-atom.tsx → redundant "-atom" from ancestor "atoms/"
+ */
+const noRedundantFolderSuffix = {
+    create(context) {
+        const filename = context.filename || context.getFilename();
+        const normalizedFilename = filename.replace(/\\/g, "/");
+
+        // Get the file base name without extension
+        const parts = normalizedFilename.split("/");
+        const fileWithExt = parts[parts.length - 1];
+        const baseName = fileWithExt.replace(/\.(jsx?|tsx?)$/, "");
+
+        // Skip index files
+        if (baseName === "index") return {};
+
+        // Singularize: convert folder name to singular form
+        const singularizeHandler = (word) => {
+            if (word.endsWith("ies")) return word.slice(0, -3) + "y";
+            if (word.endsWith("ses") || word.endsWith("xes") || word.endsWith("zes")) return word.slice(0, -2);
+            if (word.endsWith("s")) return word.slice(0, -1);
+
+            return word;
+        };
+
+        // Find the src/ boundary and collect ancestor folders from src/ onwards
+        const srcIndex = parts.indexOf("src");
+
+        if (srcIndex === -1) return {};
+
+        // Collect folders between src/ and the file itself
+        const ancestorFolders = parts.slice(srcIndex + 1, parts.length - 1);
+
+        if (ancestorFolders.length === 0) return {};
+
+        // Check if the file name ends with any ancestor folder name (singularized)
+        const checkRedundantSuffixHandler = () => {
+            for (const folder of ancestorFolders) {
+                const singular = singularizeHandler(folder);
+                const suffix = `-${singular}`;
+
+                if (baseName.endsWith(suffix)) {
+                    return { folder, singular, suffix };
+                }
+            }
+
+            return null;
+        };
+
+        const redundancy = checkRedundantSuffixHandler();
+
+        if (!redundancy) return {};
+
+        return {
+            Program(node) {
+                context.report({
+                    message: `File name "${baseName}" has redundant suffix "${redundancy.suffix}" — the "${redundancy.folder}/" folder already provides this context. Rename to "${baseName.slice(0, -redundancy.suffix.length)}".`,
+                    node,
+                });
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Disallow file names that redundantly include the parent or ancestor folder name as a suffix" },
+        fixable: null,
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
  * Rule: No Inline Type Definitions
  * ───────────────────────────────────────────────────────────────
  *
@@ -22344,6 +22437,7 @@ export default {
         "component-props-destructure": componentPropsDestructure,
         "component-props-inline-type": componentPropsInlineType,
         "folder-component-suffix": folderComponentSuffix,
+        "no-redundant-folder-suffix": noRedundantFolderSuffix,
         "svg-component-icon-naming": svgComponentIconNaming,
 
         // React rules

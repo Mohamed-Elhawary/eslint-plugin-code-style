@@ -59,6 +59,7 @@ export type RuleNames =
     | "code-style/multiline-if-conditions"
     | "code-style/nested-call-closing-brackets"
     | "code-style/no-inline-type-definitions"
+    | "code-style/no-redundant-folder-suffix"
     | "code-style/no-empty-lines-in-function-calls"
     | "code-style/no-empty-lines-in-function-params"
     | "code-style/no-empty-lines-in-jsx"
@@ -156,6 +157,7 @@ interface PluginRules {
     "multiline-if-conditions": Rule.RuleModule;
     "nested-call-closing-brackets": Rule.RuleModule;
     "no-inline-type-definitions": Rule.RuleModule;
+    "no-redundant-folder-suffix": Rule.RuleModule;
     "no-empty-lines-in-function-calls": Rule.RuleModule;
     "no-empty-lines-in-function-params": Rule.RuleModule;
     "no-empty-lines-in-jsx": Rule.RuleModule;

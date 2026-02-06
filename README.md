@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*76 rules (67 auto-fixable, 17 configurable) to keep your codebase clean and consistent*
+*77 rules (67 auto-fixable, 17 configurable) to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **75 custom rules** (66 auto-fixable, 17 configurable) for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **76 custom rules** (66 auto-fixable, 17 configurable) for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **75 custom rules** (66 auto-fixable, 17 configurable) for 
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 67 of 76 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 67 of 77 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-**67 rules** support automatic fixing with `eslint --fix`. **17 rules** have configurable options. 9 rules are report-only (require manual changes).
+**67 rules** support automatic fixing with `eslint --fix`. **17 rules** have configurable options. 10 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -206,6 +206,7 @@ rules: {
     "code-style/enum-type-enforcement": "error",
     "code-style/export-format": "error",
     "code-style/folder-component-suffix": "error",
+    "code-style/no-redundant-folder-suffix": "error",
     "code-style/function-arguments-format": "error",
     "code-style/function-call-spacing": "error",
     "code-style/function-declaration-style": "error",
@@ -266,7 +267,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **76 rules total** — 67 with auto-fix 🔧, 17 configurable ⚙️, 9 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
+> **77 rules total** — 67 with auto-fix 🔧, 17 configurable ⚙️, 10 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -294,6 +295,7 @@ rules: {
 | `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` 🔧 |
 | `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference 🔧 |
 | `folder-component-suffix` | Components in `views/` folder must end with "View", `pages/` with "Page", `layouts/` with "Layout" |
+| `no-redundant-folder-suffix` | Disallow file names that redundantly include the parent folder name as a suffix |
 | `svg-component-icon-naming` | SVG components must end with "Icon" suffix; "Icon" suffix components must return SVG |
 | **Class Rules** | |
 | `class-method-definition-format` | Consistent spacing in class/method definitions: space before `{`, no space before `(` 🔧 |
@@ -3090,6 +3092,33 @@ export const Main = () => <div>Main</div>;
 
 ---
 
+### `no-redundant-folder-suffix`
+
+**What it does:** Flags files whose name redundantly includes the parent (or ancestor) folder name as a suffix. Since the folder already provides context, the file name doesn't need to repeat it.
+
+**Why use it:** This complements `folder-component-suffix` — the *file name* should stay clean while the *exported component name* carries the suffix. For example, `layouts/main.tsx` exporting `MainLayout` is better than `layouts/main-layout.tsx` exporting `MainLayout`.
+
+```
+// ✅ Good — file names don't repeat the folder name
+layouts/main.tsx           → export const MainLayout = ...
+atoms/button.tsx           → file "button" has no redundant suffix
+views/dashboard.tsx        → file "dashboard" has no redundant suffix
+hooks/use-auth.ts          → file "use-auth" has no redundant suffix
+
+// ❌ Bad — file names redundantly include the folder suffix
+layouts/main-layout.tsx    → redundant "-layout" (already in layouts/)
+atoms/button-atom.tsx      → redundant "-atom" (already in atoms/)
+views/dashboard-view.tsx   → redundant "-view" (already in views/)
+hooks/use-auth-hook.ts     → redundant "-hook" (already in hooks/)
+
+// Nested files are also checked against ancestor folders
+atoms/forms/input-atom.tsx → redundant "-atom" from ancestor "atoms/"
+```
+
+> **Note:** Index files (`index.ts`, `index.js`, etc.) are skipped. Folder names are singularized automatically (e.g., `layouts` → `layout`, `categories` → `category`, `classes` → `class`).
+
+---
+
 ### `svg-component-icon-naming`
 
 **What it does:** Enforces naming conventions for SVG icon components:
@@ -3901,7 +3930,7 @@ const UseAuth = () => {};          // hooks should be camelCase
 
 ## 🔧 Auto-fixing
 
-67 of 76 rules support auto-fixing. Run ESLint with the `--fix` flag:
+67 of 77 rules support auto-fixing. Run ESLint with the `--fix` flag:
 
 ```bash
 # Fix all files in src directory

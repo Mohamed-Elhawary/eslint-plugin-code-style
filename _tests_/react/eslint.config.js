@@ -139,6 +139,7 @@ export default [ // eslint-disable-line
             "code-style/empty-line-after-block": "error",
             "code-style/export-format": "error",
             "code-style/folder-component-suffix": "error",
+            "code-style/no-redundant-folder-suffix": "error",
             "code-style/function-arguments-format": "error",
             "code-style/function-call-spacing": "error",
             "code-style/function-declaration-style": "error",
