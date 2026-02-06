@@ -17,6 +17,8 @@
         "index.d.ts",
         "README.md",
         "CHANGELOG.md",
+        "CLAUDE.md",
+        "AGENTS.md",
         "LICENSE"
     ],
     "keywords": [
