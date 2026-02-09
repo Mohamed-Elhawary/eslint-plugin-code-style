@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2026-02-09
+
+**Modular Source Architecture + Minified Build**
+
+**Version Range:** v1.20.0 → v2.0.0
+
+### Changed
+
+- **BREAKING: Modular source architecture** — Split monolithic 23K-line `index.js` into `src/` with 17 category files + shared utilities
+  - `src/index.js` — Entry point importing all rules
+  - `src/rules/*.js` — 17 category files (arrays, arrow-functions, call-expressions, classes, comments, components, control-flow, functions, hooks, imports-exports, jsx, objects, react, spacing, strings, typescript, variables)
+  - `src/utils/tailwind.js` — Shared Tailwind CSS class utilities
+- **Build system** — Added esbuild to bundle and minify `src/` into `dist/index.js`
+  - `npm run build` generates the bundled output
+  - Output is ~269 KB (was ~1 MB), a 73% reduction
+- **Package entry point** — `main` and `exports` now point to `dist/index.js` instead of `index.js`
+- **npm package** — Publishes `dist/index.js` instead of root `index.js`; removed root `index.js` from package
+
+### Added
+
+- `esbuild.config.js` — Build configuration
+- `esbuild` as devDependency
+- `npm run build` script
+
+### Stats
+
+- Total Rules: 79
+- Auto-fixable: 70 rules 🔧
+- Configurable: 19 rules ⚙️
+- Report-only: 9 rules
+- Unpacked size: ~400 KB (was ~1.26 MB)
+
+**Full Changelog:** [v1.20.0...v2.0.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.20.0...v2.0.0)
+
+---
+
 ## [1.20.0] - 2026-02-09
 
 **README Reorganization — Split Rules Reference into docs/rules/**
@@ -1910,6 +1946,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.20.0...v2.0.0
 [1.20.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.19.0...v1.20.0
 [1.19.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.18.0...v1.19.0
 [1.18.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.17.2...v1.18.0
