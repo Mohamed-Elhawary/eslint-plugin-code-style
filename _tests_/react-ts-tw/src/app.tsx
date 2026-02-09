@@ -10,7 +10,7 @@
 import { Button, Card } from "@/components";
 import { ButtonVariantEnum } from "@/enums";
 import { useCounter, useToggle } from "@/hooks";
-import { strings } from "@/strings";
+import { appStrings } from "@/strings";
 import type { User } from "@/types";
 import { formatCurrencyHandler, formatDateHandler } from "@/utils";
 
@@ -30,10 +30,10 @@ export const App = () => {
     // Test: TypeScript variable with type annotation
     const user: User = {
         age: 25,
-        email: strings.form.placeholderEmail,
+        email: appStrings.form.placeholderEmail,
         id: "1",
         isActive: true,
-        name: strings.user.defaultName,
+        name: appStrings.user.defaultName,
     };
 
     const currentDate = new Date();
@@ -53,8 +53,8 @@ export const App = () => {
         >
             <Card
                 className="w-full max-w-md"
-                description={`${strings.labels.welcome}${user.name}`}
-                title={strings.labels.counterApp}
+                description={`${appStrings.labels.welcome}${user.name}`}
+                title={appStrings.labels.counterApp}
             >
                 <div className="mb-4 text-center">
                     <p className="text-2xl font-bold text-gray-800">{count}</p>
@@ -65,12 +65,12 @@ export const App = () => {
                 </div>
                 <div className="flex gap-4">
                     <Button
-                        label={strings.actions.decrement}
+                        label={appStrings.actions.decrement}
                         variant={ButtonVariantEnum.DANGER}
                         onClick={onDecrement}
                     />
                     <Button
-                        label={strings.actions.increment}
+                        label={appStrings.actions.increment}
                         variant={ButtonVariantEnum.PRIMARY}
                         onClick={onIncrement}
                     />
@@ -78,7 +78,7 @@ export const App = () => {
             </Card>
             <Button
                 className="mt-4"
-                label={isModalOpen ? strings.actions.close : strings.actions.open}
+                label={isModalOpen ? appStrings.actions.close : appStrings.actions.open}
                 variant={ButtonVariantEnum.SECONDARY}
                 onClick={onToggle}
             />
@@ -92,7 +92,7 @@ export const App = () => {
                         shadow-lg
                     "
                 >
-                    <p>{strings.labels.modalContent}</p>
+                    <p>{appStrings.labels.modalContent}</p>
                 </div>
             )}
         </div>

@@ -6,16 +6,16 @@
  */
 // Test: type import for TypeScript types
 
-import { currencyUsd, localeEnUs } from "@/constants";
+import { localeConstants } from "@/constants";
 import { DateFormatStyleEnum, NumberFormatStyleEnum } from "@/enums";
 import type { UserInterface } from "@/interfaces";
 
 // Test: function naming convention with TypeScript return type
 export const formatCurrencyHandler = (amount: number): string => {
     const formatter = new Intl.NumberFormat(
-        localeEnUs,
+        localeConstants.enUs,
         {
-            currency: currencyUsd,
+            currency: localeConstants.currencyUsd,
             style: NumberFormatStyleEnum.CURRENCY,
         },
     );
@@ -26,7 +26,7 @@ export const formatCurrencyHandler = (amount: number): string => {
 // Test: function with explicit return type
 export const formatDateHandler = (date: Date): string => {
     const formatter = new Intl.DateTimeFormat(
-        localeEnUs,
+        localeConstants.enUs,
         {
             day: DateFormatStyleEnum.NUMERIC,
             month: DateFormatStyleEnum.LONG,

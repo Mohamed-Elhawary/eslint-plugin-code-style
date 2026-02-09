@@ -9,22 +9,22 @@
 import { useCallback, useState } from "react";
 
 // Test: function-naming-convention (camelCase for hooks)
-const useCounter = (initialValue = 0) => {
+export const useCounter = (initialValue = 0) => {
     const [count, setCount] = useState(initialValue);
 
     // Test: hook-callback-format (callback on new line)
-    const increment = useCallback(
+    const incrementHandler = useCallback(
         () => setCount((prev) => prev + 1),
         [setCount],
     );
 
-    const decrement = useCallback(
+    const decrementHandler = useCallback(
         () => setCount((prev) => prev - 1),
         [setCount],
     );
 
     // Test: hook-deps-per-line (deps on same line when 2 or fewer)
-    const reset = useCallback(
+    const resetHandler = useCallback(
         () => setCount(initialValue),
         [initialValue, setCount],
     );
@@ -34,11 +34,9 @@ const useCounter = (initialValue = 0) => {
 
     return {
         count,
-        decrement,
+        decrement: decrementHandler,
         getCount: getCountHandler,
-        increment,
-        reset,
+        increment: incrementHandler,
+        reset: resetHandler,
     };
 };
-
-export { useCounter };

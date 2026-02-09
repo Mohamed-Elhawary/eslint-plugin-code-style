@@ -10,6 +10,8 @@
  */
 // Test: variable-naming-convention
 
+import { typeOfData } from "@/data";
+
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Test: arrow-function-simplify
@@ -19,7 +21,7 @@ const isEmailHandler = (value) => emailRegex.test(value);
 const isEmptyHandler = (value) => {
     if (value === null || value === undefined) return true;
 
-    if (typeof value === "string") return value.trim() === "";
+    if (typeof value === typeOfData.string) return value.trim() === "";
 
     if (Array.isArray(value)) return value.length === 0;
 
@@ -28,6 +30,6 @@ const isEmptyHandler = (value) => {
 
 // Test: simple function
 const isNumberHandler = (value) =>
-    typeof value === "number" && !Number.isNaN(value);
+    typeof value === typeOfData.number && !Number.isNaN(value);
 
 export { isEmailHandler as isEmail, isEmptyHandler as isEmpty, isNumberHandler as isNumber };

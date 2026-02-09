@@ -38,7 +38,7 @@ import {
 } from "react";
 
 import { InputTypeEnum } from "@/enums";
-import { strings } from "@/strings";
+import { appStrings } from "@/strings";
 
 export const UserDashboardView = ({
     initialCount = 0,
@@ -67,7 +67,7 @@ export const UserDashboardView = ({
     // 4. useMemo declarations
     const filteredItems = useMemo(
         () => {
-            const items = [strings.items.apple, strings.items.banana, strings.items.cherry];
+            const items = [appStrings.items.apple, appStrings.items.banana, appStrings.items.cherry];
 
             return items.filter((item) => item.toLowerCase().includes(searchTerm.toLowerCase()));
         },
@@ -132,7 +132,7 @@ export const UserDashboardView = ({
             <div className="mb-4">
                 <input
                     className="rounded border p-2"
-                    placeholder={strings.form.placeholderSearch}
+                    placeholder={appStrings.form.placeholderSearch}
                     ref={inputRef}
                     type={InputTypeEnum.TEXT}
                     onChange={({ target }) => setSearchTerm(target.value)}
@@ -140,7 +140,7 @@ export const UserDashboardView = ({
             </div>
             <div className="mb-4">
                 <span className="mr-4">
-                    {`${strings.labels.count}${countStats.display}`}
+                    {`${appStrings.labels.count}${countStats.display}`}
                 </span>
                 <button
                     type={InputTypeEnum.BUTTON}
@@ -188,7 +188,7 @@ export const UserDashboardView = ({
                     "
                     onClick={submitHandler}
                 >
-                    {isLoading ? strings.common.loading : strings.actions.submit}
+                    {isLoading ? appStrings.common.loading : appStrings.actions.submit}
                 </button>
                 <button
                     type={InputTypeEnum.BUTTON}
@@ -201,7 +201,7 @@ export const UserDashboardView = ({
                     "
                     onClick={resetHandler}
                 >
-                    {strings.actions.reset}
+                    {appStrings.actions.reset}
                 </button>
             </div>
         </div>

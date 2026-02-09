@@ -4,6 +4,7 @@
  */
 // Locale and currency constants
 
-export const localeEnUs = "en-US";
-
-export const currencyUsd = "USD";
+export const localeConstants = {
+    currencyUsd: "USD",
+    enUs: "en-US",
+};

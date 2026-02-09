@@ -9,31 +9,29 @@
 import { useCallback, useState } from "react";
 
 // Test: function-naming-convention
-const useToggle = (initialValue = false) => {
+export const useToggle = (initialValue = false) => {
     const [value, setValue] = useState(initialValue);
 
     // Test: hook-callback-format (callback on new line)
-    const toggle = useCallback(
+    const toggleHandler = useCallback(
         () => setValue((prev) => !prev),
         [],
     );
 
-    const setTrue = useCallback(
+    const setTrueHandler = useCallback(
         () => setValue(true),
         [],
     );
 
-    const setFalse = useCallback(
+    const setFalseHandler = useCallback(
         () => setValue(false),
         [],
     );
 
     return {
-        setFalse,
-        setTrue,
-        toggle,
+        setFalse: setFalseHandler,
+        setTrue: setTrueHandler,
+        toggle: toggleHandler,
         value,
     };
 };
-
-export { useToggle };

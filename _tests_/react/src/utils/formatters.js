@@ -18,7 +18,7 @@
  * Test: absolute-imports-only 
  */
 
-import { isNumber } from "@/utils";
+import { isNumber } from "./validators";
 
 // Test: variable-naming-convention (camelCase for constants)
 const defaultLocale = "en-US";

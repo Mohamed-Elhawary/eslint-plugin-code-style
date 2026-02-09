@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*78 rules (67 auto-fixable, 18 configurable) to keep your codebase clean and consistent*
+*79 rules (70 auto-fixable, 19 configurable) to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **78 custom rules** (67 auto-fixable, 18 configurable) for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **79 custom rules** (70 auto-fixable, 19 configurable) for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **78 custom rules** (67 auto-fixable, 18 configurable) for 
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 67 of 78 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 70 of 79 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -60,7 +60,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 
 ### 💡 Why Use These Configs?
 
-- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 77 code-style rules
+- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 79 code-style rules
 - **Ready-to-Use** — Copy the config file and start linting immediately
 - **Battle-Tested** — These configurations have been refined through real-world usage
 - **Fully Documented** — Each config includes detailed instructions and explanations
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-**67 rules** support automatic fixing with `eslint --fix`. **18 rules** have configurable options. 11 rules are report-only (require manual changes).
+**70 rules** support automatic fixing with `eslint --fix`. **19 rules** have configurable options. 9 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -223,6 +223,7 @@ rules: {
     "code-style/import-source-spacing": "error",
     "code-style/index-export-style": "error",
     "code-style/index-exports-only": "error",
+    "code-style/inline-export-declaration": "error",
     "code-style/interface-format": "error",
     "code-style/jsx-children-on-new-line": "error",
     "code-style/jsx-closing-bracket-spacing": "error",
@@ -268,7 +269,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **78 rules total** — 67 with auto-fix 🔧, 18 configurable ⚙️, 11 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
+> **79 rules total** — 70 with auto-fix 🔧, 19 configurable ⚙️, 9 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -295,7 +296,7 @@ rules: {
 | **Component Rules** | |
 | `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` 🔧 |
 | `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference 🔧 |
-| `folder-based-naming-convention` | Enforce naming based on folder: suffix for views/layouts/pages/providers/reducers/contexts/themes, chained folder names for nested files 🔧 |
+| `folder-based-naming-convention` | Enforce naming based on folder: suffix for views/layouts/pages/providers/reducers/contexts/themes, camelCase suffix for data/constants/strings/services/reducers folders, chained folder names for nested files 🔧 |
 | `folder-structure-consistency` | Enforce consistent folder structure (flat vs wrapped) in module folders (atoms, components, hooks, enums, views, etc.) ⚙️ |
 | `no-redundant-folder-suffix` | Disallow file and folder names that redundantly include the parent folder name as a suffix |
 | `svg-icon-naming-convention` | SVG components must end with "Icon" suffix; "Icon" suffix components must return SVG |
@@ -323,12 +324,13 @@ rules: {
 | `hook-deps-per-line` | Collapse deps ≤ threshold to one line; expand larger arrays with each dep on own line (default: >2) 🔧 ⚙️ |
 | `use-state-naming-convention` | Boolean useState variables must start with is/has/with/without prefix 🔧 ⚙️ |
 | **Import/Export Rules** | |
-| `absolute-imports-only` | Use alias imports from index files only (not deep paths), no relative imports (default: `@/`) ⚙️ |
+| `absolute-imports-only` | Use alias imports from index files only (not deep paths), no relative imports; files within the same module folder must use relative imports — auto-fixes absolute imports to relative (default: `@/`) 🔧 ⚙️ |
 | `export-format` | `export {` on same line; collapse ≤ threshold to one line; expand larger with each specifier on own line (default: ≤3) 🔧 ⚙️ |
 | `import-format` | `import {` and `} from` on same line; collapse ≤ threshold; expand larger with each specifier on own line (default: ≤3) 🔧 ⚙️ |
 | `import-source-spacing` | No leading/trailing spaces inside import path quotes 🔧 |
 | `index-export-style` | Index files: no blank lines, enforce shorthand or import-export style; Regular files: require blank lines between exports (default: shorthand) 🔧 ⚙️ |
 | `index-exports-only` | Index files should only contain imports and re-exports, not code definitions (types, functions, variables, classes) |
+| `inline-export-declaration` | Enforce inline export declarations instead of grouped export statements in non-index files 🔧 ⚙️ |
 | `module-index-exports` | Index files must export all folder contents (files and subfolders) ⚙️ |
 | **JSX Rules** | |
 | `classname-dynamic-at-end` | Dynamic expressions (`${className}`) must be at the end of class strings (JSX and variables) 🔧 |
@@ -1814,13 +1816,14 @@ const [error, setError] = useState<boolean>(false);
 
 ### `absolute-imports-only`
 
-**What it does:** Enforces importing from folder index files using absolute paths (aliases like `@/`) instead of relative paths or deep file imports.
+**What it does:** Enforces importing from folder index files using absolute paths (aliases like `@/`) instead of relative paths or deep file imports. Files within the same module folder must use relative imports (`./` or `../`) instead of absolute paths to avoid circular dependencies through the index file. Auto-fixes absolute imports to own module folder into relative paths. 🔧
 
 **Why use it:**
 - Absolute imports are cleaner than `../../../components`
 - Index imports create a public API for each folder
 - Refactoring file locations doesn't break imports
 - Encourages proper module organization
+- Relative imports within the same module folder avoid circular dependencies
 
 ```javascript
 // ✅ Good — import from index files using alias
@@ -1832,7 +1835,20 @@ import { formatDate } from "@/utils";
 // ✅ Good — assets allow deep imports by default
 import logo from "@/assets/images/logo.png";
 
-// ❌ Bad — relative imports
+// ✅ Good — relative import within the same module folder (siblings)
+// File: utils/formatters.js
+import { isNumber } from "./validators";
+
+// ✅ Good — relative import within the same module folder (nested)
+// File: data/auth/forget-password/index.ts
+import { guestLoginData } from "../../login/guest";
+
+// ❌ Bad — absolute import to own module folder (should use relative)
+// File: data/auth/forget-password/index.ts
+import { guestLoginData } from "@/data";
+// → use relative import instead: import { guestLoginData } from "../../login/guest";
+
+// ❌ Bad — relative imports across different folders
 import { Button } from "../../components";
 import { useAuth } from "../../../hooks";
 
@@ -2082,6 +2098,46 @@ export type ButtonVariant = "primary" | "secondary";  // Move to types.ts
 export interface ButtonProps { ... }                  // Move to types.ts
 export const CONSTANT = "value";                      // Move to constants.ts
 export function helper() { ... }                      // Move to utils.ts
+```
+
+---
+
+### `inline-export-declaration`
+
+**What it does:** Enforces that exports are declared inline with the declaration (`export const`, `export function`) instead of using grouped export statements (`export { ... }`). Auto-fixable: adds `export` to each declaration and removes the grouped export statement.
+
+**Why use it:** Inline exports make it immediately clear which declarations are public. Grouped exports at the bottom of a file require scrolling to discover what's exported, and they can become stale or inconsistent with the actual declarations.
+
+**Important exceptions:**
+- **Index files** (barrel re-exports) are skipped entirely -- they should use grouped/re-export syntax
+- **Aliased exports** (`export { a as b }`) are skipped since they cannot be expressed as inline exports
+
+```javascript
+// ✅ Good — inline export declarations
+export const strings = {
+    title: "Hello",
+    subtitle: "World",
+};
+
+export const MAX_RETRIES = 3;
+
+export function fetchData() {
+    return fetch("/api/data");
+}
+
+// ❌ Bad — grouped export statement
+const strings = {
+    title: "Hello",
+    subtitle: "World",
+};
+
+const MAX_RETRIES = 3;
+
+function fetchData() {
+    return fetch("/api/data");
+}
+
+export { strings, MAX_RETRIES, fetchData };
 ```
 
 ---
@@ -3065,7 +3121,7 @@ export const Card = ({ a, b } : { a: string, b: string }) => (
 
 ### `folder-based-naming-convention`
 
-**What it does:** Enforces naming conventions based on folder location, with chained folder names for nested files:
+**What it does:** Enforces naming conventions based on folder location, with chained folder names for nested files. Also enforces camelCase suffix for data/constants/strings/services/reducers folders (e.g., `authData`, `apiConstants`, `loginStrings`, `userServices`):
 
 | Folder | Suffix | Example |
 |--------|--------|---------|
@@ -3076,12 +3132,16 @@ export const Card = ({ a, b } : { a: string, b: string }) => (
 | `reducers/` | Reducer | `UserReducer` |
 | `contexts/` | Context | `AuthContext` |
 | `theme/` / `themes/` | Theme | `DarkTheme` |
+| `data/` | Data (camelCase) | `authData` |
+| `constants/` | Constants (camelCase) | `apiConstants` |
+| `strings/` | Strings (camelCase) | `loginStrings` |
+| `services/` | Services (camelCase) | `userServices` |
 | `atoms/` | *(none)* | `Button` |
 | `components/` | *(none)* | `Card` |
 
 Nested files chain folder names (e.g., `layouts/auth/login.tsx` → `LoginAuthLayout`, `atoms/input/password.tsx` → `PasswordInput`).
 
-**Why use it:** Consistent naming based on folder structure makes purpose immediately clear. The chained naming encodes the full path context into the name.
+**Why use it:** Consistent naming based on folder structure makes purpose immediately clear. The chained naming encodes the full path context into the name. The camelCase suffix for data/constants/strings/services/reducers folders distinguishes these utility modules from PascalCase component-like entities.
 
 ```tsx
 // ✅ Good — suffix folders
@@ -3102,6 +3162,19 @@ export const UserReducer = (state, action) => { ... };
 
 // in themes/dark.ts
 export const DarkTheme = { primary: "#000" };
+
+// ✅ Good — camelCase suffix folders
+// in data/auth.ts
+export const authData = { ... };
+
+// in constants/api.ts
+export const apiConstants = { ... };
+
+// in strings/login.ts
+export const loginStrings = { ... };
+
+// in services/user.ts
+export const userServices = { ... };
 
 // ✅ Good — no-suffix folders (chaining only)
 // in atoms/input/password.tsx (chained: Password + Input)
@@ -3146,7 +3219,7 @@ atoms/input.tsx
 atoms/calendar.tsx
 
 // ✅ Good — wrapped mode (justified — input has multiple files)
-atoms/input/input.tsx
+atoms/input/index.tsx
 atoms/input/helpers.ts
 atoms/calendar/index.tsx
 
@@ -3180,6 +3253,11 @@ layouts/main.tsx           → export const MainLayout = ...
 atoms/button.tsx           → file "button" has no redundant suffix
 views/dashboard.tsx        → file "dashboard" has no redundant suffix
 views/access-control/...   → folder "access-control" has no redundant suffix
+atoms/input/index.tsx      → uses "index" inside folder (correct)
+
+// ❌ Bad — file name matches parent folder name (use index instead)
+atoms/input/input.tsx      → use "input/index.tsx" instead
+components/card/card.tsx   → use "card/index.tsx" instead
 
 // ❌ Bad — file names redundantly include the folder suffix
 layouts/main-layout.tsx    → redundant "-layout" (already in layouts/)
@@ -4008,7 +4086,7 @@ const UseAuth = () => {};          // hooks should be camelCase
 
 ## 🔧 Auto-fixing
 
-67 of 78 rules support auto-fixing. Run ESLint with the `--fix` flag:
+70 of 79 rules support auto-fixing. Run ESLint with the `--fix` flag:
 
 ```bash
 # Fix all files in src directory

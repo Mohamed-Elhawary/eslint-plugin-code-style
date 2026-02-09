@@ -15,12 +15,12 @@ import { NumberSignEnum } from "@/enums";
 export const formatValueHandler = (value: string): string => value.trim();
 
 // Test: variable-naming-convention - camelCase for variables
-const defaultTimeout = 5000;
+export const defaultTimeout = 5000;
 
 // Test: variable-naming-convention - camelCase for constants
-const maxRetries = 3;
+export const maxRetries = 3;
 
-const apiBaseUrl = "https://api.example.com";
+export const apiBaseUrl = "https://api.example.com"; // eslint-disable-line code-style/no-hardcoded-strings -- config URL
 
 // Test: type-annotation-spacing with generics - no space before <
 export const createArrayHandler = <T>(item: T, count: number): T[] => Array.from(
@@ -77,6 +77,3 @@ export const getItemHandler = (arr: string[], index: number): string | undefined
 // Test: type-annotation-spacing with array types - no space before []
 export const filterNumbersHandler = (values: Array<string | number>): number[] => values.filter((v): v is number => typeof v === "number", // eslint-disable-line code-style/no-hardcoded-strings -- typeof check
 );
-
-// Export constants for use in tests
-export { apiBaseUrl, defaultTimeout, maxRetries };

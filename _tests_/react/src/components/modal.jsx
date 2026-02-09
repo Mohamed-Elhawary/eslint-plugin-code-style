@@ -10,22 +10,25 @@
  */
 // Test: function-params-per-line (each param on own line)
 
-const Modal = ({
+import { buttonTypeData } from "@/data";
+import { appStrings } from "@/strings";
+
+export const Modal = ({
     children,
     isOpen,
     onClose,
     title,
 }) => {
     // Test: function-arguments-format (2+ args on separate lines)
-    const handleKeyDownHandler = (event) => {
+    const closeOnKeyDownHandler = (event) => {
         const { key } = event;
 
         // Test: if-statement-format
-        if (key === "Escape") onClose();
+        if (key === appStrings.escape) onClose();
     };
 
     // Test: block-statement-newlines
-    const handleBackdropClickHandler = (event) => {
+    const backdropClickHandler = (event) => {
         const {
             currentTarget,
             target,
@@ -41,14 +44,14 @@ const Modal = ({
         <div
             className="modal-backdrop"
             role="dialog"
-            onClick={handleBackdropClickHandler}
-            onKeyDown={handleKeyDownHandler}
+            onClick={backdropClickHandler}
+            onKeyDown={closeOnKeyDownHandler}
         >
             <div className="modal-content">
                 <div className="modal-header">
                     <h2>{title}</h2>
                     <button
-                        type="button"
+                        type={buttonTypeData.button}
                         onClick={onClose}
                     >
                         X
@@ -59,5 +62,3 @@ const Modal = ({
         </div>
     );
 };
-
-export { Modal };

@@ -6494,6 +6494,10 @@ const enumTypeEnforcement = {
  *   Local paths (starting with @/) should only import from
  *   folder-level index files.
  *
+ *   Exception: Files within the same module folder should use
+ *   relative imports (./sibling) to avoid circular dependencies
+ *   through the index file.
+ *
  * Options:
  *   - aliasPrefix: string (default: "@/") - Change path alias prefix if your project uses something other than @/ (e.g., ~/, src/)
  *   - extraAllowedFolders: string[] - Add custom folders that can be imported with @/folder. Extends defaults without replacing them
@@ -6506,10 +6510,14 @@ const enumTypeEnforcement = {
  * ✓ Good:
  *   import { Button } from "@/components";
  *   import { useAuth } from "@/hooks";
+ *   // Sibling import within same folder (avoids circular deps):
+ *   import { helpers } from "./helpers";  (when in data/app.js importing data/helpers.js)
  *
  * ✗ Bad:
  *   import { Button } from "@/components/buttons/primary-button";
  *   import { useAuth } from "@/hooks/auth/useAuth";
+ *   // Same-folder absolute import (circular dependency risk):
+ *   import { helpers } from "@/data";  (when file is inside data/ folder)
  *
  * Configuration Example:
  *   "code-style/absolute-imports-only": ["error", {
@@ -6606,15 +6614,34 @@ const absoluteImportsOnly = {
                 // to use relative imports for app root and styles (e.g., ./index.css, ./app)
                 const isEntryFile = /\/main\.(js|jsx|ts|tsx)$/.test(normalizedFilename);
 
-                // 1. Disallow relative imports (starting with ./ or ../)
-                // EXCEPT in index files which need relative imports for re-exports
-                if (importPath.startsWith("./") || importPath.startsWith("../")) {
-                    if (!isIndexFile && !isEntryFile) {
-                        context.report({
-                            message: `Relative imports are not allowed. Use absolute imports with "${aliasPrefix}" prefix instead.`,
-                            node: node.source,
-                        });
+                // Detect if the file is inside a module folder at any depth
+                // e.g., data/app.js, data/auth/login/guest.tsx are both inside "data"
+                const getParentModuleFolderHandler = () => {
+                    for (const folder of allowedFolders) {
+                        const pattern = new RegExp(`/(${folder})/`);
+
+                        if (pattern.test(normalizedFilename)) return folder;
                     }
+
+                    return null;
+                };
+
+                const parentModuleFolder = getParentModuleFolderHandler();
+
+                // 1. Disallow relative imports (starting with ./ or ../)
+                // EXCEPT in index files, entry files, and sibling files within the same module folder
+                if (importPath.startsWith("./") || importPath.startsWith("../")) {
+                    // Always allow in index files and entry files
+                    if (isIndexFile || isEntryFile) return;
+
+                    // Allow relative imports within the same module folder (any depth)
+                    // e.g., data/app.js → "./helpers", data/auth/forget-password/index.ts → "../../login/guest"
+                    if (parentModuleFolder) return;
+
+                    context.report({
+                        message: `Relative imports are not allowed. Use absolute imports with "${aliasPrefix}" prefix instead.`,
+                        node: node.source,
+                    });
 
                     return;
                 }
@@ -6656,6 +6683,39 @@ const absoluteImportsOnly = {
                     if (!allowedFolders.includes(folderName)) {
                         context.report({
                             message: `Unknown folder "${folderName}" in import path. Allowed folders: ${allowedFolders.join(", ")}`,
+                            node: node.source,
+                        });
+
+                        return;
+                    }
+
+                    // Check if importing from own parent module folder (circular dependency risk)
+                    // e.g., data/app.js importing @/data → should use relative import instead
+                    if (parentModuleFolder && folderName === parentModuleFolder) {
+                        const targetRelativeToModule = segments.slice(1).join("/");
+
+                        // Deep path within own module (e.g., @/data/auth/login/guest) — auto-fixable
+                        if (targetRelativeToModule) {
+                            const moduleIndex = normalizedFilename.lastIndexOf(`/${parentModuleFolder}/`);
+                            const fileRelativeToModule = normalizedFilename.slice(moduleIndex + parentModuleFolder.length + 2);
+                            const fileDir = fileRelativeToModule.substring(0, fileRelativeToModule.lastIndexOf("/"));
+
+                            let relativePath = nodePath.posix.relative(fileDir, targetRelativeToModule);
+
+                            if (!relativePath.startsWith(".")) relativePath = `./${relativePath}`;
+
+                            context.report({
+                                message: `Files within "${parentModuleFolder}/" should use relative imports (e.g., "${relativePath}") instead of "${importPath}" to avoid circular dependencies.`,
+                                node: node.source,
+                                fix: (fixer) => fixer.replaceText(node.source, `"${relativePath}"`),
+                            });
+
+                            return;
+                        }
+
+                        // Barrel import to own module (e.g., @/data from inside data/) — report only
+                        context.report({
+                            message: `Files within "${parentModuleFolder}/" should use relative imports instead of "${importPath}" to avoid circular dependencies through the index file.`,
                             node: node.source,
                         });
 
@@ -6707,7 +6767,8 @@ const absoluteImportsOnly = {
         };
     },
     meta: {
-        docs: { description: "Enforce absolute imports from index files only for local paths" },
+        docs: { description: "Enforce absolute imports from index files only for local paths, with relative imports required for files within the same module folder" },
+        fixable: "code",
         schema: [
             {
                 additionalProperties: false,
@@ -8033,6 +8094,149 @@ const indexExportsOnly = {
         docs: { description: "Index files should only contain imports and re-exports, not code definitions" },
         schema: [],
         type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Inline Export Declaration
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   In non-index files, enforce inline export declarations instead
+ *   of declaring variables/functions separately and then exporting
+ *   them with a grouped export statement at the end.
+ *
+ *   This does NOT apply to index files (which use barrel re-exports).
+ *
+ * ✓ Good:
+ *   export const strings = { ... };
+ *
+ *   export const buttonTypeData = { button: "button" };
+ *
+ *   export const submitHandler = () => { ... };
+ *
+ * ✗ Bad:
+ *   const strings = { ... };
+ *   export { strings };
+ *
+ * ✗ Bad:
+ *   const foo = 1;
+ *   const bar = 2;
+ *   export { foo, bar };
+ *
+ * Auto-fixable: Yes — adds "export" to each declaration and removes
+ * the grouped export statement.
+ */
+const inlineExportDeclaration = {
+    create(context) {
+        const filename = context.filename || context.getFilename();
+        const normalizedFilename = filename.replace(/\\/g, "/");
+        const isIndexFile = /\/index\.(js|jsx|ts|tsx)$/.test(normalizedFilename)
+            || /^index\.(js|jsx|ts|tsx)$/.test(normalizedFilename);
+
+        // Only apply to non-index files
+        if (isIndexFile) return {};
+
+        const sourceCode = context.sourceCode || context.getSourceCode();
+
+        return {
+            Program(programNode) {
+                // Find all grouped export statements: export { a, b, c };
+                // These have specifiers but no source (not re-exports) and no declaration
+                const groupedExports = programNode.body.filter(
+                    (node) => node.type === "ExportNamedDeclaration"
+                        && !node.source
+                        && !node.declaration
+                        && node.specifiers.length > 0,
+                );
+
+                if (groupedExports.length === 0) return;
+
+                // Build a map of all top-level declarations: name → node
+                const declarationMap = new Map();
+
+                programNode.body.forEach((node) => {
+                    if (node.type === "VariableDeclaration") {
+                        node.declarations.forEach((decl) => {
+                            if (decl.id && decl.id.type === "Identifier") {
+                                declarationMap.set(decl.id.name, { declarationNode: node, kind: node.kind });
+                            }
+                        });
+                    } else if (node.type === "FunctionDeclaration" && node.id) {
+                        declarationMap.set(node.id.name, { declarationNode: node, kind: "function" });
+                    } else if (node.type === "ClassDeclaration" && node.id) {
+                        declarationMap.set(node.id.name, { declarationNode: node, kind: "class" });
+                    }
+                });
+
+                groupedExports.forEach((exportNode) => {
+                    // Skip if any specifier has an alias (export { a as b })
+                    const hasAlias = exportNode.specifiers.some(
+                        (spec) => spec.local.name !== spec.exported.name,
+                    );
+
+                    if (hasAlias) return;
+
+                    // Check all specifiers have matching declarations
+                    const allFound = exportNode.specifiers.every(
+                        (spec) => declarationMap.has(spec.local.name),
+                    );
+
+                    if (!allFound) return;
+
+                    // Check if any declaration is already exported (would cause duplicate)
+                    const anyAlreadyExported = exportNode.specifiers.some((spec) => {
+                        const info = declarationMap.get(spec.local.name);
+                        const declNode = info.declarationNode;
+                        const parent = declNode.parent;
+
+                        // Check if declaration is inside an ExportNamedDeclaration
+                        if (parent && parent.type === "ExportNamedDeclaration") return true;
+
+                        // Check source text starts with "export"
+                        const declText = sourceCode.getText(declNode);
+
+                        return declText.startsWith("export ");
+                    });
+
+                    if (anyAlreadyExported) return;
+
+                    context.report({
+                        fix(fixer) {
+                            const fixes = [];
+
+                            // Add "export " before each declaration
+                            exportNode.specifiers.forEach((spec) => {
+                                const info = declarationMap.get(spec.local.name);
+                                const declNode = info.declarationNode;
+
+                                fixes.push(fixer.insertTextBefore(declNode, "export "));
+                            });
+
+                            // Remove the grouped export statement and any preceding blank line
+                            const tokenBefore = sourceCode.getTokenBefore(exportNode, { includeComments: true });
+
+                            if (tokenBefore) {
+                                fixes.push(fixer.removeRange([tokenBefore.range[1], exportNode.range[1]]));
+                            } else {
+                                fixes.push(fixer.remove(exportNode));
+                            }
+
+                            return fixes;
+                        },
+                        message: "Use inline export declarations (export const x = ...) instead of grouped export statements (export { x }).",
+                        node: exportNode,
+                    });
+                });
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce inline export declarations instead of grouped export statements in non-index files" },
+        fixable: "code",
+        schema: [],
+        type: "layout",
     },
 };
 
@@ -18891,17 +19095,21 @@ const folderBasedNamingConvention = {
         const normalizedFilename = filename.replace(/\\/g, "/");
 
         // Folder-to-suffix mapping
-        // - JSX component folders: require function returning JSX
-        // - Non-JSX folders: check any PascalCase exported identifier
+        // - JSX component folders: require function returning JSX (PascalCase)
+        // - camelCase folders: check camelCase exported identifiers
+        // - Other non-JSX folders: check PascalCase exported identifiers
         const folderSuffixMap = {
             atoms: "",
             components: "",
+            constants: "Constants",
             contexts: "Context",
+            data: "Data",
             layouts: "Layout",
             pages: "Page",
             providers: "Provider",
             reducers: "Reducer",
             services: "Service",
+            strings: "Strings",
             theme: "Theme",
             themes: "Theme",
             views: "View",
@@ -18910,8 +19118,14 @@ const folderBasedNamingConvention = {
         // Folders where JSX return is required (component folders)
         const jsxRequiredFolders = new Set(["atoms", "components", "layouts", "pages", "providers", "views"]);
 
+        // Folders where exports use camelCase naming (non-component, non-context)
+        const camelCaseFolders = new Set(["constants", "data", "reducers", "services", "strings"]);
+
         // Convert kebab-case to PascalCase
         const toPascalCaseHandler = (str) => str.split("-").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join("");
+
+        // Convert PascalCase to camelCase (lowercase first letter)
+        const toCamelCaseHandler = (str) => str.charAt(0).toLowerCase() + str.slice(1);
 
         // Build regex dynamically from folder names
         const folderNames = Object.keys(folderSuffixMap).join("|");
@@ -18935,7 +19149,7 @@ const folderBasedNamingConvention = {
 
         // Build the expected name based on file position
         const buildExpectedNameHandler = (moduleInfo) => {
-            const { fileName, intermediateFolders, suffix } = moduleInfo;
+            const { fileName, folder, intermediateFolders, suffix } = moduleInfo;
 
             // Module barrel file (e.g., views/index.ts) — skip
             if (fileName === "index" && intermediateFolders.length === 0) return null;
@@ -18950,7 +19164,12 @@ const folderBasedNamingConvention = {
                 nameParts = [fileName, ...[...intermediateFolders].reverse()];
             }
 
-            return nameParts.map(toPascalCaseHandler).join("") + suffix;
+            const pascalName = nameParts.map(toPascalCaseHandler).join("") + suffix;
+
+            // camelCase folders produce camelCase names
+            if (camelCaseFolders.has(folder)) return toCamelCaseHandler(pascalName);
+
+            return pascalName;
         };
 
         // Get the component name from function node
@@ -19059,6 +19278,25 @@ const folderBasedNamingConvention = {
             return `"${name}" in "${folder}" folder must be named "${expectedName}" (expected chained folder names)`;
         };
 
+        // Check if name starts with lowercase (camelCase)
+        const isCamelCaseHandler = (name) => name && /^[a-z]/.test(name);
+
+        // Build suffix message for camelCase folders
+        const buildSuffixMessageHandler = (name, folder, suffix) => `"${name}" in "${folder}" folder must end with "${suffix}" suffix (e.g., "myItem${suffix}")`;
+
+        // Check camelCase naming (suffix-only enforcement for camelCase folders)
+        const checkCamelCaseHandler = (name, folder, suffix, identifierNode) => {
+            // For camelCase folders, only enforce the suffix (not full chained name)
+            // because these folders often have multiple exports per file
+            // Suffix stays PascalCase even in camelCase names (e.g., buttonTypeData)
+            if (!name.endsWith(suffix)) {
+                context.report({
+                    message: buildSuffixMessageHandler(name, folder, suffix),
+                    node: identifierNode,
+                });
+            }
+        };
+
         // Check function declarations (JSX components + non-JSX functions like reducers)
         const checkFunctionHandler = (node) => {
             const moduleInfo = getModuleInfoHandler();
@@ -19071,9 +19309,18 @@ const folderBasedNamingConvention = {
 
             const { name, identifierNode } = componentInfo;
 
-            if (!isPascalCaseHandler(name)) return;
+            const { folder, suffix } = moduleInfo;
 
-            const { folder } = moduleInfo;
+            // For camelCase folders, only enforce suffix
+            if (camelCaseFolders.has(folder)) {
+                if (!isCamelCaseHandler(name) || !suffix) return;
+
+                checkCamelCaseHandler(name, folder, suffix, identifierNode);
+
+                return;
+            }
+
+            if (!isPascalCaseHandler(name)) return;
 
             // For JSX-required folders, only check functions that return JSX
             if (jsxRequiredFolders.has(folder) && !returnsJsxHandler(node)) return;
@@ -19081,8 +19328,6 @@ const folderBasedNamingConvention = {
             const expectedName = buildExpectedNameHandler(moduleInfo);
 
             if (!expectedName) return;
-
-            const { suffix } = moduleInfo;
 
             if (name !== expectedName) {
                 context.report({
@@ -19093,7 +19338,7 @@ const folderBasedNamingConvention = {
             }
         };
 
-        // Check variable declarations for non-JSX folders (contexts, themes)
+        // Check variable declarations for non-JSX folders (contexts, themes, data, etc.)
         const checkVariableHandler = (node) => {
             // Only check VariableDeclarators with an identifier name
             if (!node.id || node.id.type !== "Identifier") return;
@@ -19105,20 +19350,27 @@ const folderBasedNamingConvention = {
 
             if (!moduleInfo) return;
 
-            const { folder } = moduleInfo;
+            const { folder, suffix } = moduleInfo;
 
-            // Only check non-JSX folders (contexts, themes)
+            // Only check non-JSX folders (contexts, themes, data, constants, strings, etc.)
             if (jsxRequiredFolders.has(folder)) return;
 
             const name = node.id.name;
+
+            // For camelCase folders, only enforce suffix
+            if (camelCaseFolders.has(folder)) {
+                if (!isCamelCaseHandler(name) || !suffix) return;
+
+                checkCamelCaseHandler(name, folder, suffix, node.id);
+
+                return;
+            }
 
             if (!isPascalCaseHandler(name)) return;
 
             const expectedName = buildExpectedNameHandler(moduleInfo);
 
             if (!expectedName) return;
-
-            const { suffix } = moduleInfo;
 
             if (name !== expectedName) {
                 context.report({
@@ -19242,7 +19494,23 @@ const folderStructureConsistency = {
 
         const moduleFolderInfo = getModuleFolderInfoHandler();
 
-        if (!moduleFolderInfo) return {};
+        // Check for loose module files (e.g., src/data.js instead of src/data/)
+        if (!moduleFolderInfo) {
+            const fileBaseName = normalizedFilename.replace(/.*\//, "").replace(/\.(jsx?|tsx?)$/, "");
+
+            if (moduleFolders.includes(fileBaseName)) {
+                return {
+                    Program(node) {
+                        context.report({
+                            message: `"${fileBaseName}" should be a folder, not a standalone file. Use "${fileBaseName}/" folder with an index file instead.`,
+                            node,
+                        });
+                    },
+                };
+            }
+
+            return {};
+        }
 
         const { folder, fullPath } = moduleFolderInfo;
 
@@ -19439,10 +19707,21 @@ const noRedundantFolderSuffix = {
             }
         }
 
+        // Check if the file name matches the immediate parent folder name (e.g., input/input.tsx → should be input/index.tsx)
+        let fileMatchesFolder = null;
+
+        if (baseName !== "index" && ancestorFolders.length >= 2) {
+            const immediateFolder = ancestorFolders[ancestorFolders.length - 1];
+
+            if (baseName === immediateFolder) {
+                fileMatchesFolder = immediateFolder;
+            }
+        }
+
         // Check if the file name ends with any ancestor folder name (singularized) — skip index files
         let fileRedundancy = null;
 
-        if (baseName !== "index") {
+        if (baseName !== "index" && !fileMatchesFolder) {
             for (const folder of ancestorFolders) {
                 const singular = singularizeHandler(folder);
                 const suffix = `-${singular}`;
@@ -19454,13 +19733,20 @@ const noRedundantFolderSuffix = {
             }
         }
 
-        if (folderErrors.length === 0 && !fileRedundancy) return {};
+        if (folderErrors.length === 0 && !fileRedundancy && !fileMatchesFolder) return {};
 
         return {
             Program(node) {
                 for (const error of folderErrors) {
                     context.report({
                         message: `Folder name "${error.folderName}" has redundant suffix "${error.suffix}" — the "${error.ancestorFolder}/" ancestor folder already provides this context. Rename to "${error.suggestedName}".`,
+                        node,
+                    });
+                }
+
+                if (fileMatchesFolder) {
+                    context.report({
+                        message: `File name "${baseName}" is the same as its parent folder "${fileMatchesFolder}/". Use "index" instead (e.g., "${fileMatchesFolder}/index${fileWithExt.match(/\.\w+$/)[0]}").`,
                         node,
                     });
                 }
@@ -22812,6 +23098,7 @@ export default {
         "import-source-spacing": importSourceSpacing,
         "index-export-style": indexExportStyle,
         "index-exports-only": indexExportsOnly,
+        "inline-export-declaration": inlineExportDeclaration,
         "module-index-exports": moduleIndexExports,
 
         // JSX rules

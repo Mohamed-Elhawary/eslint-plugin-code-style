@@ -14,10 +14,10 @@ import { useMemo, useState } from "react";
 
 import { StatusEnum } from "@/enums";
 import type { ListItemInterface } from "@/interfaces";
-import { strings } from "@/strings";
+import { appStrings } from "@/strings";
 
 export const List = ({
-    emptyMessage = strings.common.noItems,
+    emptyMessage = appStrings.common.noItems,
     items,
     title,
 }: {
@@ -31,11 +31,11 @@ export const List = ({
     const defaultItems: ListItemInterface[] = [
         {
             id: "1",
-            label: strings.items.first,
+            label: appStrings.items.first,
         },
         {
             id: "2",
-            label: strings.items.second,
+            label: appStrings.items.second,
         },
     ];
 

@@ -10,7 +10,9 @@
  */
 // Test: function-naming-convention (PascalCase for components)
 
-const Card = ({
+import { appStrings } from "@/strings";
+
+export const Card = ({
     children,
     description,
     isLoading,
@@ -26,7 +28,7 @@ const Card = ({
     return (
         <div className="card">
             <div className="card-header">{renderTitleHandler()}</div>
-            {isLoading ? <span>Loading...</span> : (
+            {isLoading ? <span>{appStrings.loading}</span> : (
                 <div className="card-body">
                     {showDescription && <p>{description}</p>}
                     <div className="card-content">{children}</div>
@@ -35,5 +37,3 @@ const Card = ({
         </div>
     );
 };
-
-export { Card };

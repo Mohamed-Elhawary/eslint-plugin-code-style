@@ -33,7 +33,7 @@ import {
 
 import { FormFieldEnum } from "@/enums";
 import type { FormInitialDataInterface, UseFormSubmissionReturnInterface } from "@/interfaces";
-import { strings } from "@/strings";
+import { appStrings } from "@/strings";
 import type { FormFieldNameType } from "@/types";
 
 export const useFormSubmission = (initialData: FormInitialDataInterface): UseFormSubmissionReturnInterface => {
@@ -92,7 +92,7 @@ export const useFormSubmission = (initialData: FormInitialDataInterface): UseFor
     // 6. Handler functions
     const submitHandler = async () => {
         if (!isFormValid) {
-            setError(strings.form.requiredFieldsError);
+            setError(appStrings.form.requiredFieldsError);
 
             return;
         }
@@ -113,7 +113,7 @@ export const useFormSubmission = (initialData: FormInitialDataInterface): UseFor
 
             setIsSuccess(true);
         } catch (err) {
-            setError(err instanceof Error ? err.message : strings.form.submissionFailed);
+            setError(err instanceof Error ? err.message : appStrings.form.submissionFailed);
         } finally {
             setIsSubmitting(false);
         }

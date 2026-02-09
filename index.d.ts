@@ -41,6 +41,7 @@ export type RuleNames =
     | "code-style/import-source-spacing"
     | "code-style/index-export-style"
     | "code-style/index-exports-only"
+    | "code-style/inline-export-declaration"
     | "code-style/classname-dynamic-at-end"
     | "code-style/classname-multiline"
     | "code-style/classname-no-extra-spaces"
@@ -140,6 +141,7 @@ interface PluginRules {
     "import-source-spacing": Rule.RuleModule;
     "index-export-style": Rule.RuleModule;
     "index-exports-only": Rule.RuleModule;
+    "inline-export-declaration": Rule.RuleModule;
     "classname-dynamic-at-end": Rule.RuleModule;
     "classname-multiline": Rule.RuleModule;
     "classname-no-extra-spaces": Rule.RuleModule;

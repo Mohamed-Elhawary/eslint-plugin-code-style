@@ -29,7 +29,10 @@ import {
     useState,
 } from "react";
 
-export const UserDashboard = ({
+import { buttonTypeData, inputTypeData } from "@/data";
+import { appStrings } from "@/strings";
+
+export const UserDashboardView = ({
     initialCount = 0,
     title,
 }) => {
@@ -53,7 +56,7 @@ export const UserDashboard = ({
     // 4. useMemo declarations
     const filteredItems = useMemo(
         () => {
-            const items = ["Apple", "Banana", "Cherry"];
+            const items = [appStrings.apple, appStrings.banana, appStrings.cherry];
 
             return items.filter((item) => item.toLowerCase().includes(searchTerm.toLowerCase()));
         },
@@ -117,24 +120,24 @@ export const UserDashboard = ({
             <h1>{title}</h1>
             <div>
                 <input
-                    placeholder="Search..."
+                    placeholder={appStrings.search}
                     ref={inputRef}
-                    type="text"
+                    type={inputTypeData.text}
                     onChange={({ target }) => setSearchTerm(target.value)}
                 />
             </div>
             <div>
                 <span>
-                    {`Count: ${countStats.display}`}
+                    {`${appStrings.countPrefix}${countStats.display}`}
                 </span>
                 <button
-                    type="button"
+                    type={buttonTypeData.button}
                     onClick={decrementHandler}
                 >
                     -
                 </button>
                 <button
-                    type="button"
+                    type={buttonTypeData.button}
                     onClick={incrementHandler}
                 >
                     +
@@ -148,16 +151,16 @@ export const UserDashboard = ({
             <div>
                 <button
                     disabled={isLoading}
-                    type="button"
+                    type={buttonTypeData.button}
                     onClick={submitHandler}
                 >
-                    {isLoading ? "Loading..." : "Submit"}
+                    {isLoading ? appStrings.loading : appStrings.submit}
                 </button>
                 <button
-                    type="button"
+                    type={buttonTypeData.button}
                     onClick={resetHandler}
                 >
-                    Reset
+                    {appStrings.reset}
                 </button>
             </div>
         </div>

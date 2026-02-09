@@ -4,7 +4,7 @@
  */
 // UI strings for app and components
 
-export const strings = {
+export const appStrings = {
     actions: {
         close: "Close Modal",
         decrement: "Decrement",

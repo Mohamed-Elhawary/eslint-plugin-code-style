@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.17.0] - 2026-02-09
+
+**New Rule + Enhancements to Naming & Import Rules**
+
+**Version Range:** v1.16.0 → v1.17.0
+
+### Added
+
+**New Rules (1)**
+- `inline-export-declaration` - Enforce inline export declarations (`export const x = ...`) instead of grouped export statements (`export { x }`) in non-index files 🔧
+  - Auto-fixable: adds `export` to each declaration and removes the grouped export statement
+  - Skips index files (barrel re-exports) and aliased exports (`export { a as b }`)
+
+### Enhanced
+
+- **`folder-based-naming-convention`** - Extended camelCase suffix enforcement for data/constants/strings/services/reducers folders
+  - Exports in `data/` must end with `Data` (e.g., `buttonTypeData`)
+  - Exports in `constants/` must end with `Constants` (e.g., `localeConstants`)
+  - Exports in `strings/` must end with `Strings` (e.g., `appStrings`)
+  - Exports in `services/` must end with `Service`, `reducers/` with `Reducer`
+- **`absolute-imports-only`** - Files within the same module folder must use relative imports instead of absolute to avoid circular dependencies 🔧
+  - Detects files at any depth inside module folders (e.g., `data/auth/login/guest.tsx`)
+  - Allows both `./` and `../` relative imports within the same module folder
+  - Auto-fixes absolute imports to own module folder (e.g., `@/data/auth/login/guest` → `../../login/guest`)
+  - Now marked as auto-fixable (`fixable: "code"`)
+- **`folder-structure-consistency`** - Added loose module file detection: standalone files matching module folder names (e.g., `data.js`, `strings.js`) are flagged — must use folder structure instead
+
+### Stats
+
+- Total Rules: 79 (was 78)
+- Auto-fixable: 70 rules (was 69) 🔧
+- Configurable: 19 rules (was 18)
+- Report-only: 9 rules (was 10)
+
+**Full Changelog:** [v1.16.0...v1.17.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.16.0...v1.17.0)
+
+---
+
 ## [1.16.0] - 2026-02-09
 
 **New Rule + Enhancements + Rule Renames**
@@ -1768,6 +1806,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.17.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.16.0...v1.17.0
 [1.16.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.15.0...v1.16.0
 [1.15.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.4...v1.15.0
 [1.14.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.3...v1.14.4

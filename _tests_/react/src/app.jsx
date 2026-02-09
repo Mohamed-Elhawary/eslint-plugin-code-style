@@ -10,11 +10,13 @@
  */
 /*
  * Test: import-format (single line when 3 or fewer specifiers)
- * Test: absolute-imports-only (use @/ prefix) 
+ * Test: absolute-imports-only (use @/ prefix)
  */
 
 import { Button, Card, Modal } from "@/components";
+import { variantData } from "@/data";
 import { useCounter, useToggle } from "@/hooks";
+import { appStrings } from "@/strings";
 import { formatCurrency, formatDate, formatNumber } from "@/utils";
 
 // Test: object-property-per-line
@@ -24,19 +26,19 @@ const appConfig = {
 };
 
 // Test: function-params-per-line, no-empty-lines-in-function-params
-const App = () => {
+export const App = () => {
     const {
         count,
-        increment,
+        increment: incrementHandler,
     } = useCounter(0);
 
     const {
-        toggle,
+        toggle: toggleHandler,
         value: isModalOpen,
     } = useToggle(false);
-    
+
     // Test: object-property-per-line (>= 2 properties)
-    
+
     const stats = {
         count: formatNumber(count),
         date: formatDate(Date.now()),
@@ -44,10 +46,10 @@ const App = () => {
     };
 
     // Test: opening-brackets-same-line
-    const handleClickHandler = () => {
-        increment();
+    const clickHandler = () => {
+        incrementHandler();
 
-        toggle();
+        toggleHandler();
     };
 
     // Test: jsx-parentheses-position
@@ -57,32 +59,29 @@ const App = () => {
             <Card
                 description={stats.date}
                 isLoading={false}
-                title="Counter"
+                title={appStrings.counter}
             >
                 <p>
-                    {"Count: "}
+                    {appStrings.countPrefix}
                     {stats.count}
                 </p>
                 <p>
-                    {"Total: "}
+                    {appStrings.totalPrefix}
                     {stats.total}
                 </p>
                 <Button
-                    label="Increment"
-                    variant="primary"
-                    onClick={handleClickHandler}
+                    label={appStrings.increment}
+                    variant={variantData.primary}
+                    onClick={clickHandler}
                 />
             </Card>
             <Modal
                 isOpen={isModalOpen}
-                title="Details"
-                onClose={toggle}
+                title={appStrings.details}
+                onClose={toggleHandler}
             >
-                <p>Modal content goes here</p>
+                <p>{appStrings.modalContent}</p>
             </Modal>
         </div>
     );
 };
-
-// Test: export-format
-export { App };

@@ -28,6 +28,9 @@ import {
     useState,
 } from "react";
 
+import { fieldData } from "@/data";
+import { appStrings } from "@/strings";
+
 export const useFormSubmission = (initialData) => {
     // 1. useRef declarations
     const submitCountRef = useRef(0);
@@ -84,7 +87,7 @@ export const useFormSubmission = (initialData) => {
     // 6. Handler functions
     const submitHandler = async () => {
         if (!isFormValid) {
-            setError("Please fill in all required fields");
+            setError(appStrings.pleaseFillRequired);
 
             return;
         }
@@ -105,16 +108,16 @@ export const useFormSubmission = (initialData) => {
 
             setIsSuccess(true);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Submission failed");
+            setError(err instanceof Error ? err.message : appStrings.submissionFailed);
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const validateFieldHandler = (field) => {
-        if (field === "name") return formData.name.length > 0;
+        if (field === fieldData.name) return formData.name.length > 0;
 
-        if (field === "email") return formData.email.includes("@");
+        if (field === fieldData.email) return formData.email.includes("@");
 
         return false;
     };

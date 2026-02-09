@@ -6,7 +6,9 @@
  */
 // Test: object with multi-line template literal value should NOT trigger collapse
 
-const muiTheme = {
+import { variantData } from "@/data";
+
+export const muiTheme = {
     components: {
         MuiCssBaseline: {
             styleOverrides: `
@@ -22,10 +24,10 @@ const muiTheme = {
 };
 
 // Test: object with single-line template literal CAN be collapsed (valid single line)
-const simpleConfig = { name: `app-${Date.now()}` };
+export const simpleConfig = { name: `app-${Date.now()}` };
 
 // Test: nested object with multi-line template should stay multi-line
-const cssConfig = {
+export const cssConfig = {
     globalStyles: {
         body: `
             margin: 0;
@@ -36,7 +38,7 @@ const cssConfig = {
 };
 
 // Test: mixed - one property with multi-line template, should stay multi-line
-const htmlTemplate = {
+export const htmlTemplate = {
     template: `
         <html>
             <head>
@@ -50,42 +52,31 @@ const htmlTemplate = {
 };
 
 // Test: helper function for spread test
-const getLinkColorSxHandler = (color, { palette }) => ({
+export const getLinkColorSxHandler = (color, { palette }) => ({
     color: palette[color],
     textDecoration: "none",
 });
 
 // Test: spread element with multi-line function call should NOT be collapsed
-const getLinkStylesHandler = (theme) => ({
+export const getLinkStylesHandler = (theme) => ({
     ...getLinkColorSxHandler(
-        "primary",
+        variantData.primary,
         theme,
     ),
 });
 
 // Test: spread with single-line call CAN be collapsed
-const inlineSpread = {
+export const inlineSpread = {
     ...getLinkColorSxHandler(
-        "primary",
+        variantData.primary,
         {},
     ),
 };
 
 // Test: arrow function returning object with spread (like MUI sx prop pattern)
-const getSxPropExampleHandler = (theme) => ({
+export const getSxPropExampleHandler = (theme) => ({
     ...getLinkColorSxHandler(
         "whiteGrey",
         theme,
     ),
 });
-
-export {
-    cssConfig,
-    getLinkColorSxHandler,
-    getLinkStylesHandler,
-    getSxPropExampleHandler,
-    htmlTemplate,
-    inlineSpread,
-    muiTheme,
-    simpleConfig,
-};

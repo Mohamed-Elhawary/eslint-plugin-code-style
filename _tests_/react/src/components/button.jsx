@@ -13,14 +13,16 @@
  */
 // Test: variable-naming-convention (camelCase for regular variables)
 
-const buttonVariants = { 
+import { buttonTypeData } from "@/data";
+
+const buttonVariants = {
     danger: "red",
     primary: "blue",
     variant: "contained",
 };
 
 // Test: function-naming-convention (PascalCase for components)
-const Button = ({
+export const Button = ({
     className,
     disabled,
     label,
@@ -46,7 +48,7 @@ const Button = ({
                 className={className}
                 disabled={disabled}
                 style={buttonStyle}
-                type="button"
+                type={buttonTypeData.button}
                 onClick={onClick}
             >
                 {getLabelHandler()}
@@ -54,5 +56,3 @@ const Button = ({
         </div>
     );
 };
-
-export { Button };
