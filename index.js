@@ -19328,17 +19328,38 @@ const folderBasedNamingConvention = {
         // Check if name starts with lowercase (camelCase)
         const isCamelCaseHandler = (name) => name && /^[a-z]/.test(name);
 
-        // Build suffix message for camelCase folders
-        const buildSuffixMessageHandler = (name, folder, suffix) => `"${name}" in "${folder}" folder must end with "${suffix}" suffix (e.g., "myItem${suffix}")`;
-
-        // Check camelCase naming (suffix-only enforcement for camelCase folders)
-        const checkCamelCaseHandler = (name, folder, suffix, identifierNode) => {
-            // For camelCase folders, only enforce the suffix (not full chained name)
-            // because these folders often have multiple exports per file
-            // Suffix stays PascalCase even in camelCase names (e.g., buttonTypeData)
+        // Check camelCase naming for camelCase folders (constants, data, reducers, services, strings)
+        const checkCamelCaseHandler = (name, folder, suffix, identifierNode, scopeNode, moduleInfo) => {
             if (!name.endsWith(suffix)) {
+                // Missing suffix — auto-fix by appending suffix
+                const fixedName = name + suffix;
+
                 context.report({
-                    message: buildSuffixMessageHandler(name, folder, suffix),
+                    fix: createRenameFixer(scopeNode, name, fixedName, identifierNode),
+                    message: `"${name}" in "${folder}" folder must end with "${suffix}" suffix (should be "${fixedName}")`,
+                    node: identifierNode,
+                });
+
+                return;
+            }
+
+            // Has correct suffix — check if prefix is a near-match of expected file-based name
+            // This catches cases like "routeConstants" → "routesConstants" (file is routes.ts)
+            // but allows unrelated names like "buttonTypeData" in data/app.ts
+            const expectedName = buildExpectedNameHandler(moduleInfo);
+
+            if (!expectedName || name === expectedName) return;
+
+            const actualPrefix = name.slice(0, -suffix.length);
+            const expectedPrefix = expectedName.slice(0, -suffix.length);
+
+            const isNearMatch = (expectedPrefix.startsWith(actualPrefix) && (expectedPrefix.length - actualPrefix.length) <= 2)
+                || (actualPrefix.startsWith(expectedPrefix) && (actualPrefix.length - expectedPrefix.length) <= 2);
+
+            if (isNearMatch) {
+                context.report({
+                    fix: createRenameFixer(scopeNode, name, expectedName, identifierNode),
+                    message: `"${name}" in "${folder}" folder should be "${expectedName}" to match the file name`,
                     node: identifierNode,
                 });
             }
@@ -19358,11 +19379,11 @@ const folderBasedNamingConvention = {
 
             const { folder, suffix } = moduleInfo;
 
-            // For camelCase folders, only enforce suffix
+            // For camelCase folders, enforce suffix + near-match prefix check
             if (camelCaseFolders.has(folder)) {
                 if (!isCamelCaseHandler(name) || !suffix) return;
 
-                checkCamelCaseHandler(name, folder, suffix, identifierNode);
+                checkCamelCaseHandler(name, folder, suffix, identifierNode, node, moduleInfo);
 
                 return;
             }
@@ -19404,11 +19425,11 @@ const folderBasedNamingConvention = {
 
             const name = node.id.name;
 
-            // For camelCase folders, only enforce suffix
+            // For camelCase folders, enforce suffix + near-match prefix check
             if (camelCaseFolders.has(folder)) {
                 if (!isCamelCaseHandler(name) || !suffix) return;
 
-                checkCamelCaseHandler(name, folder, suffix, node.id);
+                checkCamelCaseHandler(name, folder, suffix, node.id, node, moduleInfo);
 
                 return;
             }

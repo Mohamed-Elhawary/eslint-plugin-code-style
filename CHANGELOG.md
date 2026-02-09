@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.17.2] - 2026-02-09
+
+**Fix: CamelCase Naming Auto-Fix & Prefix Enforcement**
+
+**Version Range:** v1.17.1 → v1.17.2
+
+### Fixed
+
+- **`folder-based-naming-convention`** - Fix camelCase naming enforcement for constants, data, reducers, services, and strings folders
+  - Auto-fix missing suffix: `common` → `commonConstants` on save (all camelCase folders)
+  - Near-match prefix enforcement: `routeConstants` → `routesConstants` when file is `routes.ts`
+  - Multi-export files with unrelated prefixes (e.g., `buttonTypeData` in `data/app.ts`) are not flagged
+
+**Full Changelog:** [v1.17.1...v1.17.2](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.17.1...v1.17.2)
+
+---
+
 ## [1.17.1] - 2026-02-09
 
 **Fix: Index File Behavior in Wrapped Folders**
@@ -1824,6 +1841,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.17.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.17.1...v1.17.2
 [1.17.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.17.0...v1.17.1
 [1.17.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.16.0...v1.17.0
 [1.16.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.15.0...v1.16.0
