@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.19.0] - 2026-02-09
+
+**New: React + Tailwind Test Project & Recommended Config**
+
+**Version Range:** v1.18.0 → v1.19.0
+
+### Added
+
+- **React + Tailwind test project** (`_tests_/react-tw/`) — React + Tailwind CSS project (no TypeScript) with 70 code-style rules enabled and Tailwind CSS v4 plugin
+- **React + Tailwind recommended config** (`recommended-configs/react-tw/`) — Ready-to-use ESLint flat config for React + Tailwind CSS projects without TypeScript
+  - Includes 70 JavaScript-compatible code-style rules, Tailwind CSS plugin, and recommended third-party plugins
+  - Documented with installation instructions, rule explanations, and customization guide
+
+### Changed
+
+- Updated Available Configurations table in README.md — React + Tailwind now links to config instead of "Coming Soon"
+- Updated AGENTS.md — React + Tailwind marked as Available with folder paths
+
+**Full Changelog:** [v1.18.0...v1.19.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.18.0...v1.19.0)
+
+---
+
 ## [1.18.0] - 2026-02-09
 
 **New: React + TypeScript Test Project & Recommended Config**

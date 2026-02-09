@@ -18,7 +18,7 @@ Instructions for AI coding agents working with this codebase.
 | React (JS) | `recommended-configs/react/` | `_tests_/react/` | Available |
 | React + TS + Tailwind | `recommended-configs/react-ts-tw/` | `_tests_/react-ts-tw/` | Available |
 | React + TypeScript | `recommended-configs/react-ts/` | `_tests_/react-ts/` | Available |
-| React + Tailwind | - | - | Coming Soon |
+| React + Tailwind | `recommended-configs/react-tw/` | `_tests_/react-tw/` | Available |
 
 ### Test Projects & Rule Compatibility
 
@@ -26,16 +26,17 @@ Instructions for AI coding agents working with this codebase.
 
 Each test project in `_tests_/` corresponds to a specific tech stack. Rules should ONLY be added to projects that support them:
 
-| Rule Category | `react/` (JS only) | `react-ts-tw/` (TS + Tailwind) | `react-ts/` (TS) | Future: `react-tw/` |
+| Rule Category | `react/` (JS only) | `react-ts-tw/` (TS + Tailwind) | `react-ts/` (TS) | `react-tw/` (TW) |
 |---------------|:------------------:|:------------------------------:|:-------------------:|:-------------------:|
 | **General rules** (arrays, functions, etc.) | ✅ | ✅ | ✅ | ✅ |
 | **JSX/React rules** | ✅ | ✅ | ✅ | ✅ |
 | **TypeScript rules** | ❌ | ✅ | ✅ | ❌ |
 | **Tailwind rules** | ❌ | ✅ | ❌ | ✅ |
 
-**TypeScript-only rules** (71 rules in JS projects, 79 in TS projects):
+**TypeScript-only rules** (70 rules in JS projects, 79 in TS projects):
 - `component-props-inline-type`
 - `enum-format`
+- `enum-type-enforcement`
 - `interface-format`
 - `no-inline-type-definitions`
 - `prop-naming-convention`
@@ -730,7 +731,7 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 | `README.md` | ~3650 | `70 of 79 rules support auto-fixing` |
 | `AGENTS.md` | ~7 | `79 custom formatting rules (70 auto-fixable, 19 configurable, 9 report-only)` |
 | `AGENTS.md` | ~9 | `Contains all 79 rules` |
-| `AGENTS.md` | ~36 | `(71 rules in JS projects, 79 in TS projects)` |
+| `AGENTS.md` | ~36 | `(70 rules in JS projects, 79 in TS projects)` |
 | `AGENTS.md` | ~89 | `(79 rules total)` |
 | `AGENTS.md` | ~675 | `all 79 rules` |
 | `AGENTS.md` | ~697 | `70 auto-fixable rules, 19 configurable rules, 9 report-only` |
