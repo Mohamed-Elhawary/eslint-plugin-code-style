@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.16.0] - 2026-02-09
+
+**New Rule + Enhancements + Rule Renames**
+
+**Version Range:** v1.15.0 → v1.16.0
+
+### Added
+
+**New Rules (1)**
+- `folder-structure-consistency` - Enforce consistent folder structure (flat vs wrapped) in module folders
+  - Applies to all module folders (same list as `module-index-exports`)
+  - Detects mixed structures (some flat files, some in subfolders)
+  - Flags unnecessary wrapper folders when each has only one file
+  - Configurable `moduleFolders` and `extraModuleFolders` options
+
+### Enhanced
+
+- **`folder-based-naming-convention`** (renamed from `folder-component-suffix`)
+  - Support nested files with chained folder names (e.g., `layouts/auth/login.tsx` → `LoginAuthLayout`)
+  - Match files at any depth within module folders
+  - Expanded to cover: views, layouts, pages, providers, reducers, services, contexts, themes (with suffix), atoms and components (chaining only, no suffix)
+  - Added `VariableDeclarator` detection for non-JSX folders (contexts, themes)
+- **`no-redundant-folder-suffix`** - Also check folder names for redundant suffixes (e.g., `views/access-control-view/` is now flagged)
+
+### Renamed
+
+- `folder-component-suffix` → `folder-based-naming-convention` (now handles more than just components)
+- `svg-component-icon-naming` → `svg-icon-naming-convention` (consistent with other naming convention rules)
+
+### Stats
+
+- Total Rules: 78 (was 77)
+- Auto-fixable: 67 rules
+- Configurable: 18 rules (was 17)
+- Report-only: 11 rules (was 10)
+
+**Full Changelog:** [v1.15.0...v1.16.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.15.0...v1.16.0)
+
+---
+
 ## [1.15.0] - 2026-02-06
 
 **New Rule: no-redundant-folder-suffix**
@@ -1728,6 +1768,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.16.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.15.0...v1.16.0
 [1.15.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.4...v1.15.0
 [1.14.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.3...v1.14.4
 [1.14.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.2...v1.14.3

@@ -393,7 +393,7 @@ export enum Status {           // Missing Enum suffix
 
 ## eslint-plugin-code-style Rules
 
-Our custom plugin provides **67 auto-fixable rules** (77 total, 17 configurable, 10 report-only) that fill the gaps not covered by ESLint's built-in rules or other plugins.
+Our custom plugin provides **67 auto-fixable rules** (78 total, 18 configurable, 11 report-only) that fill the gaps not covered by ESLint's built-in rules or other plugins.
 
 For complete rule descriptions, examples, and configuration options, see the [main README](../../README.md#-rules-summary).
 
