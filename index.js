@@ -18750,7 +18750,7 @@ const componentPropsInlineType = {
  *       <button>{children}</button>
  *   );
  */
-const svgComponentIconNaming = {
+const svgIconNamingConvention = {
     create(context) {
         // Get the component name from node
         const getComponentNameHandler = (node) => {
@@ -18885,32 +18885,75 @@ const svgComponentIconNaming = {
  *   // In layouts/main.tsx:
  *   export const Main = () => <div>Main</div>;  // Should be "MainLayout"
  */
-const folderComponentSuffix = {
+const folderBasedNamingConvention = {
     create(context) {
         const filename = context.filename || context.getFilename();
         const normalizedFilename = filename.replace(/\\/g, "/");
 
         // Folder-to-suffix mapping
+        // - JSX component folders: require function returning JSX
+        // - Non-JSX folders: check any PascalCase exported identifier
         const folderSuffixMap = {
+            atoms: "",
+            components: "",
+            contexts: "Context",
             layouts: "Layout",
             pages: "Page",
+            providers: "Provider",
+            reducers: "Reducer",
+            services: "Service",
+            theme: "Theme",
+            themes: "Theme",
             views: "View",
         };
 
-        // Check which folder the file is in
-        const getFolderSuffixHandler = () => {
-            for (const [folder, suffix] of Object.entries(folderSuffixMap)) {
-                const pattern = new RegExp(`/${folder}/[^/]+\\.(jsx?|tsx?)$`);
+        // Folders where JSX return is required (component folders)
+        const jsxRequiredFolders = new Set(["atoms", "components", "layouts", "pages", "providers", "views"]);
 
-                if (pattern.test(normalizedFilename)) {
-                    return { folder, suffix };
-                }
-            }
+        // Convert kebab-case to PascalCase
+        const toPascalCaseHandler = (str) => str.split("-").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join("");
 
-            return null;
+        // Build regex dynamically from folder names
+        const folderNames = Object.keys(folderSuffixMap).join("|");
+
+        // Parse the file path to extract module folder info at any depth
+        const getModuleInfoHandler = () => {
+            const pattern = new RegExp(`\\/(${folderNames})\\/(.+)\\.(jsx?|tsx?)$`);
+            const match = normalizedFilename.match(pattern);
+
+            if (!match) return null;
+
+            const moduleFolderName = match[1];
+            const suffix = folderSuffixMap[moduleFolderName];
+            const relativePath = match[2];
+            const segments = relativePath.split("/");
+            const fileName = segments[segments.length - 1];
+            const intermediateFolders = segments.slice(0, -1);
+
+            return { fileName, folder: moduleFolderName, intermediateFolders, suffix };
         };
 
-        // Get the component name from node
+        // Build the expected name based on file position
+        const buildExpectedNameHandler = (moduleInfo) => {
+            const { fileName, intermediateFolders, suffix } = moduleInfo;
+
+            // Module barrel file (e.g., views/index.ts) — skip
+            if (fileName === "index" && intermediateFolders.length === 0) return null;
+
+            let nameParts;
+
+            if (fileName === "index") {
+                // Index in subfolder (e.g., layouts/auth/index.tsx) → parts from folders only
+                nameParts = [...intermediateFolders].reverse();
+            } else {
+                // Regular file (e.g., layouts/auth/login.tsx) → file name + folders deepest-to-shallowest
+                nameParts = [fileName, ...[...intermediateFolders].reverse()];
+            }
+
+            return nameParts.map(toPascalCaseHandler).join("") + suffix;
+        };
+
+        // Get the component name from function node
         const getComponentNameHandler = (node) => {
             // Arrow function: const Name = () => ...
             if (node.parent && node.parent.type === "VariableDeclarator" && node.parent.id && node.parent.id.type === "Identifier") {
@@ -18925,8 +18968,8 @@ const folderComponentSuffix = {
             return null;
         };
 
-        // Check if component name starts with uppercase (React component convention)
-        const isReactComponentNameHandler = (name) => name && /^[A-Z]/.test(name);
+        // Check if name starts with uppercase (PascalCase)
+        const isPascalCaseHandler = (name) => name && /^[A-Z]/.test(name);
 
         // Check if the function returns JSX
         const returnsJsxHandler = (node) => {
@@ -18966,11 +19009,61 @@ const folderComponentSuffix = {
             return false;
         };
 
-        const checkFunctionHandler = (node) => {
-            const folderInfo = getFolderSuffixHandler();
+        // Shared fix logic for renaming identifier and all references
+        const createRenameFixer = (node, name, expectedName, identifierNode) => (fixer) => {
+            const scope = context.sourceCode
+                ? context.sourceCode.getScope(node)
+                : context.getScope();
 
-            // Not in a folder that requires specific suffix
-            if (!folderInfo) return;
+            const findVariableHandler = (s, varName) => {
+                const v = s.variables.find((variable) => variable.name === varName);
+
+                if (v) return v;
+                if (s.upper) return findVariableHandler(s.upper, varName);
+
+                return null;
+            };
+
+            const variable = findVariableHandler(scope, name);
+
+            if (!variable) return fixer.replaceText(identifierNode, expectedName);
+
+            const fixes = [];
+            const fixedRanges = new Set();
+
+            variable.defs.forEach((def) => {
+                const rangeKey = `${def.name.range[0]}-${def.name.range[1]}`;
+
+                if (!fixedRanges.has(rangeKey)) {
+                    fixedRanges.add(rangeKey);
+                    fixes.push(fixer.replaceText(def.name, expectedName));
+                }
+            });
+
+            variable.references.forEach((ref) => {
+                const rangeKey = `${ref.identifier.range[0]}-${ref.identifier.range[1]}`;
+
+                if (!fixedRanges.has(rangeKey)) {
+                    fixedRanges.add(rangeKey);
+                    fixes.push(fixer.replaceText(ref.identifier, expectedName));
+                }
+            });
+
+            return fixes;
+        };
+
+        // Build the error message based on folder type
+        const buildMessageHandler = (name, folder, suffix, expectedName) => {
+            if (suffix) return `"${name}" in "${folder}" folder must be named "${expectedName}" (expected "${suffix}" suffix with chained folder names)`;
+
+            return `"${name}" in "${folder}" folder must be named "${expectedName}" (expected chained folder names)`;
+        };
+
+        // Check function declarations (JSX components + non-JSX functions like reducers)
+        const checkFunctionHandler = (node) => {
+            const moduleInfo = getModuleInfoHandler();
+
+            if (!moduleInfo) return;
 
             const componentInfo = getComponentNameHandler(node);
 
@@ -18978,65 +19071,60 @@ const folderComponentSuffix = {
 
             const { name, identifierNode } = componentInfo;
 
-            // Only check React components (PascalCase)
-            if (!isReactComponentNameHandler(name)) return;
+            if (!isPascalCaseHandler(name)) return;
 
-            // Only check functions that return JSX
-            if (!returnsJsxHandler(node)) return;
+            const { folder } = moduleInfo;
 
-            const { folder, suffix } = folderInfo;
+            // For JSX-required folders, only check functions that return JSX
+            if (jsxRequiredFolders.has(folder) && !returnsJsxHandler(node)) return;
 
-            // Check if component name ends with the required suffix
-            if (!name.endsWith(suffix)) {
-                const newName = `${name}${suffix}`;
+            const expectedName = buildExpectedNameHandler(moduleInfo);
 
+            if (!expectedName) return;
+
+            const { suffix } = moduleInfo;
+
+            if (name !== expectedName) {
                 context.report({
-                    fix(fixer) {
-                        const scope = context.sourceCode
-                            ? context.sourceCode.getScope(node)
-                            : context.getScope();
-
-                        // Find the variable in scope
-                        const findVariableHandler = (s, varName) => {
-                            const v = s.variables.find((variable) => variable.name === varName);
-
-                            if (v) return v;
-                            if (s.upper) return findVariableHandler(s.upper, varName);
-
-                            return null;
-                        };
-
-                        const variable = findVariableHandler(scope, name);
-
-                        if (!variable) return fixer.replaceText(identifierNode, newName);
-
-                        const fixes = [];
-                        const fixedRanges = new Set();
-
-                        // Fix definition
-                        variable.defs.forEach((def) => {
-                            const rangeKey = `${def.name.range[0]}-${def.name.range[1]}`;
-
-                            if (!fixedRanges.has(rangeKey)) {
-                                fixedRanges.add(rangeKey);
-                                fixes.push(fixer.replaceText(def.name, newName));
-                            }
-                        });
-
-                        // Fix all references
-                        variable.references.forEach((ref) => {
-                            const rangeKey = `${ref.identifier.range[0]}-${ref.identifier.range[1]}`;
-
-                            if (!fixedRanges.has(rangeKey)) {
-                                fixedRanges.add(rangeKey);
-                                fixes.push(fixer.replaceText(ref.identifier, newName));
-                            }
-                        });
-
-                        return fixes;
-                    },
-                    message: `Component "${name}" in "${folder}" folder must end with "${suffix}" suffix (e.g., "${newName}")`,
+                    fix: createRenameFixer(node, name, expectedName, identifierNode),
+                    message: buildMessageHandler(name, folder, suffix, expectedName),
                     node: identifierNode,
+                });
+            }
+        };
+
+        // Check variable declarations for non-JSX folders (contexts, themes)
+        const checkVariableHandler = (node) => {
+            // Only check VariableDeclarators with an identifier name
+            if (!node.id || node.id.type !== "Identifier") return;
+
+            // Skip if init is a function (handled by checkFunctionHandler)
+            if (node.init && (node.init.type === "ArrowFunctionExpression" || node.init.type === "FunctionExpression")) return;
+
+            const moduleInfo = getModuleInfoHandler();
+
+            if (!moduleInfo) return;
+
+            const { folder } = moduleInfo;
+
+            // Only check non-JSX folders (contexts, themes)
+            if (jsxRequiredFolders.has(folder)) return;
+
+            const name = node.id.name;
+
+            if (!isPascalCaseHandler(name)) return;
+
+            const expectedName = buildExpectedNameHandler(moduleInfo);
+
+            if (!expectedName) return;
+
+            const { suffix } = moduleInfo;
+
+            if (name !== expectedName) {
+                context.report({
+                    fix: createRenameFixer(node, name, expectedName, node.id),
+                    message: buildMessageHandler(name, folder, suffix, expectedName),
+                    node: node.id,
                 });
             }
         };
@@ -19045,12 +19133,230 @@ const folderComponentSuffix = {
             ArrowFunctionExpression: checkFunctionHandler,
             FunctionDeclaration: checkFunctionHandler,
             FunctionExpression: checkFunctionHandler,
+            VariableDeclarator: checkVariableHandler,
         };
     },
     meta: {
-        docs: { description: "Enforce components in 'views' folder end with 'View', components in 'pages' folder end with 'Page', and components in 'layouts' folder end with 'Layout'" },
+        docs: { description: "Enforce naming conventions based on folder location — suffix for views/layouts/pages/providers/reducers/contexts/themes, chained folder names for nested files" },
         fixable: "code",
         schema: [],
+        type: "suggestion",
+    },
+};
+
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Folder Structure Consistency
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforces that module folders have a consistent internal
+ *   structure — either all flat files or all wrapped in folders.
+ *
+ *   Applies to the same folders as module-index-exports: atoms,
+ *   components, hooks, utils, enums, types, reducers, etc.
+ *
+ *   - Flat mode: All items are direct files (e.g., atoms/input.tsx)
+ *   - Wrapped mode: All items are in subfolders (e.g., atoms/input/index.tsx)
+ *   - Wrapped mode is only justified when at least one subfolder has 2+ files
+ *
+ * ✓ Good (flat — all direct files):
+ *   atoms/input.tsx
+ *   atoms/calendar.tsx
+ *
+ * ✓ Good (wrapped — justified, input has multiple files):
+ *   atoms/input/input.tsx
+ *   atoms/input/helpers.ts
+ *   atoms/calendar/index.tsx
+ *
+ * ✗ Bad (mixed — some flat, some wrapped):
+ *   atoms/input.tsx
+ *   atoms/calendar/index.tsx
+ *
+ * ✗ Bad (wrapped but unnecessary — each folder has only 1 file):
+ *   atoms/input/index.tsx
+ *   atoms/calendar/index.tsx
+ */
+const folderStructureConsistency = {
+    create(context) {
+        const filename = context.filename || context.getFilename();
+        const normalizedFilename = filename.replace(/\\/g, "/");
+
+        const options = context.options[0] || {};
+        const defaultModuleFolders = [
+            "actions",
+            "apis",
+            "assets",
+            "atoms",
+            "components",
+            "config",
+            "configs",
+            "constants",
+            "contexts",
+            "data",
+            "enums",
+            "helpers",
+            "hooks",
+            "interfaces",
+            "layouts",
+            "lib",
+            "middlewares",
+            "molecules",
+            "organisms",
+            "pages",
+            "providers",
+            "reducers",
+            "redux",
+            "requests",
+            "routes",
+            "schemas",
+            "sections",
+            "services",
+            "store",
+            "strings",
+            "styles",
+            "theme",
+            "thunks",
+            "types",
+            "ui",
+            "utils",
+            "utilities",
+            "views",
+            "widgets",
+        ];
+
+        const moduleFolders = options.moduleFolders
+            || [...defaultModuleFolders, ...(options.extraModuleFolders || [])];
+
+        // Find the module folder in the file path
+        const getModuleFolderInfoHandler = () => {
+            for (const folder of moduleFolders) {
+                const pattern = new RegExp(`(.*/${folder})/`);
+                const match = normalizedFilename.match(pattern);
+
+                if (match) return { folder, fullPath: match[1] };
+            }
+
+            return null;
+        };
+
+        const moduleFolderInfo = getModuleFolderInfoHandler();
+
+        if (!moduleFolderInfo) return {};
+
+        const { folder, fullPath } = moduleFolderInfo;
+
+        // Read module folder children
+        let children;
+
+        try {
+            children = fs.readdirSync(fullPath, { withFileTypes: true });
+        } catch {
+            return {};
+        }
+
+        const codeFilePattern = /\.(tsx?|jsx?)$/;
+
+        // Categorize children
+        const directFiles = children.filter(
+            (child) => child.isFile() && codeFilePattern.test(child.name) && !child.name.startsWith("index."),
+        );
+
+        const subdirectories = children.filter((child) => child.isDirectory());
+
+        // If only index files or empty, no issue
+        if (directFiles.length === 0 && subdirectories.length === 0) return {};
+
+        // If only one non-index file and no subdirectories, no issue
+        if (directFiles.length <= 1 && subdirectories.length === 0) return {};
+
+        // Check if wrapped mode is justified (any subfolder has 2+ code files)
+        const isWrappedJustifiedHandler = () => {
+            for (const dir of subdirectories) {
+                try {
+                    const dirPath = `${fullPath}/${dir.name}`;
+                    const dirChildren = fs.readdirSync(dirPath, { withFileTypes: true });
+                    const codeFiles = dirChildren.filter(
+                        (child) => child.isFile() && codeFilePattern.test(child.name),
+                    );
+
+                    if (codeFiles.length >= 2) return true;
+                } catch {
+                    // Skip unreadable directories
+                }
+            }
+
+            return false;
+        };
+
+        const hasDirectFiles = directFiles.length > 0;
+        const hasSubdirectories = subdirectories.length > 0;
+        const isMixed = hasDirectFiles && hasSubdirectories;
+        const wrappedJustified = hasSubdirectories ? isWrappedJustifiedHandler() : false;
+
+        return {
+            Program(node) {
+                // Case: All folders, NOT justified → unnecessary wrapping
+                if (!hasDirectFiles && hasSubdirectories && !wrappedJustified) {
+                    context.report({
+                        message: `Unnecessary wrapper folders in "${folder}/". Each item has only one file, use direct files instead (e.g., ${folder}/component.tsx).`,
+                        node,
+                    });
+
+                    return;
+                }
+
+                // Case: Mixed + wrapped justified → error on direct files
+                if (isMixed && wrappedJustified) {
+                    // Only report if this file IS a direct file in the module folder
+                    const relativePart = normalizedFilename.slice(fullPath.length + 1);
+                    const isDirectFile = !relativePart.includes("/");
+
+                    if (isDirectFile) {
+                        context.report({
+                            message: `Since some items in "${folder}/" contain multiple files, all items should be wrapped in folders.`,
+                            node,
+                        });
+                    }
+
+                    return;
+                }
+
+                // Case: Mixed + NOT justified → error on subfolder files
+                if (isMixed && !wrappedJustified) {
+                    // Only report if this file IS inside a subfolder
+                    const relativePart = normalizedFilename.slice(fullPath.length + 1);
+                    const isInSubfolder = relativePart.includes("/");
+
+                    if (isInSubfolder) {
+                        context.report({
+                            message: `Unnecessary wrapper folder. Each item in "${folder}/" has only one file, use direct files instead.`,
+                            node,
+                        });
+                    }
+                }
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce consistent folder structure (flat vs wrapped) in module folders like atoms, components, hooks, enums, views, layouts, and pages" },
+        fixable: null,
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    extraModuleFolders: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                    moduleFolders: {
+                        items: { type: "string" },
+                        type: "array",
+                    },
+                },
+                type: "object",
+            },
+        ],
         type: "suggestion",
     },
 };
@@ -19091,9 +19397,6 @@ const noRedundantFolderSuffix = {
         const fileWithExt = parts[parts.length - 1];
         const baseName = fileWithExt.replace(/\.(jsx?|tsx?)$/, "");
 
-        // Skip index files
-        if (baseName === "index") return {};
-
         // Singularize: convert folder name to singular form
         const singularizeHandler = (word) => {
             if (word.endsWith("ies")) return word.slice(0, -3) + "y";
@@ -19113,35 +19416,66 @@ const noRedundantFolderSuffix = {
 
         if (ancestorFolders.length === 0) return {};
 
-        // Check if the file name ends with any ancestor folder name (singularized)
-        const checkRedundantSuffixHandler = () => {
+        // Check intermediate folder names for redundant suffixes
+        const folderErrors = [];
+
+        for (let i = 1; i < ancestorFolders.length; i++) {
+            const folderName = ancestorFolders[i];
+
+            for (let j = 0; j < i; j++) {
+                const ancestorFolder = ancestorFolders[j];
+                const singular = singularizeHandler(ancestorFolder);
+                const suffix = `-${singular}`;
+
+                if (folderName.endsWith(suffix)) {
+                    folderErrors.push({
+                        ancestorFolder,
+                        folderName,
+                        singular,
+                        suffix,
+                        suggestedName: folderName.slice(0, -suffix.length),
+                    });
+                }
+            }
+        }
+
+        // Check if the file name ends with any ancestor folder name (singularized) — skip index files
+        let fileRedundancy = null;
+
+        if (baseName !== "index") {
             for (const folder of ancestorFolders) {
                 const singular = singularizeHandler(folder);
                 const suffix = `-${singular}`;
 
                 if (baseName.endsWith(suffix)) {
-                    return { folder, singular, suffix };
+                    fileRedundancy = { folder, singular, suffix };
+                    break;
                 }
             }
+        }
 
-            return null;
-        };
-
-        const redundancy = checkRedundantSuffixHandler();
-
-        if (!redundancy) return {};
+        if (folderErrors.length === 0 && !fileRedundancy) return {};
 
         return {
             Program(node) {
-                context.report({
-                    message: `File name "${baseName}" has redundant suffix "${redundancy.suffix}" — the "${redundancy.folder}/" folder already provides this context. Rename to "${baseName.slice(0, -redundancy.suffix.length)}".`,
-                    node,
-                });
+                for (const error of folderErrors) {
+                    context.report({
+                        message: `Folder name "${error.folderName}" has redundant suffix "${error.suffix}" — the "${error.ancestorFolder}/" ancestor folder already provides this context. Rename to "${error.suggestedName}".`,
+                        node,
+                    });
+                }
+
+                if (fileRedundancy) {
+                    context.report({
+                        message: `File name "${baseName}" has redundant suffix "${fileRedundancy.suffix}" — the "${fileRedundancy.folder}/" folder already provides this context. Rename to "${baseName.slice(0, -fileRedundancy.suffix.length)}".`,
+                        node,
+                    });
+                }
             },
         };
     },
     meta: {
-        docs: { description: "Disallow file names that redundantly include the parent or ancestor folder name as a suffix" },
+        docs: { description: "Disallow file and folder names that redundantly include the parent or ancestor folder name as a suffix" },
         fixable: null,
         schema: [],
         type: "suggestion",
@@ -22436,9 +22770,10 @@ export default {
         // Component rules
         "component-props-destructure": componentPropsDestructure,
         "component-props-inline-type": componentPropsInlineType,
-        "folder-component-suffix": folderComponentSuffix,
+        "folder-based-naming-convention": folderBasedNamingConvention,
+        "folder-structure-consistency": folderStructureConsistency,
         "no-redundant-folder-suffix": noRedundantFolderSuffix,
-        "svg-component-icon-naming": svgComponentIconNaming,
+        "svg-icon-naming-convention": svgIconNamingConvention,
 
         // React rules
         "react-code-order": reactCodeOrder,

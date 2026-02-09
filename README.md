@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*77 rules (67 auto-fixable, 17 configurable) to keep your codebase clean and consistent*
+*78 rules (67 auto-fixable, 18 configurable) to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **77 custom rules** (67 auto-fixable, 17 configurable) for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **78 custom rules** (67 auto-fixable, 18 configurable) for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **77 custom rules** (67 auto-fixable, 17 configurable) for 
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 67 of 77 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 67 of 78 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-**67 rules** support automatic fixing with `eslint --fix`. **17 rules** have configurable options. 10 rules are report-only (require manual changes).
+**67 rules** support automatic fixing with `eslint --fix`. **18 rules** have configurable options. 11 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -199,13 +199,14 @@ rules: {
     "code-style/comment-format": "error",
     "code-style/component-props-destructure": "error",
     "code-style/component-props-inline-type": "error",
-    "code-style/svg-component-icon-naming": "error",
+    "code-style/svg-icon-naming-convention": "error",
     "code-style/curried-arrow-same-line": "error",
     "code-style/empty-line-after-block": "error",
     "code-style/enum-format": "error",
     "code-style/enum-type-enforcement": "error",
     "code-style/export-format": "error",
-    "code-style/folder-component-suffix": "error",
+    "code-style/folder-based-naming-convention": "error",
+    "code-style/folder-structure-consistency": "error",
     "code-style/no-redundant-folder-suffix": "error",
     "code-style/function-arguments-format": "error",
     "code-style/function-call-spacing": "error",
@@ -267,7 +268,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **77 rules total** — 67 with auto-fix 🔧, 17 configurable ⚙️, 10 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
+> **78 rules total** — 67 with auto-fix 🔧, 18 configurable ⚙️, 11 report-only. See detailed examples in [Rules Reference](#-rules-reference) below.
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -294,9 +295,10 @@ rules: {
 | **Component Rules** | |
 | `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` 🔧 |
 | `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference 🔧 |
-| `folder-component-suffix` | Components in `views/` folder must end with "View", `pages/` with "Page", `layouts/` with "Layout" |
-| `no-redundant-folder-suffix` | Disallow file names that redundantly include the parent folder name as a suffix |
-| `svg-component-icon-naming` | SVG components must end with "Icon" suffix; "Icon" suffix components must return SVG |
+| `folder-based-naming-convention` | Enforce naming based on folder: suffix for views/layouts/pages/providers/reducers/contexts/themes, chained folder names for nested files 🔧 |
+| `folder-structure-consistency` | Enforce consistent folder structure (flat vs wrapped) in module folders (atoms, components, hooks, enums, views, etc.) ⚙️ |
+| `no-redundant-folder-suffix` | Disallow file and folder names that redundantly include the parent folder name as a suffix |
+| `svg-icon-naming-convention` | SVG components must end with "Icon" suffix; "Icon" suffix components must return SVG |
 | **Class Rules** | |
 | `class-method-definition-format` | Consistent spacing in class/method definitions: space before `{`, no space before `(` 🔧 |
 | `class-naming-convention` | Class declarations must end with "Class" suffix (e.g., `ApiServiceClass`) 🔧 |
@@ -3061,65 +3063,141 @@ export const Card = ({ a, b } : { a: string, b: string }) => (
 
 ---
 
-### `folder-component-suffix`
+### `folder-based-naming-convention`
 
-**What it does:** Enforces naming conventions for components based on folder location:
-- Components in `views/` folder must end with "View" suffix
-- Components in `pages/` folder must end with "Page" suffix
-- Components in `layouts/` folder must end with "Layout" suffix
+**What it does:** Enforces naming conventions based on folder location, with chained folder names for nested files:
 
-**Why use it:** Consistent naming based on folder structure makes component purpose immediately clear. View components, page components, and layout components have different responsibilities, and the suffix reflects this.
+| Folder | Suffix | Example |
+|--------|--------|---------|
+| `views/` | View | `DashboardView` |
+| `layouts/` | Layout | `MainLayout` |
+| `pages/` | Page | `HomePage` |
+| `providers/` | Provider | `AuthProvider` |
+| `reducers/` | Reducer | `UserReducer` |
+| `contexts/` | Context | `AuthContext` |
+| `theme/` / `themes/` | Theme | `DarkTheme` |
+| `atoms/` | *(none)* | `Button` |
+| `components/` | *(none)* | `Card` |
+
+Nested files chain folder names (e.g., `layouts/auth/login.tsx` → `LoginAuthLayout`, `atoms/input/password.tsx` → `PasswordInput`).
+
+**Why use it:** Consistent naming based on folder structure makes purpose immediately clear. The chained naming encodes the full path context into the name.
 
 ```tsx
-// ✅ Good — in views/dashboard-view.tsx
+// ✅ Good — suffix folders
+// in views/dashboard.tsx
 export const DashboardView = () => <div>Dashboard</div>;
 
-// ✅ Good — in pages/home-page.tsx
-export const HomePage = () => <div>Home</div>;
+// in layouts/auth/login.tsx (chained: Login + Auth + Layout)
+export const LoginAuthLayout = () => <div>Login</div>;
 
-// ✅ Good — in layouts/main-layout.tsx
-export const MainLayout = () => <div>Main</div>;
+// in providers/auth.tsx
+export const AuthProvider = ({ children }) => <AuthContext.Provider>{children}</AuthContext.Provider>;
 
-// ❌ Bad — in views/dashboard.tsx (missing "View" suffix)
-export const Dashboard = () => <div>Dashboard</div>;
+// in contexts/auth.ts
+export const AuthContext = createContext(null);
 
-// ❌ Bad — in pages/home.tsx (missing "Page" suffix)
-export const Home = () => <div>Home</div>;
+// in reducers/user.ts
+export const UserReducer = (state, action) => { ... };
 
-// ❌ Bad — in layouts/main.tsx (missing "Layout" suffix)
-export const Main = () => <div>Main</div>;
+// in themes/dark.ts
+export const DarkTheme = { primary: "#000" };
+
+// ✅ Good — no-suffix folders (chaining only)
+// in atoms/input/password.tsx (chained: Password + Input)
+export const PasswordInput = () => <input type="password" />;
+
+// in atoms/button.tsx
+export const Button = () => <button>Click</button>;
+
+// in components/card.tsx
+export const Card = () => <div>Card</div>;
+
+// ❌ Bad
+// in layouts/auth/login.tsx (should be "LoginAuthLayout")
+export const Login = () => <div>Login</div>;
+
+// in reducers/user.ts (should be "UserReducer")
+export const User = (state, action) => { ... };
+
+// in atoms/input/password.tsx (should be "PasswordInput")
+export const Password = () => <input type="password" />;
 ```
+
+> **Note:** Module barrel files (e.g., `views/index.ts`) are skipped. Interfaces, enums, and types have their own naming rules (`interface-format`, `enum-format`, `type-format`). Auto-fix renames the identifier and all its references.
+
+---
+
+### `folder-structure-consistency`
+
+**What it does:** Enforces that module folders have a consistent internal structure — either all flat files or all wrapped in subfolders. Wrapped mode is only justified when at least one subfolder contains 2+ files. Applies to the same folders as `module-index-exports`: atoms, components, hooks, utils, enums, types, interfaces, reducers, layouts, views, pages, and more.
+
+**Why use it:** Mixing flat files and wrapped folders in the same directory creates inconsistency. This rule ensures a uniform structure — if one item needs a folder (because it has multiple files), all items should be wrapped; if none do, keep everything flat.
+
+**Configurable options:**
+| Option | Default | Description |
+|--------|---------|-------------|
+| `moduleFolders` | Same as `module-index-exports` (atoms, components, hooks, utils, enums, types, views, layouts, pages, etc.) | Replace the entire folder list |
+| `extraModuleFolders` | `[]` | Add extra folders on top of the defaults |
+
+```
+// ✅ Good — flat mode (all direct files)
+atoms/input.tsx
+atoms/calendar.tsx
+
+// ✅ Good — wrapped mode (justified — input has multiple files)
+atoms/input/input.tsx
+atoms/input/helpers.ts
+atoms/calendar/index.tsx
+
+// ❌ Bad — mixed (some flat, some wrapped with justification)
+atoms/input.tsx              → "all items should be wrapped in folders"
+atoms/calendar/index.tsx
+atoms/calendar/helpers.ts
+
+// ❌ Bad — wrapped but unnecessary (each folder has only 1 file)
+atoms/input/index.tsx        → "use direct files instead"
+atoms/calendar/index.tsx
+
+// ❌ Bad — mixed without justification
+atoms/input.tsx
+atoms/calendar/index.tsx     → "use direct files instead"
+```
+
+> **Note:** This rule applies equally to all module folders — component folders (atoms, components, views), data folders (enums, types, interfaces), and utility folders (hooks, utils, helpers). The `folder-based-naming-convention` naming rule is separate and enforces export naming based on folder location.
 
 ---
 
 ### `no-redundant-folder-suffix`
 
-**What it does:** Flags files whose name redundantly includes the parent (or ancestor) folder name as a suffix. Since the folder already provides context, the file name doesn't need to repeat it.
+**What it does:** Flags files and folders whose name redundantly includes the parent (or ancestor) folder name as a suffix. Since the folder already provides context, the name doesn't need to repeat it.
 
-**Why use it:** This complements `folder-component-suffix` — the *file name* should stay clean while the *exported component name* carries the suffix. For example, `layouts/main.tsx` exporting `MainLayout` is better than `layouts/main-layout.tsx` exporting `MainLayout`.
+**Why use it:** This complements `folder-based-naming-convention` — the *file name* should stay clean while the *exported component name* carries the suffix. For example, `layouts/main.tsx` exporting `MainLayout` is better than `layouts/main-layout.tsx` exporting `MainLayout`.
 
 ```
-// ✅ Good — file names don't repeat the folder name
+// ✅ Good — names don't repeat the folder name
 layouts/main.tsx           → export const MainLayout = ...
 atoms/button.tsx           → file "button" has no redundant suffix
 views/dashboard.tsx        → file "dashboard" has no redundant suffix
-hooks/use-auth.ts          → file "use-auth" has no redundant suffix
+views/access-control/...   → folder "access-control" has no redundant suffix
 
 // ❌ Bad — file names redundantly include the folder suffix
 layouts/main-layout.tsx    → redundant "-layout" (already in layouts/)
 atoms/button-atom.tsx      → redundant "-atom" (already in atoms/)
 views/dashboard-view.tsx   → redundant "-view" (already in views/)
-hooks/use-auth-hook.ts     → redundant "-hook" (already in hooks/)
 
-// Nested files are also checked against ancestor folders
+// ❌ Bad — folder names redundantly include the ancestor suffix
+views/access-control-view/ → redundant "-view" (already in views/)
+
+// Nested names are also checked against ancestor folders
 atoms/forms/input-atom.tsx → redundant "-atom" from ancestor "atoms/"
 ```
 
-> **Note:** Index files (`index.ts`, `index.js`, etc.) are skipped. Folder names are singularized automatically (e.g., `layouts` → `layout`, `categories` → `category`, `classes` → `class`).
+> **Note:** Index files (`index.ts`, `index.js`, etc.) are skipped for file name checks. Folder names are singularized automatically (e.g., `layouts` → `layout`, `categories` → `category`, `classes` → `class`).
 
 ---
 
-### `svg-component-icon-naming`
+### `svg-icon-naming-convention`
 
 **What it does:** Enforces naming conventions for SVG icon components:
 - Components that return only an SVG element must have a name ending with "Icon"
@@ -3930,7 +4008,7 @@ const UseAuth = () => {};          // hooks should be camelCase
 
 ## 🔧 Auto-fixing
 
-67 of 77 rules support auto-fixing. Run ESLint with the `--fix` flag:
+67 of 78 rules support auto-fixing. Run ESLint with the `--fix` flag:
 
 ```bash
 # Fix all files in src directory

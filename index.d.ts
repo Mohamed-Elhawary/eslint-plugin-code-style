@@ -19,12 +19,13 @@ export type RuleNames =
     | "code-style/component-props-destructure"
     | "code-style/react-code-order"
     | "code-style/component-props-inline-type"
-    | "code-style/svg-component-icon-naming"
+    | "code-style/svg-icon-naming-convention"
     | "code-style/curried-arrow-same-line"
     | "code-style/empty-line-after-block"
     | "code-style/enum-type-enforcement"
     | "code-style/export-format"
-    | "code-style/folder-component-suffix"
+    | "code-style/folder-based-naming-convention"
+    | "code-style/folder-structure-consistency"
     | "code-style/function-arguments-format"
     | "code-style/function-call-spacing"
     | "code-style/function-declaration-style"
@@ -118,12 +119,13 @@ interface PluginRules {
     "component-props-destructure": Rule.RuleModule;
     "react-code-order": Rule.RuleModule;
     "component-props-inline-type": Rule.RuleModule;
-    "svg-component-icon-naming": Rule.RuleModule;
+    "svg-icon-naming-convention": Rule.RuleModule;
     "curried-arrow-same-line": Rule.RuleModule;
     "empty-line-after-block": Rule.RuleModule;
     "enum-type-enforcement": Rule.RuleModule;
     "export-format": Rule.RuleModule;
-    "folder-component-suffix": Rule.RuleModule;
+    "folder-based-naming-convention": Rule.RuleModule;
+    "folder-structure-consistency": Rule.RuleModule;
     "function-arguments-format": Rule.RuleModule;
     "function-call-spacing": Rule.RuleModule;
     "function-declaration-style": Rule.RuleModule;
