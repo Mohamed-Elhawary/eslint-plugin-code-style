@@ -395,7 +395,7 @@ export enum Status {           // Missing Enum suffix
 
 Our custom plugin provides **70 auto-fixable rules** (79 total, 19 configurable, 9 report-only) that fill the gaps not covered by ESLint's built-in rules or other plugins.
 
-For complete rule descriptions, examples, and configuration options, see the [main README](../../README.md#-rules-summary).
+For complete rule descriptions, examples, and configuration options, see the [Rules Reference Documentation](../../docs/rules/).
 
 ---
 

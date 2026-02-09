@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.20.0] - 2026-02-09
+
+**README Reorganization — Split Rules Reference into docs/rules/**
+
+**Version Range:** v1.19.0 → v1.20.0
+
+### Added
+
+- **Rules Reference Documentation** (`docs/rules/`) — 17 category files with detailed rule documentation, examples, and configuration options
+  - `arrays.md`, `arrow-functions.md`, `call-expressions.md`, `classes.md`, `comments.md`, `components.md`, `control-flow.md`, `functions.md`, `hooks.md`, `imports-exports.md`, `jsx.md`, `objects.md`, `react.md`, `spacing.md`, `strings.md`, `typescript.md`, `variables.md`
+- **Rules index page** (`docs/rules/README.md`) — Overview table linking to all 17 category files
+
+### Changed
+
+- **README.md** — Reorganized from ~4,150 lines to ~475 lines by moving detailed rule documentation to `docs/rules/`
+  - Kept: badges, Why This Plugin, Recommended Configs, Features, Installation, Quick Start, Enable All Rules, Rules Summary table, Rules Reference links, Auto-fixing, Disabling Rules, Contributing, License
+  - Moved: All detailed rule examples, options, and explanations to `docs/rules/` category files
+- **Recommended config READMEs** — Updated rule documentation links to point to `docs/rules/` instead of main README
+- **AGENTS.md** — Updated documentation references to reflect new `docs/rules/` structure
+- **package.json** — Added `docs/` to npm `files` array
+
+**Full Changelog:** [v1.19.0...v1.20.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.19.0...v1.20.0)
+
+---
+
 ## [1.19.0] - 2026-02-09
 
 **New: React + Tailwind Test Project & Recommended Config**
@@ -1885,6 +1910,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.20.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.19.0...v1.20.0
+[1.19.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.18.0...v1.19.0
+[1.18.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.17.2...v1.18.0
 [1.17.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.17.1...v1.17.2
 [1.17.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.17.0...v1.17.1
 [1.17.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.16.0...v1.17.0

@@ -320,7 +320,7 @@ These are native ESLint rules for code quality and best practices.
 
 Our custom plugin provides **70 auto-fixable rules** (70 JavaScript-compatible rules out of 79 total) that fill the gaps not covered by ESLint's built-in rules or other plugins. The 9 TypeScript-only rules are excluded from this configuration.
 
-For complete rule descriptions, examples, and configuration options, see the [main README](../../README.md#-rules-summary).
+For complete rule descriptions, examples, and configuration options, see the [Rules Reference Documentation](../../docs/rules/).
 
 ---
 

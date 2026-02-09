@@ -197,11 +197,10 @@ When creating a new rule, ALL of the following files must be updated:
 
 #### 3. `README.md` — Main Documentation
 
-> ⚠️ **IMPORTANT:** README.md has **four separate sections** that mention rules. When adding or editing a rule, you must update ALL relevant sections:
-> - **Rule counts** (6 locations) — must match actual rule count
+> ⚠️ **IMPORTANT:** README.md has **three separate sections** that mention rules. When adding or editing a rule, you must update ALL relevant sections:
+> - **Rule counts** (5 locations) — must match actual rule count
 > - **Quick Start example** (~line 184) — alphabetically sorted configuration example
 > - **Rules Summary table** — brief description with emoji indicators
-> - **Detailed documentation** — full examples, options, and explanations
 >
 > Missing any section will leave documentation inconsistent. Use the `audit-docs` skill to verify all sections are in sync.
 
@@ -209,9 +208,8 @@ When creating a new rule, ALL of the following files must be updated:
 - [ ] Line ~22: `*XX rules (YY auto-fixable)*`
 - [ ] Line ~30: `**XX custom rules** (YY auto-fixable)`
 - [ ] Line ~39: `YY of XX rules support auto-fix`
-- [ ] Line ~100: `**YY rules** support automatic fixing`
-- [ ] Line ~254: `**XX rules total** — YY with auto-fix`
-- [ ] Line ~3037: `YY of XX rules support auto-fixing`
+- [ ] Line ~272: `**XX rules total** — YY with auto-fix`
+- [ ] Line ~409: `YY of XX rules support auto-fixing`
 
 **b) Add rule to Quick Start example** (~line 184, alphabetically sorted):
 ```javascript
@@ -225,7 +223,10 @@ When creating a new rule, ALL of the following files must be updated:
 - Add 🔧 emoji if auto-fixable
 - Add ⚙️ emoji if has configurable options
 
-**d) Add detailed rule documentation section** (in appropriate category section):
+#### 3b. `docs/rules/<category>.md` — Detailed Rule Documentation
+
+Add detailed rule documentation to the appropriate category file in `docs/rules/`:
+
 ```markdown
 ### `new-rule-name`
 
@@ -393,11 +394,11 @@ comm -23 /tmp/a.txt /tmp/b.txt
 - [ ] Remove from `RuleNames` type union
 - [ ] Remove from `PluginRules` interface
 
-#### 3. `README.md` (all four sections)
+#### 3. `README.md` + `docs/rules/`
 - [ ] Update all rule counts (see [Rule Count Locations](#rule-count-locations))
 - [ ] Remove from `rules: {}` example in Quick Start
 - [ ] Remove from Rules Summary table
-- [ ] Remove detailed documentation section
+- [ ] Remove detailed documentation from `docs/rules/<category>.md`
 
 #### 4. `AGENTS.md`
 - [ ] Update all rule counts
@@ -424,7 +425,7 @@ comm -23 /tmp/a.txt /tmp/b.txt
 
 When modifying an existing rule, check if these need updates:
 
-> ⚠️ **README.md Reminder:** If the rule's behavior, examples, or options change, remember that README.md has multiple sections to update (Quick Start example, Rules Summary table, detailed documentation). See the note in "Adding a New Rule" section for details.
+> ⚠️ **Documentation Reminder:** If the rule's behavior, examples, or options change, update README.md (Quick Start example, Rules Summary table) and the detailed docs in `docs/rules/<category>.md`. See the note in "Adding a New Rule" section for details.
 
 #### If fixing a bug (PATCH version: x.x.+1):
 - [ ] Fix the issue in rule's `create()` function in `index.js`
@@ -527,9 +528,9 @@ See "When to Bump Version & Create Tag" section in Git Workflow for details.
 
 ---
 
-### Rule Documentation Format in README.md
+### Rule Documentation Format in docs/rules/
 
-Each rule should have this format in the Rules Reference section:
+Each rule should have this format in its category file under `docs/rules/`:
 
 ```markdown
 ### `rule-name`
@@ -688,8 +689,9 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 
 ## Documentation Files
 
-- `README.md` - Main documentation with all 79 rules
-- `recommended-configs/<config-name>/README.md` - Config-specific documentation (references main README for rule details)
+- `README.md` - Main documentation with rule overview and links
+- `docs/rules/` - Detailed rule documentation (17 category files with examples and options)
+- `recommended-configs/<config-name>/README.md` - Config-specific documentation (references docs/rules/ for rule details)
 - `index.d.ts` - TypeScript types for IDE autocomplete
 
 ## Important Notes
@@ -726,9 +728,9 @@ Rules are organized in these categories (alphabetically sorted in index.js and R
 | `README.md` | ~22 | `*79 rules (70 auto-fixable, 19 configurable)*` |
 | `README.md` | ~30 | `**79 custom rules** (70 auto-fixable, 19 configurable)` |
 | `README.md` | ~39 | `70 of 79 rules support auto-fix` |
-| `README.md` | ~100 | `**70 rules** support automatic fixing. **19 rules** have configurable options` |
-| `README.md` | ~266 | `**79 rules total** — 70 with auto-fix, 19 configurable` |
-| `README.md` | ~3650 | `70 of 79 rules support auto-fixing` |
+| `README.md` | ~272 | `**79 rules total** — 70 with auto-fix, 19 configurable` |
+| `README.md` | ~409 | `70 of 79 rules support auto-fixing` |
+| `docs/rules/README.md` | ~3 | `**79 rules total** — 70 with auto-fix, 19 configurable` |
 | `AGENTS.md` | ~7 | `79 custom formatting rules (70 auto-fixable, 19 configurable, 9 report-only)` |
 | `AGENTS.md` | ~9 | `Contains all 79 rules` |
 | `AGENTS.md` | ~36 | `(70 rules in JS projects, 79 in TS projects)` |
