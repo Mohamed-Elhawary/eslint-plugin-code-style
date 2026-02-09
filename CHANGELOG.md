@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.18.0] - 2026-02-09
+
+**New: React + TypeScript Test Project & Recommended Config**
+
+**Version Range:** v1.17.2 → v1.18.0
+
+### Added
+
+- **React + TypeScript test project** (`_tests_/react-ts/`) — React + TypeScript project (no Tailwind) with all 79 code-style rules enabled and @typescript-eslint parser
+- **React + TypeScript recommended config** (`recommended-configs/react-ts/`) — Ready-to-use ESLint flat config for React + TypeScript projects without Tailwind CSS
+  - Includes all 79 code-style rules, TypeScript parser, and recommended third-party plugins
+  - Documented with installation instructions, rule explanations, and customization guide
+
+### Changed
+
+- Updated Available Configurations table in README.md — React + TypeScript now links to config instead of "Coming Soon"
+- Updated AGENTS.md — React + TypeScript marked as Available with folder paths
+
+**Full Changelog:** [v1.17.2...v1.18.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.17.2...v1.18.0)
+
+---
+
 ## [1.17.2] - 2026-02-09
 
 **Fix: CamelCase Naming Auto-Fix & Prefix Enforcement**

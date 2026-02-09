@@ -71,7 +71,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 |---------------|-------------|--------|
 | **React** | React.js projects (JavaScript, JSX) | [View Config](./recommended-configs/react/) |
 | **React + TS + Tailwind** | React + TypeScript + Tailwind CSS | [View Config](./recommended-configs/react-ts-tw/) |
-| **React + TypeScript** | React + TypeScript projects | Coming Soon |
+| **React + TypeScript** | React + TypeScript projects | [View Config](./recommended-configs/react-ts/) |
 | **React + Tailwind** | React + Tailwind CSS projects | Coming Soon |
 
 ### ⚡ Quick Start with Recommended Config

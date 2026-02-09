@@ -17,7 +17,7 @@ Instructions for AI coding agents working with this codebase.
 |--------|-------------------|-------------|--------|
 | React (JS) | `recommended-configs/react/` | `_tests_/react/` | Available |
 | React + TS + Tailwind | `recommended-configs/react-ts-tw/` | `_tests_/react-ts-tw/` | Available |
-| React + TypeScript | - | - | Coming Soon |
+| React + TypeScript | `recommended-configs/react-ts/` | `_tests_/react-ts/` | Available |
 | React + Tailwind | - | - | Coming Soon |
 
 ### Test Projects & Rule Compatibility
@@ -26,7 +26,7 @@ Instructions for AI coding agents working with this codebase.
 
 Each test project in `_tests_/` corresponds to a specific tech stack. Rules should ONLY be added to projects that support them:
 
-| Rule Category | `react/` (JS only) | `react-ts-tw/` (TS + Tailwind) | Future: `react-ts/` | Future: `react-tw/` |
+| Rule Category | `react/` (JS only) | `react-ts-tw/` (TS + Tailwind) | `react-ts/` (TS) | Future: `react-tw/` |
 |---------------|:------------------:|:------------------------------:|:-------------------:|:-------------------:|
 | **General rules** (arrays, functions, etc.) | ✅ | ✅ | ✅ | ✅ |
 | **JSX/React rules** | ✅ | ✅ | ✅ | ✅ |
