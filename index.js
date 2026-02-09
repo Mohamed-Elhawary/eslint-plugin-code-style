@@ -8022,8 +8022,9 @@ const indexExportsOnly = {
 
         if (!isIndexFile) return {};
 
-        // Skip subfolder index files inside module folders — these are component entry points, not barrels
-        // e.g., views/assessment/index.tsx is a component file, views/index.ts is a barrel
+        // Determine if this is a subfolder index inside a module folder
+        // e.g., views/assessment/index.tsx (depth >= 2 from module folder) = subfolder index
+        // vs views/index.ts (depth == 1 from module folder) = root barrel
         const moduleFolders = [
             "actions", "apis", "assets", "atoms", "components", "config", "configs",
             "constants", "contexts", "data", "enums", "helpers", "hooks", "interfaces",
@@ -8033,39 +8034,44 @@ const indexExportsOnly = {
         ];
         const parts = normalizedFilename.split("/");
         const indexPos = parts.length - 1;
+        let isSubfolderIndex = false;
 
-        // Find if this index file is inside a module folder
         for (let i = 0; i < indexPos; i++) {
             if (moduleFolders.includes(parts[i])) {
-                // If there are folders between the module folder and the index file,
-                // this is a subfolder index (e.g., views/assessment/index.tsx) — skip it
-                if (indexPos - i >= 2) return {};
+                if (indexPos - i >= 2) isSubfolderIndex = true;
 
                 break;
             }
         }
 
-        // Helper to check if a node is an import or export statement
-        const isImportOrExportHandler = (node) => {
+        // Helper to check if a node is an import or re-export (no inline declarations)
+        const isImportOrReexportHandler = (node) => {
             const { type } = node;
 
-            // Import statements
             if (type === "ImportDeclaration") return true;
 
-            // Export statements (named, default, all)
-            if (type === "ExportNamedDeclaration") {
-                // Only allow re-exports (export { x } from "./module" or export { x })
-                // If it has a declaration, it's defining something (not allowed)
-                return !node.declaration;
-            }
+            if (type === "ExportNamedDeclaration") return !node.declaration;
 
             if (type === "ExportDefaultDeclaration") {
-                // Allow export default <identifier> (re-exporting)
-                // Disallow export default function/class/object (defining something)
                 return node.declaration && node.declaration.type === "Identifier";
             }
 
             if (type === "ExportAllDeclaration") return true;
+
+            return false;
+        };
+
+        // Helper to check if a node contains actual code (declarations, logic)
+        const hasCodeDeclarationHandler = (node) => {
+            const { type } = node;
+
+            if (type === "VariableDeclaration" || type === "FunctionDeclaration" || type === "ClassDeclaration") return true;
+
+            if (type === "ExportNamedDeclaration" && node.declaration) return true;
+
+            if (type === "ExportDefaultDeclaration") {
+                return node.declaration && node.declaration.type !== "Identifier";
+            }
 
             return false;
         };
@@ -8086,9 +8092,7 @@ const indexExportsOnly = {
                 case "ClassDeclaration":
                     return "Class declaration";
                 case "ExportNamedDeclaration":
-                    if (node.declaration) {
-                        return getNodeDescriptionHandler(node.declaration);
-                    }
+                    if (node.declaration) return getNodeDescriptionHandler(node.declaration);
 
                     return "Export with inline declaration";
                 case "ExportDefaultDeclaration":
@@ -8100,8 +8104,28 @@ const indexExportsOnly = {
 
         return {
             Program(programNode) {
+                if (isSubfolderIndex) {
+                    // Subfolder index (e.g., views/assessment/index.tsx):
+                    // Must contain component code — must NOT be a barrel (re-exports only)
+                    // Only one barrel per module (the root index)
+                    const hasCode = programNode.body.some((node) => hasCodeDeclarationHandler(node));
+
+                    if (!hasCode) {
+                        const subfolder = parts[indexPos - 1];
+
+                        context.report({
+                            message: `Subfolder index file "${subfolder}/index" should contain component code, not just re-exports. Only the module root index file should be a barrel for imports and re-exports.`,
+                            node: programNode,
+                        });
+                    }
+
+                    return;
+                }
+
+                // Root module index (e.g., views/index.ts):
+                // Must be barrel only — no code declarations allowed
                 for (const node of programNode.body) {
-                    if (!isImportOrExportHandler(node)) {
+                    if (!isImportOrReexportHandler(node)) {
                         const description = getNodeDescriptionHandler(node);
 
                         context.report({
@@ -8114,7 +8138,7 @@ const indexExportsOnly = {
         };
     },
     meta: {
-        docs: { description: "Index files should only contain imports and re-exports, not code definitions" },
+        docs: { description: "Enforce index files as barrels (re-exports only) at module root, and as component entry points (with code) in subfolders" },
         schema: [],
         type: "suggestion",
     },
