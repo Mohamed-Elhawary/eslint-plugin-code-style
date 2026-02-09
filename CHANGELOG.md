@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.17.1] - 2026-02-09
+
+**Fix: Index File Behavior in Wrapped Folders**
+
+**Version Range:** v1.17.0 → v1.17.1
+
+### Fixed
+
+- **`index-exports-only`** - Enforce dual index file behavior for wrapped folder structure
+  - Root module index (`views/index.ts`) → barrel only (re-exports)
+  - Subfolder index (`views/assessment/index.tsx`) → must contain component code, not just re-exports
+  - Only one barrel per module — subfolder index files that simulate a barrel are flagged
+- **`no-redundant-folder-suffix`** - Detect file name matching parent folder name (e.g., `assessment/assessment.tsx` → use `assessment/index.tsx`)
+
+**Full Changelog:** [v1.17.0...v1.17.1](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.17.0...v1.17.1)
+
+---
+
 ## [1.17.0] - 2026-02-09
 
 **New Rule + Enhancements to Naming & Import Rules**
@@ -1806,6 +1824,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.17.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.17.0...v1.17.1
 [1.17.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.16.0...v1.17.0
 [1.16.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.15.0...v1.16.0
 [1.15.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.4...v1.15.0
