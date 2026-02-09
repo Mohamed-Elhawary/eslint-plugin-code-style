@@ -8022,6 +8022,29 @@ const indexExportsOnly = {
 
         if (!isIndexFile) return {};
 
+        // Skip subfolder index files inside module folders — these are component entry points, not barrels
+        // e.g., views/assessment/index.tsx is a component file, views/index.ts is a barrel
+        const moduleFolders = [
+            "actions", "apis", "assets", "atoms", "components", "config", "configs",
+            "constants", "contexts", "data", "enums", "helpers", "hooks", "interfaces",
+            "layouts", "lib", "middlewares", "pages", "providers", "reducers", "redux",
+            "requests", "routes", "schemas", "services", "store", "strings", "styles",
+            "theme", "themes", "thunks", "types", "ui", "utils", "utilities", "views",
+        ];
+        const parts = normalizedFilename.split("/");
+        const indexPos = parts.length - 1;
+
+        // Find if this index file is inside a module folder
+        for (let i = 0; i < indexPos; i++) {
+            if (moduleFolders.includes(parts[i])) {
+                // If there are folders between the module folder and the index file,
+                // this is a subfolder index (e.g., views/assessment/index.tsx) — skip it
+                if (indexPos - i >= 2) return {};
+
+                break;
+            }
+        }
+
         // Helper to check if a node is an import or export statement
         const isImportOrExportHandler = (node) => {
             const { type } = node;
