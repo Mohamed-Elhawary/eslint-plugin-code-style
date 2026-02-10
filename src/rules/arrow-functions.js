@@ -257,7 +257,19 @@ const arrowFunctionSimpleJsx = {
             ArrowFunctionExpression(node) {
                 const { body } = node;
 
-                // Only handle JSX bodies
+                // Check for missing space after => (applies to all arrow functions)
+                const arrowToken = sourceCode.getTokenBefore(body);
+
+                if (arrowToken && arrowToken.value === "=>"
+                    && body.range[0] === arrowToken.range[1]) {
+                    context.report({
+                        fix: (fixer) => fixer.insertTextBefore(body, " "),
+                        message: "Missing space after arrow (=>)",
+                        node: body,
+                    });
+                }
+
+                // Only handle JSX bodies for the remaining checks
                 if (body.type !== "JSXElement" && body.type !== "JSXFragment") return;
 
                 // Skip if already on one line
@@ -294,12 +306,17 @@ const arrowFunctionSimpleJsx = {
                         node: body,
                     });
                 } else {
-                    // Just collapse the multiline JSX
+                    // Collapse the multiline JSX — replace from => token end to body end
+                    // to also remove the newline/whitespace between => and body
                     context.report({
-                        fix: (fixer) => fixer.replaceText(
-                            body,
-                            jsxText,
-                        ),
+                        fix: (fixer) => {
+                            const arrowToken = sourceCode.getTokenBefore(body);
+
+                            return fixer.replaceTextRange(
+                                [arrowToken.range[1], body.range[1]],
+                                " " + jsxText,
+                            );
+                        },
                         message: "Simple JSX should be on same line as arrow function",
                         node: body,
                     });

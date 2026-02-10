@@ -455,6 +455,7 @@ When modifying an existing rule, check if these need updates:
 
 #### If fixing a bug (PATCH version: x.x.+1):
 - [ ] Fix the issue in rule's `create()` function in `src/rules/<category>.js`
+- [ ] Run `npm run build` to regenerate `dist/index.js`
 - [ ] Test in `_tests_/` apps with `npm run lint` and `npm run lint:fix`
 - [ ] Commit: `fix: description of what was fixed in rule-name`
 
@@ -501,6 +502,11 @@ When modifying an existing rule, check if these need updates:
 #### Testing After Any Edit
 
 **IMPORTANT:** Always test rule changes before committing.
+
+0. **Build the plugin:**
+   ```bash
+   npm run build    # Required — regenerates dist/index.js from src/
+   ```
 
 1. **Create a temporary test file** for quick verification:
    ```bash

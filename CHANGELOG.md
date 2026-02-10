@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.1] - 2026-02-10
+
+### Fixed
+
+- **`arrow-function-simple-jsx`** — Auto-fix now correctly collapses multiline JSX (without parens) by replacing from `=>` token end instead of just the body node
+- **`arrow-function-simple-jsx`** — Detect and fix missing space after `=>` for all arrow functions (e.g., `() =>{` → `() => {`, `() =><h1>` → `() => <h1>`)
+
+### Docs
+
+- Added `npm run build` step to AGENTS.md bug fix checklist and testing section
+- Added build + test steps to README.md Contributing section
+
+---
+
 ## [2.0.0] - 2026-02-09
 
 **Modular Source Architecture + Minified Build**
@@ -1946,6 +1960,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.20.0...v2.0.0
 [1.20.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.19.0...v1.20.0
 [1.19.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.18.0...v1.19.0
