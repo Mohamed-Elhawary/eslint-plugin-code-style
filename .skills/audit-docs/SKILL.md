@@ -12,11 +12,11 @@ Verify documentation is accurate and consistent across all files.
 1. **Count actual rules**
    ```bash
    # Total rules
-   grep -c "^const .* = {$" index.js
+   grep -rc "^const .* = {$" src/rules/
 
    # Auto-fixable breakdown
-   grep -c 'fixable: "code"' index.js
-   grep -c 'fixable: "whitespace"' index.js
+   grep -rc 'fixable: "code"' src/rules/
+   grep -rc 'fixable: "whitespace"' src/rules/
    ```
 
 2. **Check rule count references (must be uniform across ALL files)**
@@ -67,6 +67,6 @@ Broken links:
 Missing rules in docs:
 - rule-name
 
-Extra rules in docs (not in index.js):
+Extra rules in docs (not in src/rules/):
 - old-rule-name
 ```

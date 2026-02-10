@@ -1,19 +1,19 @@
 ---
 name: validate-types
-description: Verify TypeScript definitions in index.d.ts match the rules in index.js. Use after adding new rules or before releases.
+description: Verify TypeScript definitions in index.d.ts match the rules in src/. Use after adding new rules or before releases.
 ---
 
 # Validate TypeScript Definitions
 
-Ensure `index.d.ts` correctly defines all rules from `index.js`.
+Ensure `index.d.ts` correctly defines all rules from `src/rules/`.
 
 ## Steps
 
-1. **Count rules in index.js**
+1. **Count rules in src/rules/**
    ```bash
-   grep -c "^const .* = {$" index.js
+   grep -rc "^const .* = {$" src/rules/
    ```
-   Or count entries in the `rules` export object at the end of the file.
+   Or count entries in the `rules` export objects across the category files.
 
 2. **Check index.d.ts**
    - Verify `RuleNames` type union includes all rule names
@@ -21,8 +21,8 @@ Ensure `index.d.ts` correctly defines all rules from `index.js`.
    - All entries should be alphabetically sorted
 
 3. **Find mismatches**
-   - Rules in `index.js` missing from `index.d.ts`?
-   - Rules in `index.d.ts` that don't exist in `index.js`?
+   - Rules in `src/rules/` missing from `index.d.ts`?
+   - Rules in `index.d.ts` that don't exist in `src/rules/`?
 
 4. **Test IDE support**
    - Open an eslint.config.js file
@@ -31,7 +31,7 @@ Ensure `index.d.ts` correctly defines all rules from `index.js`.
 ## Report Format
 
 ```
-Total rules in index.js: X
+Total rules in src/rules/: X
 Total rules in index.d.ts: X
 Types match: Yes/No
 
@@ -39,6 +39,6 @@ Missing from index.d.ts:
 - rule-name-1
 - rule-name-2
 
-Extra in index.d.ts (not in index.js):
+Extra in index.d.ts (not in src/rules/):
 - old-rule-name
 ```

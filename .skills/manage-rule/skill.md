@@ -13,10 +13,10 @@ Complete workflow for adding, editing, or removing a rule from the plugin.
 
 **Files to modify (in order):**
 
-1. **`index.js`** — Rule implementation
+1. **`src/rules/<category>.js`** — Rule implementation
    - Add JSDoc block with description, Good/Bad examples, and options table
    - Add rule definition: `const ruleName = { create(), meta: {} }`
-   - Add to `rules` object in default export (alphabetically sorted)
+   - Add to `rules` object in the category's default export (alphabetically sorted)
 
 2. **`index.d.ts`** — TypeScript types
    - Add to `RuleNames` type union (alphabetically sorted)
@@ -79,7 +79,7 @@ Complete workflow for adding, editing, or removing a rule from the plugin.
 ### Editing an Existing Rule
 
 **Bug fix (PATCH x.x.+1):**
-- Fix in `index.js` → Test
+- Fix in `src/rules/<category>.js` → Test
 - Update `package.json` version (x.x.+1)
 - Update `CHANGELOG.md` with **simple tag format** (NO title, NO version range, NO full changelog in entry):
   ```markdown
@@ -96,7 +96,7 @@ Complete workflow for adding, editing, or removing a rule from the plugin.
 - Create tag: `git tag -a vX.Y.Z -m "message"`
 
 **Behavior change (PATCH/MINOR):**
-- Update `index.js` logic and JSDoc
+- Update `src/rules/<category>.js` logic and JSDoc
 - Update `README.md` rule documentation section (examples, description)
 - Test with `npm run lint` and `npm run lint:fix`
 
@@ -127,7 +127,7 @@ Complete workflow for adding, editing, or removing a rule from the plugin.
 
 **Files to modify:**
 
-1. **`index.js`** — Remove JSDoc, rule definition, and from `rules` object
+1. **`src/rules/<category>.js`** — Remove JSDoc, rule definition, and from `rules` object
 2. **`index.d.ts`** — Remove from `RuleNames` and `PluginRules`
 3. **`README.md`** — Remove from all 4 sections (counts, Quick Start, table, detailed docs)
 4. **`AGENTS.md`** — Update counts and remove from categories
@@ -155,7 +155,7 @@ rm src/test-file.tsx
 
 ```bash
 # Count rules in each location
-grep -c "^const .* = {$" index.js
+grep -rc "^const .* = {$" src/rules/
 grep -c 'code-style/' index.d.ts
 grep -c '"code-style/' recommended-configs/react-ts-tw/eslint.config.js
 ```

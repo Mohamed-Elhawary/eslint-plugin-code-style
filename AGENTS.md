@@ -760,18 +760,19 @@ Rules are organized in these categories (alphabetically sorted in src/index.js a
 | `README.md` | ~22 | `*79 rules (70 auto-fixable, 19 configurable)*` |
 | `README.md` | ~30 | `**79 custom rules** (70 auto-fixable, 19 configurable)` |
 | `README.md` | ~39 | `70 of 79 rules support auto-fix` |
+| `README.md` | ~100 | `**70 rules** support automatic fixing... **19 rules** have configurable options. 9 rules are report-only` |
 | `README.md` | ~272 | `**79 rules total** — 70 with auto-fix, 19 configurable` |
 | `README.md` | ~409 | `70 of 79 rules support auto-fixing` |
 | `docs/rules/README.md` | ~3 | `**79 rules total** — 70 with auto-fix, 19 configurable` |
 | `AGENTS.md` | ~7 | `79 custom formatting rules (70 auto-fixable, 19 configurable, 9 report-only)` |
-| `AGENTS.md` | ~9 | `Contains all 79 rules` |
-| `AGENTS.md` | ~36 | `(70 rules in JS projects, 79 in TS projects)` |
-| `AGENTS.md` | ~89 | `(79 rules total)` |
+| `AGENTS.md` | ~37 | `(70 rules in JS projects, 79 in TS projects)` |
 | `AGENTS.md` | ~675 | `all 79 rules` |
-| `AGENTS.md` | ~697 | `70 auto-fixable rules, 19 configurable rules, 9 report-only` |
+| `AGENTS.md` | ~733 | `70 auto-fixable rules, 19 configurable rules, 9 report-only` |
 | `AGENTS.md` | Rule Count Locations section | Current Counts table |
-| `recommended-configs/react-ts-tw/README.md` | ~396 | `**70 auto-fixable rules** (79 total, 19 configurable, 9 report-only)` |
 | `recommended-configs/react/README.md` | ~286 | `**70 auto-fixable rules** (79 total, 19 configurable, 9 report-only)` |
+| `recommended-configs/react-ts/README.md` | ~361 | `**70 auto-fixable rules** (79 total, 19 configurable, 9 report-only)` |
+| `recommended-configs/react-tw/README.md` | ~321 | `**70 auto-fixable rules** (70 JavaScript-compatible rules out of 79 total)` |
+| `recommended-configs/react-ts-tw/README.md` | ~396 | `**70 auto-fixable rules** (79 total, 19 configurable, 9 report-only)` |
 
 ### Quick Verification Commands
 

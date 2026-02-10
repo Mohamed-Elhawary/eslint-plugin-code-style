@@ -16,10 +16,6 @@
         "dist/index.js",
         "index.d.ts",
         "README.md",
-        "CHANGELOG.md",
-        "CLAUDE.md",
-        "AGENTS.md",
-        "docs/",
         "LICENSE"
     ],
     "scripts": {

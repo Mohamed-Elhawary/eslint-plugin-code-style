@@ -9,8 +9,8 @@ Test a rule to verify valid code passes and invalid code triggers errors with co
 
 ## Steps
 
-1. **Find the rule** in `index.js`
-   - Locate the rule definition (const ruleName = { create(), meta: {} })
+1. **Find the rule** in `src/rules/<category>.js`
+   - Locate the rule definition (const ruleName = { create(), meta: {} }) in the appropriate category file
    - Understand what conditions trigger errors
    - Note the error message and auto-fix behavior
 
