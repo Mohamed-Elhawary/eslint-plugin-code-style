@@ -138,6 +138,27 @@ const variableNamingConvention = {
                 return true;
             }
 
+            // Component re-export from PascalCase namespace: const Select = SelectPrimitive.Root
+            if (/^[A-Z]/.test(name) && node.init.type === "MemberExpression"
+                && node.init.object.type === "Identifier" && /^[A-Z]/.test(node.init.object.name)) {
+                return true;
+            }
+
+            // Dynamic component pattern: const Comp = condition ? Component : "tag"
+            if (/^[A-Z]/.test(name) && node.init.type === "ConditionalExpression") {
+                const { consequent, alternate } = node.init;
+
+                const isComponentBranch = (branch) =>
+                    (branch.type === "Identifier" && /^[A-Z]/.test(branch.name))
+                    || (branch.type === "Literal" && typeof branch.value === "string")
+                    || (branch.type === "MemberExpression" && branch.object.type === "Identifier"
+                        && /^[A-Z]/.test(branch.object.name));
+
+                if (isComponentBranch(consequent) || isComponentBranch(alternate)) {
+                    return true;
+                }
+            }
+
             return false;
         };
 

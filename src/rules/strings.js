@@ -430,6 +430,12 @@ const noHardcodedStrings = {
             "subpixel", "truncate", "underline", "uppercase",
             // Layout
             "container", "isolate",
+            // Flexbox
+            "grow", "shrink",
+            // Borders
+            "border", "rounded",
+            // Group/Peer modifiers
+            "group", "peer",
             // Misc
             "resize", "snap", "touch", "select", "pointer", "transition", "animate",
             "filter", "backdrop", "transform", "appearance", "cursor", "outline",
@@ -466,8 +472,10 @@ const noHardcodedStrings = {
                     /^-?[a-z]+(-[a-z0-9]+)+$/.test(token)
                     // With fractions: w-1/2, -translate-y-1/2, bg-black/50
                     || /^-?[a-z]+(-[a-z0-9]+)*\/\d+$/.test(token)
-                    // With modifiers: hover:bg-primary, focus:ring-2, sm:flex
-                    || /^[a-z0-9]+:[a-z][-a-z0-9/[\]]*$/.test(token)
+                    // With modifiers: hover:bg-primary, focus-visible:ring-2, sm:flex, data-[state=checked]:bg-primary
+                    || /^[a-z][-a-z0-9]*(\[[-\w=]+\])?:[a-z][-a-z0-9/[\]]*$/.test(token)
+                    // Arbitrary selector variants: [&_svg]:size-4, [&>*]:p-2
+                    || /^\[.+\]:[a-z][-a-z0-9/[\]]*$/.test(token)
                     // Arbitrary values: w-[100px], bg-[#ff0000]
                     || /^-?[a-z]+(-[a-z]+)*-?\[.+\]$/.test(token)
                 );
@@ -665,8 +673,34 @@ const noHardcodedStrings = {
             return `Hardcoded UI string "${truncatedStr}"${contextPart} should be imported from @/strings or @/constants (e.g., import { strings } from "@/strings")`;
         };
 
+        // Known CSS utility function names (class string builders)
+        const classUtilityFunctions = new Set([
+            "cn", "cva", "clsx", "twMerge", "classnames", "cx", "tv", "twJoin",
+        ]);
+
+        // Check if a node is inside a class utility function call (cn, cva, clsx, etc.)
+        const isInsideClassUtilityCallHandler = (node) => {
+            let current = node.parent;
+
+            while (current) {
+                if (current.type === "CallExpression" && current.callee) {
+                    const calleeName = current.callee.name
+                        || (current.callee.property && current.callee.property.name);
+
+                    if (calleeName && classUtilityFunctions.has(calleeName)) return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        };
+
         // Check if a string matches any ignore pattern
-        const shouldIgnoreStringHandler = (str) => {
+        const shouldIgnoreStringHandler = (str, node) => {
+            // Skip strings inside class utility function calls (cn, cva, clsx, etc.)
+            if (node && isInsideClassUtilityCallHandler(node)) return true;
+
             // Skip Tailwind/CSS class strings
             if (isTailwindClassStringHandler(str)) return true;
 
@@ -852,7 +886,7 @@ const noHardcodedStrings = {
 
                 if (!text) return;
 
-                if (shouldIgnoreStringHandler(text)) return;
+                if (shouldIgnoreStringHandler(text, node)) return;
 
                 // Check if it looks like user-facing text (contains letters)
                 if (!/[a-zA-Z]/.test(text)) return;
@@ -886,7 +920,7 @@ const noHardcodedStrings = {
                 if (expression.type === "Literal" && typeof expression.value === "string") {
                     const str = expression.value;
 
-                    if (shouldIgnoreStringHandler(str)) return;
+                    if (shouldIgnoreStringHandler(str, expression)) return;
 
                     // Check if it looks like user-facing text
                     if (!/[a-zA-Z]/.test(str)) return;
@@ -902,7 +936,7 @@ const noHardcodedStrings = {
                     expression.quasis.forEach((quasi) => {
                         const str = quasi.value.cooked || quasi.value.raw;
 
-                        if (shouldIgnoreStringHandler(str)) return;
+                        if (shouldIgnoreStringHandler(str, expression)) return;
 
                         // Check if it contains user-facing text
                         if (!/[a-zA-Z]{2,}/.test(str)) return;
@@ -938,7 +972,7 @@ const noHardcodedStrings = {
                 if (node.value.type === "Literal" && typeof node.value.value === "string") {
                     const str = node.value.value;
 
-                    if (shouldIgnoreStringHandler(str)) return;
+                    if (shouldIgnoreStringHandler(str, node.value)) return;
 
                     // Check if it looks like user-facing text
                     if (!/[a-zA-Z]/.test(str)) return;
@@ -959,7 +993,7 @@ const noHardcodedStrings = {
                     if (expression.type === "Literal" && typeof expression.value === "string") {
                         const str = expression.value;
 
-                        if (shouldIgnoreStringHandler(str)) return;
+                        if (shouldIgnoreStringHandler(str, expression)) return;
 
                         if (!/[a-zA-Z]/.test(str)) return;
 
@@ -997,7 +1031,7 @@ const noHardcodedStrings = {
                 }
 
                 // Skip if it matches ignore patterns (for strings inside functions)
-                if (shouldIgnoreStringHandler(str)) return;
+                if (shouldIgnoreStringHandler(str, node)) return;
 
                 // Skip if not in relevant context (must be inside a function)
                 if (!isInRelevantContextHandler(node)) return;
@@ -1050,7 +1084,7 @@ const noHardcodedStrings = {
                 node.quasis.forEach((quasi) => {
                     const str = quasi.value.cooked || quasi.value.raw;
 
-                    if (shouldIgnoreStringHandler(str)) return;
+                    if (shouldIgnoreStringHandler(str, node)) return;
 
                     // Check if it contains substantial user-facing text
                     if (!/[a-zA-Z]{3,}/.test(str)) return;

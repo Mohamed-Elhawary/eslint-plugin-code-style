@@ -275,6 +275,7 @@ const absoluteImportsOnly = {
                         const suggestedImport = `${aliasPrefix}${folderName}`;
 
                         context.report({
+                            fix: (fixer) => fixer.replaceText(node.source, `"${suggestedImport}"`),
                             message: `Deep imports are not allowed. Import from "${suggestedImport}" instead of "${importPath}". Export the module from the folder's index file.`,
                             node: node.source,
                         });

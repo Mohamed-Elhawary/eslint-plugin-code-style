@@ -110,6 +110,21 @@ const enumTypeEnforcement = {
             });
         };
 
+        // Check if an enum name exists in the current scope or imports
+        const isEnumInScopeHandler = (enumName, node) => {
+            const scope = sourceCode.getScope ? sourceCode.getScope(node) : context.getScope();
+
+            // Walk up scope chain looking for the enum variable
+            let currentScope = scope;
+
+            while (currentScope) {
+                if (currentScope.variables.some((v) => v.name === enumName)) return true;
+                currentScope = currentScope.upper;
+            }
+
+            return false;
+        };
+
         return {
             // Track function parameters
             "ArrowFunctionExpression, FunctionDeclaration, FunctionExpression"(node) {
@@ -131,9 +146,12 @@ const enumTypeEnforcement = {
                     const stringValue = node.right.value;
                     const enumMember = toEnumMemberHandler(stringValue);
                     const replacement = `${typeInfo.enumName}.${enumMember}`;
+                    const enumExists = isEnumInScopeHandler(typeInfo.enumName, node);
 
                     context.report({
-                        fix: (fixer) => fixer.replaceText(node.right, replacement),
+                        fix: enumExists
+                            ? (fixer) => fixer.replaceText(node.right, replacement)
+                            : undefined,
                         message: `Use "${replacement}" instead of string literal "${stringValue}"`,
                         node: node.right,
                     });
@@ -166,9 +184,12 @@ const enumTypeEnforcement = {
                 const stringValue = literalNode.value;
                 const enumMember = toEnumMemberHandler(stringValue);
                 const replacement = `${typeInfo.enumName}.${enumMember}`;
+                const enumExists = isEnumInScopeHandler(typeInfo.enumName, node);
 
                 context.report({
-                    fix: (fixer) => fixer.replaceText(literalNode, replacement),
+                    fix: enumExists
+                        ? (fixer) => fixer.replaceText(literalNode, replacement)
+                        : undefined,
                     message: `Use "${replacement}" instead of string literal "${stringValue}"`,
                     node: literalNode,
                 });
@@ -1380,13 +1401,120 @@ const typeFormat = {
                     checkTypeLiteralHandler(node, node.typeAnnotation, node.typeAnnotation.members);
                 }
 
-                // Also check intersection types that contain object types
+                // Also check intersection types
                 if (node.typeAnnotation && node.typeAnnotation.type === "TSIntersectionType") {
-                    node.typeAnnotation.types.forEach((type) => {
-                        if (type.type === "TSTypeLiteral") {
-                            checkTypeLiteralHandler(node, type, type.members);
+                    const types = node.typeAnnotation.types;
+                    const equalToken = sourceCode.getTokenAfter(node.id);
+
+                    // Handle TSTypeLiteral members in the intersection
+                    types.forEach((type) => {
+                        if (type.type !== "TSTypeLiteral") return;
+
+                        const { members } = type;
+
+                        if (members.length === 0) return;
+
+                        if (members.length === 1) {
+                            // Single-prop: collapse to inline { prop: Type } with no trailing punctuation
+                            const openBrace = sourceCode.getFirstToken(type);
+                            const closeBrace = sourceCode.getLastToken(type);
+                            const member = members[0];
+                            const isMultiLine = openBrace.loc.start.line !== closeBrace.loc.end.line;
+
+                            if (isMultiLine) {
+                                let memberText = sourceCode.getText(member).trim();
+
+                                if (memberText.endsWith(",") || memberText.endsWith(";")) {
+                                    memberText = memberText.slice(0, -1);
+                                }
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange(
+                                        [openBrace.range[0], closeBrace.range[1]],
+                                        `{ ${memberText} }`,
+                                    ),
+                                    message: "Single property type in intersection should be inline",
+                                    node: type,
+                                });
+                            } else {
+                                // Already inline - check for trailing comma or semicolon
+                                const memberText = sourceCode.getText(member);
+
+                                if (memberText.trimEnd().endsWith(",")) {
+                                    const commaIndex = memberText.lastIndexOf(",");
+
+                                    context.report({
+                                        fix: (fixer) => fixer.removeRange([
+                                            member.range[0] + commaIndex,
+                                            member.range[0] + commaIndex + 1,
+                                        ]),
+                                        message: "Single property inline type should not have trailing comma",
+                                        node: member,
+                                    });
+                                } else if (memberText.trimEnd().endsWith(";")) {
+                                    const semiIndex = memberText.lastIndexOf(";");
+
+                                    context.report({
+                                        fix: (fixer) => fixer.replaceTextRange([
+                                            member.range[0] + semiIndex,
+                                            member.range[0] + semiIndex + 1,
+                                        ], ","),
+                                        message: "Type properties must end with comma (,) not semicolon (;)",
+                                        node: member,
+                                    });
+                                }
+                            }
+                        } else {
+                            // Multi-prop: use existing handler for formatting
+                            checkTypeLiteralHandler(node, type, members);
                         }
                     });
+
+                    // Check intersection members are on same line (joined by &)
+                    // = should be on same line as first type
+                    if (equalToken && types[0] && types[0].loc.start.line !== equalToken.loc.end.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [equalToken.range[1], types[0].range[0]],
+                                " ",
+                            ),
+                            message: "First intersection member should be on same line as '='",
+                            node: types[0],
+                        });
+                    }
+
+                    // Check each consecutive pair - & and next type on same line
+                    for (let i = 1; i < types.length; i++) {
+                        const prevType = types[i - 1];
+                        const currentType = types[i];
+                        const ampToken = sourceCode.getTokenBefore(currentType, (t) => t.value === "&");
+
+                        if (!ampToken) continue;
+
+                        // & should be on same line as end of previous type
+                        if (ampToken.loc.start.line !== prevType.loc.end.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [prevType.range[1], ampToken.range[0]],
+                                    " ",
+                                ),
+                                message: "'&' should be on same line as previous intersection member",
+                                node: ampToken,
+                            });
+                        }
+
+                        // Current type should start on same line as &
+                        if (currentType.loc.start.line !== ampToken.loc.start.line) {
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [ampToken.range[1], currentType.range[0]],
+                                    " ",
+                                ),
+                                message: "Intersection member should be on same line as '&'",
+                                node: currentType,
+                            });
+                        }
+                    }
                 }
 
                 // Check union types formatting (e.g., "a" | "b" | "c")

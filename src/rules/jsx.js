@@ -1935,6 +1935,56 @@ const classNameMultiline = {
                 }
             },
 
+            // Check class utility function calls: cn(), cva(), clsx(), twMerge(), etc.
+            CallExpression(node) {
+                if (!node.callee) return;
+
+                const calleeName = node.callee.name
+                    || (node.callee.property && node.callee.property.name);
+
+                const classUtilFunctions = new Set([
+                    "cn", "cva", "clsx", "twMerge", "classnames", "cx", "tv", "twJoin",
+                ]);
+
+                if (!calleeName || !classUtilFunctions.has(calleeName)) return;
+
+                // Check each string/template argument
+                node.arguments.forEach((arg) => {
+                    if (arg.type === "Literal" && typeof arg.value === "string") {
+                        checkStringLiteralHandler(arg, arg.value, "className");
+                    }
+
+                    if (arg.type === "TemplateLiteral") {
+                        checkTemplateLiteralHandler(arg, "className");
+                    }
+
+                    // For cva/tv: check variant object values
+                    if (arg.type === "ObjectExpression") {
+                        const variantsProp = arg.properties.find(
+                            (p) => p.type === "Property" && p.key && (p.key.name === "variants" || p.key.value === "variants"),
+                        );
+
+                        if (variantsProp && variantsProp.value && variantsProp.value.type === "ObjectExpression") {
+                            variantsProp.value.properties.forEach((category) => {
+                                if (category.type !== "Property" || !category.value || category.value.type !== "ObjectExpression") return;
+
+                                category.value.properties.forEach((variant) => {
+                                    if (variant.type !== "Property") return;
+
+                                    if (variant.value && variant.value.type === "Literal" && typeof variant.value.value === "string") {
+                                        checkStringLiteralHandler(variant.value, variant.value.value, "className");
+                                    }
+
+                                    if (variant.value && variant.value.type === "TemplateLiteral") {
+                                        checkTemplateLiteralHandler(variant.value, "className");
+                                    }
+                                });
+                            });
+                        }
+                    }
+                });
+            },
+
             // Check return statements with Tailwind class values
             ReturnStatement(node) {
                 if (!node.argument) return;
@@ -1958,7 +2008,7 @@ const classNameMultiline = {
         };
     },
     meta: {
-        docs: { description: "Enforce multiline formatting for long className strings; smart detection for objects with Tailwind values and return statements" },
+        docs: { description: "Enforce multiline formatting for long className strings; smart detection for objects with Tailwind values, return statements, and class utility calls (cn, cva, clsx)" },
         fixable: "code",
         schema: [
             {

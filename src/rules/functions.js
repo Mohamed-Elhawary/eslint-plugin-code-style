@@ -1241,6 +1241,13 @@ const functionParamsPerLine = {
                     }
                 }
 
+                // Check nested destructuring inside each callback param
+                for (const p of params) {
+                    const pIndent = p.loc.start.column;
+
+                    checkDestructuredParamHandler(p, pIndent);
+                }
+
                 return;
             }
 

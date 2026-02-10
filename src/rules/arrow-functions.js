@@ -272,8 +272,8 @@ const arrowFunctionSimpleJsx = {
                 // Only handle JSX bodies for the remaining checks
                 if (body.type !== "JSXElement" && body.type !== "JSXFragment") return;
 
-                // Skip if already on one line
-                if (node.loc.start.line === node.loc.end.line) return;
+                // Skip if arrow and body are already on the same line
+                if (arrowToken.loc.end.line === body.loc.start.line) return;
 
                 // Check if JSX is simple
                 if (!isSimpleJsxHandler(body)) return;
@@ -282,8 +282,9 @@ const arrowFunctionSimpleJsx = {
                 const jsxText = getSimplifiedJsxTextHandler(body);
 
                 // Check if result would be reasonably short (< 120 chars)
-                const arrowStart = sourceCode.getText(node).split("=>")[0] + "=> ";
-                const totalLength = arrowStart.length + jsxText.length + 1;
+                // Use the arrow token's line column (not full multiline text) for length calculation
+                const arrowLineCol = arrowToken.loc.start.column;
+                const totalLength = arrowLineCol + "=> ".length + jsxText.length;
 
                 if (totalLength > 120) return;
 

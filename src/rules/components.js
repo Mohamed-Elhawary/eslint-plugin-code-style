@@ -714,6 +714,12 @@ const componentPropsInlineType = {
                         ? typeAnnotation.typeName.name
                         : sourceCode.getText(typeAnnotation.typeName);
 
+                    // Skip built-in library types (React.HTMLAttributes, React.ComponentProps, etc.)
+                    // These can't be reasonably inlined
+                    if (typeAnnotation.typeName && typeAnnotation.typeName.type === "TSQualifiedName") {
+                        return;
+                    }
+
                     context.report({
                         message: `Component props should use inline type annotation instead of referencing "${typeName}". Define the type inline as "{ prop: type, ... }"`,
                         node: typeAnnotation,

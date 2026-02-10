@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.2] - 2026-02-11
+
+### Fixed
+
+- **`enum-type-enforcement`** — Auto-fix now only replaces string literals with enum references when the enum exists in scope; degrades to report-only otherwise
+- **`variable-naming-convention`** — Allow PascalCase for component re-exports from PascalCase namespaces (`const Select = SelectPrimitive.Root`) and dynamic component patterns (`const Comp = asChild ? Slot : "button"`)
+- **`type-format`** — Added intersection type formatting: single-prop types collapse inline, all `&` members on same line as `=`
+- **`function-params-per-line`** — Destructured properties in callback arrow params now get one-per-line formatting (e.g., forwardRef callbacks)
+- **`arrow-function-simple-jsx`** — Fixed line length calculation for multiline callbacks so `=> <JSX>` correctly collapses; fixed skip check to use arrow token position instead of full node span
+- **`no-hardcoded-strings`** — Skip strings inside class utility calls (`cn`, `cva`, `clsx`, `twMerge`, `classnames`, `cx`, `tv`, `twJoin`); added missing single-word Tailwind utilities (`peer`, `border`, `group`, `rounded`, `grow`, `shrink`); fixed regex for hyphenated modifiers (`focus-visible:`) and arbitrary selectors (`[&_svg]:`)
+- **`classname-multiline`** — Added CallExpression handler for class utility calls (`cn`, `cva`, `clsx`, etc.) including cva/tv variant object values
+- **`absolute-imports-only`** — Added auto-fix for deep import violations (`@/utils/index` → `@/utils`)
+- **`component-props-inline-type`** — Skip qualified library types (`React.HTMLAttributes`, `React.ComponentProps`, etc.) that can't be reasonably inlined
+
 ## [2.0.1] - 2026-02-10
 
 ### Fixed
@@ -1960,6 +1974,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.20.0...v2.0.0
 [1.20.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.19.0...v1.20.0
