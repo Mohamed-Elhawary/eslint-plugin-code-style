@@ -103,6 +103,35 @@ const functionArgumentsFormat = {
                             message: "Single template literal argument should start on same line as function call",
                             node,
                         });
+                    } else if (openParen && closeParen) {
+                        // Template literal starts on same line — check for trailing comma and closing paren placement
+                        const tokenAfterArg = sourceCode.getTokenAfter(args[0]);
+                        const fixes = [];
+
+                        // Remove trailing comma after template literal
+                        if (tokenAfterArg && tokenAfterArg.value === ",") {
+                            fixes.push((fixer) => fixer.remove(tokenAfterArg));
+                        }
+
+                        // Move closing paren to same line as closing backtick
+                        if (closeParen.loc.start.line !== args[0].loc.end.line) {
+                            const lastRelevantToken = tokenAfterArg && tokenAfterArg.value === ","
+                                ? tokenAfterArg
+                                : args[0];
+
+                            fixes.push((fixer) => fixer.replaceTextRange(
+                                [lastRelevantToken.range[1], closeParen.range[0]],
+                                "",
+                            ));
+                        }
+
+                        if (fixes.length > 0) {
+                            context.report({
+                                fix: (fixer) => fixes.map((f) => f(fixer)),
+                                message: "Single template literal argument should not have trailing comma or closing paren on separate line",
+                                node,
+                            });
+                        }
                     }
 
                     return;
@@ -1062,11 +1091,16 @@ const openingBracketsSameLine = {
             // Case 3: Simple expressions - collapse to single line
             const simpleTypes = ["Identifier", "MemberExpression", "Literal"];
 
-            // Also include ConditionalExpression if it's single-line
-            const isSingleLineConditional = expression.type === "ConditionalExpression"
+            // Also include single-line expressions that are safe to collapse
+            const isSingleLineExpression = [
+                "ConditionalExpression",
+                "BinaryExpression",
+                "LogicalExpression",
+                "UnaryExpression",
+            ].includes(expression.type)
                 && expression.loc.start.line === expression.loc.end.line;
 
-            if (simpleTypes.includes(expression.type) || isSingleLineConditional) {
+            if (simpleTypes.includes(expression.type) || isSingleLineExpression) {
                 const isMultiLine = openBrace.loc.end.line !== closeBrace.loc.start.line;
 
                 if (isMultiLine) {

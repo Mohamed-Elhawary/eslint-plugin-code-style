@@ -2052,23 +2052,33 @@ const typeAnnotationSpacing = {
                         }
                     }
 
-                    // Check trailing commas on all params
+                    // Check commas between params (not trailing on last — TS doesn't allow it)
                     if (!needsReformat) {
-                        for (const param of params) {
-                            const tokenAfter = sourceCode.getTokenAfter(param);
+                        for (let i = 0; i < params.length - 1; i++) {
+                            const tokenAfter = sourceCode.getTokenAfter(params[i]);
 
                             if (!tokenAfter || tokenAfter.value !== ",") {
                                 needsReformat = true;
                                 break;
                             }
                         }
+
+                        // Last param should NOT have a trailing comma
+                        if (!needsReformat) {
+                            const lastTokenAfter = sourceCode.getTokenAfter(lastParam);
+
+                            if (lastTokenAfter && lastTokenAfter.value === ",") {
+                                needsReformat = true;
+                            }
+                        }
                     }
 
                     if (needsReformat) {
-                        const formattedParams = params.map((param) => {
+                        const formattedParams = params.map((param, index) => {
                             const text = sourceCode.getText(param).trim();
+                            const comma = index < params.length - 1 ? "," : "";
 
-                            return paramIndent + text + ",";
+                            return paramIndent + text + comma;
                         }).join("\n");
 
                         context.report({
@@ -2076,7 +2086,7 @@ const typeAnnotationSpacing = {
                                 [openBracket.range[1], closeBracket.range[0]],
                                 "\n" + formattedParams + "\n" + baseIndent,
                             ),
-                            message: "Generic type parameters should each be on their own line with trailing commas",
+                            message: "Generic type parameters should each be on their own line",
                             node,
                         });
 
