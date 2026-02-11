@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.4] - 2026-02-11
+
+### Fixed
+
+- **`function-arguments-format`** — Skip single `TemplateLiteral` arguments so `cva(\`...\`)` with multi-line Tailwind classes is not reformatted
+- **`type-format`** — Enforce trailing comma on last property in multi-member types (nested and expanded types were missing it)
+- **`type-format`** — Detect nested type literals inside array types (`{ label: string }[]`) for single-prop collapse and multi-prop expansion
+
+---
+
 ## [2.0.3] - 2026-02-11
 
 ### Fixed
@@ -1987,6 +1997,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.0...v2.0.1
