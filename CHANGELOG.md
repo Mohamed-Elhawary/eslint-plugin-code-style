@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.3] - 2026-02-11
+
+### Fixed
+
+- **`function-object-destructure`** — Recognize components inside `React.forwardRef()`, `memo()`, `observer()` and other wrapper calls (no longer falsely reports destructured props)
+- **`type-format`** — Closing brace must be on its own line for types with 2+ properties
+- **`type-format`** — Single-property type aliases collapse to one line (e.g., `type FooType = { bar: string }`)
+- **`type-format`** — Nested type literals with 2+ properties get expanded to separate lines with proper formatting
+- **`type-format`** — Union types with multi-property object members stay expanded (no longer collapsed to one line)
+- **`single-argument-on-one-line`** — Skip multi-line template literals (fixes conflict with Tailwind class strings in `cva()`, `clsx()`, etc.)
+
+---
+
 ## [2.0.2] - 2026-02-11
 
 ### Fixed
@@ -1974,6 +1987,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.20.0...v2.0.0
