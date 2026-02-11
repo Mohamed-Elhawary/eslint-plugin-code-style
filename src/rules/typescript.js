@@ -1024,9 +1024,21 @@ const typeFormat = {
                     }
                 }
 
-                // Handle nested object types (e.g., options: { label: string, value: string })
-                if (member.type === "TSPropertySignature" && member.typeAnnotation?.typeAnnotation?.type === "TSTypeLiteral") {
-                    const nestedType = member.typeAnnotation.typeAnnotation;
+                // Handle nested object types (e.g., options: { label: string, value: string } or { label: string }[])
+                let nestedTypeLiteral = null;
+
+                if (member.type === "TSPropertySignature" && member.typeAnnotation?.typeAnnotation) {
+                    const typeNode = member.typeAnnotation.typeAnnotation;
+
+                    if (typeNode.type === "TSTypeLiteral") {
+                        nestedTypeLiteral = typeNode;
+                    } else if (typeNode.type === "TSArrayType" && typeNode.elementType?.type === "TSTypeLiteral") {
+                        nestedTypeLiteral = typeNode.elementType;
+                    }
+                }
+
+                if (nestedTypeLiteral) {
+                    const nestedType = nestedTypeLiteral;
 
                     if (nestedType.members && nestedType.members.length === 1) {
                         // Collapse single-member nested object types to one line
@@ -1093,6 +1105,19 @@ const typeFormat = {
                         message: "Type properties must end with comma (,) not semicolon (;)",
                         node: member,
                     });
+                }
+
+                // Ensure trailing comma on last member (for multi-member types)
+                if (members.length >= 2 && index === members.length - 1) {
+                    const trimmedText = memberText.trimEnd();
+
+                    if (!trimmedText.endsWith(",") && !trimmedText.endsWith(";")) {
+                        context.report({
+                            fix: (fixer) => fixer.insertTextAfter(member, ","),
+                            message: "Last type property must have trailing comma",
+                            node: member,
+                        });
+                    }
                 }
 
                 // Check formatting for multiple members

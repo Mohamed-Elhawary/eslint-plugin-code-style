@@ -77,6 +77,7 @@ const functionArgumentsFormat = {
                 if (args[0].type === "ArrayExpression") return;
                 if (args[0].type === "ArrowFunctionExpression") return;
                 if (args[0].type === "FunctionExpression") return;
+                if (args[0].type === "TemplateLiteral") return;
             }
 
             // Check if formatting should be enforced:

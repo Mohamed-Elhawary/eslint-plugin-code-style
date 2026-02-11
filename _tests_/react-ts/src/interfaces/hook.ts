@@ -21,12 +21,12 @@ export interface UseFormSubmissionReturnInterface {
     error: string | null,
     formData: {
         email: string,
-        name: string
+        name: string,
     },
     formSummary: {
         email: string,
         isValid: boolean,
-        name: string
+        name: string,
     },
     hasBeenSubmitted: boolean,
     isFormValid: boolean,
