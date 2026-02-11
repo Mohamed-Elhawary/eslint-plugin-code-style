@@ -1845,6 +1845,13 @@ const functionObjectDestructure = {
             if (node.parent) {
                 if (node.parent.type === "VariableDeclarator" && node.parent.id && node.parent.id.type === "Identifier") {
                     componentName = node.parent.id.name;
+                } else if (node.parent.type === "CallExpression") {
+                    // Handle React.forwardRef((props) => ...), memo((props) => ...), observer((props) => ...), etc.
+                    const callParent = node.parent.parent;
+
+                    if (callParent && callParent.type === "VariableDeclarator" && callParent.id && callParent.id.type === "Identifier") {
+                        componentName = callParent.id.name;
+                    }
                 } else if (node.id && node.id.type === "Identifier") {
                     componentName = node.id.name;
                 }

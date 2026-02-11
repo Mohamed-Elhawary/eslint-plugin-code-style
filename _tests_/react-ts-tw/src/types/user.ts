@@ -46,4 +46,12 @@ export type FullUserType = UserProfileType & {
 };
 
 // Test: discriminated union type
-export type ApiResultType<T> = { data: T, error: string, status: "error" } | { data: T, error: null, status: "success" };
+export type ApiResultType<T> = {
+    data: T,
+    error: string,
+    status: "error",
+} | {
+    data: T,
+    error: null,
+    status: "success",
+};

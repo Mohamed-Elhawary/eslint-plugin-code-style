@@ -2064,8 +2064,10 @@ const singleArgumentOnOneLine = {
                     && !argNode.computed;
             }
 
-            // Template literals without expressions
-            if (argNode.type === "TemplateLiteral" && argNode.expressions.length === 0) return true;
+            // Template literals without expressions (only if single-line — multi-line ones are intentional)
+            if (argNode.type === "TemplateLiteral" && argNode.expressions.length === 0) {
+                return argNode.loc.start.line === argNode.loc.end.line;
+            }
 
             // Unary expressions like !flag, -1
             if (argNode.type === "UnaryExpression") {

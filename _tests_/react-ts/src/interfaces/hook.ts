@@ -19,8 +19,15 @@ export interface UseCounterReturnInterface {
 
 export interface UseFormSubmissionReturnInterface {
     error: string | null,
-    formData: { email: string, name: string },
-    formSummary: { email: string, isValid: boolean, name: string },
+    formData: {
+        email: string,
+        name: string
+    },
+    formSummary: {
+        email: string,
+        isValid: boolean,
+        name: string
+    },
     hasBeenSubmitted: boolean,
     isFormValid: boolean,
     isSubmitting: boolean,

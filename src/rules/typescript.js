@@ -984,6 +984,18 @@ const typeFormat = {
                 });
             }
 
+            // For multiple members, closing brace must be on its own line
+            if (members.length >= 2 && closeBraceToken.loc.start.line === lastMember.loc.end.line) {
+                context.report({
+                    fix: (fixer) => fixer.replaceTextRange(
+                        [lastMember.range[1], closeBraceToken.range[0]],
+                        "\n" + baseIndent,
+                    ),
+                    message: "Closing brace should be on its own line in multiline type literal",
+                    node: closeBraceToken,
+                });
+            }
+
             // For multiple members, first member should be on new line after opening brace
             if (members.length > 1 && firstMember.loc.start.line === openBraceToken.loc.end.line) {
                 context.report({
@@ -1012,11 +1024,12 @@ const typeFormat = {
                     }
                 }
 
-                // Collapse single-member nested object types to one line
+                // Handle nested object types (e.g., options: { label: string, value: string })
                 if (member.type === "TSPropertySignature" && member.typeAnnotation?.typeAnnotation?.type === "TSTypeLiteral") {
                     const nestedType = member.typeAnnotation.typeAnnotation;
 
                     if (nestedType.members && nestedType.members.length === 1) {
+                        // Collapse single-member nested object types to one line
                         const nestedOpenBrace = sourceCode.getFirstToken(nestedType);
                         const nestedCloseBrace = sourceCode.getLastToken(nestedType);
                         const isNestedMultiLine = nestedOpenBrace.loc.end.line !== nestedCloseBrace.loc.start.line;
@@ -1039,6 +1052,9 @@ const typeFormat = {
                                 node: nestedType,
                             });
                         }
+                    } else if (nestedType.members && nestedType.members.length >= 2) {
+                        // Multi-member nested types get the same formatting as outer types
+                        checkTypeLiteralHandler(member, nestedType, nestedType.members);
                     }
                 }
 
@@ -1379,26 +1395,81 @@ const typeFormat = {
 
                 // Check if it's an object type (TSTypeLiteral)
                 if (node.typeAnnotation && node.typeAnnotation.type === "TSTypeLiteral") {
-                    // Get opening brace of the type literal
-                    const openBraceToken = sourceCode.getFirstToken(node.typeAnnotation);
+                    const { members } = node.typeAnnotation;
 
-                    // Check opening brace is on same line as type name (or = sign)
-                    if (openBraceToken && openBraceToken.loc.start.line !== node.id.loc.end.line) {
-                        context.report({
-                            fix: (fixer) => {
-                                const equalToken = sourceCode.getTokenAfter(node.id);
+                    // Single property type alias: collapse to one line without trailing punctuation
+                    if (members.length === 1) {
+                        const openBrace = sourceCode.getFirstToken(node.typeAnnotation);
+                        const closeBrace = sourceCode.getLastToken(node.typeAnnotation);
+                        const isMultiLine = openBrace.loc.start.line !== closeBrace.loc.end.line;
+                        const member = members[0];
+                        let memberText = sourceCode.getText(member).trim();
 
-                                return fixer.replaceTextRange(
-                                    [equalToken.range[1], openBraceToken.range[0]],
-                                    " ",
-                                );
-                            },
-                            message: "Opening brace must be on the same line as type name",
-                            node: openBraceToken,
-                        });
+                        if (memberText.endsWith(",") || memberText.endsWith(";")) {
+                            memberText = memberText.slice(0, -1);
+                        }
+
+                        if (isMultiLine) {
+                            const equalToken = sourceCode.getTokenAfter(node.id);
+
+                            context.report({
+                                fix: (fixer) => fixer.replaceTextRange(
+                                    [equalToken.range[0], closeBrace.range[1]],
+                                    `= { ${memberText} }`,
+                                ),
+                                message: "Single property type should be on one line",
+                                node: node.typeAnnotation,
+                            });
+                        } else {
+                            // Already inline — check trailing punctuation
+                            const rawMemberText = sourceCode.getText(member);
+
+                            if (rawMemberText.trimEnd().endsWith(",")) {
+                                const commaIndex = rawMemberText.lastIndexOf(",");
+
+                                context.report({
+                                    fix: (fixer) => fixer.removeRange([
+                                        member.range[0] + commaIndex,
+                                        member.range[0] + commaIndex + 1,
+                                    ]),
+                                    message: "Single property inline type should not have trailing comma",
+                                    node: member,
+                                });
+                            } else if (rawMemberText.trimEnd().endsWith(";")) {
+                                const semiIndex = rawMemberText.lastIndexOf(";");
+
+                                context.report({
+                                    fix: (fixer) => fixer.replaceTextRange([
+                                        member.range[0] + semiIndex,
+                                        member.range[0] + semiIndex + 1,
+                                    ], ","),
+                                    message: "Type properties must end with comma (,) not semicolon (;)",
+                                    node: member,
+                                });
+                            }
+                        }
+                    } else {
+                        // Get opening brace of the type literal
+                        const openBraceToken = sourceCode.getFirstToken(node.typeAnnotation);
+
+                        // Check opening brace is on same line as type name (or = sign)
+                        if (openBraceToken && openBraceToken.loc.start.line !== node.id.loc.end.line) {
+                            context.report({
+                                fix: (fixer) => {
+                                    const equalToken = sourceCode.getTokenAfter(node.id);
+
+                                    return fixer.replaceTextRange(
+                                        [equalToken.range[1], openBraceToken.range[0]],
+                                        " ",
+                                    );
+                                },
+                                message: "Opening brace must be on the same line as type name",
+                                node: openBraceToken,
+                            });
+                        }
+
+                        checkTypeLiteralHandler(node, node.typeAnnotation, node.typeAnnotation.members);
                     }
-
-                    checkTypeLiteralHandler(node, node.typeAnnotation, node.typeAnnotation.members);
                 }
 
                 // Also check intersection types
@@ -1600,7 +1671,12 @@ const typeFormat = {
                         }
                     } else {
                         // Should be single line format (less than 5 members)
-                        if (!isCurrentlySingleLine) {
+                        // But skip if any union member is a multi-prop type literal (those need to stay expanded)
+                        const hasMultiPropTypeLiteral = types.some(
+                            (type) => type.type === "TSTypeLiteral" && type.members && type.members.length >= 2,
+                        );
+
+                        if (!isCurrentlySingleLine && !hasMultiPropTypeLiteral) {
                             // Build single line format
                             const typeTexts = types.map((type) => sourceCode.getText(type));
                             const singleLineText = `= ${typeTexts.join(" | ")}`;
@@ -1622,39 +1698,24 @@ const typeFormat = {
                 // Skip if already handled by TSTypeAliasDeclaration or TSAsExpression
                 if (node.parent?.type === "TSTypeAliasDeclaration") return;
                 if (node.parent?.type === "TSAsExpression") return;
+                // Skip if already handled as nested type inside checkTypeLiteralHandler
+                if (node.parent?.type === "TSTypeAnnotation"
+                    && node.parent.parent?.type === "TSPropertySignature"
+                    && node.parent.parent.parent?.type === "TSTypeLiteral"
+                    && (node.parent.parent.parent.parent?.type === "TSTypeAliasDeclaration"
+                        || node.parent.parent.parent.parent?.type === "TSIntersectionType")) return;
 
-                // Check for single-member nested object types that should be collapsed
-                if (node.members) {
-                    node.members.forEach((member) => {
-                        if (member.type === "TSPropertySignature" && member.typeAnnotation?.typeAnnotation?.type === "TSTypeLiteral") {
-                            const nestedType = member.typeAnnotation.typeAnnotation;
+                if (!node.members || node.members.length === 0) return;
 
-                            if (nestedType.members && nestedType.members.length === 1) {
-                                const nestedOpenBrace = sourceCode.getFirstToken(nestedType);
-                                const nestedCloseBrace = sourceCode.getLastToken(nestedType);
-                                const isNestedMultiLine = nestedOpenBrace.loc.end.line !== nestedCloseBrace.loc.start.line;
+                // Find a suitable parent for indentation reference
+                let indentRef = node.parent;
 
-                                if (isNestedMultiLine) {
-                                    const nestedMember = nestedType.members[0];
-                                    let nestedMemberText = sourceCode.getText(nestedMember).trim();
+                while (indentRef && !indentRef.loc) {
+                    indentRef = indentRef.parent;
+                }
 
-                                    // Remove trailing punctuation
-                                    if (nestedMemberText.endsWith(",") || nestedMemberText.endsWith(";")) {
-                                        nestedMemberText = nestedMemberText.slice(0, -1);
-                                    }
-
-                                    context.report({
-                                        fix: (fixer) => fixer.replaceTextRange(
-                                            [nestedOpenBrace.range[0], nestedCloseBrace.range[1]],
-                                            `{ ${nestedMemberText} }`,
-                                        ),
-                                        message: "Single property nested object type should be on one line",
-                                        node: nestedType,
-                                    });
-                                }
-                            }
-                        }
-                    });
+                if (indentRef) {
+                    checkTypeLiteralHandler(indentRef, node, node.members);
                 }
             },
         };
