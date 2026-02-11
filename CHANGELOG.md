@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.5] - 2026-02-11
+
+### Fixed
+
+- **`function-arguments-format`** — Actively fix `cva(\n    \`...\`,\n)` back to `cva(\`...\`)` for single template literal arguments
+- **`type-annotation-spacing`** — Single generic type parameter collapses inline without trailing comma (e.g., `forwardRef<ElementRef<typeof X>>`)
+- **`type-annotation-spacing`** — Multiple generic type parameters expand to separate lines with trailing commas
+- **`type-annotation-spacing`** — Skip multiline formatting for short generics (e.g., `Record<string, unknown>`)
+
+---
+
 ## [2.0.4] - 2026-02-11
 
 ### Fixed
@@ -1997,6 +2008,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.1...v2.0.2
