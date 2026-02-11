@@ -77,7 +77,36 @@ const functionArgumentsFormat = {
                 if (args[0].type === "ArrayExpression") return;
                 if (args[0].type === "ArrowFunctionExpression") return;
                 if (args[0].type === "FunctionExpression") return;
-                if (args[0].type === "TemplateLiteral") return;
+
+                // For single template literal: don't reformat, but fix back if already on separate line
+                if (args[0].type === "TemplateLiteral") {
+                    const openParen = sourceCode.getTokenAfter(
+                        node.callee,
+                        (token) => token.value === "(",
+                    );
+                    const closeParen = sourceCode.getLastToken(node);
+
+                    if (openParen && closeParen && openParen.loc.end.line !== args[0].loc.start.line) {
+                        // Template literal is on a separate line — collapse back to fn(`...`)
+                        const argText = sourceCode.getText(args[0]);
+
+                        // Include type arguments if they exist
+                        const typeArgs = node.typeArguments || node.typeParameters;
+                        let calleeText = sourceCode.getText(node.callee);
+
+                        if (typeArgs) {
+                            calleeText += sourceCode.getText(typeArgs);
+                        }
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceText(node, `${calleeText}(${argText})`),
+                            message: "Single template literal argument should start on same line as function call",
+                            node,
+                        });
+                    }
+
+                    return;
+                }
             }
 
             // Check if formatting should be enforced:

@@ -1947,10 +1947,11 @@ const typeAnnotationSpacing = {
 
                 if (openBracket.value !== "<" || closeBracket.value !== ">") return;
 
-                // Check for space after <
+                // Check for space after < (only for single-line generics — multiline handled by formatting below)
                 const firstParam = node.params[0];
+                const isSingleLine = firstParam && openBracket.loc.end.line === closeBracket.loc.start.line;
 
-                if (firstParam) {
+                if (firstParam && isSingleLine) {
                     const textAfterOpen = sourceCode.getText().slice(
                         openBracket.range[1],
                         firstParam.range[0],
@@ -1965,10 +1966,10 @@ const typeAnnotationSpacing = {
                     }
                 }
 
-                // Check for space before >
+                // Check for space before > (only for single-line generics)
                 const lastParam = node.params[node.params.length - 1];
 
-                if (lastParam) {
+                if (lastParam && isSingleLine) {
                     const textBeforeClose = sourceCode.getText().slice(
                         lastParam.range[1],
                         closeBracket.range[0],
@@ -1980,6 +1981,106 @@ const typeAnnotationSpacing = {
                             message: "No space allowed before > in generic type",
                             node: closeBracket,
                         });
+                    }
+                }
+
+                // Generic type params formatting (like function params)
+                const params = node.params;
+
+                if (params.length === 1) {
+                    // Single param: should be inline — <ParamType> (no trailing comma, no newlines)
+                    const param = params[0];
+                    const isMultiLine = openBracket.loc.end.line !== closeBracket.loc.start.line;
+
+                    if (isMultiLine) {
+                        const paramText = sourceCode.getText(param).trim();
+                        // Remove trailing comma if present
+                        const cleanParamText = paramText.endsWith(",") ? paramText.slice(0, -1) : paramText;
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBracket.range[1], closeBracket.range[0]],
+                                cleanParamText,
+                            ),
+                            message: "Single generic type parameter should be inline",
+                            node,
+                        });
+
+                        return;
+                    }
+
+                    // Already inline — check for trailing comma (not allowed for single param)
+                    const paramText = sourceCode.getText(param);
+
+                    if (paramText.trimEnd().endsWith(",")) {
+                        const commaIndex = paramText.lastIndexOf(",");
+
+                        context.report({
+                            fix: (fixer) => fixer.removeRange([
+                                param.range[0] + commaIndex,
+                                param.range[0] + commaIndex + 1,
+                            ]),
+                            message: "Single generic type parameter should not have trailing comma",
+                            node: param,
+                        });
+
+                        return;
+                    }
+                } else if (params.length >= 2) {
+                    // Multiple params: each on its own line with trailing commas, > on its own line
+                    // But only if the generic params span is long enough to warrant multiline
+                    const genericText = sourceCode.getText().slice(openBracket.range[0], closeBracket.range[1]);
+
+                    if (genericText.length <= 80 && openBracket.loc.start.line === closeBracket.loc.end.line) return;
+
+                    const nodeLine = sourceCode.lines[node.loc.start.line - 1];
+                    const baseIndent = nodeLine.match(/^\s*/)[0];
+                    const paramIndent = baseIndent + "    ";
+
+                    const isFirstOnNewLine = firstParam.loc.start.line > openBracket.loc.end.line;
+                    const isClosingOnOwnLine = closeBracket.loc.start.line > lastParam.loc.end.line;
+
+                    let needsReformat = !isFirstOnNewLine || !isClosingOnOwnLine;
+
+                    // Check each param is on its own line
+                    if (!needsReformat) {
+                        for (let i = 1; i < params.length; i++) {
+                            if (params[i].loc.start.line === params[i - 1].loc.end.line) {
+                                needsReformat = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Check trailing commas on all params
+                    if (!needsReformat) {
+                        for (const param of params) {
+                            const tokenAfter = sourceCode.getTokenAfter(param);
+
+                            if (!tokenAfter || tokenAfter.value !== ",") {
+                                needsReformat = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (needsReformat) {
+                        const formattedParams = params.map((param) => {
+                            const text = sourceCode.getText(param).trim();
+
+                            return paramIndent + text + ",";
+                        }).join("\n");
+
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openBracket.range[1], closeBracket.range[0]],
+                                "\n" + formattedParams + "\n" + baseIndent,
+                            ),
+                            message: "Generic type parameters should each be on their own line with trailing commas",
+                            node,
+                        });
+
+                        return;
                     }
                 }
 
