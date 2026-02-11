@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.6] - 2026-02-12
+
+### Fixed
+
+- **`openingBracketsSameLine`** — Collapse `BinaryExpression`, `LogicalExpression`, and `UnaryExpression` in JSX attributes to single line (e.g., `collapsible={type === "single"}`)
+- **`function-arguments-format`** — Remove trailing comma and move closing paren for single template literal arguments (e.g., `cva(\`...\`,\n)` → `cva(\`...\`)`)
+- **`type-annotation-spacing`** — No trailing comma on last generic type parameter (fixes TypeScript error `ts(1009)`)
+
+---
+
 ## [2.0.5] - 2026-02-11
 
 ### Fixed
@@ -2008,6 +2018,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.5...v2.0.6
 [2.0.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.2...v2.0.3
