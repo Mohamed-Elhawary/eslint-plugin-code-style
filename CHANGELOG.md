@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.10] - 2026-02-12
+
+### Fixed
+
+- **`folder-based-naming-convention`** — Enforce folder chain segments in camelCase folder naming (e.g., `schemas/auth/forgot-password.ts` → `forgotPasswordAuthSchema`, not just `forgotPasswordSchema`)
+
+---
+
 ## [2.0.9] - 2026-02-12
 
 ### Fixed
@@ -2044,6 +2052,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.10]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.9...v2.0.10
 [2.0.9]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.8...v2.0.9
 [2.0.8]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.7...v2.0.8
 [2.0.7]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.6...v2.0.7
