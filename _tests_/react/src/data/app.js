@@ -1,18 +1,18 @@
 // Data constants
 
-export const buttonTypeData = { button: "button" };
+export const buttonTypeAppData = { button: "button" };
 
-export const fieldData = {
+export const fieldAppData = {
     email: "email",
     name: "name",
     title: "title",
 };
 
-export const inputTypeData = { text: "text" };
+export const inputTypeAppData = { text: "text" };
 
-export const typeOfData = {
+export const typeOfAppData = {
     number: "number",
     string: "string",
 };
 
-export const variantData = { primary: "primary" };
+export const variantAppData = { primary: "primary" };

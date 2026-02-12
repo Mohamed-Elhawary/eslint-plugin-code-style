@@ -1446,44 +1446,66 @@ const folderBasedNamingConvention = {
         // Check if name starts with lowercase (camelCase)
         const isCamelCaseHandler = (name) => name && /^[a-z]/.test(name);
 
-        // Check camelCase naming for camelCase folders (constants, data, reducers, services, strings)
+        // Edit distance for typo detection (e.g., fogotPassword vs forgotPassword)
+        const editDistanceHandler = (a, b) => {
+            const m = a.length;
+            const n = b.length;
+
+            if (Math.abs(m - n) > 2) return 3;
+
+            const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+            for (let i = 0; i <= m; i++) dp[i][0] = i;
+            for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    dp[i][j] = a[i - 1] === b[j - 1]
+                        ? dp[i - 1][j - 1]
+                        : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+                }
+            }
+
+            return dp[m][n];
+        };
+
+        // Check camelCase naming for camelCase folders (constants, data, reducers, schemas, services, strings)
+        // Every export must end with {FileNamePascal}{FolderChainPascal}{Suffix}
+        // e.g., data/app.js → ending "AppData", schemas/auth/forgot-password.ts → ending "ForgotPasswordAuthSchema"
         const checkCamelCaseHandler = (name, folder, suffix, identifierNode, scopeNode, moduleInfo) => {
-            if (!name.endsWith(suffix)) {
-                // Missing suffix — auto-fix by appending suffix
-                const fixedName = name + suffix;
+            // Build the required chain: fileNamePascal + folderChainPascal
+            const isIndex = moduleInfo.fileName === "index";
+            const fileNamePascal = isIndex ? "" : toPascalCaseHandler(moduleInfo.fileName);
+            const meaningfulFolders = moduleInfo.intermediateFolders.filter((f) => !groupingFolders.has(f));
+            const chainParts = [...meaningfulFolders].reverse().map(toPascalCaseHandler).join("");
+            const chain = fileNamePascal + chainParts;
+            const requiredEnding = chain + suffix;
+            const requiredEndingCamel = toCamelCaseHandler(requiredEnding);
 
-                context.report({
-                    fix: createRenameFixer(scopeNode, name, fixedName, identifierNode),
-                    message: `"${name}" in "${folder}" folder must end with "${suffix}" suffix (should be "${fixedName}")`,
-                    node: identifierNode,
-                });
+            // Already has correct chain + suffix ending
+            if (name.endsWith(requiredEnding) || name === requiredEndingCamel) return;
 
-                return;
+            // Build the fixed name
+            let fixedName;
+            const prefix = name.endsWith(suffix) ? name.slice(0, -suffix.length) : name;
+            const prefixPascal = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+
+            if (chain.startsWith(prefixPascal)) {
+                // Prefix is beginning of chain (e.g., forgotPassword ≈ start of ForgotPasswordAuth)
+                fixedName = requiredEndingCamel;
+            } else if (editDistanceHandler(prefix, toCamelCaseHandler(fileNamePascal)) <= 2) {
+                // Typo in file name portion (e.g., fogotPassword vs forgotPassword)
+                fixedName = requiredEndingCamel;
+            } else {
+                // Custom prefix + required ending (e.g., buttonType + AppData)
+                fixedName = prefix + requiredEnding;
             }
 
-            // Has correct suffix — check if prefix matches expected file-based name
-            // Catches missing folder chain (forgotPasswordSchema → forgotPasswordAuthSchema)
-            // and typos (routeConstants → routesConstants), but allows unrelated names
-            const expectedName = buildExpectedNameHandler(moduleInfo);
-
-            if (!expectedName || name === expectedName) return;
-
-            const actualPrefix = name.slice(0, -suffix.length);
-            const expectedPrefix = expectedName.slice(0, -suffix.length);
-
-            // Flag when expected prefix starts with actual prefix (missing folder chain segments)
-            // or when actual prefix is a near-match of expected (typos within 2 chars)
-            const isMissingFolderChain = expectedPrefix.startsWith(actualPrefix);
-            const isNearMatch = actualPrefix.startsWith(expectedPrefix)
-                && (actualPrefix.length - expectedPrefix.length) <= 2;
-
-            if (isMissingFolderChain || isNearMatch) {
-                context.report({
-                    fix: createRenameFixer(scopeNode, name, expectedName, identifierNode),
-                    message: `"${name}" in "${folder}" folder should be "${expectedName}" to match the file name`,
-                    node: identifierNode,
-                });
-            }
+            context.report({
+                fix: createRenameFixer(scopeNode, name, fixedName, identifierNode),
+                message: `"${name}" in "${folder}" folder must end with "${requiredEnding}" (should be "${fixedName}")`,
+                node: identifierNode,
+            });
         };
 
         // Check function declarations (JSX components + non-JSX functions like reducers)
