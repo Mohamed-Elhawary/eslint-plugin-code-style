@@ -1302,6 +1302,9 @@ const folderBasedNamingConvention = {
             return { fileName, folder: moduleFolderName, intermediateFolders, suffix };
         };
 
+        // Generic grouping folders that don't contribute to the component name
+        const groupingFolders = new Set(["shared", "common", "ui", "base", "general", "core"]);
+
         // Build the expected name based on file position
         const buildExpectedNameHandler = (moduleInfo) => {
             const { fileName, folder, intermediateFolders, suffix } = moduleInfo;
@@ -1309,14 +1312,20 @@ const folderBasedNamingConvention = {
             // Module barrel file (e.g., views/index.ts) — skip
             if (fileName === "index" && intermediateFolders.length === 0) return null;
 
+            // Filter out generic grouping folders (shared, common, ui, etc.)
+            const meaningfulFolders = intermediateFolders.filter((f) => !groupingFolders.has(f));
+
             let nameParts;
 
             if (fileName === "index") {
                 // Index in subfolder (e.g., layouts/auth/index.tsx) → parts from folders only
-                nameParts = [...intermediateFolders].reverse();
+                nameParts = [...meaningfulFolders].reverse();
+
+                // If all folders were grouping folders (e.g., components/shared/index.ts), skip
+                if (nameParts.length === 0) return null;
             } else {
                 // Regular file (e.g., layouts/auth/login.tsx) → file name + folders deepest-to-shallowest
-                nameParts = [fileName, ...[...intermediateFolders].reverse()];
+                nameParts = [fileName, ...[...meaningfulFolders].reverse()];
             }
 
             const pascalName = nameParts.map(toPascalCaseHandler).join("") + suffix;
