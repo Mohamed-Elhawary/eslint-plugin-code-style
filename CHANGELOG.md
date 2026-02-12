@@ -7,11 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.11] - 2026-02-13
+
+### Fixed
+
+- **`folder-based-naming-convention`** — Enforce file name + folder chain in camelCase folder naming: every export must end with `{FileName}{FolderChain}{Suffix}` (e.g., `buttonTypeData` → `buttonTypeAppData` in `data/app.js`, `forgotPasswordSchema` → `forgotPasswordAuthSchema` in `schemas/auth/forgot-password.ts`)
+
+---
+
 ## [2.0.10] - 2026-02-12
 
 ### Fixed
 
-- **`folder-based-naming-convention`** — Enforce folder chain segments in camelCase folder naming (e.g., `schemas/auth/forgot-password.ts` → `forgotPasswordAuthSchema`, not just `forgotPasswordSchema`)
+- **`folder-based-naming-convention`** — Add `schemas` folder with `Schema` suffix and camelCase naming; enforce folder chain segments in camelCase folder naming
 
 ---
 
@@ -2052,6 +2060,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.11]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.10...v2.0.11
 [2.0.10]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.9...v2.0.10
 [2.0.9]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.8...v2.0.9
 [2.0.8]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.7...v2.0.8
