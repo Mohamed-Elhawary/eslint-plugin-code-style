@@ -2141,10 +2141,85 @@ const singleArgumentOnOneLine = {
             return false;
         };
 
+        // Check if an argument is simple for method chain context (allows deep member expressions)
+        const isSimpleChainArgHandler = (argNode) => {
+            if (!argNode) return false;
+            if (argNode.type === "Literal") return true;
+            if (argNode.type === "Identifier") return true;
+            if (argNode.type === "MemberExpression") return true;
+            if (argNode.type === "UnaryExpression") return true;
+            if (argNode.type === "TemplateLiteral" && argNode.expressions.length === 0
+                && argNode.loc.start.line === argNode.loc.end.line) return true;
+
+            return false;
+        };
+
+        // Collect all calls in a method chain (deepest first)
+        const collectChainHandler = (node) => {
+            const calls = [];
+            let current = node;
+
+            while (current && current.type === "CallExpression") {
+                calls.unshift(current);
+
+                if (current.callee && current.callee.type === "MemberExpression") {
+                    current = current.callee.object;
+                } else {
+                    break;
+                }
+            }
+
+            return calls;
+        };
+
         return {
             CallExpression(node) {
                 const { arguments: args, callee } = node;
 
+                // --- Method chain collapse ---
+                // Check if this is the outermost call in a method chain
+                const isOutermostInChain = !(node.parent && node.parent.type === "MemberExpression"
+                    && node.parent.parent && node.parent.parent.type === "CallExpression"
+                    && node.parent.parent.callee === node.parent);
+
+                if (isOutermostInChain && callee && callee.type === "MemberExpression") {
+                    const calls = collectChainHandler(node);
+
+                    if (calls.length >= 2) {
+                        const firstCall = calls[0];
+
+                        if (firstCall.loc.start.line !== node.loc.end.line) {
+                            const allSimple = calls.every((call) => {
+                                if (call.arguments.length > 1) return false;
+                                if (call.arguments.length === 1 && !isSimpleChainArgHandler(call.arguments[0])) return false;
+
+                                return true;
+                            });
+
+                            if (allSimple) {
+                                const fullText = sourceCode.getText(node);
+                                const collapsed = fullText.replace(/\s*\n\s*/g, "").replace(/\s{2,}/g, " ");
+
+                                const line = sourceCode.lines[node.loc.start.line - 1];
+                                const indent = line.match(/^(\s*)/)[1].length;
+                                const prefix = line.slice(indent, line.indexOf(fullText.split("\n")[0].trim()));
+                                const totalLength = indent + prefix.length + collapsed.length;
+
+                                if (totalLength <= 120) {
+                                    context.report({
+                                        fix: (fixer) => fixer.replaceText(node, collapsed),
+                                        message: "Method chain with single simple arguments should be on one line",
+                                        node,
+                                    });
+
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // --- Single argument collapse ---
                 // Only check calls with exactly one argument
                 if (args.length !== 1) return;
 
@@ -2192,107 +2267,7 @@ const singleArgumentOnOneLine = {
         };
     },
     meta: {
-        docs: { description: "Enforce single simple argument calls to be on one line" },
-        fixable: "code",
-        schema: [],
-        type: "layout",
-    },
-};
-
-/*
- * Method Chain Single Line
- * Collapse method chains to one line when all calls have ≤1 simple argument.
- * e.g., string().\n    required(arg).\n    email(arg) → string().required(arg).email(arg)
- */
-const methodChainSingleLine = {
-    create(context) {
-        const sourceCode = context.sourceCode || context.getSourceCode();
-
-        // Check if an argument is simple enough to keep on one line
-        const isSimpleArgHandler = (argNode) => {
-            if (!argNode) return false;
-
-            if (argNode.type === "Literal") return true;
-            if (argNode.type === "Identifier") return true;
-            if (argNode.type === "MemberExpression") return true;
-            if (argNode.type === "UnaryExpression") return true;
-            if (argNode.type === "TemplateLiteral" && argNode.expressions.length === 0
-                && argNode.loc.start.line === argNode.loc.end.line) return true;
-
-            return false;
-        };
-
-        // Collect all calls in a method chain (deepest first)
-        const collectChainHandler = (node) => {
-            const calls = [];
-            let current = node;
-
-            while (current && current.type === "CallExpression") {
-                calls.unshift(current);
-
-                if (current.callee && current.callee.type === "MemberExpression") {
-                    current = current.callee.object;
-                } else {
-                    break;
-                }
-            }
-
-            return calls;
-        };
-
-        return {
-            CallExpression(node) {
-                // Only process the outermost call in a chain
-                if (node.parent && node.parent.type === "MemberExpression"
-                    && node.parent.parent && node.parent.parent.type === "CallExpression"
-                    && node.parent.parent.callee === node.parent) {
-                    return;
-                }
-
-                // Must be a method chain (at least 2 calls linked by .)
-                if (!node.callee || node.callee.type !== "MemberExpression") return;
-
-                const calls = collectChainHandler(node);
-
-                if (calls.length < 2) return;
-
-                // Must span multiple lines
-                const firstCall = calls[0];
-
-                if (firstCall.loc.start.line === node.loc.end.line) return;
-
-                // All calls must have ≤1 argument and all args must be simple
-                const allSimple = calls.every((call) => {
-                    if (call.arguments.length > 1) return false;
-                    if (call.arguments.length === 1 && !isSimpleArgHandler(call.arguments[0])) return false;
-
-                    return true;
-                });
-
-                if (!allSimple) return;
-
-                // Build collapsed version
-                const fullText = sourceCode.getText(node);
-                const collapsed = fullText.replace(/\s*\n\s*/g, "").replace(/\s{2,}/g, " ");
-
-                // Check line length with context
-                const line = sourceCode.lines[node.loc.start.line - 1];
-                const indent = line.match(/^(\s*)/)[1].length;
-                const prefix = line.slice(indent, line.indexOf(fullText.split("\n")[0].trim()));
-                const totalLength = indent + prefix.length + collapsed.length;
-
-                if (totalLength > 120) return;
-
-                context.report({
-                    fix: (fixer) => fixer.replaceText(node, collapsed),
-                    message: "Method chain with single simple arguments should be on one line",
-                    node,
-                });
-            },
-        };
-    },
-    meta: {
-        docs: { description: "Collapse method chains to one line when all calls have single simple arguments" },
+        docs: { description: "Enforce single simple argument calls and method chains to be on one line" },
         fixable: "code",
         schema: [],
         type: "layout",
@@ -2301,7 +2276,6 @@ const methodChainSingleLine = {
 
 export {
     functionArgumentsFormat,
-    methodChainSingleLine,
     nestedCallClosingBrackets,
     noEmptyLinesInFunctionCalls,
     openingBracketsSameLine,

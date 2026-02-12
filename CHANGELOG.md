@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.9] - 2026-02-12
+
+### Fixed
+
+- **`single-argument-on-one-line`** — Collapse method chains to one line when all calls have ≤1 simple argument (e.g., `string().required(arg).email(arg)`)
+- **`folder-based-naming-convention`** — Add `schemas` folder with `Schema` suffix and camelCase naming (e.g., `schemas/auth/forgot-password.ts` → `forgotPasswordAuthSchema`)
+
+---
+
 ## [2.0.8] - 2026-02-12
 
 ### Fixed
@@ -2035,6 +2044,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.9]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.8...v2.0.9
 [2.0.8]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.7...v2.0.8
 [2.0.7]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.6...v2.0.7
 [2.0.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.5...v2.0.6
