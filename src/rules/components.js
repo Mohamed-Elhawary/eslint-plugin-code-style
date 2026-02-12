@@ -1263,6 +1263,7 @@ const folderBasedNamingConvention = {
             pages: "Page",
             providers: "Provider",
             reducers: "Reducer",
+            schemas: "Schema",
             services: "Service",
             strings: "Strings",
             theme: "Theme",
@@ -1274,7 +1275,7 @@ const folderBasedNamingConvention = {
         const jsxRequiredFolders = new Set(["atoms", "components", "layouts", "pages", "providers", "views"]);
 
         // Folders where exports use camelCase naming (non-component, non-context)
-        const camelCaseFolders = new Set(["constants", "data", "reducers", "services", "strings"]);
+        const camelCaseFolders = new Set(["constants", "data", "reducers", "schemas", "services", "strings"]);
 
         // Convert kebab-case to PascalCase
         const toPascalCaseHandler = (str) => str.split("-").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join("");

@@ -7,6 +7,7 @@ import {
 } from "./rules/arrow-functions.js";
 import {
     functionArgumentsFormat,
+    methodChainSingleLine,
     nestedCallClosingBrackets,
     noEmptyLinesInFunctionCalls,
     openingBracketsSameLine,
@@ -109,6 +110,7 @@ export default {
 
         // Call expression rules
         "function-arguments-format": functionArgumentsFormat,
+        "method-chain-single-line": methodChainSingleLine,
         "nested-call-closing-brackets": nestedCallClosingBrackets,
         "no-empty-lines-in-function-calls": noEmptyLinesInFunctionCalls,
         "opening-brackets-same-line": openingBracketsSameLine,
