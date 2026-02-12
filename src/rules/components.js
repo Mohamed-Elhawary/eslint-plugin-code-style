@@ -1443,6 +1443,16 @@ const folderBasedNamingConvention = {
             return `"${name}" in "${folder}" folder must be named "${expectedName}" (expected chained folder names)`;
         };
 
+        // Detect when a name's suffix belongs to a different folder (wrong placement)
+        // Returns the correct folder name, or null if no mismatch
+        const detectWrongFolderHandler = (name, currentFolder) => {
+            const match = Object.entries(folderSuffixMap)
+                .filter(([f, s]) => f !== currentFolder && s && name.endsWith(s))
+                .sort((a, b) => b[1].length - a[1].length)[0];
+
+            return match ? match[0] : null;
+        };
+
         // Check if name starts with lowercase (camelCase)
         const isCamelCaseHandler = (name) => name && /^[a-z]/.test(name);
 
@@ -1541,6 +1551,17 @@ const folderBasedNamingConvention = {
             if (!expectedName) return;
 
             if (name !== expectedName) {
+                const correctFolder = detectWrongFolderHandler(name, folder);
+
+                if (correctFolder) {
+                    context.report({
+                        message: `"${name}" belongs in "${correctFolder}/" folder, not "${folder}/". Move it to the correct folder.`,
+                        node: identifierNode,
+                    });
+
+                    return;
+                }
+
                 context.report({
                     fix: createRenameFixer(node, name, expectedName, identifierNode),
                     message: buildMessageHandler(name, folder, suffix, expectedName),
@@ -1584,6 +1605,17 @@ const folderBasedNamingConvention = {
             if (!expectedName) return;
 
             if (name !== expectedName) {
+                const correctFolder = detectWrongFolderHandler(name, folder);
+
+                if (correctFolder) {
+                    context.report({
+                        message: `"${name}" belongs in "${correctFolder}/" folder, not "${folder}/". Move it to the correct folder.`,
+                        node: node.id,
+                    });
+
+                    return;
+                }
+
                 context.report({
                     fix: createRenameFixer(node, name, expectedName, node.id),
                     message: buildMessageHandler(name, folder, suffix, expectedName),

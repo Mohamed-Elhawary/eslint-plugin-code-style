@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.13] - 2026-02-13
+
+### Fixed
+
+- **`folder-based-naming-convention`** — Detect exports with suffixes belonging to a different folder (e.g., `AuthProvider` in `contexts/` reports "belongs in `providers/` folder, not `contexts/`" instead of trying to rename)
+
+---
+
 ## [2.0.12] - 2026-02-13
 
 ### Fixed
@@ -2068,6 +2076,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.13]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.12...v2.0.13
 [2.0.12]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.11...v2.0.12
 [2.0.11]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.10...v2.0.11
 [2.0.10]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.9...v2.0.10
