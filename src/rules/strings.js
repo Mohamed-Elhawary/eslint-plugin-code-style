@@ -468,14 +468,14 @@ const noHardcodedStrings = {
 
                 // Common Tailwind patterns - MUST have hyphen, colon, slash, or brackets
                 return (
-                    // Kebab-case: w-5, p-4, pr-12, text-2xl, gap-4, bg-white, text-error
-                    /^-?[a-z]+(-[a-z0-9]+)+$/.test(token)
+                    // Kebab-case: w-5, p-4, pr-12, text-2xl, gap-4, bg-white, py-1.5, gap-2.5
+                    /^-?[a-z]+(-[a-z0-9.]+)+$/.test(token)
                     // With fractions: w-1/2, -translate-y-1/2, bg-black/50
-                    || /^-?[a-z]+(-[a-z0-9]+)*\/\d+$/.test(token)
+                    || /^-?[a-z]+(-[a-z0-9.]+)*\/\d+$/.test(token)
                     // With modifiers: hover:bg-primary, focus-visible:ring-2, sm:flex, data-[state=checked]:bg-primary
-                    || /^[a-z][-a-z0-9]*(\[[-\w=]+\])?:[a-z][-a-z0-9/[\]]*$/.test(token)
+                    || /^[a-z][-a-z0-9]*(\[[-\w=]+\])?:[a-z][-a-z0-9./[\]]*$/.test(token)
                     // Arbitrary selector variants: [&_svg]:size-4, [&>*]:p-2
-                    || /^\[.+\]:[a-z][-a-z0-9/[\]]*$/.test(token)
+                    || /^\[.+\]:[a-z][-a-z0-9./[\]]*$/.test(token)
                     // Arbitrary values: w-[100px], bg-[#ff0000]
                     || /^-?[a-z]+(-[a-z]+)*-?\[.+\]$/.test(token)
                 );
@@ -679,8 +679,10 @@ const noHardcodedStrings = {
         ]);
 
         // Check if a node is inside a class utility function call (cn, cva, clsx, etc.)
+        // or inside any function call within a className/class JSX attribute
         const isInsideClassUtilityCallHandler = (node) => {
             let current = node.parent;
+            let insideCallExpression = false;
 
             while (current) {
                 if (current.type === "CallExpression" && current.callee) {
@@ -688,6 +690,15 @@ const noHardcodedStrings = {
                         || (current.callee.property && current.callee.property.name);
 
                     if (calleeName && classUtilityFunctions.has(calleeName)) return true;
+
+                    insideCallExpression = true;
+                }
+
+                // Any function call inside a className/class JSX attribute is a class utility
+                if (insideCallExpression && current.type === "JSXAttribute" && current.name) {
+                    const attrName = current.name.name;
+
+                    if (attrName === "className" || attrName === "class") return true;
                 }
 
                 current = current.parent;
