@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.7] - 2026-02-12
+
+### Fixed
+
+- **`component-naming`** — Skip generic grouping folders (`shared`, `common`, `ui`, `base`, `general`, `core`) when chaining folder names into component names (e.g., `components/shared/page-header.tsx` → `PageHeader`, not `PageHeaderShared`)
+
+---
+
 ## [2.0.6] - 2026-02-12
 
 ### Fixed
@@ -2018,6 +2026,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.7]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.6...v2.0.7
 [2.0.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.5...v2.0.6
 [2.0.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.3...v2.0.4
