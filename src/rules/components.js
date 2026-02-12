@@ -1461,9 +1461,9 @@ const folderBasedNamingConvention = {
                 return;
             }
 
-            // Has correct suffix — check if prefix is a near-match of expected file-based name
-            // This catches cases like "routeConstants" → "routesConstants" (file is routes.ts)
-            // but allows unrelated names like "buttonTypeData" in data/app.ts
+            // Has correct suffix — check if prefix matches expected file-based name
+            // Catches missing folder chain (forgotPasswordSchema → forgotPasswordAuthSchema)
+            // and typos (routeConstants → routesConstants), but allows unrelated names
             const expectedName = buildExpectedNameHandler(moduleInfo);
 
             if (!expectedName || name === expectedName) return;
@@ -1471,10 +1471,13 @@ const folderBasedNamingConvention = {
             const actualPrefix = name.slice(0, -suffix.length);
             const expectedPrefix = expectedName.slice(0, -suffix.length);
 
-            const isNearMatch = (expectedPrefix.startsWith(actualPrefix) && (expectedPrefix.length - actualPrefix.length) <= 2)
-                || (actualPrefix.startsWith(expectedPrefix) && (actualPrefix.length - expectedPrefix.length) <= 2);
+            // Flag when expected prefix starts with actual prefix (missing folder chain segments)
+            // or when actual prefix is a near-match of expected (typos within 2 chars)
+            const isMissingFolderChain = expectedPrefix.startsWith(actualPrefix);
+            const isNearMatch = actualPrefix.startsWith(expectedPrefix)
+                && (actualPrefix.length - expectedPrefix.length) <= 2;
 
-            if (isNearMatch) {
+            if (isMissingFolderChain || isNearMatch) {
                 context.report({
                     fix: createRenameFixer(scopeNode, name, expectedName, identifierNode),
                     message: `"${name}" in "${folder}" folder should be "${expectedName}" to match the file name`,
