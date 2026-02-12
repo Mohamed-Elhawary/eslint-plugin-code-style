@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.8] - 2026-02-12
+
+### Fixed
+
+- **`no-hardcoded-strings`** — Fix Tailwind class regex to handle decimal values (`py-1.5`, `gap-2.5`, `text-base/7`)
+- **`no-hardcoded-strings`** — Detect any function call inside a `className` JSX attribute as a class utility (no longer limited to `cn`, `cva`, `clsx` — works with custom names like `generateClassNameHandler`)
+
+---
+
 ## [2.0.7] - 2026-02-12
 
 ### Fixed
@@ -2026,6 +2035,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.8]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.7...v2.0.8
 [2.0.7]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.6...v2.0.7
 [2.0.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.5...v2.0.6
 [2.0.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.4...v2.0.5
