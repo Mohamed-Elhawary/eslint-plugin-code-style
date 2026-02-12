@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.12] - 2026-02-13
+
+### Fixed
+
+- **`single-argument-on-one-line`** — Collapse method chain inter-call line breaks: when a chain has calls split across lines, collapse them onto one line while preserving multi-line argument formatting (e.g., `string().\n    required(arg).\n    min(\n        a,\n        b,\n    )` → `string().required(arg).min(\n    a,\n    b,\n)`)
+
+---
+
 ## [2.0.11] - 2026-02-13
 
 ### Fixed
@@ -2060,6 +2068,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.12]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.11...v2.0.12
 [2.0.11]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.10...v2.0.11
 [2.0.10]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.9...v2.0.10
 [2.0.9]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.8...v2.0.9

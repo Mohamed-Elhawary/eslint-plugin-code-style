@@ -2215,9 +2215,104 @@ const singleArgumentOnOneLine = {
                                     return;
                                 }
                             }
+
+                            // Partial collapse: not all calls are simple but chain has
+                            // inter-call line breaks that should be removed.
+                            // Collapse chain connectors onto one line, preserve multi-line args.
+                            if (!allSimple) {
+                                let hasInterCallBreaks = false;
+
+                                for (let i = 1; i < calls.length; i++) {
+                                    const prevEnd = sourceCode.getLastToken(calls[i - 1]);
+                                    const currOpen = sourceCode.getTokenAfter(
+                                        calls[i].callee.property,
+                                        (t) => t.value === "(",
+                                    );
+
+                                    if (prevEnd.loc.end.line !== currOpen.loc.start.line) {
+                                        hasInterCallBreaks = true;
+                                        break;
+                                    }
+                                }
+
+                                if (hasInterCallBreaks) {
+                                    const startLine = sourceCode.lines[node.loc.start.line - 1];
+                                    const baseIndent = startLine.match(/^(\s*)/)[1].length;
+                                    let chainIndent = baseIndent + 4;
+
+                                    for (let i = 1; i < calls.length; i++) {
+                                        const prevEnd = sourceCode.getLastToken(calls[i - 1]);
+                                        const currOpen = sourceCode.getTokenAfter(
+                                            calls[i].callee.property,
+                                            (t) => t.value === "(",
+                                        );
+
+                                        if (prevEnd.loc.end.line !== currOpen.loc.start.line) {
+                                            const propLine = sourceCode.lines[calls[i].callee.property.loc.start.line - 1];
+
+                                            chainIndent = propLine.match(/^(\s*)/)[1].length;
+                                            break;
+                                        }
+                                    }
+
+                                    const indentDelta = baseIndent - chainIndent;
+                                    let fixed = "";
+                                    let lastOffset = node.range[0];
+
+                                    for (let i = 1; i < calls.length; i++) {
+                                        const prevEnd = sourceCode.getLastToken(calls[i - 1]);
+                                        const currOpen = sourceCode.getTokenAfter(
+                                            calls[i].callee.property,
+                                            (t) => t.value === "(",
+                                        );
+
+                                        if (prevEnd.loc.end.line !== currOpen.loc.start.line) {
+                                            fixed += sourceCode.text.slice(lastOffset, prevEnd.range[1]);
+
+                                            const dotToken = sourceCode.getTokenBefore(calls[i].callee.property);
+
+                                            fixed += dotToken.value + calls[i].callee.property.name;
+                                            lastOffset = currOpen.range[0];
+                                        }
+                                    }
+
+                                    fixed += sourceCode.text.slice(lastOffset, node.range[1]);
+
+                                    if (indentDelta !== 0) {
+                                        const fixedLines = fixed.split("\n");
+
+                                        if (fixedLines.length > 1) {
+                                            fixed = fixedLines[0] + "\n" + fixedLines.slice(1).map((ln) => {
+                                                const curIndent = ln.match(/^(\s*)/)[1].length;
+                                                const newIndent = Math.max(0, curIndent + indentDelta);
+
+                                                return " ".repeat(newIndent) + ln.trimStart();
+                                            }).join("\n");
+                                        }
+                                    }
+
+                                    const firstFixedLine = fixed.split("\n")[0];
+                                    const linePrefix = sourceCode.lines[node.loc.start.line - 1]
+                                        .slice(0, node.loc.start.column);
+                                    const nodeText = sourceCode.getText(node);
+
+                                    if (linePrefix.length + firstFixedLine.length <= 120 && fixed !== nodeText) {
+                                        context.report({
+                                            fix: (fixer) => fixer.replaceText(node, fixed),
+                                            message: "Method chain should not have line breaks between calls",
+                                            node,
+                                        });
+
+                                        return;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
+
+                // Inner chain calls are handled by the outermost chain collapse
+                if (!isOutermostInChain) return;
 
                 // --- Single argument collapse ---
                 // Only check calls with exactly one argument
