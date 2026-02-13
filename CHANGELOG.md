@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.15] - 2026-02-13
+
+### Fixed
+
+- **`folder-based-naming-convention`** — Flag PascalCase names in camelCase folders (`data`, `constants`, `schemas`, `services`, `reducers`, `strings`) and auto-fix to camelCase (e.g., `ApisData` → `apisData`, `ButtonsConstants` → `buttonsConstants`)
+
+---
+
 ## [2.0.14] - 2026-02-13
 
 ### Fixed
@@ -2084,6 +2092,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.15]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.14...v2.0.15
 [2.0.14]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.13...v2.0.14
 [2.0.13]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.12...v2.0.13
 [2.0.12]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.11...v2.0.12

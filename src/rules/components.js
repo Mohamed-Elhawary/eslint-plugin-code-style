@@ -1534,9 +1534,19 @@ const folderBasedNamingConvention = {
 
             // For camelCase folders, enforce suffix + near-match prefix check
             if (camelCaseFolders.has(folder)) {
-                if (!isCamelCaseHandler(name) || !suffix) return;
+                if (!suffix) return;
 
-                checkCamelCaseHandler(name, folder, suffix, identifierNode, node, moduleInfo);
+                if (isCamelCaseHandler(name)) {
+                    checkCamelCaseHandler(name, folder, suffix, identifierNode, node, moduleInfo);
+                } else if (isPascalCaseHandler(name)) {
+                    const fixedName = toCamelCaseHandler(name);
+
+                    context.report({
+                        fix: createRenameFixer(node, name, fixedName, identifierNode),
+                        message: `"${name}" in "${folder}" folder should be camelCase. Rename to "${fixedName}"`,
+                        node: identifierNode,
+                    });
+                }
 
                 return;
             }
@@ -1609,9 +1619,19 @@ const folderBasedNamingConvention = {
 
             // For camelCase folders, enforce suffix + near-match prefix check
             if (camelCaseFolders.has(folder)) {
-                if (!isCamelCaseHandler(name) || !suffix) return;
+                if (!suffix) return;
 
-                checkCamelCaseHandler(name, folder, suffix, node.id, node, moduleInfo);
+                if (isCamelCaseHandler(name)) {
+                    checkCamelCaseHandler(name, folder, suffix, node.id, node, moduleInfo);
+                } else if (isPascalCaseHandler(name)) {
+                    const fixedName = toCamelCaseHandler(name);
+
+                    context.report({
+                        fix: createRenameFixer(node, name, fixedName, node.id),
+                        message: `"${name}" in "${folder}" folder should be camelCase. Rename to "${fixedName}"`,
+                        node: node.id,
+                    });
+                }
 
                 return;
             }
