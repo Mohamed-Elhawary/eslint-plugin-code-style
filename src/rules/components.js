@@ -1272,7 +1272,7 @@ const folderBasedNamingConvention = {
         };
 
         // Folders where JSX return is required (component folders)
-        const jsxRequiredFolders = new Set(["atoms", "components", "layouts", "pages", "providers", "views"]);
+        const jsxRequiredFolders = new Set(["atoms", "components", "layouts", "pages", "views"]);
 
         // Folders where exports use camelCase naming (non-component, non-context)
         const camelCaseFolders = new Set(["constants", "data", "reducers", "schemas", "services", "strings"]);
@@ -1541,7 +1541,25 @@ const folderBasedNamingConvention = {
                 return;
             }
 
-            if (!isPascalCaseHandler(name)) return;
+            if (!isPascalCaseHandler(name)) {
+                // Flag exported camelCase functions in PascalCase folders (e.g., authProvider → AuthProvider)
+                const varDecl = node.parent && node.parent.type === "VariableDeclarator" && node.parent.parent;
+                const isExported = varDecl && varDecl.parent && varDecl.parent.type === "ExportNamedDeclaration";
+
+                if (isExported && isCamelCaseHandler(name)) {
+                    const expectedName = buildExpectedNameHandler(moduleInfo);
+
+                    if (expectedName) {
+                        context.report({
+                            fix: createRenameFixer(node, name, expectedName, identifierNode),
+                            message: `"${name}" in "${folder}" folder should be PascalCase. Rename to "${expectedName}"`,
+                            node: identifierNode,
+                        });
+                    }
+                }
+
+                return;
+            }
 
             // For JSX-required folders, only check functions that return JSX
             if (jsxRequiredFolders.has(folder) && !returnsJsxHandler(node)) return;
@@ -1598,7 +1616,25 @@ const folderBasedNamingConvention = {
                 return;
             }
 
-            if (!isPascalCaseHandler(name)) return;
+            if (!isPascalCaseHandler(name)) {
+                // Flag exported camelCase names in PascalCase folders (e.g., authProvider → AuthProvider)
+                const isExported = node.parent && node.parent.parent
+                    && node.parent.parent.type === "ExportNamedDeclaration";
+
+                if (isExported && isCamelCaseHandler(name)) {
+                    const expectedName = buildExpectedNameHandler(moduleInfo);
+
+                    if (expectedName) {
+                        context.report({
+                            fix: createRenameFixer(node, name, expectedName, node.id),
+                            message: `"${name}" in "${folder}" folder should be PascalCase. Rename to "${expectedName}"`,
+                            node: node.id,
+                        });
+                    }
+                }
+
+                return;
+            }
 
             const expectedName = buildExpectedNameHandler(moduleInfo);
 
