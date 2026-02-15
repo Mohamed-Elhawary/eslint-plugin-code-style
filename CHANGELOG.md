@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.16] - 2026-02-15
+
+### Enhanced
+
+- **`nested-call-closing-brackets`** — Collapse closing `)` onto the same line as arrow function body for single-arg calls (block bodies, expression bodies, ternaries), removing trailing commas
+- **`opening-brackets-same-line`** — Collapse `fn(\n    () =>` to `fn(() =>` for zero-param arrow callbacks; split destructured callback params with 2+ properties to multi-line; move arrow body to `=>` line for destructured callback params
+
+---
+
 ## [2.0.15] - 2026-02-13
 
 ### Fixed
@@ -2092,6 +2101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.16]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.15...v2.0.16
 [2.0.15]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.14...v2.0.15
 [2.0.14]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.13...v2.0.14
 [2.0.13]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.12...v2.0.13
