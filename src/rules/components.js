@@ -1992,15 +1992,19 @@ const noRedundantFolderSuffix = {
             for (let j = 0; j < i; j++) {
                 const ancestorFolder = ancestorFolders[j];
                 const singular = singularizeHandler(ancestorFolder);
-                const suffix = `-${singular}`;
+                const pluralSuffix = `-${ancestorFolder}`;
+                const singularSuffix = `-${singular}`;
+                const matchedSuffix = folderName.endsWith(pluralSuffix)
+                    ? pluralSuffix
+                    : (ancestorFolder !== singular && folderName.endsWith(singularSuffix) ? singularSuffix : null);
 
-                if (folderName.endsWith(suffix)) {
+                if (matchedSuffix) {
                     folderErrors.push({
                         ancestorFolder,
                         folderName,
                         singular,
-                        suffix,
-                        suggestedName: folderName.slice(0, -suffix.length),
+                        suffix: matchedSuffix,
+                        suggestedName: folderName.slice(0, -matchedSuffix.length),
                     });
                 }
             }
@@ -2017,16 +2021,22 @@ const noRedundantFolderSuffix = {
             }
         }
 
-        // Check if the file name ends with any ancestor folder name (singularized) — skip index files
+        // Check if the file name ends with any ancestor folder name (singular or plural) — skip index files
         let fileRedundancy = null;
 
         if (baseName !== "index" && !fileMatchesFolder) {
             for (const folder of ancestorFolders) {
                 const singular = singularizeHandler(folder);
-                const suffix = `-${singular}`;
+                const pluralSuffix = `-${folder}`;
+                const singularSuffix = `-${singular}`;
 
-                if (baseName.endsWith(suffix)) {
-                    fileRedundancy = { folder, singular, suffix };
+                if (baseName.endsWith(pluralSuffix)) {
+                    fileRedundancy = { folder, singular, suffix: pluralSuffix };
+                    break;
+                }
+
+                if (folder !== singular && baseName.endsWith(singularSuffix)) {
+                    fileRedundancy = { folder, singular, suffix: singularSuffix };
                     break;
                 }
             }
