@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.17] - 2026-02-15
+
+### Fixed
+
+- **`no-redundant-folder-suffix`** — Detect plural folder suffix in file names (e.g., `auth-interfaces.ts` in `interfaces/` folder, `user-actions.ts` in `actions/` folder), not just singular forms
+
+---
+
 ## [2.0.16] - 2026-02-15
 
 ### Enhanced
@@ -2101,6 +2109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.17]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.16...v2.0.17
 [2.0.16]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.15...v2.0.16
 [2.0.15]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.14...v2.0.15
 [2.0.14]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.13...v2.0.14
