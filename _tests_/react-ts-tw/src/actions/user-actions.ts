@@ -72,22 +72,22 @@ export const useUserActions = () => {
         setIsLoading(true);
 
         try {
-            setUsers((prev) => prev.map(({ id: currentId, ...rest }) =>
-                currentId === id
-                    ? {
-                        ...rest,
-                        id: currentId,
-                        ...age !== undefined && { age },
-                        ...email !== undefined && { email },
-                        ...isActive !== undefined && { isActive },
-                        ...name !== undefined && { name },
-                    }
-                    : {
-                        id: currentId,
-                        ...rest,
-                    },
-            ),
-            );
+            setUsers((prev) => prev.map(({
+                id: currentId,
+                ...rest
+            }) => currentId === id
+                ? {
+                    ...rest,
+                    id: currentId,
+                    ...age !== undefined && { age },
+                    ...email !== undefined && { email },
+                    ...isActive !== undefined && { isActive },
+                    ...name !== undefined && { name },
+                }
+                : {
+                    id: currentId,
+                    ...rest,
+                }));
         } catch (err) {
             setError(err instanceof Error ? err.message : appStrings.common.unknownError);
         } finally {
@@ -107,17 +107,17 @@ export const useUserActions = () => {
         try {
             if (force) setUsers((prev) => prev.filter(({ id: currentId }) => currentId !== id));
             else {
-                setUsers((prev) => prev.map(({ id: currentId, ...rest }) =>
-                    currentId === id ? {
-                        id: currentId,
-                        ...rest,
-                        isActive: false,
-                    } : {
-                        id: currentId,
-                        ...rest,
-                    },
-                ),
-                );
+                setUsers((prev) => prev.map(({
+                    id: currentId,
+                    ...rest
+                }) => currentId === id ? {
+                    id: currentId,
+                    ...rest,
+                    isActive: false,
+                } : {
+                    id: currentId,
+                    ...rest,
+                }));
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : appStrings.common.unknownError);

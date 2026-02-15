@@ -367,6 +367,30 @@ const nestedCallClosingBrackets = {
                     closingBrace = sourceCode.getLastToken(body.typeAnnotation);
                 } else if (body.type === "ObjectExpression" || body.type === "ArrayExpression") {
                     closingBrace = sourceCode.getLastToken(body);
+                } else {
+                    // General arrow body (BlockStatement, expression bodies, etc.)
+                    const lastToken = sourceCode.getLastToken(lastArg);
+                    const closeParen = sourceCode.getLastToken(node);
+
+                    if (!closeParen || closeParen.value !== ")") return;
+
+                    // Check if there's a trailing comma after the arrow's last token
+                    const tokenAfter = sourceCode.getTokenAfter(lastToken);
+                    const hasTrailingComma = tokenAfter && tokenAfter.value === ",";
+                    const checkToken = hasTrailingComma ? tokenAfter : lastToken;
+
+                    if (checkToken.loc.end.line !== closeParen.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [lastToken.range[1], closeParen.range[0]],
+                                "",
+                            ),
+                            message: "Closing parenthesis should be on same line as arrow function body",
+                            node: closeParen,
+                        });
+                    }
+
+                    return;
                 }
             }
 
@@ -813,7 +837,20 @@ const openingBracketsSameLine = {
 
                 const arrowParams = firstArg.params;
 
-                if (arrowParams.length === 0) return;
+                if (arrowParams.length === 0) {
+                    if (openParen.loc.end.line !== firstArg.loc.start.line) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [openParen.range[1], firstArg.range[0]],
+                                "",
+                            ),
+                            message: "Arrow function should start on the same line as opening parenthesis",
+                            node: firstArg,
+                        });
+                    }
+
+                    return;
+                }
 
                 const firstParam = arrowParams[0];
                 const lastParam = arrowParams[arrowParams.length - 1];
@@ -849,6 +886,57 @@ const openingBracketsSameLine = {
                             ),
                             message: "Opening parenthesis and brace should be on the same line for callback destructured param",
                             node: openBrace,
+                        });
+
+                        return;
+                    }
+
+                    // Split destructured properties to multi-line when 2+ properties
+                    // and body starts on a different line from =>
+                    const arrowToken = sourceCode.getTokenBefore(firstArg.body);
+                    const bodyFirstToken = sourceCode.getTokenAfter(arrowToken);
+                    const bodyOnDifferentLine = arrowToken.value === "=>" && arrowToken.loc.end.line !== bodyFirstToken.loc.start.line;
+
+                    if (firstParam.properties.length >= 2) {
+                        const closeBrace = sourceCode.getLastToken(firstParam);
+                        const propsOnOneLine = openBrace.loc.start.line === closeBrace.loc.end.line;
+
+                        if (propsOnOneLine && bodyOnDifferentLine) {
+                            const lineText = sourceCode.lines[openParen.loc.start.line - 1];
+                            const lineIndent = lineText.match(/^(\s*)/)[1];
+                            const propIndent = lineIndent + "    ";
+
+                            const propsText = firstParam.properties.map((prop) =>
+                                propIndent + sourceCode.getText(prop)).join(",\n");
+
+                            context.report({
+                                fix: (fixer) => [
+                                    fixer.replaceTextRange(
+                                        [openBrace.range[0], closeBrace.range[1]],
+                                        "{\n" + propsText + "\n" + lineIndent + "}",
+                                    ),
+                                    fixer.replaceTextRange(
+                                        [arrowToken.range[1], bodyFirstToken.range[0]],
+                                        " ",
+                                    ),
+                                ],
+                                message: "Destructured callback params with 2+ properties should each be on their own line",
+                                node: firstParam,
+                            });
+
+                            return;
+                        }
+                    }
+
+                    // Ensure arrow body starts on same line as =>
+                    if (bodyOnDifferentLine) {
+                        context.report({
+                            fix: (fixer) => fixer.replaceTextRange(
+                                [arrowToken.range[1], bodyFirstToken.range[0]],
+                                " ",
+                            ),
+                            message: "Arrow function body should start on the same line as =>",
+                            node: bodyFirstToken,
                         });
                     }
 
@@ -1914,16 +2002,20 @@ const openingBracketsSameLine = {
  * ───────────────────────────────────────────────────────────────
  *
  * Description:
- *   Simple function calls with an arrow function containing a
- *   simple call expression should be on a single line.
+ *   Function calls with a single arrow function argument containing
+ *   a simple expression body should be on a single line.
  *
  * ✓ Good:
  *   fn(() => call(arg))
  *   lazy(() => import("./module"))
+ *   useState(() => !!getCookieHandler(key))
  *
  * ✗ Bad:
  *   fn(
  *       () => call(arg),
+ *   )
+ *   useState(
+ *       () => !!getCookieHandler(key),
  *   )
  */
 const simpleCallSingleLine = {
@@ -2015,14 +2107,11 @@ const simpleCallSingleLine = {
 
                 const { body } = arg;
 
-                // Zero params: body must be a simple call/import
-                if (arg.params.length === 0 && !isSimpleBodyHandler(body)) return;
+                // Must be expression body, not block statement
+                if (body.type === "BlockStatement") return;
 
-                // With single param: body must be expression (not block) and simple
-                if (arg.params.length === 1) {
-                    if (body.type === "BlockStatement") return;
-                    if (!isSimpleExpressionHandler(body)) return;
-                }
+                // Body must be a simple expression
+                if (!isSimpleExpressionHandler(body)) return;
 
                 // For optional chaining like .find(...)?.symbol, include the full chain
                 let replaceNode = node;
@@ -2038,40 +2127,14 @@ const simpleCallSingleLine = {
                 // Check if the full chain spans multiple lines
                 if (replaceNode.loc.start.line === replaceNode.loc.end.line) return;
 
+                // Skip if there are line comments — collapsing would break them
+                const comments = sourceCode.getCommentsInside(replaceNode);
+
+                if (comments.some((c) => c.type === "Line")) return;
+
                 // Build the collapsed single-line version from source text, normalizing whitespace
                 const fullText = sourceCode.getText(replaceNode);
-                const fullCollapsed = fullText.replace(/\s*\n\s*/g, " ").replace(/\s+/g, " ").replace(/\( \)/, "()").replace(/,\s*\)/, ")").replace(/\s+\?\./g, "?.").replace(/\?\.\s+/g, "?.");
-
-                // Account for surrounding context (indentation + variable declaration)
-                const line = sourceCode.lines[replaceNode.loc.start.line - 1];
-                const indent = line.match(/^(\s*)/)[1].length;
-
-                // Check parent chain for variable declarator to account for "const x = " prefix
-                let prefixLength = 0;
-                let current = replaceNode.parent;
-
-                while (current) {
-                    if (current.type === "VariableDeclarator") {
-                        const declText = sourceCode.getText(current.id);
-
-                        prefixLength = `const ${declText} = `.length;
-
-                        break;
-                    }
-
-                    if (current.type === "MemberExpression" || current.type === "ChainExpression") {
-                        current = current.parent;
-
-                        continue;
-                    }
-
-                    break;
-                }
-
-                const totalLength = indent + prefixLength + fullCollapsed.length;
-
-                // Only simplify if the result fits on one line (max ~120 chars)
-                if (totalLength > 120) return;
+                const fullCollapsed = fullText.replace(/\s*\n\s*/g, " ").replace(/\s+/g, " ").replace(/\(\s+/g, "(").replace(/\s+\)/g, ")").replace(/,\s*\)/, ")").replace(/\s+\?\./g, "?.").replace(/\?\.\s+/g, "?.");
 
                 context.report({
                     fix: (fixer) => fixer.replaceText(replaceNode, fullCollapsed),

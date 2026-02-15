@@ -75,5 +75,4 @@ export const fetchDataHandler = async (url: string): Promise<unknown> => {
 export const getItemHandler = (arr: string[], index: number): string | undefined => arr[index];
 
 // Test: type-annotation-spacing with array types - no space before []
-export const filterNumbersHandler = (values: Array<string | number>): number[] => values.filter((v): v is number => typeof v === "number", // eslint-disable-line code-style/no-hardcoded-strings -- typeof check
-);
+export const filterNumbersHandler = (values: Array<string | number>): number[] => values.filter((v): v is number => typeof v === "number"); // eslint-disable-line code-style/no-hardcoded-strings -- typeof check
