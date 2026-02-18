@@ -1811,62 +1811,84 @@ const folderStructureConsistency = {
             return {};
         }
 
-        const { folder, fullPath } = moduleFolderInfo;
-
-        // Read module folder children
-        let children;
-
-        try {
-            children = fs.readdirSync(fullPath, { withFileTypes: true });
-        } catch {
-            return {};
-        }
-
         const codeFilePattern = /\.(tsx?|jsx?)$/;
 
-        // Categorize children
-        const directFiles = children.filter(
-            (child) => child.isFile() && codeFilePattern.test(child.name) && !child.name.startsWith("index."),
-        );
+        // Check consistency for a given folder path
+        const checkFolderConsistencyHandler = (checkPath, folderLabel) => {
+            let children;
 
-        const subdirectories = children.filter((child) => child.isDirectory());
-
-        // If only index files or empty, no issue
-        if (directFiles.length === 0 && subdirectories.length === 0) return {};
-
-        // If only one non-index file and no subdirectories, no issue
-        if (directFiles.length <= 1 && subdirectories.length === 0) return {};
-
-        // Check if wrapped mode is justified (any subfolder has 2+ code files)
-        const isWrappedJustifiedHandler = () => {
-            for (const dir of subdirectories) {
-                try {
-                    const dirPath = `${fullPath}/${dir.name}`;
-                    const dirChildren = fs.readdirSync(dirPath, { withFileTypes: true });
-                    const codeFiles = dirChildren.filter(
-                        (child) => child.isFile() && codeFilePattern.test(child.name),
-                    );
-
-                    if (codeFiles.length >= 2) return true;
-                } catch {
-                    // Skip unreadable directories
-                }
+            try {
+                children = fs.readdirSync(checkPath, { withFileTypes: true });
+            } catch {
+                return null;
             }
 
-            return false;
+            const directFiles = children.filter(
+                (child) => child.isFile() && codeFilePattern.test(child.name) && !child.name.startsWith("index."),
+            );
+
+            const subdirectories = children.filter((child) => child.isDirectory());
+
+            if (directFiles.length === 0 && subdirectories.length === 0) return null;
+
+            if (directFiles.length <= 1 && subdirectories.length === 0) return null;
+
+            const isWrappedJustifiedHandler = () => {
+                for (const dir of subdirectories) {
+                    try {
+                        const dirPath = `${checkPath}/${dir.name}`;
+                        const dirChildren = fs.readdirSync(dirPath, { withFileTypes: true });
+                        const codeFiles = dirChildren.filter(
+                            (child) => child.isFile() && codeFilePattern.test(child.name),
+                        );
+
+                        if (codeFiles.length >= 2) return true;
+
+                        // Justified if subfolder has an index file (component-style organization)
+                        if (codeFiles.some((f) => f.name.startsWith("index."))) return true;
+
+                        // Also check if subfolder has its own subdirectories (nested structure)
+                        const subDirs = dirChildren.filter((child) => child.isDirectory());
+
+                        if (subDirs.length > 0) return true;
+                    } catch {
+                        // Skip unreadable directories
+                    }
+                }
+
+                return false;
+            };
+
+            const hasDirectFiles = directFiles.length > 0;
+            const hasSubdirectories = subdirectories.length > 0;
+            const isMixed = hasDirectFiles && hasSubdirectories;
+            const wrappedJustified = hasSubdirectories ? isWrappedJustifiedHandler() : false;
+
+            return { folderLabel, hasDirectFiles, hasSubdirectories, isMixed, wrappedJustified };
         };
 
-        const hasDirectFiles = directFiles.length > 0;
-        const hasSubdirectories = subdirectories.length > 0;
-        const isMixed = hasDirectFiles && hasSubdirectories;
-        const wrappedJustified = hasSubdirectories ? isWrappedJustifiedHandler() : false;
+        const { fullPath: moduleFolderPath } = moduleFolderInfo;
+
+        // Check both the module folder and the immediate parent folder of the file
+        const fileParts = normalizedFilename.split("/");
+        const parentFolderPath = fileParts.slice(0, -1).join("/");
+        const parentFolderName = fileParts[fileParts.length - 2];
+
+        // Determine which folder to check — prefer the immediate parent if it's nested
+        const checkPath = parentFolderPath;
+        const folderLabel = parentFolderName;
+        const result = checkFolderConsistencyHandler(checkPath, folderLabel);
+
+        if (!result) return {};
+
+        const { hasDirectFiles, hasSubdirectories, isMixed, wrappedJustified } = result;
 
         return {
             Program(node) {
                 // Case: All folders, NOT justified → unnecessary wrapping
                 if (!hasDirectFiles && hasSubdirectories && !wrappedJustified) {
                     context.report({
-                        message: `Unnecessary wrapper folders in "${folder}/". Each item has only one file, use direct files instead (e.g., ${folder}/component.tsx).`,
+                        message: `Unnecessary wrapper folders in "${folderLabel}/". Each item has only one file, use direct files instead (e.g., ${folderLabel}/component.tsx).`,
                         node,
                     });
 
@@ -1875,13 +1897,13 @@ const folderStructureConsistency = {
 
                 // Case: Mixed + wrapped justified → error on direct files
                 if (isMixed && wrappedJustified) {
-                    // Only report if this file IS a direct file in the module folder
-                    const relativePart = normalizedFilename.slice(fullPath.length + 1);
+                    // Only report if this file IS a direct file in the checked folder
+                    const relativePart = normalizedFilename.slice(checkPath.length + 1);
                     const isDirectFile = !relativePart.includes("/");
 
                     if (isDirectFile) {
                         context.report({
-                            message: `Since some items in "${folder}/" contain multiple files, all items should be wrapped in folders.`,
+                            message: `Since some items in "${folderLabel}/" contain multiple files or subfolders, all items should be wrapped in folders.`,
                             node,
                         });
                     }
@@ -1892,12 +1914,12 @@ const folderStructureConsistency = {
                 // Case: Mixed + NOT justified → error on subfolder files
                 if (isMixed && !wrappedJustified) {
                     // Only report if this file IS inside a subfolder
-                    const relativePart = normalizedFilename.slice(fullPath.length + 1);
+                    const relativePart = normalizedFilename.slice(checkPath.length + 1);
                     const isInSubfolder = relativePart.includes("/");
 
                     if (isInSubfolder) {
                         context.report({
-                            message: `Unnecessary wrapper folder. Each item in "${folder}/" has only one file, use direct files instead.`,
+                            message: `Unnecessary wrapper folder. Each item in "${folderLabel}/" has only one file, use direct files instead.`,
                             node,
                         });
                     }
