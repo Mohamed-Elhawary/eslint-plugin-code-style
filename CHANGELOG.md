@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.18] - 2026-02-15
+
+### Fixed
+
+- **`folder-structure-consistency`** — Enforce consistency in nested subfolders (e.g., `components/shared/`), not just top-level module folders; treat index-file folders and folders with subdirectories as justified wrapping
+
+---
+
 ## [2.0.17] - 2026-02-15
 
 ### Fixed
@@ -2109,6 +2117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.18]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.17...v2.0.18
 [2.0.17]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.16...v2.0.17
 [2.0.16]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.15...v2.0.16
 [2.0.15]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.14...v2.0.15
