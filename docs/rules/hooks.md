@@ -99,6 +99,52 @@ useEffect(() => {}, [
 
 <br />
 
+### `hook-file-naming-convention`
+
+**What it does:** Enforces naming conventions for hook files inside `hooks/` module subfolders. Hook files must include the module name (from the parent folder) and follow a specific pattern depending on whether they are verb hooks or list hooks.
+
+**Why use it:** Files like `use-create.ts` or `use-get.ts` inside a module subfolder don't indicate which module they belong to. Requiring the module name in the file name makes it immediately clear what each hook operates on, even when browsing files outside their folder context.
+
+**Patterns:**
+
+- **Verb hooks:** `use-{verb}-{chain}-{module-singular}.ts`
+- **List hooks:** `use-{chain}-{module-plural}-list.ts`
+
+The *chain* is built from intermediate folders between `hooks/` and the module folder (excluding grouping folders like shared, common, ui, base, general, core).
+
+```
+// Good — verb hooks include the module name (singular)
+hooks/super-admins/use-create-super-admin.ts
+hooks/super-admins/use-get-super-admin.ts
+hooks/super-admins/use-update-super-admin.ts
+hooks/super-admins/use-delete-super-admin.ts
+
+// Good — list hooks use the module name (plural) + "-list"
+hooks/super-admins/use-super-admins-list.ts
+
+// Good — chain folders are included between verb and module
+hooks/dashboard/super-admins/use-get-dashboard-super-admin.ts
+hooks/dashboard/super-admins/use-dashboard-super-admins-list.ts
+
+// Good — files directly in hooks/ are not checked
+hooks/use-debounce.ts
+hooks/use-local-storage.ts
+
+// Good — files in grouping folders are not checked
+hooks/shared/use-auth.ts
+
+// Bad — missing module name
+hooks/super-admins/use-create.ts
+hooks/super-admins/use-get.ts
+
+// Bad — list hook with wrong pattern
+hooks/super-admins/use-list.ts
+```
+
+> **Note:** Index files and non-`use-` prefixed files are automatically skipped. The `no-redundant-folder-suffix` rule has a built-in exception for hook files so it won't conflict with this rule.
+
+---
+
 ### `use-state-naming-convention`
 
 **What it does:** Enforces boolean useState variables to start with valid prefixes (is, has, with, without).

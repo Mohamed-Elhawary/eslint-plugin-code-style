@@ -519,4 +519,135 @@ const useStateNamingConvention = {
     },
 };
 
-export { hookCallbackFormat, hookDepsPerLine, useStateNamingConvention };
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Hook File Naming Convention
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforce naming conventions for hook files inside hooks/ module
+ *   subfolders. Hook files must include the module name from their
+ *   parent folder and follow specific patterns for verb hooks vs
+ *   list hooks.
+ *
+ * ✓ Good:
+ *   hooks/super-admins/use-create-super-admin.ts
+ *   hooks/super-admins/use-super-admins-list.ts
+ *   hooks/dashboard/super-admins/use-get-dashboard-super-admin.ts
+ *   hooks/dashboard/super-admins/use-dashboard-super-admins-list.ts
+ *
+ * ✗ Bad:
+ *   hooks/super-admins/use-create.ts  (missing module name)
+ *   hooks/super-admins/use-get.ts     (missing module name)
+ */
+const hookFileNamingConvention = {
+    create(context) {
+        const filename = context.filename || context.getFilename();
+        const normalizedFilename = filename.replace(/\\/g, "/");
+
+        const parts = normalizedFilename.split("/");
+        const fileWithExt = parts[parts.length - 1];
+        const baseName = fileWithExt.replace(/\.(jsx?|tsx?)$/, "");
+
+        // Skip index files and non-use- files
+        if (baseName === "index" || !baseName.startsWith("use-")) return {};
+
+        // Find the hooks/ folder in the path
+        const hooksIndex = parts.lastIndexOf("hooks");
+
+        if (hooksIndex === -1) return {};
+
+        // Folders between hooks/ and the file
+        const foldersAfterHooks = parts.slice(hooksIndex + 1, parts.length - 1);
+
+        // Skip files directly in hooks/ (no module subfolder)
+        if (foldersAfterHooks.length === 0) return {};
+
+        // Grouping folders to exclude from chain
+        const groupingFolders = new Set(["shared", "common", "ui", "base", "general", "core"]);
+
+        // Skip files in grouping folders (e.g., hooks/shared/use-something.ts)
+        if (foldersAfterHooks.length === 1 && groupingFolders.has(foldersAfterHooks[0])) return {};
+
+        // Module folder = immediate parent (last folder after hooks/)
+        const moduleFolder = foldersAfterHooks[foldersAfterHooks.length - 1];
+
+        // Skip if module folder is a grouping folder
+        if (groupingFolders.has(moduleFolder)) return {};
+
+        // Chain = folders between hooks/ and module folder, excluding grouping folders
+        const chainFolders = foldersAfterHooks.slice(0, -1).filter((f) => !groupingFolders.has(f));
+        const chain = chainFolders.join("-");
+
+        // Singularize: convert folder name to singular form (same logic as noRedundantFolderSuffix)
+        const singularizeHandler = (word) => {
+            if (word.endsWith("ies")) return word.slice(0, -3) + "y";
+            if (word.endsWith("ses") || word.endsWith("xes") || word.endsWith("zes")) return word.slice(0, -2);
+            if (word.endsWith("s")) return word.slice(0, -1);
+
+            return word;
+        };
+
+        const moduleSingular = singularizeHandler(moduleFolder);
+        const modulePlural = moduleFolder;
+
+        // Check if this is a list hook (ends with -list)
+        const isList = baseName.endsWith("-list");
+
+        let expectedPattern;
+        let message;
+
+        if (isList) {
+            // List hooks: use-{chain}-{module-plural}-list
+            expectedPattern = chain
+                ? `use-${chain}-${modulePlural}-list`
+                : `use-${modulePlural}-list`;
+
+            if (baseName !== expectedPattern) {
+                message = `List hook file "${baseName}" should be named "${expectedPattern}". List hooks must follow the pattern: use-{chain}-{module-plural}-list.`;
+            }
+        } else {
+            // Verb hooks: use-{verb}-{chain}-{module-singular}
+            const expectedSuffix = chain
+                ? `-${chain}-${moduleSingular}`
+                : `-${moduleSingular}`;
+
+            if (!baseName.endsWith(expectedSuffix)) {
+                const exampleName = chain
+                    ? `use-{verb}-${chain}-${moduleSingular}`
+                    : `use-{verb}-${moduleSingular}`;
+
+                message = `Hook file "${baseName}" should end with "${expectedSuffix}". Verb hooks must follow the pattern: ${exampleName}.`;
+            } else {
+                // Verify there's a verb word between "use-" and the suffix
+                const afterUse = baseName.slice(4); // Remove "use-"
+                const suffixWithoutDash = expectedSuffix.slice(1); // Remove leading "-"
+                const verbPart = afterUse.slice(0, afterUse.length - suffixWithoutDash.length - 1); // Remove suffix and its preceding dash
+
+                if (!verbPart || verbPart.length === 0) {
+                    const exampleName = chain
+                        ? `use-{verb}-${chain}-${moduleSingular}`
+                        : `use-{verb}-${moduleSingular}`;
+
+                    message = `Hook file "${baseName}" is missing a verb. Verb hooks must follow the pattern: ${exampleName}.`;
+                }
+            }
+        }
+
+        if (!message) return {};
+
+        return {
+            Program(node) {
+                context.report({ message, node });
+            },
+        };
+    },
+    meta: {
+        docs: { description: "Enforce naming conventions for hook files inside hooks/ module subfolders" },
+        fixable: null,
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+export { hookCallbackFormat, hookDepsPerLine, hookFileNamingConvention, useStateNamingConvention };

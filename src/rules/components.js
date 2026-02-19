@@ -2044,9 +2044,10 @@ const noRedundantFolderSuffix = {
         }
 
         // Check if the file name ends with any ancestor folder name (singular or plural) — skip index files
+        // Exception: hook files (use-*) inside hooks/ folders need the module name and should not be flagged
         let fileRedundancy = null;
 
-        if (baseName !== "index" && !fileMatchesFolder) {
+        if (baseName !== "index" && !fileMatchesFolder && !(baseName.startsWith("use-") && ancestorFolders.includes("hooks"))) {
             for (const folder of ancestorFolders) {
                 const singular = singularizeHandler(folder);
                 const pluralSuffix = `-${folder}`;

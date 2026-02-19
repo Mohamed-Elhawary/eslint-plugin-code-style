@@ -283,7 +283,7 @@ views/access-control-view/ -> redundant "-view" (already in views/)
 atoms/forms/input-atom.tsx -> redundant "-atom" from ancestor "atoms/"
 ```
 
-> **Note:** Index files (`index.ts`, `index.js`, etc.) are skipped for file name checks. Folder names are singularized automatically (e.g., `layouts` -> `layout`, `categories` -> `category`, `classes` -> `class`).
+> **Note:** Index files (`index.ts`, `index.js`, etc.) are skipped for file name checks. Folder names are singularized automatically (e.g., `layouts` -> `layout`, `categories` -> `category`, `classes` -> `class`). Hook files (`use-*`) inside `hooks/` folders are also skipped, since they intentionally include the module name as required by `hook-file-naming-convention`.
 
 ---
 

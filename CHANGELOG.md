@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0] - 2026-02-19
+
+**New Rule: Hook File Naming Convention + 18 Fixes & Enhancements**
+
+**Version Range:** v2.0.1 → v2.1.0
+
+### Added
+
+**New Rules (1)**
+- `hook-file-naming-convention` - Enforce naming conventions for hook files inside `hooks/` module subfolders: verb hooks must follow `use-{verb}-{module-singular}`, list hooks must follow `use-{module-plural}-list`
+
+### Enhanced
+
+- **`nested-call-closing-brackets`** — Collapse closing `)` onto the same line as arrow function body for single-arg calls (block bodies, expression bodies, ternaries), removing trailing commas
+- **`opening-brackets-same-line`** — Collapse `fn(\n    () =>` to `fn(() =>` for zero-param arrow callbacks; split destructured callback params with 2+ properties to multi-line; move arrow body to `=>` line for destructured callback params
+- **`no-redundant-folder-suffix`** — Added exception for hook files (`use-*`) inside `hooks/` folders, since they intentionally include the module name as required by `hook-file-naming-convention`
+
+### Fixed
+
+- **`folder-structure-consistency`** — Enforce consistency in nested subfolders (e.g., `components/shared/`), not just top-level module folders; treat index-file folders and folders with subdirectories as justified wrapping
+- **`no-redundant-folder-suffix`** — Detect plural folder suffix in file names (e.g., `auth-interfaces.ts` in `interfaces/` folder), not just singular forms
+- **`folder-based-naming-convention`** — Flag PascalCase names in camelCase folders and auto-fix to camelCase; enforce PascalCase for `providers/` folder; detect wrong-folder placement by suffix; enforce file name + folder chain in camelCase naming; add `schemas` folder with `Schema` suffix
+- **`single-argument-on-one-line`** — Collapse method chain inter-call line breaks; collapse method chains to one line when all calls have ≤1 simple argument; skip multi-line template literals
+- **`no-hardcoded-strings`** — Fix Tailwind class regex to handle decimal values; detect any function call inside `className` as a class utility; skip strings inside class utility calls; added missing single-word Tailwind utilities
+- **`component-naming`** — Skip generic grouping folders (`shared`, `common`, `ui`, `base`, `general`, `core`) when chaining folder names
+- **`opening-brackets-same-line`** — Collapse `BinaryExpression`, `LogicalExpression`, and `UnaryExpression` in JSX attributes to single line
+- **`function-arguments-format`** — Remove trailing comma for single template literal arguments; skip single `TemplateLiteral` arguments
+- **`type-annotation-spacing`** — No trailing comma on last generic type parameter; single generic collapses inline; multiple generics expand to separate lines
+- **`type-format`** — Enforce trailing comma on last property; detect nested type literals inside array types; closing brace on own line for 2+ properties; single-property collapse; union types with multi-property objects stay expanded; intersection type formatting
+- **`function-object-destructure`** — Recognize components inside `React.forwardRef()`, `memo()`, `observer()` wrapper calls
+- **`enum-type-enforcement`** — Auto-fix only replaces string literals when enum exists in scope
+- **`variable-naming-convention`** — Allow PascalCase for component re-exports from PascalCase namespaces
+- **`function-params-per-line`** — Destructured properties in callback arrow params get one-per-line formatting
+- **`arrow-function-simple-jsx`** — Fixed multiline JSX collapse and missing space after `=>`
+- **`classname-multiline`** — Added CallExpression handler for class utility calls
+- **`absolute-imports-only`** — Auto-fix deep import violations; auto-fix absolute imports to relative within same module
+- **`component-props-inline-type`** — Skip qualified library types (`React.HTMLAttributes`, etc.)
+
+### Stats
+
+- Total Rules: 80 (was 79)
+- Auto-fixable: 70 rules 🔧
+- Configurable: 19 rules ⚙️
+- Report-only: 10 rules (was 9)
+
+**Full Changelog:** [v2.0.1...v2.1.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.1...v2.1.0)
+
+---
+
 ## [2.0.18] - 2026-02-15
 
 ### Fixed
@@ -2117,6 +2166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.1.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.18...v2.1.0
 [2.0.18]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.17...v2.0.18
 [2.0.17]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.16...v2.0.17
 [2.0.16]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.15...v2.0.16
