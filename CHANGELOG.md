@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.1] - 2026-02-22
+
+### Fixed
+
+- **`function-object-destructure`** — Skip array method callbacks (`.map()`, `.filter()`, `.find()`, `.forEach()`, `.reduce()`, etc.) from the "no destructure in signature" check; array callbacks are handled by `array-callback-destructure` instead
+
+### Enhanced
+
+- **`function-object-destructure`** — Auto-fix arrow functions that only destructure and return: convert block body to expression body with destructured params (e.g., `(item) => { const { label } = item; return label; }` → `({ label }) => label`)
+
+---
+
 ## [2.1.0] - 2026-02-19
 
 **New Rule: Hook File Naming Convention + 18 Fixes & Enhancements**
@@ -2166,6 +2178,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.1.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.18...v2.1.0
 [2.0.18]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.17...v2.0.18
 [2.0.17]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.16...v2.0.17

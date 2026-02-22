@@ -2319,16 +2319,29 @@ const functionObjectDestructure = {
             }
 
             // For non-components with block body: check if first param is destructured in signature (not allowed)
+            // Skip array method callbacks — those are handled by array-callback-destructure
             if (!isComponent) {
                 const firstParam = params[0];
 
                 if (firstParam.type === "ObjectPattern") {
-                    context.report({
-                        message: "Non-component functions should not destructure parameters in the signature. Use a typed parameter (e.g., \"data: InterfaceType\") and destructure in the function body instead.",
-                        node: firstParam,
-                    });
+                    // Check if this function is an array method callback (e.g., .map(({ id }) => ...))
+                    const parent = node.parent;
+                    const isArrayCallback = parent
+                        && parent.type === "CallExpression"
+                        && parent.callee
+                        && parent.callee.type === "MemberExpression"
+                        && parent.callee.property
+                        && parent.callee.property.type === "Identifier"
+                        && SKIP_METHODS.has(parent.callee.property.name);
 
-                    return;
+                    if (!isArrayCallback) {
+                        context.report({
+                            message: "Non-component functions should not destructure parameters in the signature. Use a typed parameter (e.g., \"data: InterfaceType\") and destructure in the function body instead.",
+                            node: firstParam,
+                        });
+
+                        return;
+                    }
                 }
             }
 
@@ -2340,7 +2353,37 @@ const functionObjectDestructure = {
                     const result = isDestructureAndReturnOnlyHandler(body, firstParam.name);
 
                     if (result) {
+                        // Auto-fix only for simple case: exactly one destructure statement from param + return,
+                        // no rest elements, no type annotation on param, no nested chains
+                        const firstStmt = body.body[0];
+                        const isSimpleCase = body.body.length === 2
+                            && firstStmt.type === "VariableDeclaration"
+                            && firstStmt.declarations.length === 1
+                            && firstStmt.declarations[0].id.type === "ObjectPattern"
+                            && firstStmt.declarations[0].init.type === "Identifier"
+                            && firstStmt.declarations[0].init.name === firstParam.name
+                            && !firstStmt.declarations[0].id.properties.some((p) => p.type === "RestElement")
+                            && !firstParam.typeAnnotation;
+
                         context.report({
+                            fix: isSimpleCase
+                                ? (fixer) => {
+                                    const fixes = [];
+                                    const destructPattern = firstStmt.declarations[0].id;
+                                    const returnExpr = result.returnStatement.argument;
+                                    const returnText = sourceCode.getText(returnExpr);
+
+                                    // Replace param with the destructured pattern from the body
+                                    fixes.push(fixer.replaceText(firstParam, sourceCode.getText(destructPattern)));
+
+                                    // Replace block body with expression
+                                    // Wrap in parens if it's an object literal to avoid ambiguity with block
+                                    const exprText = returnExpr.type === "ObjectExpression" ? `(${returnText})` : returnText;
+                                    fixes.push(fixer.replaceText(body, exprText));
+
+                                    return fixes;
+                                }
+                                : undefined,
                             message: `This function only destructures and returns. Convert to expression body with destructured param: "({ ${result.destructuredProps.join(", ")} }) => ..."`,
                             node: body,
                         });
