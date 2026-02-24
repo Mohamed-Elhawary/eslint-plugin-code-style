@@ -2795,6 +2795,48 @@ const interfaceFormat = {
                         message: `Interface name "${interfaceName}" must end with "Interface" suffix. Use "${interfaceName}Interface" instead of "${interfaceName}"`,
                         node: node.id,
                     });
+                } else {
+                    // Check verb-first ordering in interface names
+                    const nameWithoutSuffix = interfaceName.slice(0, -"Interface".length);
+                    const words = nameWithoutSuffix.match(/[A-Z][a-z0-9]*/g);
+
+                    if (words && words.length >= 2) {
+                        const commonVerbs = new Set([
+                            "Accept", "Activate", "Add", "Approve", "Assign",
+                            "Cancel", "Change", "Clear", "Close", "Confirm", "Connect", "Create",
+                            "Deactivate", "Delete", "Deny", "Disable", "Disconnect", "Download",
+                            "Edit", "Enable", "Execute", "Export",
+                            "Fetch", "Filter", "Find",
+                            "Generate", "Get",
+                            "Handle", "Hide",
+                            "Import", "Insert", "Invite",
+                            "Load", "Login", "Logout",
+                            "Merge", "Mount", "Move",
+                            "Open",
+                            "Patch", "Pause", "Post", "Process", "Publish", "Push", "Put",
+                            "Receive", "Register", "Reject", "Remove", "Rename", "Replace", "Reset", "Resolve", "Resume", "Revoke",
+                            "Save", "Search", "Select", "Send", "Set", "Show", "Sign", "Sort", "Start", "Stop", "Submit", "Subscribe", "Suspend", "Sync",
+                            "Toggle", "Transform", "Trigger",
+                            "Unassign", "Undo", "Unmount", "Unsubscribe", "Update", "Upload", "Upsert", "Use",
+                            "Validate", "Verify",
+                        ]);
+
+                        const verbIndex = words.findIndex((w) => commonVerbs.has(w));
+
+                        if (verbIndex > 0) {
+                            const verb = words[verbIndex];
+                            const otherWords = words.filter((_, i) => i !== verbIndex);
+                            const fixedName = verb + otherWords.join("") + "Interface";
+
+                            context.report({
+                                fix(fixer) {
+                                    return fixer.replaceText(node.id, fixedName);
+                                },
+                                message: `Interface name "${interfaceName}" should start with the verb "${verb}". Use "${fixedName}" instead.`,
+                                node: node.id,
+                            });
+                        }
+                    }
                 }
 
                 // Get opening brace
