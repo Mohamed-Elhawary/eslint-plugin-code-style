@@ -41,7 +41,7 @@ import {
     functionParamsPerLine,
     noEmptyLinesInFunctionParams,
 } from "./rules/functions.js";
-import { hookCallbackFormat, hookDepsPerLine, hookFileNamingConvention, useStateNamingConvention } from "./rules/hooks.js";
+import { hookCallbackFormat, hookDepsPerLine, hookFileNamingConvention, hookFunctionNamingConvention, useStateNamingConvention } from "./rules/hooks.js";
 import {
     absoluteImportsOnly,
     exportFormat,
@@ -155,6 +155,7 @@ export default {
         "hook-callback-format": hookCallbackFormat,
         "hook-deps-per-line": hookDepsPerLine,
         "hook-file-naming-convention": hookFileNamingConvention,
+        "hook-function-naming-convention": hookFunctionNamingConvention,
         "use-state-naming-convention": useStateNamingConvention,
 
         // Import/Export rules

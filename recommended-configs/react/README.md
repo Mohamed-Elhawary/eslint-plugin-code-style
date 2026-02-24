@@ -5,7 +5,7 @@ This is the **recommended ESLint flat configuration** for React.js projects (wit
 - **[@stylistic/eslint-plugin](https://eslint.style/)** — Formatting rules (replaces ESLint's deprecated formatting rules)
 - **ESLint built-in rules** — Code quality and best practices
 - **Third-party plugins** — React, accessibility, import sorting, etc.
-- **eslint-plugin-code-style** — Our 79 custom formatting rules
+- **eslint-plugin-code-style** — Our 81 custom formatting rules
 
 > **Why @stylistic?** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0, moving them to `@stylistic/eslint-plugin`. This config uses @stylistic as the modern replacement.
 
@@ -283,7 +283,7 @@ These are native ESLint rules for code quality and best practices.
 
 ## eslint-plugin-code-style Rules
 
-Our custom plugin provides **70 auto-fixable rules** (80 total, 19 configurable, 10 report-only) that fill the gaps not covered by ESLint's built-in rules or other plugins.
+Our custom plugin provides **71 auto-fixable rules** (81 total, 20 configurable, 10 report-only) that fill the gaps not covered by ESLint's built-in rules or other plugins.
 
 For complete rule descriptions, examples, and configuration options, see the [Rules Reference Documentation](../../docs/rules/).
 

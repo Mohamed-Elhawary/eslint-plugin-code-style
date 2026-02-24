@@ -151,16 +151,23 @@ export const Card = ({ a, b } : { a: string, b: string }) => (
 | `atoms/` | *(none)* | `Button` |
 | `components/` | *(none)* | `Card` |
 
-Nested files chain folder names (e.g., `layouts/auth/login.tsx` -> `LoginAuthLayout`, `atoms/input/password.tsx` -> `PasswordInput`).
+Nested files chain folder names with **singularization** — plural folder names are singularized for named files (e.g., `discount/types/code.tsx` -> `CodeTypeDiscount`), but kept plural for index files (e.g., `discount/types/index.tsx` -> `TypesDiscount`).
 
-**Why use it:** Consistent naming based on folder structure makes purpose immediately clear. The chained naming encodes the full path context into the name. The camelCase suffix for data/constants/strings/services/reducers folders distinguishes these utility modules from PascalCase component-like entities.
+**Why use it:** Consistent naming based on folder structure makes purpose immediately clear. The chained naming encodes the full path context into the name. Singularization avoids awkward plural forms in component names (a file represents ONE of that type). The camelCase suffix for data/constants/strings/services/reducers folders distinguishes these utility modules from PascalCase component-like entities.
+
+**Configurable options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `chainOrder` | `string` | `"child-parent"` | Order of folder chain: `"child-parent"` (LoginAuth) or `"parent-child"` (AuthLogin) |
+| `files` | `array` | `[]` | Per-path chainOrder overrides: `[{ paths: ["table/"], chainOrder: "parent-child" }]` |
 
 ```tsx
 // Good — suffix folders
 // in views/dashboard.tsx
 export const DashboardView = () => <div>Dashboard</div>;
 
-// in layouts/auth/login.tsx (chained: Login + Auth + Layout)
+// in layouts/auth/login.tsx (chained: Login + Auth(singular) + Layout)
 export const LoginAuthLayout = () => <div>Login</div>;
 
 // in providers/auth.tsx
@@ -209,6 +216,34 @@ export const User = (state, action) => { ... };
 export const Password = () => <input type="password" />;
 ```
 
+**Singularization examples:**
+```
+// Named files — folders are singularized
+discount/types/code.tsx     → CodeTypeDiscount (not CodeTypesDiscount)
+table-items/actions.tsx     → ActionsTableItem (not ActionsTableItems)
+
+// Index files — folders keep plural
+discount/types/index.tsx    → TypesDiscount (plural preserved)
+audit-logs/index.tsx        → AuditLogs (plural preserved)
+```
+
+**Chain order examples:**
+```javascript
+// Default: child-parent (file name first, then folders deepest→shallowest)
+// layouts/auth/login.tsx → LoginAuthLayout
+
+// parent-child (folders shallowest→deepest, then file name)
+"code-style/folder-based-naming-convention": ["error", { chainOrder: "parent-child" }]
+// layouts/auth/login.tsx → AuthLoginLayout
+
+// Per-path override: use parent-child only for specific paths
+"code-style/folder-based-naming-convention": ["error", {
+    files: [{ paths: ["table/"], chainOrder: "parent-child" }]
+}]
+// table/actions.tsx → TableActions (parent-child)
+// layouts/auth/login.tsx → LoginAuthLayout (default child-parent)
+```
+
 > **Note:** Module barrel files (e.g., `views/index.ts`) are skipped. Interfaces, enums, and types have their own naming rules (`interface-format`, `enum-format`, `type-format`). Auto-fix renames the identifier and all its references.
 
 ---
@@ -247,6 +282,28 @@ atoms/calendar/index.tsx
 // Bad — mixed without justification
 atoms/input.tsx
 atoms/calendar/index.tsx     -> "use direct files instead"
+```
+
+**Single-child folder detection:**
+```
+// Bad — unnecessary nesting (discount/ has only one subfolder)
+discount/
+  types/
+    code.tsx
+    coupon.tsx
+// Error: "discount/" has only one subfolder "types/". Flatten to "discount-types/" to reduce nesting.
+
+// Good — flattened structure
+discount-types/
+  code.tsx
+  coupon.tsx
+
+// Good — multiple subfolders (no report)
+discount/
+  types/
+    code.tsx
+  coupons/
+    create.tsx
 ```
 
 > **Note:** This rule applies equally to all module folders — component folders (atoms, components, views), data folders (enums, types, interfaces), and utility folders (hooks, utils, helpers). The `folder-based-naming-convention` naming rule is separate and enforces export naming based on folder location.

@@ -1,5 +1,14 @@
 import fs from "fs";
 
+// Singularize: convert folder name to singular form (shared across multiple rules)
+const singularizeHandler = (word) => {
+    if (word.endsWith("ies")) return word.slice(0, -3) + "y";
+    if (word.endsWith("ses") || word.endsWith("xes") || word.endsWith("zes")) return word.slice(0, -2);
+    if (word.endsWith("s")) return word.slice(0, -1);
+
+    return word;
+};
+
 /**
  * ───────────────────────────────────────────────────────────────
  * Rule: Component Props Destructure
@@ -1249,6 +1258,22 @@ const folderBasedNamingConvention = {
         const filename = context.filename || context.getFilename();
         const normalizedFilename = filename.replace(/\\/g, "/");
 
+        // Chain order options
+        const options = context.options[0] || {};
+        const defaultChainOrder = options.chainOrder || "child-parent";
+        const fileOverrides = options.files || [];
+
+        // Determine effective chain order for this file
+        const getEffectiveChainOrderHandler = () => {
+            for (const override of fileOverrides) {
+                if (override.paths.some((p) => normalizedFilename.includes(p))) return override.chainOrder;
+            }
+
+            return defaultChainOrder;
+        };
+
+        const effectiveChainOrder = getEffectiveChainOrderHandler();
+
         // Folder-to-suffix mapping
         // - JSX component folders: require function returning JSX (PascalCase)
         // - camelCase folders: check camelCase exported identifiers
@@ -1319,14 +1344,23 @@ const folderBasedNamingConvention = {
             let nameParts;
 
             if (fileName === "index") {
-                // Index in subfolder (e.g., layouts/auth/index.tsx) → parts from folders only
-                nameParts = [...meaningfulFolders].reverse();
+                // Index in subfolder (e.g., layouts/auth/index.tsx) → parts from folders only (keep plural)
+                // child-parent: [deepest, ..., shallowest], parent-child: [shallowest, ..., deepest]
+                nameParts = effectiveChainOrder === "parent-child"
+                    ? [...meaningfulFolders]
+                    : [...meaningfulFolders].reverse();
 
                 // If all folders were grouping folders (e.g., components/shared/index.ts), skip
                 if (nameParts.length === 0) return null;
             } else {
-                // Regular file (e.g., layouts/auth/login.tsx) → file name + folders deepest-to-shallowest
-                nameParts = [fileName, ...[...meaningfulFolders].reverse()];
+                // Regular file — singularize folders
+                const singularizedFolders = meaningfulFolders.map(singularizeHandler);
+
+                // child-parent: [fileName, deepest, ..., shallowest]
+                // parent-child: [shallowest, ..., deepest, fileName]
+                nameParts = effectiveChainOrder === "parent-child"
+                    ? [...singularizedFolders, fileName]
+                    : [fileName, ...[...singularizedFolders].reverse()];
             }
 
             const pascalName = nameParts.map(toPascalCaseHandler).join("") + suffix;
@@ -1487,8 +1521,17 @@ const folderBasedNamingConvention = {
             const isIndex = moduleInfo.fileName === "index";
             const fileNamePascal = isIndex ? "" : toPascalCaseHandler(moduleInfo.fileName);
             const meaningfulFolders = moduleInfo.intermediateFolders.filter((f) => !groupingFolders.has(f));
-            const chainParts = [...meaningfulFolders].reverse().map(toPascalCaseHandler).join("");
-            const chain = fileNamePascal + chainParts;
+            // Singularize folders for named files, keep plural for index files
+            const processedFolders = isIndex ? meaningfulFolders : meaningfulFolders.map(singularizeHandler);
+            // Apply chain order
+            const orderedFolders = effectiveChainOrder === "parent-child"
+                ? [...processedFolders]
+                : [...processedFolders].reverse();
+            const chainParts = orderedFolders.map(toPascalCaseHandler).join("");
+            // child-parent: fileNamePascal + chainParts, parent-child: chainParts + fileNamePascal
+            const chain = effectiveChainOrder === "parent-child"
+                ? chainParts + fileNamePascal
+                : fileNamePascal + chainParts;
             const requiredEnding = chain + suffix;
             const requiredEndingCamel = toCamelCaseHandler(requiredEnding);
 
@@ -1690,7 +1733,37 @@ const folderBasedNamingConvention = {
     meta: {
         docs: { description: "Enforce naming conventions based on folder location — suffix for views/layouts/pages/providers/reducers/contexts/themes, chained folder names for nested files" },
         fixable: "code",
-        schema: [],
+        schema: [{
+            additionalProperties: false,
+            properties: {
+                chainOrder: {
+                    default: "child-parent",
+                    description: "Order of folder chain in names: child-parent (LoginAuth) or parent-child (AuthLogin)",
+                    enum: ["child-parent", "parent-child"],
+                    type: "string",
+                },
+                files: {
+                    description: "Per-path chainOrder overrides",
+                    items: {
+                        additionalProperties: false,
+                        properties: {
+                            chainOrder: {
+                                enum: ["child-parent", "parent-child"],
+                                type: "string",
+                            },
+                            paths: {
+                                items: { type: "string" },
+                                type: "array",
+                            },
+                        },
+                        required: ["chainOrder", "paths"],
+                        type: "object",
+                    },
+                    type: "array",
+                },
+            },
+            type: "object",
+        }],
         type: "suggestion",
     },
 };
@@ -1879,50 +1952,95 @@ const folderStructureConsistency = {
         const folderLabel = parentFolderName;
         const result = checkFolderConsistencyHandler(checkPath, folderLabel);
 
-        if (!result) return {};
+        // Check for unnecessary nesting: a folder with exactly 1 subfolder and 0 direct code files
+        const singleChildNesting = [];
 
-        const { hasDirectFiles, hasSubdirectories, isMixed, wrappedJustified } = result;
+        // Traverse up from file's parent folder to module folder, checking each intermediate level
+        let currentPath = parentFolderPath;
+
+        while (currentPath.length > moduleFolderPath.length) {
+            const grandparentPath = currentPath.slice(0, currentPath.lastIndexOf("/"));
+
+            if (grandparentPath.length < moduleFolderPath.length) break;
+
+            try {
+                const grandparentChildren = fs.readdirSync(grandparentPath, { withFileTypes: true });
+                const subfolders = grandparentChildren.filter((child) => child.isDirectory());
+                const codeFiles = grandparentChildren.filter(
+                    (child) => child.isFile() && codeFilePattern.test(child.name) && !child.name.startsWith("index."),
+                );
+
+                if (subfolders.length === 1 && codeFiles.length === 0) {
+                    const grandparentName = grandparentPath.split("/").pop();
+                    const subfolderName = subfolders[0].name;
+
+                    singleChildNesting.push({
+                        folderName: grandparentName,
+                        subfolderName,
+                        suggestedName: `${grandparentName}-${subfolderName}`,
+                    });
+                }
+            } catch {
+                // Skip unreadable directories
+            }
+
+            currentPath = grandparentPath;
+        }
+
+        if (!result && singleChildNesting.length === 0) return {};
+
+        const { hasDirectFiles, hasSubdirectories, isMixed, wrappedJustified } = result || {};
 
         return {
             Program(node) {
-                // Case: All folders, NOT justified → unnecessary wrapping
-                if (!hasDirectFiles && hasSubdirectories && !wrappedJustified) {
+                if (result) {
+                    // Case: All folders, NOT justified → unnecessary wrapping
+                    if (!hasDirectFiles && hasSubdirectories && !wrappedJustified) {
+                        context.report({
+                            message: `Unnecessary wrapper folders in "${folderLabel}/". Each item has only one file, use direct files instead (e.g., ${folderLabel}/component.tsx).`,
+                            node,
+                        });
+
+                        return;
+                    }
+
+                    // Case: Mixed + wrapped justified → error on direct files
+                    if (isMixed && wrappedJustified) {
+                        // Only report if this file IS a direct file in the checked folder
+                        const relativePart = normalizedFilename.slice(checkPath.length + 1);
+                        const isDirectFile = !relativePart.includes("/");
+
+                        if (isDirectFile) {
+                            context.report({
+                                message: `Since some items in "${folderLabel}/" contain multiple files or subfolders, all items should be wrapped in folders.`,
+                                node,
+                            });
+                        }
+
+                        return;
+                    }
+
+                    // Case: Mixed + NOT justified → error on subfolder files
+                    if (isMixed && !wrappedJustified) {
+                        // Only report if this file IS inside a subfolder
+                        const relativePart = normalizedFilename.slice(checkPath.length + 1);
+                        const isInSubfolder = relativePart.includes("/");
+
+                        if (isInSubfolder) {
+                            context.report({
+                                message: `Unnecessary wrapper folder. Each item in "${folderLabel}/" has only one file, use direct files instead.`,
+                                node,
+                            });
+                        }
+                    }
+                }
+
+                // Report single-child folder nesting
+                for (const nesting of singleChildNesting) {
                     context.report({
-                        message: `Unnecessary wrapper folders in "${folderLabel}/". Each item has only one file, use direct files instead (e.g., ${folderLabel}/component.tsx).`,
+                        message: `"${nesting.folderName}/" has only one subfolder "${nesting.subfolderName}/". Flatten to "${nesting.suggestedName}/" to reduce nesting.`,
                         node,
                     });
-
-                    return;
-                }
-
-                // Case: Mixed + wrapped justified → error on direct files
-                if (isMixed && wrappedJustified) {
-                    // Only report if this file IS a direct file in the checked folder
-                    const relativePart = normalizedFilename.slice(checkPath.length + 1);
-                    const isDirectFile = !relativePart.includes("/");
-
-                    if (isDirectFile) {
-                        context.report({
-                            message: `Since some items in "${folderLabel}/" contain multiple files or subfolders, all items should be wrapped in folders.`,
-                            node,
-                        });
-                    }
-
-                    return;
-                }
-
-                // Case: Mixed + NOT justified → error on subfolder files
-                if (isMixed && !wrappedJustified) {
-                    // Only report if this file IS inside a subfolder
-                    const relativePart = normalizedFilename.slice(checkPath.length + 1);
-                    const isInSubfolder = relativePart.includes("/");
-
-                    if (isInSubfolder) {
-                        context.report({
-                            message: `Unnecessary wrapper folder. Each item in "${folderLabel}/" has only one file, use direct files instead.`,
-                            node,
-                        });
-                    }
                 }
             },
         };
@@ -1985,15 +2103,6 @@ const noRedundantFolderSuffix = {
         const parts = normalizedFilename.split("/");
         const fileWithExt = parts[parts.length - 1];
         const baseName = fileWithExt.replace(/\.(jsx?|tsx?)$/, "");
-
-        // Singularize: convert folder name to singular form
-        const singularizeHandler = (word) => {
-            if (word.endsWith("ies")) return word.slice(0, -3) + "y";
-            if (word.endsWith("ses") || word.endsWith("xes") || word.endsWith("zes")) return word.slice(0, -2);
-            if (word.endsWith("s")) return word.slice(0, -1);
-
-            return word;
-        };
 
         // Find the src/ boundary and collect ancestor folders from src/ onwards
         const srcIndex = parts.indexOf("src");

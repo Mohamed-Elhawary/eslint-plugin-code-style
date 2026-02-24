@@ -19,7 +19,7 @@
 
 **A powerful ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects.**
 
-*80 rules (70 auto-fixable, 19 configurable) to keep your codebase clean and consistent*
+*81 rules (71 auto-fixable, 20 configurable) to keep your codebase clean and consistent*
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **80 custom rules** (70 auto-fixable, 19 configurable) for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **81 custom rules** (71 auto-fixable, 20 configurable) for code formatting. Built for **ESLint v9 flat configs**.
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -36,7 +36,7 @@ This plugin provides **80 custom rules** (70 auto-fixable, 19 configurable) for 
 - **Works alongside existing tools** — Complements ESLint's built-in rules and packages like eslint-plugin-react, eslint-plugin-import, etc
 - **Self-sufficient rules** — Each rule handles complete formatting independently
 - **Consistency at scale** — Reduces code-style differences between team members by enforcing uniform formatting across your projects
-- **Highly automated** — 70 of 80 rules support auto-fix with `eslint --fix`
+- **Highly automated** — 71 of 81 rules support auto-fix with `eslint --fix`
 
 When combined with ESLint's native rules and other popular plugins, this package helps create a complete code style solution that keeps your codebase clean and consistent.
 
@@ -60,7 +60,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 
 ### 💡 Why Use These Configs?
 
-- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 80 code-style rules
+- **Complete Coverage** — Combines ESLint built-in rules, third-party plugins, and all 81 code-style rules
 - **Ready-to-Use** — Copy the config file and start linting immediately
 - **Battle-Tested** — These configurations have been refined through real-world usage
 - **Fully Documented** — Each config includes detailed instructions and explanations
@@ -97,7 +97,7 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 <td width="50%">
 
 ### 🔧 Auto-Fixable Rules
-**70 rules** support automatic fixing with `eslint --fix`. **19 rules** have configurable options. 10 rules are report-only (require manual changes).
+**71 rules** support automatic fixing with `eslint --fix`. **20 rules** have configurable options. 10 rules are report-only (require manual changes).
 
 </td>
 <td width="50%">
@@ -217,6 +217,7 @@ rules: {
     "code-style/hook-callback-format": "error",
     "code-style/hook-deps-per-line": "error",
     "code-style/hook-file-naming-convention": "error",
+    "code-style/hook-function-naming-convention": "error",
     "code-style/use-state-naming-convention": "error",
     "code-style/if-else-spacing": "error",
     "code-style/if-statement-format": "error",
@@ -270,7 +271,7 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **80 rules total** — 70 with auto-fix 🔧, 19 configurable ⚙️, 10 report-only. See detailed examples in the [Rules Reference](./docs/rules/).
+> **81 rules total** — 71 with auto-fix 🔧, 20 configurable ⚙️, 10 report-only. See detailed examples in the [Rules Reference](./docs/rules/).
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -297,7 +298,7 @@ rules: {
 | **Component Rules** | |
 | `component-props-destructure` | Component props must be destructured `({ prop })` not received as `(props)` 🔧 |
 | `component-props-inline-type` | Inline type annotation `} : {` with matching props, proper spacing, commas, no interface reference 🔧 |
-| `folder-based-naming-convention` | Enforce naming based on folder: suffix for views/layouts/pages/providers/reducers/contexts/themes, camelCase suffix for data/constants/strings/services/reducers folders, chained folder names for nested files 🔧 |
+| `folder-based-naming-convention` | Enforce naming based on folder: suffix for views/layouts/pages/providers/reducers/contexts/themes, camelCase suffix for data/constants/strings/services/reducers folders, chained folder names for nested files, singularizes plural folders 🔧 ⚙️ |
 | `folder-structure-consistency` | Enforce consistent folder structure (flat vs wrapped) in module folders (atoms, components, hooks, enums, views, etc.) ⚙️ |
 | `no-redundant-folder-suffix` | Disallow file and folder names that redundantly include the parent folder name as a suffix |
 | `svg-icon-naming-convention` | SVG components must end with "Icon" suffix; "Icon" suffix components must return SVG |
@@ -324,6 +325,7 @@ rules: {
 | `hook-callback-format` | React hooks: callback on new line, deps array on separate line, proper indentation 🔧 |
 | `hook-deps-per-line` | Collapse deps ≤ threshold to one line; expand larger arrays with each dep on own line (default: >2) 🔧 ⚙️ |
 | `hook-file-naming-convention` | Hook files in module subfolders must include the module name (verb hooks: `use-{verb}-{module}`, list hooks: `use-{module}-list`) |
+| `hook-function-naming-convention` | Hook function name must match camelCase of file name (e.g., `use-create-super-admin.ts` → `useCreateSuperAdmin`) 🔧 |
 | `use-state-naming-convention` | Boolean useState variables must start with is/has/with/without prefix 🔧 ⚙️ |
 | **Import/Export Rules** | |
 | `absolute-imports-only` | Use alias imports from index files only (not deep paths), no relative imports; files within the same module folder must use relative imports — auto-fixes absolute imports to relative (default: `@/`) 🔧 ⚙️ |
@@ -392,7 +394,7 @@ For detailed documentation with examples, configuration options, and best practi
 | [Components](./docs/rules/components.md) | 6 | Props destructure, folder naming, structure consistency |
 | [Control Flow](./docs/rules/control-flow.md) | 8 | Block newlines, if/else, logical expressions, ternaries |
 | [Functions](./docs/rules/functions.md) | 6 | Call spacing, declaration style, naming, params |
-| [Hooks](./docs/rules/hooks.md) | 4 | Callback format, deps-per-line, file naming, useState naming |
+| [Hooks](./docs/rules/hooks.md) | 5 | Callback format, deps-per-line, file naming, function naming, useState naming |
 | [Imports/Exports](./docs/rules/imports-exports.md) | 8 | Absolute imports, format, index exports, module exports |
 | [JSX](./docs/rules/jsx.md) | 14 | ClassName handling, children, logical expressions |
 | [Objects](./docs/rules/objects.md) | 5 | Property formatting, empty lines, string properties |
@@ -408,7 +410,7 @@ For detailed documentation with examples, configuration options, and best practi
 
 ## 🔧 Auto-fixing
 
-70 of 80 rules support auto-fixing. Run ESLint with the `--fix` flag:
+71 of 81 rules support auto-fixing. Run ESLint with the `--fix` flag:
 
 ```bash
 # Fix all files in src directory

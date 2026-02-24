@@ -97,6 +97,37 @@ useEffect(() => {}, [
 "code-style/hook-deps-per-line": ["error", { maxDeps: 3 }]
 ```
 
+---
+
+### `hook-function-naming-convention`
+
+**What it does:** Enforces that the exported hook function name matches the camelCase conversion of the file name. Only applies inside `hooks/` folders, skips index files and non-`use-` files.
+
+**Why use it:** Files like `use-create-super-admin.ts` exporting `useCreate` instead of `useCreateSuperAdmin` are misleading. The function name should encode the full intent from the file name so it's clear what the hook does when imported elsewhere.
+
+```typescript
+// ✅ Good — function name matches file name
+// hooks/super-admins/use-create-super-admin.ts
+export const useCreateSuperAdmin = () => { ... };
+
+// hooks/super-admins/use-super-admins-list.ts
+export const useSuperAdminsList = () => { ... };
+
+// hooks/use-debounce.ts
+export const useDebounce = () => { ... };
+
+// ❌ Bad — function name doesn't match file name
+// hooks/super-admins/use-create-super-admin.ts
+export const useCreate = () => { ... };
+// Error: Hook function "useCreate" should be named "useCreateSuperAdmin"
+
+// hooks/super-admins/use-super-admins-list.ts
+export const useList = () => { ... };
+// Error: Hook function "useList" should be named "useSuperAdminsList"
+```
+
+> **Note:** This rule is separate from `hook-file-naming-convention` which validates the file name itself. This rule validates the function name inside the file. Auto-fix renames the function and all its references within the file.
+
 <br />
 
 ### `hook-file-naming-convention`

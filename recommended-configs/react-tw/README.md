@@ -6,7 +6,7 @@ This is the **recommended ESLint flat configuration** for React projects using T
 - **ESLint built-in rules** — Code quality and best practices
 - **Third-party plugins** — React, accessibility, import sorting, etc.
 - **[eslint-plugin-tailwindcss](https://github.com/francoismassart/eslint-plugin-tailwindcss)** — Tailwind CSS linting rules
-- **eslint-plugin-code-style** — Our 70 JavaScript-compatible custom formatting rules
+- **eslint-plugin-code-style** — Our 72 JavaScript-compatible custom formatting rules
 
 > **Why @stylistic?** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0, moving them to `@stylistic/eslint-plugin`. This config uses @stylistic as the modern replacement.
 
@@ -318,7 +318,7 @@ These are native ESLint rules for code quality and best practices.
 
 ## eslint-plugin-code-style Rules
 
-Our custom plugin provides **70 auto-fixable rules** (71 JavaScript-compatible rules out of 80 total) that fill the gaps not covered by ESLint's built-in rules or other plugins. The 9 TypeScript-only rules are excluded from this configuration.
+Our custom plugin provides **71 auto-fixable rules** (72 JavaScript-compatible rules out of 81 total) that fill the gaps not covered by ESLint's built-in rules or other plugins. The 9 TypeScript-only rules are excluded from this configuration.
 
 For complete rule descriptions, examples, and configuration options, see the [Rules Reference Documentation](../../docs/rules/).
 

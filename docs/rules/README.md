@@ -1,6 +1,6 @@
 # Rules Reference
 
-> **80 rules total** — 70 with auto-fix 🔧, 19 configurable ⚙️, 10 report-only
+> **81 rules total** — 71 with auto-fix 🔧, 20 configurable ⚙️, 10 report-only
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -16,7 +16,7 @@
 | [Component Rules](./components.md) | 6 | Props destructuring, folder naming, structure consistency, SVG icons |
 | [Control Flow Rules](./control-flow.md) | 8 | Block newlines, if/else formatting, logical expressions, ternaries, switch cases |
 | [Function Rules](./functions.md) | 6 | Call spacing, declaration style, naming, params, destructuring |
-| [Hook Rules](./hooks.md) | 4 | Callback formatting, deps-per-line, file naming, useState naming |
+| [Hook Rules](./hooks.md) | 5 | Callback formatting, deps-per-line, file naming, function naming, useState naming |
 | [Import/Export Rules](./imports-exports.md) | 8 | Absolute imports, format, index exports, module exports |
 | [JSX Rules](./jsx.md) | 14 | ClassName handling, children formatting, logical expressions, ternaries |
 | [Object Rules](./objects.md) | 5 | Property formatting, empty lines, string property spacing |

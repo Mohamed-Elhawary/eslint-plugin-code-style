@@ -35,6 +35,7 @@ export type RuleNames =
     | "code-style/hook-callback-format"
     | "code-style/hook-deps-per-line"
     | "code-style/hook-file-naming-convention"
+    | "code-style/hook-function-naming-convention"
     | "code-style/use-state-naming-convention"
     | "code-style/if-else-spacing"
     | "code-style/if-statement-format"
@@ -137,6 +138,7 @@ interface PluginRules {
     "hook-callback-format": Rule.RuleModule;
     "hook-deps-per-line": Rule.RuleModule;
     "hook-file-naming-convention": Rule.RuleModule;
+    "hook-function-naming-convention": Rule.RuleModule;
     "if-else-spacing": Rule.RuleModule;
     "if-statement-format": Rule.RuleModule;
     "import-format": Rule.RuleModule;

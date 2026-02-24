@@ -650,4 +650,141 @@ const hookFileNamingConvention = {
     },
 };
 
-export { hookCallbackFormat, hookDepsPerLine, hookFileNamingConvention, useStateNamingConvention };
+/**
+ * ───────────────────────────────────────────────────────────────
+ * Rule: Hook Function Naming Convention
+ * ───────────────────────────────────────────────────────────────
+ *
+ * Description:
+ *   Enforces that the exported hook function name matches the
+ *   camelCase conversion of the file name. Only applies inside
+ *   hooks/ folders, skips index files and non-use- files.
+ *
+ * ✓ Good:
+ *   // use-create-super-admin.ts → exports useCreateSuperAdmin
+ *   // use-users-list.ts → exports useUsersList
+ *
+ * ✗ Bad:
+ *   // use-create-super-admin.ts → exports useCreate (missing parts)
+ *   // use-users-list.ts → exports useList (missing parts)
+ */
+const hookFunctionNamingConvention = {
+    create(context) {
+        const filename = context.filename || context.getFilename();
+        const normalizedFilename = filename.replace(/\\/g, "/");
+
+        const parts = normalizedFilename.split("/");
+        const fileWithExt = parts[parts.length - 1];
+        const baseName = fileWithExt.replace(/\.(jsx?|tsx?)$/, "");
+
+        // Skip index files and non-use- files
+        if (baseName === "index" || !baseName.startsWith("use-")) return {};
+
+        // Only apply inside hooks/ folders
+        const hooksIndex = parts.lastIndexOf("hooks");
+
+        if (hooksIndex === -1) return {};
+
+        // Convert kebab-case file name to camelCase: use-create-super-admin → useCreateSuperAdmin
+        const expectedName = baseName.split("-").map((segment, i) => (i === 0 ? segment : segment.charAt(0).toUpperCase() + segment.slice(1))).join("");
+
+        // Shared fix logic for renaming identifier and all references
+        const createRenameFixer = (node, name, identifierNode) => (fixer) => {
+            const scope = context.sourceCode
+                ? context.sourceCode.getScope(node)
+                : context.getScope();
+
+            const findVariableHandler = (s, varName) => {
+                const v = s.variables.find((variable) => variable.name === varName);
+
+                if (v) return v;
+                if (s.upper) return findVariableHandler(s.upper, varName);
+
+                return null;
+            };
+
+            const variable = findVariableHandler(scope, name);
+
+            if (!variable) return fixer.replaceText(identifierNode, expectedName);
+
+            const fixes = [];
+            const fixedRanges = new Set();
+
+            variable.defs.forEach((def) => {
+                const rangeKey = `${def.name.range[0]}-${def.name.range[1]}`;
+
+                if (!fixedRanges.has(rangeKey)) {
+                    fixedRanges.add(rangeKey);
+                    fixes.push(fixer.replaceText(def.name, expectedName));
+                }
+            });
+
+            variable.references.forEach((ref) => {
+                const rangeKey = `${ref.identifier.range[0]}-${ref.identifier.range[1]}`;
+
+                if (!fixedRanges.has(rangeKey)) {
+                    fixedRanges.add(rangeKey);
+                    fixes.push(fixer.replaceText(ref.identifier, expectedName));
+                }
+            });
+
+            return fixes;
+        };
+
+        // Check if name starts with "use" followed by uppercase letter (hook pattern)
+        const isHookNameHandler = (name) => /^use[A-Z]/.test(name) || name === "use";
+
+        // Check exported arrow functions, function declarations, and function expressions
+        const checkFunctionHandler = (node) => {
+            let name;
+            let identifierNode;
+
+            // Arrow function: const useFoo = () => ...
+            if (node.parent && node.parent.type === "VariableDeclarator" && node.parent.id && node.parent.id.type === "Identifier") {
+                name = node.parent.id.name;
+                identifierNode = node.parent.id;
+
+                // Only check exported declarations
+                const varDecl = node.parent.parent;
+                const isExported = varDecl && varDecl.parent && varDecl.parent.type === "ExportNamedDeclaration";
+
+                if (!isExported) return;
+            } else if (node.id && node.id.type === "Identifier") {
+                // Function declaration: export function useFoo() { ... }
+                name = node.id.name;
+                identifierNode = node.id;
+
+                const isExported = node.parent && node.parent.type === "ExportNamedDeclaration";
+
+                if (!isExported) return;
+            } else {
+                return;
+            }
+
+            // Only check hook-like names (starting with "use")
+            if (!isHookNameHandler(name)) return;
+
+            if (name !== expectedName) {
+                context.report({
+                    fix: createRenameFixer(node, name, identifierNode),
+                    message: `Hook function "${name}" should be named "${expectedName}" to match file name "${baseName}".`,
+                    node: identifierNode,
+                });
+            }
+        };
+
+        return {
+            ArrowFunctionExpression: checkFunctionHandler,
+            FunctionDeclaration: checkFunctionHandler,
+            FunctionExpression: checkFunctionHandler,
+        };
+    },
+    meta: {
+        docs: { description: "Enforce that exported hook function names match the camelCase of the file name" },
+        fixable: "code",
+        schema: [],
+        type: "suggestion",
+    },
+};
+
+export { hookCallbackFormat, hookDepsPerLine, hookFileNamingConvention, hookFunctionNamingConvention, useStateNamingConvention };

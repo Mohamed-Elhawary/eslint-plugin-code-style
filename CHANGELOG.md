@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.0] - 2026-02-24
+
+**New Rule, Component Naming Enhancements & Folder Flattening Detection**
+
+**Version Range:** v2.1.1 → v2.2.0
+
+### Added
+
+**New Rules (1)**
+- `hook-function-naming-convention` - Enforce that exported hook function names match the camelCase of the file name (e.g., `use-create-super-admin.ts` must export `useCreateSuperAdmin`) 🔧
+
+**New Features**
+- **`folder-based-naming-convention`** — Singularize plural folder names in component chain for named files (e.g., `discount/types/code.tsx` → `CodeTypeDiscount` not `CodeTypesDiscount`); index files keep plural
+- **`folder-based-naming-convention`** — Configurable `chainOrder` option: `"child-parent"` (default) or `"parent-child"` with per-path overrides via `files` array
+- **`folder-structure-consistency`** — Detect unnecessary nesting when a folder has only one subfolder and no direct code files, suggesting flattening (e.g., `discount/types/` → `discount-types/`)
+
+### Enhanced
+
+- **`folder-based-naming-convention`** — Now configurable with `chainOrder` and `files` options ⚙️
+- **`no-redundant-folder-suffix`** — Shared `singularizeHandler` extracted to module level for reuse
+
+### Fixed
+
+- **`function-object-destructure`** — Skip array method callbacks, add auto-fix for destructure-and-return pattern (from v2.1.1)
+
+### Stats
+
+- Total Rules: 81 (was 80)
+- Auto-fixable: 71 rules 🔧 (was 70)
+- Configurable: 20 rules ⚙️ (was 19)
+- Report-only: 10 rules
+
+**Full Changelog:** [v2.1.1...v2.2.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.1.1...v2.2.0)
+
+---
+
 ## [2.1.1] - 2026-02-22
 
 ### Fixed
@@ -2178,6 +2214,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.2.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.18...v2.1.0
 [2.0.18]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.17...v2.0.18
