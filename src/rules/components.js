@@ -1974,11 +1974,18 @@ const folderStructureConsistency = {
                     const grandparentName = grandparentPath.split("/").pop();
                     const subfolderName = subfolders[0].name;
 
-                    singleChildNesting.push({
-                        folderName: grandparentName,
-                        subfolderName,
-                        suggestedName: `${grandparentName}-${subfolderName}`,
-                    });
+                    // Skip module folders (components, atoms, etc.) and organizational folders (shared, common)
+                    const skipFolders = ["shared", "common"];
+                    const isModuleFolder = grandparentPath === moduleFolderPath;
+                    const isSkippedFolder = skipFolders.includes(grandparentName) || skipFolders.includes(subfolderName);
+
+                    if (!isModuleFolder && !isSkippedFolder) {
+                        singleChildNesting.push({
+                            folderName: grandparentName,
+                            subfolderName,
+                            suggestedName: `${grandparentName}-${subfolderName}`,
+                        });
+                    }
                 }
             } catch {
                 // Skip unreadable directories

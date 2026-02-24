@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.1] - 2026-02-24
+
+### Fixed
+
+- **`folder-structure-consistency`** — Skip module folders (components, atoms, etc.) and organizational folders (shared, common) from single-child folder flattening detection
+
+---
+
 ## [2.2.0] - 2026-02-24
 
 **New Rule, Component Naming Enhancements & Folder Flattening Detection**
@@ -2214,6 +2222,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.2.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.18...v2.1.0
