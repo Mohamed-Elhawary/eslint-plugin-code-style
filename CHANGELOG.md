@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.3] - 2026-03-03
+
+### Documentation
+
+- Add comprehensive frontend project standards guide (`docs/frontend-standards.md`) covering ESLint setup, naming conventions, import/export rules, Husky pre-commit/pre-push hooks, EditorConfig, React component code order, TypeScript definition organization, and folder structure standards
+
+---
+
 ## [2.2.2] - 2026-02-24
 
 ### Enhanced
@@ -2230,6 +2238,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.2.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.2...v2.2.3
 [2.2.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.1...v2.2.2
 [2.2.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.1.1...v2.2.0
