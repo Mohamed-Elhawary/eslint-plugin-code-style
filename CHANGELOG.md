@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.4] - 2026-03-03
+
+### Documentation
+
+- Add AI agent coding instructions (`docs/frontend-guide/AGENTS.md`) with complete, self-contained conventions for naming, formatting, imports/exports, React components, TypeScript, JSX, hooks, control flow, and string handling
+- Organize frontend guide files into `docs/frontend-guide/` folder
+
+---
+
 ## [2.2.3] - 2026-03-03
 
 ### Documentation
