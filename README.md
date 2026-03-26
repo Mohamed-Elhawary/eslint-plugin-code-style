@@ -44,7 +44,7 @@ When combined with ESLint's native rules and other popular plugins, this package
 
 <br />
 
-[Documentation](https://eslint-plugin-code-style.vercel.app) •
+[Documentation](https://www.eslint-plugin-code-style.org) •
 [Installation](#-installation) •
 [Quick Start](#-quick-start) •
 [Recommended Configs](#-recommended-configurations) •
@@ -290,7 +290,7 @@ rules: {
 
 > **81 rules total** — 71 with auto-fix 🔧, 20 configurable ⚙️, 10 report-only
 >
-> 📖 **Full documentation with examples:** [eslint-plugin-code-style.vercel.app](https://eslint-plugin-code-style.vercel.app/docs/rules) • [Local docs](./docs/rules/)
+> 📖 **Full documentation with examples:** [www.eslint-plugin-code-style.org](https://www.eslint-plugin-code-style.org/docs/rules) • [Local docs](./docs/rules/)
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -401,7 +401,7 @@ rules: {
 
 ## 📖 Rules Reference
 
-For detailed documentation with examples, configuration options, and best practices for each rule, see the **[Rules Reference Documentation](https://eslint-plugin-code-style.vercel.app/docs/rules)** or the [local docs](./docs/rules/).
+For detailed documentation with examples, configuration options, and best practices for each rule, see the **[Rules Reference Documentation](https://www.eslint-plugin-code-style.org/docs/rules)** or the [local docs](./docs/rules/).
 
 | Category | Rules | Highlights |
 |----------|:-----:|------------|
@@ -468,7 +468,7 @@ rules: {
 
 ## 📖 Documentation
 
-Full documentation is available at **[eslint-plugin-code-style.vercel.app](https://eslint-plugin-code-style.vercel.app)** — including installation guides, configuration examples, and detailed rule references with good/bad code examples.
+Full documentation is available at **[www.eslint-plugin-code-style.org](https://www.eslint-plugin-code-style.org)** — including installation guides, configuration examples, and detailed rule references with good/bad code examples.
 
 <br />
 

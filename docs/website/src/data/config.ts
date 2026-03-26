@@ -11,5 +11,5 @@ export const pluginConfigData = {
     npmUrl: "https://www.npmjs.com/package/eslint-plugin-code-style",
     version: "3.0.1",
     versionDisplay: "v3.0.1",
-    websiteUrl: "https://eslint-plugin-code-style.vercel.app",
+    websiteUrl: "https://www.eslint-plugin-code-style.org",
 };

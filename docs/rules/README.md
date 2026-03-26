@@ -1,6 +1,6 @@
 # Rules Reference
 
-> 📖 **Online documentation with examples:** [eslint-plugin-code-style.vercel.app/docs/rules](https://eslint-plugin-code-style.vercel.app/docs/rules)
+> 📖 **Online documentation with examples:** [www.eslint-plugin-code-style.org/docs/rules](https://www.eslint-plugin-code-style.org/docs/rules)
 
 > **81 rules total** — 71 with auto-fix 🔧, 20 configurable ⚙️, 10 report-only
 >

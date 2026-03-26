@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Production-quality documentation website (`docs/website/`) built with Next.js 15, React 19, Tailwind CSS v4, and TypeScript — deployed at https://eslint-plugin-code-style.vercel.app
+- Production-quality documentation website (`docs/website/`) built with Next.js 15, React 19, Tailwind CSS v4, and TypeScript — deployed at https://www.eslint-plugin-code-style.org
   - Landing page with hero section, feature highlights, stats, and quick-start guide
   - Getting Started, Configuration, Philosophy, and Contributing guide pages
   - Rules Reference with all 81 rules across 17 category pages — descriptions, rationale, options, good/bad code examples
@@ -61,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Reorganized recommended configs into `recommended-configs/v9/` and `recommended-configs/v10/`
 - Reorganized test projects into `_tests_/v9/` and `_tests_/v10/`
-- Homepage URL changed to https://eslint-plugin-code-style.vercel.app
+- Homepage URL changed to https://www.eslint-plugin-code-style.org
 - Website domain added to README.md and docs/rules/README.md
 
 ### Removed

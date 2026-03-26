@@ -93,7 +93,7 @@ Each test project in `_tests_/` corresponds to a specific tech stack. Rules shou
 
 ## Documentation Website (`docs/website/`)
 
-The repository includes a documentation website at `docs/website/` built with Vite, React 19, React Router v7, Tailwind CSS v4, and TypeScript. It is deployed at **https://eslint-plugin-code-style.vercel.app**.
+The repository includes a documentation website at `docs/website/` built with Vite, React 19, React Router v7, Tailwind CSS v4, and TypeScript. It is deployed at **https://www.eslint-plugin-code-style.org**.
 
 ### CRITICAL: Complete Website Sync Checklist
 

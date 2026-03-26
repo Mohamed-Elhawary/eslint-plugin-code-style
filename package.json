@@ -41,7 +41,7 @@
     "bugs": {
         "url": "https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/issues"
     },
-    "homepage": "https://eslint-plugin-code-style.vercel.app",
+    "homepage": "https://www.eslint-plugin-code-style.org",
     "peerDependencies": {
         "eslint": ">=9.0.0"
     },

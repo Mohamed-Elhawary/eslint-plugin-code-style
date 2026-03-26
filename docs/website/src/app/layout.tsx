@@ -17,14 +17,14 @@ export const metadata: Metadata = {
     creator: metadataStringsData.authorName,
     description: metadataStringsData.defaultDescription,
     keywords: metadataStringsData.keywords.split(","),
-    metadataBase: new URL("https://eslint-plugin-code-style.vercel.app"),
+    metadataBase: new URL("https://www.eslint-plugin-code-style.org"),
     openGraph: {
         description: metadataStringsData.ogDescription,
         locale: "en_US",
         siteName: metadataStringsData.ogSiteName,
         title: metadataStringsData.ogTitle,
         type: "website",
-        url: "https://eslint-plugin-code-style.vercel.app",
+        url: "https://www.eslint-plugin-code-style.org",
     },
     publisher: metadataStringsData.authorName,
     robots: {
