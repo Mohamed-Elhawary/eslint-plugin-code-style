@@ -919,7 +919,7 @@ const HomePage = () => (
                             {homeStringsData.footerLicense}
                             <a
                                 className="font-medium hover:underline"
-                                href="https://hawary.dev"
+                                href={metadataStringsData.authorUrl}
                                 rel="noopener noreferrer"
                                 style={{ color: "var(--text-link)" }}
                                 target="_blank"
