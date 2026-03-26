@@ -138,9 +138,9 @@
     <text x="22" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="22" fill="white">&#x279C;</text>
   </g>
 
-  <!-- After panel (clean code — every issue fixed) -->
-  <g transform="translate(688, 148)">
-    <rect width="535" height="268" rx="12" fill="#0d1117" stroke="#22c55e" stroke-width="1" stroke-opacity="0.2"/>
+  <!-- After panel (every before issue fixed, with empty lines between blocks) -->
+  <g transform="translate(688, 140)">
+    <rect width="535" height="282" rx="12" fill="#0d1117" stroke="#22c55e" stroke-width="1" stroke-opacity="0.2"/>
     <rect width="535" height="34" rx="12" fill="#161b22"/>
     <rect y="24" width="535" height="10" fill="#161b22"/>
     <circle cx="18" cy="17" r="5" fill="#f87171" opacity="0.8"/>
@@ -150,72 +150,85 @@
     <rect x="432" y="6" width="88" height="22" rx="6" fill="#22c55e" opacity="0.15"/>
     <text x="476" y="21" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#4ade80">&#10003; 0 errors</text>
 
-    <!-- 1-4: expanded sorted imports (import-format fixed) -->
-    <text x="16" y="56" font-family="'Courier New', monospace" font-size="11.5" fill="#475569">1</text>
-    <text x="38" y="56" font-family="'Courier New', monospace" font-size="11.5" fill="#c084fc">import</text>
-    <text x="86" y="56" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">{</text>
+    <!-- FIX 1: import-format — expanded + sorted (was cramped on 1 line) -->
+    <text x="16" y="55" font-family="'Courier New', monospace" font-size="11" fill="#475569">1</text>
+    <text x="38" y="55" font-family="'Courier New', monospace" font-size="11" fill="#c084fc">import</text>
+    <text x="82" y="55" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">{ useCallback, useEffect, useState }</text>
+    <text x="358" y="55" font-family="'Courier New', monospace" font-size="11" fill="#c084fc">from</text>
+    <text x="392" y="55" font-family="'Courier New', monospace" font-size="11" fill="#a3e635">"react"</text>
+    <text x="446" y="55" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">;</text>
 
-    <text x="16" y="73" font-family="'Courier New', monospace" font-size="11.5" fill="#475569">2</text>
-    <text x="56" y="73" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">useCallback,</text>
+    <!-- empty line -->
 
-    <text x="16" y="90" font-family="'Courier New', monospace" font-size="11.5" fill="#475569">3</text>
-    <text x="56" y="90" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">useEffect,</text>
+    <!-- FIX 2: func-style — arrow function (was function declaration) -->
+    <!-- FIX 2b: props-destructure — ({ id }) (was props) -->
+    <text x="16" y="79" font-family="'Courier New', monospace" font-size="11" fill="#475569">3</text>
+    <text x="38" y="79" font-family="'Courier New', monospace" font-size="11" fill="#c084fc">const</text>
+    <text x="78" y="79" font-family="'Courier New', monospace" font-size="11" fill="#60a5fa">UserDashboard</text>
+    <text x="190" y="79" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">= ({ id }) =&gt; {</text>
 
-    <text x="16" y="107" font-family="'Courier New', monospace" font-size="11.5" fill="#475569">4</text>
-    <text x="56" y="107" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">useState,</text>
+    <!-- FIX 3: react-code-order — useState BEFORE useEffect (was reversed) -->
+    <!-- FIX 4: useState-naming — isLoading (was loading) -->
+    <text x="16" y="99" font-family="'Courier New', monospace" font-size="11" fill="#475569">4</text>
+    <text x="56" y="99" font-family="'Courier New', monospace" font-size="11" fill="#c084fc">const</text>
+    <text x="96" y="99" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">[isLoading, setIsLoading] = useState(</text>
+    <text x="378" y="99" font-family="'Courier New', monospace" font-size="11" fill="#f97316">false</text>
+    <text x="414" y="99" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">);</text>
 
-    <text x="16" y="124" font-family="'Courier New', monospace" font-size="11.5" fill="#475569">5</text>
-    <text x="38" y="124" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">}</text>
-    <text x="50" y="124" font-family="'Courier New', monospace" font-size="11.5" fill="#c084fc">from</text>
-    <text x="86" y="124" font-family="'Courier New', monospace" font-size="11.5" fill="#a3e635">"react"</text>
-    <text x="142" y="124" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">;</text>
+    <!-- empty line -->
 
-    <!-- 6: arrow function + destructured props (func-style + props fixed) -->
-    <text x="16" y="144" font-family="'Courier New', monospace" font-size="11.5" fill="#475569">6</text>
-    <text x="38" y="144" font-family="'Courier New', monospace" font-size="11.5" fill="#c084fc">const</text>
-    <text x="80" y="144" font-family="'Courier New', monospace" font-size="11.5" fill="#60a5fa">UserDashboard</text>
-    <text x="196" y="144" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">= ({ id }) =&gt; {</text>
+    <!-- FIX 5: naming-convention — submitHandler (was handleSubmit) -->
+    <!-- FIX 5b: arrow-function-simplify — implicit return (was block + return) -->
+    <text x="16" y="123" font-family="'Courier New', monospace" font-size="11" fill="#475569">6</text>
+    <text x="56" y="123" font-family="'Courier New', monospace" font-size="11" fill="#c084fc">const</text>
+    <text x="96" y="123" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">submitHandler = () =&gt; send(data);</text>
 
-    <!-- 7: useState first (react-code-order fixed) + isLoading prefix (naming fixed) -->
-    <text x="16" y="161" font-family="'Courier New', monospace" font-size="11.5" fill="#475569">7</text>
-    <text x="56" y="161" font-family="'Courier New', monospace" font-size="11.5" fill="#c084fc">const</text>
-    <text x="100" y="161" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">[isLoading, setIsLoading] =</text>
-    <text x="334" y="161" font-family="'Courier New', monospace" font-size="11.5" fill="#60a5fa">useState</text>
-    <text x="400" y="161" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">(</text>
-    <text x="408" y="161" font-family="'Courier New', monospace" font-size="11.5" fill="#f97316">false</text>
-    <text x="448" y="161" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">);</text>
+    <!-- empty line -->
 
-    <!-- 8: object expanded (object-property-per-line fixed) -->
-    <text x="16" y="178" font-family="'Courier New', monospace" font-size="11.5" fill="#475569">8</text>
-    <text x="56" y="178" font-family="'Courier New', monospace" font-size="11.5" fill="#c084fc">const</text>
-    <text x="100" y="178" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">config = {</text>
+    <!-- FIX 6: object-property-per-line — expanded (was inline) -->
+    <text x="16" y="147" font-family="'Courier New', monospace" font-size="11" fill="#475569">8</text>
+    <text x="56" y="147" font-family="'Courier New', monospace" font-size="11" fill="#c084fc">const</text>
+    <text x="96" y="147" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">config = {</text>
 
-    <text x="16" y="195" font-family="'Courier New', monospace" font-size="11.5" fill="#475569">9</text>
-    <text x="74" y="195" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">lang: </text>
-    <text x="118" y="195" font-family="'Courier New', monospace" font-size="11.5" fill="#a3e635">"en"</text>
-    <text x="148" y="195" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">,</text>
+    <text x="16" y="163" font-family="'Courier New', monospace" font-size="11" fill="#475569">9</text>
+    <text x="74" y="163" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">lang: </text>
+    <text x="114" y="163" font-family="'Courier New', monospace" font-size="11" fill="#a3e635">"en"</text>
+    <text x="142" y="163" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">,</text>
 
-    <text x="16" y="212" font-family="'Courier New', monospace" font-size="11.5" fill="#475569">10</text>
-    <text x="74" y="212" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">theme: </text>
-    <text x="126" y="212" font-family="'Courier New', monospace" font-size="11.5" fill="#a3e635">"dark"</text>
-    <text x="170" y="212" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">,</text>
+    <text x="16" y="179" font-family="'Courier New', monospace" font-size="11" fill="#475569">10</text>
+    <text x="74" y="179" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">theme: </text>
+    <text x="122" y="179" font-family="'Courier New', monospace" font-size="11" fill="#a3e635">"dark"</text>
+    <text x="166" y="179" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">,</text>
 
-    <text x="16" y="229" font-family="'Courier New', monospace" font-size="11.5" fill="#475569">11</text>
-    <text x="56" y="229" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">};</text>
+    <text x="16" y="195" font-family="'Courier New', monospace" font-size="11" fill="#475569">11</text>
+    <text x="56" y="195" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">};</text>
 
-    <!-- 9: submitHandler + implicit return (naming + simplify fixed) -->
-    <!-- 10: clean className (classname-no-extra-spaces fixed) -->
-    <text x="16" y="246" font-family="'Courier New', monospace" font-size="11.5" fill="#475569">12</text>
-    <text x="56" y="246" font-family="'Courier New', monospace" font-size="11.5" fill="#c084fc">const</text>
-    <text x="100" y="246" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">submitHandler = () =&gt;</text>
-    <text x="298" y="246" font-family="'Courier New', monospace" font-size="11.5" fill="#60a5fa">submitForm</text>
-    <text x="378" y="246" font-family="'Courier New', monospace" font-size="11.5" fill="#e2e8f0">(data);</text>
+    <!-- empty line -->
 
-    <!-- Rule fix annotations -->
-    <text x="490" y="56" text-anchor="end" font-family="system-ui, sans-serif" font-size="9" fill="#4ade80" opacity="0.6">&#10003; sorted</text>
-    <text x="490" y="144" text-anchor="end" font-family="system-ui, sans-serif" font-size="9" fill="#4ade80" opacity="0.6">&#10003; arrow + destructured</text>
-    <text x="490" y="161" text-anchor="end" font-family="system-ui, sans-serif" font-size="9" fill="#4ade80" opacity="0.6">&#10003; isLoading prefix</text>
-    <text x="490" y="178" text-anchor="end" font-family="system-ui, sans-serif" font-size="9" fill="#4ade80" opacity="0.6">&#10003; expanded + sorted</text>
+    <!-- FIX 3 continued: useEffect AFTER handlers (react-code-order fixed) -->
+    <text x="16" y="219" font-family="'Courier New', monospace" font-size="11" fill="#475569">13</text>
+    <text x="56" y="219" font-family="'Courier New', monospace" font-size="11" fill="#60a5fa">useEffect</text>
+    <text x="122" y="219" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">(() =&gt; fetchData(), [id]);</text>
+
+    <!-- empty line -->
+
+    <!-- FIX 7: classname-no-extra-spaces — clean (was double spaces + trailing) -->
+    <text x="16" y="243" font-family="'Courier New', monospace" font-size="11" fill="#475569">15</text>
+    <text x="56" y="243" font-family="'Courier New', monospace" font-size="11" fill="#c084fc">return</text>
+    <text x="102" y="243" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">&lt;div className="flex items-center"&gt;;</text>
+
+    <!-- closing -->
+    <text x="16" y="263" font-family="'Courier New', monospace" font-size="11" fill="#475569">16</text>
+    <text x="38" y="263" font-family="'Courier New', monospace" font-size="11" fill="#e2e8f0">};</text>
+
+    <!-- Fix annotations — right margin -->
+    <text x="520" y="55" text-anchor="end" font-family="system-ui, sans-serif" font-size="8" fill="#4ade80" opacity="0.7">&#10003; sorted</text>
+    <text x="520" y="79" text-anchor="end" font-family="system-ui, sans-serif" font-size="8" fill="#4ade80" opacity="0.7">&#10003; arrow + destructured</text>
+    <text x="520" y="99" text-anchor="end" font-family="system-ui, sans-serif" font-size="8" fill="#4ade80" opacity="0.7">&#10003; isLoading + order</text>
+    <text x="520" y="123" text-anchor="end" font-family="system-ui, sans-serif" font-size="8" fill="#4ade80" opacity="0.7">&#10003; Handler + implicit</text>
+    <text x="520" y="147" text-anchor="end" font-family="system-ui, sans-serif" font-size="8" fill="#4ade80" opacity="0.7">&#10003; expanded + sorted</text>
+    <text x="520" y="219" text-anchor="end" font-family="system-ui, sans-serif" font-size="8" fill="#4ade80" opacity="0.7">&#10003; moved after handlers</text>
+    <text x="520" y="243" text-anchor="end" font-family="system-ui, sans-serif" font-size="8" fill="#4ade80" opacity="0.7">&#10003; clean className</text>
     <text x="490" y="246" text-anchor="end" font-family="system-ui, sans-serif" font-size="9" fill="#4ade80" opacity="0.6">&#10003; Handler + implicit</text>
   </g>
 
