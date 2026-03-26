@@ -44,12 +44,10 @@
 
   <!-- ============ HEADER SECTION ============ -->
 
-  <!-- Logo badge -->
-  <rect x="528" y="36" width="56" height="56" rx="13" fill="url(#accent)"/>
-  <text x="556" y="73" text-anchor="middle" font-family="'Courier New', monospace" font-size="28" font-weight="700" fill="white">CS</text>
-
-  <!-- Plugin name -->
-  <text x="600" y="67" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="700" fill="white" letter-spacing="-0.5">eslint-plugin-code-style</text>
+  <!-- Logo + Plugin name (centered) -->
+  <rect x="375" y="34" width="56" height="56" rx="13" fill="url(#accent)"/>
+  <text x="403" y="71" text-anchor="middle" font-family="'Courier New', monospace" font-size="28" font-weight="700" fill="white">CS</text>
+  <text x="668" y="72" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="800" fill="white" letter-spacing="-0.5">eslint-plugin-code-style</text>
 
   <!-- Tagline -->
   <text x="640" y="118" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="17" fill="#7c8ca3">Consistent code formatting for React, TypeScript &amp; Tailwind CSS projects</text>
