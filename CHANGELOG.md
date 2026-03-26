@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Documentation Website, Next.js Compatibility & ESLint v10 Support**
 
 **Version Range:** v2.2.5 → v3.0.0
+**Full Changelog:** [v2.2.5...v3.0.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.5...v3.0.0)
 
 ### Added
 
@@ -179,7 +180,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New Rule: Hook File Naming Convention + 18 Fixes & Enhancements**
 
-**Version Range:** v2.0.1 → v2.1.0
+**Version Range:** v2.0.18 → v2.1.0
 
 ### Added
 
@@ -220,7 +221,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configurable: 19 rules ⚙️
 - Report-only: 10 rules (was 9)
 
-**Full Changelog:** [v2.0.1...v2.1.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.1...v2.1.0)
+**Full Changelog:** [v2.0.18...v2.1.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.0.18...v2.1.0)
 
 ---
 
@@ -502,10 +503,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.17.2] - 2026-02-09
 
-**Fix: CamelCase Naming Auto-Fix & Prefix Enforcement**
-
-**Version Range:** v1.17.1 → v1.17.2
-
 ### Fixed
 
 - **`folder-based-naming-convention`** - Fix camelCase naming enforcement for constants, data, reducers, services, and strings folders
@@ -513,15 +510,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Near-match prefix enforcement: `routeConstants` → `routesConstants` when file is `routes.ts`
   - Multi-export files with unrelated prefixes (e.g., `buttonTypeData` in `data/app.ts`) are not flagged
 
-**Full Changelog:** [v1.17.1...v1.17.2](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.17.1...v1.17.2)
-
 ---
 
 ## [1.17.1] - 2026-02-09
-
-**Fix: Index File Behavior in Wrapped Folders**
-
-**Version Range:** v1.17.0 → v1.17.1
 
 ### Fixed
 
@@ -530,8 +521,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Subfolder index (`views/assessment/index.tsx`) → must contain component code, not just re-exports
   - Only one barrel per module — subfolder index files that simulate a barrel are flagged
 - **`no-redundant-folder-suffix`** - Detect file name matching parent folder name (e.g., `assessment/assessment.tsx` → use `assessment/index.tsx`)
-
-**Full Changelog:** [v1.17.0...v1.17.1](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.17.0...v1.17.1)
 
 ---
 
@@ -617,7 +606,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New Rule: no-redundant-folder-suffix**
 
-**Version Range:** v1.14.1 → v1.15.0
+**Version Range:** v1.14.4 → v1.15.0
 
 ### Added
 
@@ -642,7 +631,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configurable: 17 rules ⚙️
 - Report-only: 10 rules (was 9)
 
-**Full Changelog:** [v1.14.1...v1.15.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.1...v1.15.0)
+**Full Changelog:** [v1.14.4...v1.15.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.14.4...v1.15.0)
 
 ---
 
@@ -767,7 +756,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New Rule: Folder Component Suffix**
 
-**Version Range:** v1.11.1 → v1.12.0
+**Version Range:** v1.11.9 → v1.12.0
 
 ### Added
 
@@ -782,7 +771,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-fixable: 65 rules 🔧
 - Report-only: 9 rules
 
-**Full Changelog:** [v1.11.1...v1.12.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.1...v1.12.0)
+**Full Changelog:** [v1.11.9...v1.12.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.11.9...v1.12.0)
 
 ---
 
@@ -902,7 +891,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New Rule: svg-component-icon-naming + Multiple Component Props Fixes**
 
-**Version Range:** v1.10.1 → v1.11.0
+**Version Range:** v1.10.3 → v1.11.0
 
 ### Added
 
@@ -927,7 +916,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-fixable: 65 rules
 - Report-only: 8 rules
 
-**Full Changelog:** [v1.10.1...v1.11.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.1...v1.11.0)
+**Full Changelog:** [v1.10.3...v1.11.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.10.3...v1.11.0)
 
 ---
 
@@ -966,7 +955,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New Rule: logical-expression-multiline + Enhanced no-hardcoded-strings**
 
-**Version Range:** v1.9.1 → v1.10.0
+**Version Range:** v1.9.7 → v1.10.0
 
 ### Added
 
@@ -1000,7 +989,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-fixable: 65 rules 🔧 (was 64)
 - Report-only: 7 rules
 
-**Full Changelog:** [v1.9.1...v1.10.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.1...v1.10.0)
+**Full Changelog:** [v1.9.7...v1.10.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.9.7...v1.10.0)
 
 ---
 
@@ -1101,7 +1090,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New Rule: class-method-definition-format + Enhanced Spacing Rules**
 
-**Version Range:** v1.8.1 → v1.9.0
+**Version Range:** v1.8.4 → v1.9.0
 
 ### Added
 
@@ -1126,7 +1115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-fixable: 64 rules 🔧 (was 63)
 - Report-only: 7 rules
 
-**Full Changelog:** [v1.8.1...v1.9.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.1...v1.9.0)
+**Full Changelog:** [v1.8.4...v1.9.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.8.4...v1.9.0)
 
 ---
 
@@ -1177,7 +1166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New Rule: no-hardcoded-strings**
 
-**Version Range:** v1.7.1 → v1.8.0
+**Version Range:** v1.7.6 → v1.8.0
 
 ### Added
 
@@ -1199,7 +1188,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-fixable: 63 rules 🔧
 - Report-only: 7 rules (was 6)
 
-**Full Changelog:** [v1.7.1...v1.8.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.1...v1.8.0)
+**Full Changelog:** [v1.7.6...v1.8.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.7.6...v1.8.0)
 
 ---
 
@@ -1281,7 +1270,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New Rules for Blocks, Classes & Enum Enforcement + Multiple Enhancements**
 
-**Version Range:** v1.6.1 → v1.7.0
+**Version Range:** v1.6.6 → v1.7.0
 
 ### Added
 
@@ -1309,7 +1298,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-fixable: 63 rules 🔧
 - Report-only: 6 rules
 
-**Full Changelog:** [v1.6.1...v1.7.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.1...v1.7.0)
+**Full Changelog:** [v1.6.6...v1.7.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.6.6...v1.7.0)
 
 ---
 
@@ -1375,7 +1364,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New array-callback-destructure Rule & Multiple Enhancements**
 
-**Version Range:** v1.5.1 → v1.6.0
+**Version Range:** v1.5.2 → v1.6.0
 
 ### Added
 
@@ -1397,7 +1386,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-fixable: 60 rules 🔧
 - Report-only: 6 rules
 
-**Full Changelog:** [v1.5.1...v1.6.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.5.1...v1.6.0)
+**Full Changelog:** [v1.5.2...v1.6.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.5.2...v1.6.0)
 
 ---
 
@@ -1417,7 +1406,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New if-else-spacing Rule & Enhanced Arrow/Class Method Support**
 
-**Version Range:** v1.4.3 → v1.5.0
+**Version Range:** v1.4.5 → v1.5.0
 
 ### Added
 
@@ -1439,7 +1428,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-fixable: 59 rules 🔧
 - Report-only: 6 rules
 
-**Full Changelog:** [v1.4.3...v1.5.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.4.3...v1.5.0)
+**Full Changelog:** [v1.4.5...v1.5.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.4.5...v1.5.0)
 
 ---
 
@@ -1458,10 +1447,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [1.4.2] - 2026-01-30
-
-**New Rules, Enhanced Auto-Fix & Comprehensive Documentation**
-
-**Version Range:** v1.3.1 → v1.4.2
 
 ### Added
 
@@ -1510,8 +1495,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Total Rules: 64 (was 61)
 - Auto-fixable: 58 rules 🔧
 - Report-only: 6 rules
-
-**Full Changelog:** [v1.3.1...v1.4.2](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.3.1...v1.4.2)
 
 ---
 
@@ -1666,7 +1649,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **New Rules, Auto-Fix Enhancements & Agent Skills Integration**
 
-**Version Range:** v1.2.1 → v1.3.0
+**Version Range:** v1.2.9 → v1.3.0
 
 ### Added
 
@@ -1709,7 +1692,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Total Rules: 61 (was 56)
 - All rules are auto-fixable with `eslint --fix`
 
-**Full Changelog:** [v1.2.1...v1.3.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.2.1...v1.3.0)
+**Full Changelog:** [v1.2.9...v1.3.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.2.9...v1.3.0)
 
 ---
 
@@ -1916,7 +1899,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **TypeScript + Tailwind Support & Configurable Rules**
 
-**Version Range:** v1.0.17 → v1.1.0
+**Version Range:** v1.0.41 → v1.1.0
 
 ### Added
 
@@ -1950,7 +1933,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Total Rules: 51 (was 45)
 - All changes are backward compatible
 
-**Full Changelog:** [v1.0.17...v1.1.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.0.17...v1.1.0)
+**Full Changelog:** [v1.0.41...v1.1.0](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.0.41...v1.1.0)
 
 ---
 
@@ -2142,10 +2125,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.16] - 2026-01-09
 
-**New Rule: index-export-style**
-
-**Version Range:** v1.0.15 → v1.0.16
-
 ### Added
 
 **New Rule**
@@ -2159,8 +2138,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Stats
 
 - Total Rules: 48 (was 47)
-
-**Full Changelog:** [v1.0.15...v1.0.16](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.0.15...v1.0.16)
 
 ---
 
@@ -2178,10 +2155,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [1.0.14] - 2026-01-06
-
-**Customizable Rules, Recommended Configs & Documentation Overhaul**
-
-**Version Range:** v1.0.8 → v1.0.14
 
 ### Added
 
@@ -2209,8 +2182,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Stats
 
 - Total Rules: 47
-
-**Full Changelog:** [v1.0.8...v1.0.14](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.0.8...v1.0.14)
 
 ---
 
@@ -2267,10 +2238,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.7] - 2026-01-06
 
-**TypeScript Type Definitions for IDE Support**
-
-**Version Range:** v1.0.6 → v1.0.7
-
 ### Added
 
 **TypeScript Support**
@@ -2282,8 +2249,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Stats
 
 - Total Rules: 47
-
-**Full Changelog:** [v1.0.6...v1.0.7](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v1.0.6...v1.0.7)
 
 ---
 
@@ -2305,8 +2270,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Stats
 
 - Total Rules: 45+
-
-**Full Changelog:** [v1.0.6](https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/releases/tag/v1.0.6)
 
 ---
 
