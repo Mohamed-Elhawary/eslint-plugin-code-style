@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.2] - 2026-03-26
+
+### Changed
+
+- Update website domain from `eslint-plugin-code-style.vercel.app` to `www.eslint-plugin-code-style.org`
+- Update all domain references across package.json, README.md, AGENTS.md, CHANGELOG.md, docs, and website metadata
+
+---
+
 ## [3.0.1] - 2026-03-26
 
 ### Fixed
@@ -2325,6 +2334,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[3.0.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.5...v3.0.0
 [2.2.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.4...v2.2.5
