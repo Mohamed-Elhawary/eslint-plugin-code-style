@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+    <linearGradient id="text-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c4b5fd"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="300" rx="16" fill="url(#bg)"/>
+  <rect x="0" y="284" width="1200" height="3" fill="url(#accent)" opacity="0.6"/>
+  <rect x="60" y="56" width="56" height="56" rx="12" fill="url(#accent)"/>
+  <text x="88" y="95" text-anchor="middle" font-family="monospace" font-size="28" font-weight="700" fill="white">CS</text>
+  <text x="136" y="92" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="700" fill="white">eslint-plugin-code-style</text>
+  <text x="60" y="150" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#94a3b8">81 custom ESLint rules for enforcing consistent code formatting</text>
+  <text x="60" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#94a3b8">in React, TypeScript, and Tailwind CSS projects</text>
+  <rect x="60" y="210" width="130" height="32" rx="6" fill="#7c3aed" opacity="0.15"/>
+  <text x="125" y="232" text-anchor="middle" font-family="monospace" font-size="14" font-weight="600" fill="#a78bfa">71 Auto-fixable</text>
+  <rect x="206" y="210" width="130" height="32" rx="6" fill="#7c3aed" opacity="0.15"/>
+  <text x="271" y="232" text-anchor="middle" font-family="monospace" font-size="14" font-weight="600" fill="#a78bfa">20 Configurable</text>
+  <rect x="352" y="210" width="150" height="32" rx="6" fill="#7c3aed" opacity="0.15"/>
+  <text x="427" y="232" text-anchor="middle" font-family="monospace" font-size="14" font-weight="600" fill="#a78bfa">Zero Dependencies</text>
+  <rect x="518" y="210" width="140" height="32" rx="6" fill="#7c3aed" opacity="0.15"/>
+  <text x="588" y="232" text-anchor="middle" font-family="monospace" font-size="14" font-weight="600" fill="#a78bfa">ESLint v9 &amp; v10</text>
+  <rect x="674" y="210" width="150" height="32" rx="6" fill="#7c3aed" opacity="0.15"/>
+  <text x="749" y="232" text-anchor="middle" font-family="monospace" font-size="14" font-weight="600" fill="#a78bfa">Next.js Compatible</text>
+  <text x="60" y="270" font-family="monospace" font-size="14" fill="#64748b">npm install eslint-plugin-code-style --save-dev</text>
+</svg>

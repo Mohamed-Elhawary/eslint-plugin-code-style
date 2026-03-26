@@ -1,5 +1,10 @@
 <div align="center">
 
+<img src="./banner.svg" alt="eslint-plugin-code-style — 81 custom ESLint rules for React projects" width="100%" />
+
+<br />
+<br />
+
 # ESLint Plugin Code Style
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-code-style?style=for-the-badge&logo=npm&logoColor=white&color=cb3837)](https://www.npmjs.com/package/eslint-plugin-code-style)
