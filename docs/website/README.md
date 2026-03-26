@@ -1,8 +1,14 @@
+<div align="center">
+
+<img src="src/app/icon.svg" alt="eslint-plugin-code-style" width="64" height="64" />
+
 # eslint-plugin-code-style — Documentation Website
 
 The official documentation website for [eslint-plugin-code-style](https://www.npmjs.com/package/eslint-plugin-code-style).
 
-**Live:** [www.eslint-plugin-code-style.org](https://www.eslint-plugin-code-style.org)
+**[www.eslint-plugin-code-style.org](https://www.eslint-plugin-code-style.org)**
+
+</div>
 
 ---
 
