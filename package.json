@@ -1,6 +1,6 @@
 {
     "name": "eslint-plugin-code-style",
-    "version": "2.2.5",
+    "version": "3.0.0",
     "description": "A custom ESLint plugin for enforcing consistent code formatting and style rules in React/JSX projects",
     "main": "dist/index.js",
     "types": "index.d.ts",
@@ -41,7 +41,7 @@
     "bugs": {
         "url": "https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/issues"
     },
-    "homepage": "https://github.com/Mohamed-Elhawary/eslint-plugin-code-style#readme",
+    "homepage": "https://eslint-plugin-code-style.vercel.app",
     "peerDependencies": {
         "eslint": ">=9.0.0"
     },

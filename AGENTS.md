@@ -14,12 +14,25 @@ Instructions for AI coding agents working with this codebase.
 
 ### Available Configurations
 
+#### ESLint v9
+
 | Config | Recommended Folder | Test Folder | Status |
 |--------|-------------------|-------------|--------|
-| React (JS) | `recommended-configs/react/` | `_tests_/react/` | Available |
-| React + TS + Tailwind | `recommended-configs/react-ts-tw/` | `_tests_/react-ts-tw/` | Available |
-| React + TypeScript | `recommended-configs/react-ts/` | `_tests_/react-ts/` | Available |
-| React + Tailwind | `recommended-configs/react-tw/` | `_tests_/react-tw/` | Available |
+| React (JS) | `recommended-configs/v9/react/` | `_tests_/v9/react/` | Available |
+| React + TypeScript | `recommended-configs/v9/react-ts/` | `_tests_/v9/react-ts/` | Available |
+| React + Tailwind | `recommended-configs/v9/react-tw/` | `_tests_/v9/react-tw/` | Available |
+| React + TS + Tailwind | `recommended-configs/v9/react-ts-tw/` | `_tests_/v9/react-ts-tw/` | Available |
+
+#### ESLint v10
+
+| Config | Recommended Folder | Test Folder | Status |
+|--------|-------------------|-------------|--------|
+| React (JS) | `recommended-configs/v10/react/` | `_tests_/v10/react/` | Available |
+| React + TypeScript | `recommended-configs/v10/react-ts/` | `_tests_/v10/react-ts/` | Available |
+| React + Tailwind | `recommended-configs/v10/react-tw/` | `_tests_/v10/react-tw/` | Available |
+| React + TS + Tailwind | `recommended-configs/v10/react-ts-tw/` | `_tests_/v10/react-ts-tw/` | Available |
+
+> **v10 differences:** Uses `@eslint-react/eslint-plugin` instead of `eslint-plugin-react`/`eslint-plugin-react-hooks`. `eslint-plugin-jsx-a11y` removed (no v10-compatible version).
 
 ### Test Projects & Rule Compatibility
 
@@ -27,12 +40,25 @@ Instructions for AI coding agents working with this codebase.
 
 Each test project in `_tests_/` corresponds to a specific tech stack. Rules should ONLY be added to projects that support them:
 
+#### ESLint v9 Test Projects
+
 | Rule Category | `react/` (JS only) | `react-ts-tw/` (TS + Tailwind) | `react-ts/` (TS) | `react-tw/` (TW) |
 |---------------|:------------------:|:------------------------------:|:-------------------:|:-------------------:|
 | **General rules** (arrays, functions, etc.) | ✅ | ✅ | ✅ | ✅ |
 | **JSX/React rules** | ✅ | ✅ | ✅ | ✅ |
 | **TypeScript rules** | ❌ | ✅ | ✅ | ❌ |
 | **Tailwind rules** | ❌ | ✅ | ❌ | ✅ |
+
+#### ESLint v10 Test Projects
+
+| Rule Category | `react-v10/` (JS only) | `react-ts-tw-v10/` (TS + Tailwind) | `react-ts-v10/` (TS) | `react-tw-v10/` (TW) |
+|---------------|:----------------------:|:-----------------------------------:|:---------------------:|:---------------------:|
+| **General rules** (arrays, functions, etc.) | ✅ | ✅ | ✅ | ✅ |
+| **JSX/React rules** | ✅ | ✅ | ✅ | ✅ |
+| **TypeScript rules** | ❌ | ✅ | ✅ | ❌ |
+| **Tailwind rules** | ❌ | ✅ | ❌ | ✅ |
+
+> **v10 key difference:** v10 test projects use `@eslint-react/eslint-plugin` instead of `eslint-plugin-react`/`eslint-plugin-react-hooks`, and do not include `eslint-plugin-jsx-a11y`.
 
 **TypeScript-only rules** (72 rules in JS projects, 81 in TS projects):
 - `component-props-inline-type`
@@ -64,6 +90,63 @@ Each test project in `_tests_/` corresponds to a specific tech stack. Rules shou
 4. Add ALL applicable rules (skip rules for unsupported tech)
 5. Update this table in AGENTS.md
 6. Update "Available Configurations" table above
+
+## Documentation Website (`docs/website/`)
+
+The repository includes a documentation website at `docs/website/` built with Vite, React 19, React Router v7, Tailwind CSS v4, and TypeScript. It is deployed at **https://eslint-plugin-code-style.vercel.app**.
+
+### CRITICAL: Complete Website Sync Checklist
+
+The documentation website MUST be kept 100% in sync with the plugin. ANY change to the plugin requires checking and updating the website. Here is the COMPLETE list of synced data:
+
+**Rule Data (`docs/website/src/data/rules.ts`):**
+- Total rule count (currently 81)
+- Auto-fixable count (currently 71)
+- Configurable count (currently 20)
+- Report-only count (currently 10)
+- TypeScript-only count (currently 9)
+- Category count (currently 17)
+- Each rule's: name, description, rationale, fixable flag, configurable flag, tsOnly flag, options array, good/bad examples
+
+**Version (`docs/website/src/data/config.ts`):**
+- Plugin version string (single source of truth — all other website references import from here)
+
+**Navigation (`docs/website/src/data/navigation.ts`):**
+- Sidebar category list must match the categories in rules.ts
+
+**Pages that reference counts or rules:**
+- Homepage (`src/app/page.tsx`) — stats bar (81/71/20/17), category grid with counts
+- Rules index (`src/app/docs/rules/page.tsx`) — stats cards
+- Getting started (`src/app/docs/getting-started/page.tsx`) — all rules list
+- Configuration (`src/app/docs/configuration/page.tsx`) — config descriptions, rule counts
+
+**When adding a rule:** Update rules.ts (add rule to category), verify navigation.ts has category, verify homepage category counts match.
+**When removing a rule:** Update rules.ts (remove rule), update all count references.
+**When modifying a rule:** Update rules.ts (description, options, examples).
+**When changing version:** Update config.ts ONLY (all other references import from it).
+**When changing recommended configs:** Update configuration page, v9/v10 README files.
+**When changing ESLint version support:** Update config.ts, configuration page, getting-started page, all README files.
+
+### Website Files to Update per Change Type
+
+| Change Type | Files to Update |
+|-------------|----------------|
+| New rule | `docs/website/src/data/rules.ts`, verify category page, verify homepage category counts |
+| Remove rule | `docs/website/src/data/rules.ts`, verify category page, update all count references |
+| Edit rule (behavior/options) | `docs/website/src/data/rules.ts` |
+| Version bump | `docs/website/src/data/config.ts` (single source of truth) |
+| Config change | `docs/website/src/app/docs/configuration/page.tsx` |
+| New category | `docs/website/src/data/rules.ts`, `docs/website/src/data/navigation.ts`, `src/app/page.tsx` |
+| ESLint version support change | `docs/website/src/data/config.ts`, `docs/website/src/app/docs/configuration/page.tsx`, `docs/website/src/app/docs/getting-started/page.tsx`, README.md |
+
+### Running the Website
+
+```bash
+cd docs/website
+pnpm dev      # Development server at http://localhost:5173
+pnpm build    # Production build to docs/website/dist/
+pnpm preview  # Preview production build
+```
 
 ## Build & Test Commands
 
@@ -299,8 +382,8 @@ Add the rule (**alphabetically sorted**) to ALL config files:
 
 - [ ] `recommended-configs/react-ts-tw/eslint.config.js`
 - [ ] `recommended-configs/react/eslint.config.js` (skip if TypeScript-only rule)
-- [ ] `_tests_/react-ts-tw/eslint.config.js`
-- [ ] `_tests_/react/eslint.config.js` (skip if TypeScript-only rule)
+- [ ] `_tests_/v9/react-ts-tw/eslint.config.js`
+- [ ] `_tests_/v9/react/eslint.config.js` (skip if TypeScript-only rule)
 
 **TypeScript-only rules** (only add to `-ts-tw` configs):
 - `component-props-inline-type`, `enum-format`, `interface-format`
@@ -324,14 +407,14 @@ Add the rule (**alphabetically sorted**) to ALL config files:
 
 **a) Add examples to existing test project code:**
 
-The test projects (`_tests_/react/`, `_tests_/react-ts-tw/`, etc.) contain real code (components, hooks, utils, etc.) that should naturally exercise all rules. When adding a new rule:
+The test projects (`_tests_/v9/react/`, `_tests_/v9/react-ts-tw/`, etc.) contain real code (components, hooks, utils, etc.) that should naturally exercise all rules. When adding a new rule:
 
 - Add code examples to **existing files** in the test project that are relevant to the rule
 - For example: if adding an array rule, add array code to existing component files
 - The test project code should cover ALL rules through its natural structure
 
 ```
-_tests_/react-ts-tw/src/
+_tests_/v9/react-ts-tw/src/
 ├── app.tsx              # Main app - exercises component rules
 ├── components/          # Components - exercises JSX, props rules
 │   ├── button.tsx
@@ -348,7 +431,7 @@ For quick testing during development, create a temporary test file:
 
 ```bash
 # Create temp test file
-_tests_/react-ts-tw/src/test-rule-name.tsx
+_tests_/v9/react-ts-tw/src/test-rule-name.tsx
 ```
 
 ```javascript
@@ -364,7 +447,7 @@ const goodExample = /* code that follows the rule */;
 **c) Run the linter to verify:**
 
 ```bash
-cd _tests_/react-ts-tw
+cd _tests_/v9/react-ts-tw
 
 # Check errors are reported for bad code
 npx eslint src/test-rule-name.tsx
@@ -380,8 +463,8 @@ npx eslint src/
 **d) Clean up temporary test file:**
 
 ```bash
-rm _tests_/react-ts-tw/src/test-rule-name.tsx
-rm _tests_/react/src/test-rule-name.jsx  # if created
+rm _tests_/v9/react-ts-tw/src/test-rule-name.tsx
+rm _tests_/v9/react/src/test-rule-name.jsx  # if created
 ```
 
 **e) Ensure test project code covers the new rule:**
@@ -433,8 +516,8 @@ comm -23 /tmp/a.txt /tmp/b.txt
 #### 5. Config Files
 - [ ] Remove from `recommended-configs/react-ts-tw/eslint.config.js`
 - [ ] Remove from `recommended-configs/react/eslint.config.js`
-- [ ] Remove from `_tests_/react-ts-tw/eslint.config.js`
-- [ ] Remove from `_tests_/react/eslint.config.js`
+- [ ] Remove from `_tests_/v9/react-ts-tw/eslint.config.js`
+- [ ] Remove from `_tests_/v9/react/eslint.config.js`
 
 #### 6. Config READMEs
 - [ ] Update `recommended-configs/react-ts-tw/README.md`
@@ -511,8 +594,8 @@ When modifying an existing rule, check if these need updates:
 1. **Create a temporary test file** for quick verification:
    ```bash
    # Create in appropriate project(s)
-   _tests_/react-ts-tw/src/test-rule-name.tsx   # For TS rules
-   _tests_/react/src/test-rule-name.jsx         # For general rules (test in both)
+   _tests_/v9/react-ts-tw/src/test-rule-name.tsx   # For TS rules
+   _tests_/v9/react/src/test-rule-name.jsx         # For general rules (test in both)
    ```
 
 2. **Add test cases:**
@@ -528,7 +611,7 @@ When modifying an existing rule, check if these need updates:
 
 3. **Run tests:**
    ```bash
-   cd _tests_/react-ts-tw
+   cd _tests_/v9/react-ts-tw
    npx eslint src/test-rule-name.tsx          # Verify error is reported
    npx eslint src/test-rule-name.tsx --fix    # Verify auto-fix works
    npx eslint src/                            # Ensure no regressions
@@ -536,8 +619,8 @@ When modifying an existing rule, check if these need updates:
 
 4. **Clean up temporary test file:**
    ```bash
-   rm _tests_/react-ts-tw/src/test-rule-name.tsx
-   rm _tests_/react/src/test-rule-name.jsx    # if created
+   rm _tests_/v9/react-ts-tw/src/test-rule-name.tsx
+   rm _tests_/v9/react/src/test-rule-name.jsx    # if created
    ```
 
 5. **Ensure test project code covers the change:**
@@ -995,8 +1078,9 @@ git push origin main --tags
    - Feature description 1
    - Feature description 2"
    ```
-5. **Push (requires explicit approval):** `git push origin main --tags`
-6. **Publish (requires explicit approval):** `npm publish`
+5. **Update docs/website version references and rule data if applicable**
+6. **Push (requires explicit approval):** `git push origin main --tags`
+7. **Publish (requires explicit approval):** `npm publish`
 
 ---
 
@@ -1277,7 +1361,7 @@ Test an ESLint rule to verify it works correctly.
 **Steps:**
 
 1. **Find the rule** in `src/rules/<category>.js` and understand what it checks
-2. **Identify test app** — Use `_tests_/react/` for JS rules or `_tests_/react-ts-tw/` for TS rules
+2. **Identify test app** — Use `_tests_/v9/react/` for JS rules or `_tests_/v9/react-ts-tw/` for TS rules
 3. **Create test cases** in the test app:
    - Add code that should PASS (no violations)
    - Add code that should FAIL (triggers violations)

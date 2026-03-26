@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.0] - 2026-03-26
+
+**Documentation Website, Next.js Compatibility & ESLint v10 Support**
+
+**Version Range:** v2.2.5 → v3.0.0
+
+### Added
+
+- Production-quality documentation website (`docs/website/`) built with Next.js 15, React 19, Tailwind CSS v4, and TypeScript — deployed at https://eslint-plugin-code-style.vercel.app
+  - Landing page with hero section, feature highlights, stats, and quick-start guide
+  - Getting Started, Configuration, Philosophy, and Contributing guide pages
+  - Rules Reference with all 81 rules across 17 category pages — descriptions, rationale, options, good/bad code examples
+  - Dark/light mode with system preference detection
+  - Responsive layout with sidebar navigation and mobile support
+  - Polished code blocks with copy-to-clipboard and horizontal scrolling
+  - Per-page SEO metadata (title, description, OpenGraph)
+  - Full ESLint compliance with the `react-ts-tw` recommended config (0 errors, 0 rules disabled)
+  - All hardcoded strings extracted to centralized data files
+  - Plugin version sourced from single `docs/website/src/data/config.ts` constant
+- ESLint v10 recommended configurations for all 4 project types (`recommended-configs/v10/`)
+  - v10 configs use `@eslint-react/eslint-plugin` instead of `eslint-plugin-react` and `eslint-plugin-react-hooks`
+  - READMEs with migration guide and plugin mapping table for each v10 config
+- ESLint v10 test projects (`_tests_/v10/`) for all 4 project types
+- Website sync requirements in AGENTS.md and CLAUDE.md — complete checklist for keeping the website 100% in sync with plugin changes
+
+### Enhanced
+
+- **`function-naming-convention`** — Skip Next.js reserved exports (`generateMetadata`, `generateStaticParams`, `generateViewport`, `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`); add 16 new verbs (`notify`, `broadcast`, `emit`, `dispatch`, `join`, `combine`, `bind`, etc.)
+- **`folder-based-naming-convention`** — Skip Next.js special folder patterns (`[slug]`, `(group)`, `@parallel`, `_private`) inside `app/` directory
+- **`folder-structure-consistency`** — Skip files inside Next.js `app/` directory
+- **`module-index-exports`** — Skip Next.js reserved filenames (`page`, `layout`, `loading`, `error`, `not-found`, `template`, `default`, `route`, `middleware`)
+- Added `.next/**` to ignores in all recommended config and test project ESLint configs
+
+### Changed
+
+- Reorganized recommended configs into `recommended-configs/v9/` and `recommended-configs/v10/`
+- Reorganized test projects into `_tests_/v9/` and `_tests_/v10/`
+- Homepage URL changed to https://eslint-plugin-code-style.vercel.app
+- Website domain added to README.md and docs/rules/README.md
+
+### Removed
+
+- `docs/frontend-guide/` folder (moved to separate repository)
+
+### BREAKING CHANGES
+
+- Recommended config paths changed: `recommended-configs/react/` → `recommended-configs/v9/react/` (same for all 4 variants)
+- Test project paths changed: `_tests_/react/` → `_tests_/v9/react/` (same for all 4 variants)
+- Removed `docs/frontend-guide/` directory
+
+---
+
 ## [2.2.5] - 2026-03-03
 
 ### Documentation
@@ -386,7 +438,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **React + Tailwind test project** (`_tests_/react-tw/`) — React + Tailwind CSS project (no TypeScript) with 70 code-style rules enabled and Tailwind CSS v4 plugin
+- **React + Tailwind test project** (`_tests_/v9/react-tw/`) — React + Tailwind CSS project (no TypeScript) with 70 code-style rules enabled and Tailwind CSS v4 plugin
 - **React + Tailwind recommended config** (`recommended-configs/react-tw/`) — Ready-to-use ESLint flat config for React + Tailwind CSS projects without TypeScript
   - Includes 70 JavaScript-compatible code-style rules, Tailwind CSS plugin, and recommended third-party plugins
   - Documented with installation instructions, rule explanations, and customization guide
@@ -408,7 +460,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **React + TypeScript test project** (`_tests_/react-ts/`) — React + TypeScript project (no Tailwind) with all 79 code-style rules enabled and @typescript-eslint parser
+- **React + TypeScript test project** (`_tests_/v9/react-ts/`) — React + TypeScript project (no Tailwind) with all 79 code-style rules enabled and @typescript-eslint parser
 - **React + TypeScript recommended config** (`recommended-configs/react-ts/`) — Ready-to-use ESLint flat config for React + TypeScript projects without Tailwind CSS
   - Includes all 79 code-style rules, TypeScript parser, and recommended third-party plugins
   - Documented with installation instructions, rule explanations, and customization guide
@@ -2256,6 +2308,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[3.0.0]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.5...v3.0.0
+[2.2.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.4...v2.2.5
+[2.2.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.3...v2.2.4
 [2.2.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.2...v2.2.3
 [2.2.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.1...v2.2.2
 [2.2.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v2.2.0...v2.2.1

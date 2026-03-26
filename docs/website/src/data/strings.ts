@@ -1,0 +1,532 @@
+import { pluginConfigData } from "./config";
+
+// Homepage strings
+
+export const homeStringsData = {
+    badge: pluginConfigData.versionDisplay,
+    categoriesSectionSubtitle: "Rules are organized into logical categories for easy discovery and configuration.",
+    categoriesSectionTitle: "17 Rule Categories",
+    ctaGetStarted: "Get Started",
+    ctaGitHub: "GitHub",
+    ctaInstallationGuide: "Full Installation Guide",
+    ctaViewRules: "View All Rules",
+    featureAutoFixDescription: "71 of 81 rules come with auto-fix support. Run eslint --fix and watch your code snap into shape.",
+    featureAutoFixTitle: "Auto-Fixable Rules",
+    featureConfigsDescription: "4 preset configs for React, React+TypeScript, React+Tailwind, and React+TypeScript+Tailwind.",
+    featureConfigsTitle: "Ready-to-Use Configs",
+    featureFlatConfigDescription: "Designed for the modern flat config system. No legacy .eslintrc files needed.",
+    featureFlatConfigTitle: "ESLint v9+ Flat Config",
+    featureReactDescription: "Purpose-built for React projects. JSX formatting, component conventions, hook patterns, and prop naming.",
+    featureReactTitle: "React & JSX First",
+    featuresSectionSubtitle: `
+        and
+        Built
+        by
+        ESLint
+        existing
+        fill
+        gaps
+        left
+        plugins.
+        Prettier
+        the
+        to
+    `,
+    featuresSectionTitle: "Why eslint-plugin-code-style?",
+    featureTypeScriptDescription: "9 TypeScript-specific rules for enums, interfaces, type annotations, and prop naming.",
+    featureTypeScriptTitle: "TypeScript Support",
+    featureZeroDepsDescription: "No external runtime dependencies. Lightweight and fast, with no supply-chain concerns.",
+    featureZeroDepsTitle: "Zero Dependencies",
+    footerAuthorName: "Mohamed Elhawary",
+    footerChangelog: "Changelog",
+    footerGitHub: "GitHub",
+    footerLicense: "MIT License \u00B7 Built by ",
+    footerNpm: "npm",
+    heroSubtitle: "81 custom ESLint rules for enforcing consistent code formatting in React and JSX projects. 71 auto-fixable, 20 configurable, zero dependencies.",
+    heroTitle: "Code Style Rules",
+    heroTitleSuffix: "for React Projects",
+    metadataTitle: "eslint-plugin-code-style \u2014 81 Custom ESLint Rules for React",
+    quickStartSectionSubtitle: "Get up and running in under a minute.",
+    quickStartSectionTitle: "Quick Start",
+    quickStartStepConfigure: "Configure",
+    quickStartStepInstall: "Install",
+    quickStartStepLint: "Lint",
+    quickStartTypeScriptHint: "Using TypeScript? Use ",
+    quickStartTypeScriptHintCode: "react-ts",
+    quickStartTypeScriptHintSuffix: " instead:",
+    statsAutoFixable: "Auto-fixable",
+    statsAutoFixableValue: "71",
+    statsCategories: "Categories",
+    statsCategoriesValue: "17",
+    statsConfigurable: "Configurable",
+    statsConfigurableValue: "20",
+    statsRules: "Rules",
+    statsRulesValue: "81",
+};
+
+// Docs overview strings
+export const docsOverviewStringsData = {
+    cardConfigurationDescription: "Choose a preset config or manually enable individual rules. Customize options to match your team.",
+    cardConfigurationTitle: "Configuration",
+    cardInstallationDescription: "Install the plugin, add it to your ESLint flat config, and start linting in under a minute.",
+    cardInstallationTitle: "Installation",
+    cardPhilosophyDescription: "Understand the design decisions behind the plugin: auto-fix first, consistency at scale, and more.",
+    cardPhilosophyTitle: "Philosophy",
+    cardRulesDescription: "Browse all 81 rules across 17 categories. Each rule includes examples, rationale, and options.",
+    cardRulesTitle: "Rules Reference",
+    intro: " documentation. Everything you need to install, configure, and use the plugin in your React projects.",
+    introPrefix: "Welcome to the ",
+    metadataTitle: "Documentation",
+    pluginName: "eslint-plugin-code-style",
+    title: "Documentation",
+};
+
+// Getting started strings
+export const gettingStartedStringsData = {
+    allRulesNote: "Note:",
+    allRulesNoteText: "The last 9 rules in the list (from",
+    allRulesNoteTextContinued: "to",
+    allRulesNoteTextEnd: "minus the last one) are TypeScript-only. They require",
+    allRulesNoteTextFinal: "and will not work in plain JavaScript projects.",
+    allRulesNoteTextParser: "@typescript-eslint/parser",
+    basicConfigDescription: "Add the plugin to your ",
+    basicConfigDescriptionCode: "eslint.config.js",
+    basicConfigDescriptionSuffix: " using one of the built-in preset configs. This example enables all 72 JavaScript/React rules:",
+    basicConfigLinkPrefix: "See the ",
+    basicConfigLinkSuffix: " for all four preset configs including TypeScript and Tailwind variants.",
+    basicConfigLinkText: "Configuration guide",
+    disablingRulesDescription: "To disable specific rules from a preset config, add a second config object that sets them to ",
+    disablingRulesDescriptionCode: "\"off\"",
+    disablingRulesDescriptionSuffix: ":",
+    enableAllRulesDescription: "If you prefer full control, you can manually enable each of the 81 rules instead of using a preset config:",
+    installationDescription: "Install the plugin as a dev dependency using your preferred package manager:",
+    intro: " and add it to your ESLint flat config. You will be up and running in under a minute.",
+    introPrefix: "Install ",
+    metadataTitle: "Getting Started",
+    nextStepsConfiguration: "Configuration",
+    nextStepsConfigurationSuffix: " \u2014 Explore preset configs and rule options",
+    nextStepsPhilosophy: "Philosophy",
+    nextStepsPhilosophySuffix: " \u2014 Understand the design decisions behind the plugin",
+    nextStepsRulesReference: "Rules Reference",
+    nextStepsRulesReferenceSuffix: " \u2014 Browse all 81 rules with examples",
+    pluginName: "eslint-plugin-code-style",
+    requirementEslint: "ESLint",
+    requirementEslintVersion: ">= 9.0.0 (v9 and v10 supported)",
+    requirementNode: "Node.js",
+    requirementNodeVersion: ">= 20.0.0",
+    runEslintDescription: "71 of the 81 rules are auto-fixable. Run ESLint with the ",
+    runEslintDescriptionCode: "--fix",
+    runEslintDescriptionSuffix: " flag to automatically format your code:",
+    sectionBasicConfiguration: "Basic Configuration",
+    sectionDisablingRules: "Disabling Rules",
+    sectionEnableAllRules: "Enable All Rules Manually",
+    sectionInstallation: "Installation",
+    sectionNextSteps: "Next Steps",
+    sectionRequirements: "Requirements",
+    sectionRunEslint: "Run ESLint with Auto-Fix",
+    tableHeaderDependency: "Dependency",
+    tableHeaderVersion: "Version",
+    title: "Getting Started",
+};
+
+// Configuration strings
+export const configurationStringsData = {
+    availableConfigsTitle: "Available Configs",
+    configDescriptionJsReact: "JavaScript + React",
+    configDescriptionJsReactTailwind: "JavaScript + React + Tailwind",
+    configDescriptionTsReact: "TypeScript + React",
+    configDescriptionTsReactTailwind: "TypeScript + React + Tailwind",
+    configRulesSeparator: "\u00B7",
+    configRulesSuffix: "rules",
+    intro: " ships with 4 ready-to-use preset configs. Pick the one that matches your stack or manually enable individual rules.",
+    manualConfigDescription: "If you prefer granular control, register the plugin and enable only the rules you need:",
+    manualConfigTitle: "Manual Configuration",
+    metadataTitle: "Configuration",
+    nextStepsContributing: "Contributing",
+    nextStepsContributingSuffix: " \u2014 Help improve and extend the rules",
+    nextStepsPhilosophy: "Philosophy",
+    nextStepsPhilosophySuffix: " \u2014 Learn the design principles behind the plugin",
+    nextStepsRulesReference: "Rules Reference",
+    nextStepsRulesReferenceSuffix: " \u2014 Browse all 81 rules with examples and options",
+    nextStepsTitle: "Next Steps",
+    pluginName: "eslint-plugin-code-style",
+    presetConfigsDescription: "Each preset enables the correct set of rules for your project type. TypeScript presets include 9 additional TS-only rules. Tailwind presets include 4 className utility rules. This way you avoid enabling rules that do not apply to your stack.",
+    presetConfigsTitle: "Why Preset Configs?",
+    ruleOptionsDescription: "20 of the 81 rules accept configuration options. Override a preset by adding a second config object with your custom settings:",
+    ruleOptionsLinkPrefix: "Each configurable rule documents its options on its own ",
+    ruleOptionsLinkSuffix: ".",
+    ruleOptionsLinkText: "rule page",
+    ruleOptionsTitle: "Configuring Rule Options",
+    title: "Configuration",
+    tsOnlyDescription: "The following 9 rules require a TypeScript parser and are only included in the ",
+    tsOnlyDescriptionCode1: "react-ts",
+    tsOnlyDescriptionCode2: "react-ts-tw",
+    tsOnlyDescriptionConnector: " and ",
+    tsOnlyDescriptionSuffix: " configs:",
+    tsOnlyManualNote: "If you use a manual config in a TypeScript project, make sure you have ",
+    tsOnlyManualNoteCode: "@typescript-eslint/parser",
+    tsOnlyManualNoteSuffix: " configured and include these rules explicitly.",
+    tsOnlyTitle: "TypeScript-Only Rules",
+    v9v10Description: "Both ESLint v9 and v10 are fully supported. The plugin ships with dedicated recommended configs for each version. The key difference is which React-related plugins are used under the hood:",
+    v9v10GitHubLinkPrefix: "Browse the ready-to-use config files for each version on GitHub: ",
+    v9v10GitHubLinkV9: "v9 configs",
+    v9v10GitHubLinkV10: "v10 configs",
+    v9v10Note: "All other plugins (stylistic, typescript-eslint, import-x, perfectionist, code-style, tailwindcss, etc.) work identically with both ESLint v9 and v10.",
+    v9v10TableHeaderPlugin: "Plugin",
+    v9v10TableHeaderV9: "ESLint v9",
+    v9v10TableHeaderV10: "ESLint v10",
+    v9v10TableJsxA11yV9: "eslint-plugin-jsx-a11y",
+    v9v10TableJsxA11yV10: "Not available",
+    v9v10TablePluginJsxA11y: "JSX accessibility",
+    v9v10TablePluginReact: "React rules",
+    v9v10TablePluginReactHooks: "React hooks",
+    v9v10TableReactHooksV9: "eslint-plugin-react-hooks",
+    v9v10TableReactHooksV10: "Included in @eslint-react",
+    v9v10TableReactV9: "eslint-plugin-react",
+    v9v10TableReactV10: "@eslint-react/eslint-plugin",
+    v9v10Title: "ESLint v9 vs v10",
+    viewOnGitHub: "View on GitHub",
+};
+
+// Philosophy strings
+export const philosophyStringsData = {
+    autoFixDescription1: "71 of 81 rules are auto-fixable. The goal is to let developers write code naturally and then run ",
+    autoFixDescription1Code: "eslint --fix",
+    autoFixDescription1Suffix: " to apply formatting automatically. This reduces the cognitive overhead of remembering style rules and eliminates back-and-forth in code reviews over formatting issues.",
+    autoFixDescription2: "The remaining 10 rules are report-only because their fixes would be ambiguous or could change runtime behavior. In those cases, the rule reports the issue and lets the developer decide how to resolve it.",
+    autoFixTitle: "Auto-Fix First",
+    consistencyDescription1: `
+        block
+        10,
+        5,
+        50
+        a
+        a
+        across
+        another
+        another
+        array
+        arrow
+        bodies.
+        breaks
+        codebase,
+        compound
+        developer
+        developers
+        functions,
+        implicit
+        in
+        inconsistencies
+        items
+        line,
+        lines.
+        of
+        on
+        on
+        One
+        One
+        or
+        puts
+        quickly.
+        returns
+        same
+        single
+        small
+        team
+        the
+        them
+        uses
+        uses
+        When
+        works
+    `,
+    consistencyDescription2: "These rules enforce a single way to format each pattern. The result is a codebase that reads as if one person wrote it, regardless of team size.",
+    consistencyTitle: "Consistency at Scale",
+    fillingGapsDescription1: "Prettier handles basic formatting: indentation, semicolons, trailing commas, line width. But it deliberately avoids opinions on many structural patterns. Existing ESLint plugins focus on catching bugs and enforcing best practices, not formatting style.",
+    fillingGapsDescription2: `
+        block
+        across
+        and
+        and
+        are
+        array
+        arrow
+        between
+        bodies,
+        break
+        children
+        consistency
+        covers:
+        dozens
+        enforces
+        fills
+        formatted,
+        functions
+        gap
+        how
+        how
+        It
+        items
+        JSX
+        lines,
+        linters.
+        logic-focused
+        more.
+        no
+        other
+        plugin
+        Prettier
+        should
+        structural
+        that
+        the
+        This
+        tool
+        use
+        when
+    `,
+    fillingGapsTitle: "Filling the Gaps",
+    intro: " exists because consistent code formatting goes beyond what Prettier and existing ESLint plugins cover. Here are the principles that guide every rule in the plugin.",
+    metadataTitle: "Philosophy",
+    namingConventionsDescription1: "Several rules enforce naming conventions for variables, functions, hooks, components, and files. These rules exist because consistent naming is one of the highest-leverage ways to improve codebase readability.",
+    namingConventionsDescription2Has: "has",
+    namingConventionsDescription2HasSuffix: ", you know its type without checking. These conventions eliminate guesswork.",
+    namingConventionsDescription2Is: "is",
+    namingConventionsDescription2IsSuffix: " or ",
+    namingConventionsDescription2Prefix: "When you see a function named ",
+    namingConventionsDescription2UseAuth: "useAuth",
+    namingConventionsDescription2UseAuthFile: "use-auth.ts",
+    namingConventionsDescription2UseAuthFileSuffix: ", you know it contains a hook. When a boolean prop starts with ",
+    namingConventionsDescription2UseAuthSuffix: ", you immediately know it is a React hook. When you see a file named ",
+    namingConventionsTitle: "Naming Conventions",
+    nextStepsContributing: "Contributing",
+    nextStepsContributingSuffix: " \u2014 Help improve and extend the plugin",
+    nextStepsGettingStarted: "Getting Started",
+    nextStepsGettingStartedSuffix: " \u2014 Install and configure the plugin",
+    nextStepsRulesReference: "Rules Reference",
+    nextStepsRulesReferenceSuffix: " \u2014 Browse all 81 rules",
+    nextStepsTitle: "Next Steps",
+    opinionatedDescription1: "The plugin ships with sensible defaults that work well for most projects. But 20 of the 81 rules accept configuration options for cases where the defaults do not fit. For example:",
+    opinionatedDescription2: "Defaults are chosen to match what the majority of React codebases already do. Configuration options exist for the minority that need something different.",
+    opinionatedExample1Code: "array-items-per-line",
+    opinionatedExample1Text: " defaults to collapsing arrays with 3 or fewer items, but you can adjust the threshold.",
+    opinionatedExample2Code: "hook-deps-per-line",
+    opinionatedExample2Text: " defaults to expanding dependency arrays with more than 3 dependencies, but you can set a different limit.",
+    opinionatedExample3Code: "use-state-naming-convention",
+    opinionatedExample3Text: " allows you to extend the list of valid boolean prefixes beyond the defaults.",
+    opinionatedTitle: "Opinionated but Configurable",
+    pluginName: "eslint-plugin-code-style",
+    reactFirstDescription1: "This plugin is purpose-built for React and JSX projects. Many rules target patterns that only exist in React codebases: component prop destructuring, hook dependency arrays, JSX ternary formatting, className ordering, and more.",
+    reactFirstDescription2: "General-purpose JavaScript rules (arrays, objects, functions, control flow) are included because they affect how React code reads and are not covered by other tools.",
+    reactFirstTitle: "React First",
+    selfSufficientDescription1: "Every rule is self-contained. No rule depends on another rule to work correctly. You can enable any single rule in isolation and get the expected behavior without surprises.",
+    selfSufficientDescription2: "This also means rules do not conflict with each other. Enabling the entire plugin produces a consistent output with no contradictory fixes.",
+    selfSufficientTitle: "Self-Sufficient Rules",
+    title: "Philosophy",
+    worksAlongsideDescription1: "The plugin is designed to work alongside Prettier, ",
+    worksAlongsideDescription1Code1: "eslint-plugin-react",
+    worksAlongsideDescription1Code2: "@typescript-eslint",
+    worksAlongsideDescription1Connector: ", ",
+    worksAlongsideDescription1Suffix: ", and any other ESLint plugins you use. It does not duplicate their rules or conflict with their fixes.",
+    worksAlongsideDescription2: "Run Prettier for base formatting, this plugin for structural formatting, and your existing plugins for logic and best practices. They complement each other.",
+    worksAlongsideTitle: "Works Alongside Existing Tools",
+};
+
+// Contributing strings
+export const contributingStringsData = {
+    buildDescription: "The plugin uses esbuild to bundle all source files into a single ",
+    buildDescriptionCode: "dist/index.js",
+    buildDescriptionSuffix: " file (~269 KB minified). The build configuration:",
+    buildFormatEsm: "Format: ESM",
+    buildPlatformNode: "Platform: Node",
+    buildTargetNode: "Target: Node 20",
+    buildTitle: "Build",
+    buildVersionInject: "Injects ",
+    buildVersionInjectCode1: "__VERSION__",
+    buildVersionInjectCode2: "package.json",
+    buildVersionInjectSuffix: " at build time from ",
+    cloneDescription: "Clone the repository and install dependencies:",
+    commitChore: "chore:",
+    commitChoreSuffix: " \u2014 Build, tooling, or dependency updates",
+    commitConventionsDescription: "Follow the conventional commit format for commit messages:",
+    commitConventionsTitle: "Commit Conventions",
+    commitDocs: "docs:",
+    commitDocsSuffix: " \u2014 Documentation changes",
+    commitFeat: "feat:",
+    commitFeatSuffix: " \u2014 New rule or feature",
+    commitFix: "fix:",
+    commitFixSuffix: " \u2014 Bug fix in an existing rule",
+    commitRefactor: "refactor:",
+    commitRefactorSuffix: " \u2014 Code refactoring without behavior changes",
+    gettingStartedBuildDescription: "Build the plugin:",
+    gettingStartedBuildNote: "The build step uses esbuild to bundle all source files into ",
+    gettingStartedBuildNoteCode: "dist/index.js",
+    gettingStartedBuildNoteSuffix: ". You must run the build after making changes before testing.",
+    gettingStartedTitle: "Getting Started",
+    guidelineAddRule: "Add the rule to ",
+    guidelineAddRuleCode: "src/index.js",
+    guidelineAddRuleSuffix: " in both the plugin rules map and the relevant preset configs.",
+    guidelineClearMessages: "Write clear, actionable error messages.",
+    guidelineFixable: "Include a ",
+    guidelineFixableCode1: "fixable",
+    guidelineFixableCode2: "meta",
+    guidelineFixableMiddle: " property in ",
+    guidelineFixableSuffix: " whenever the fix is safe and deterministic.",
+    guidelinePlaceRule: "Place the rule in the appropriate category file under ",
+    guidelinePlaceRuleCode: "src/rules/",
+    guidelinePlaceRuleSuffix: ".",
+    guidelinesTitle: "Guidelines for new rules",
+    guidelineTsOnly: "If the rule is TypeScript-only, only add it to ",
+    guidelineTsOnlyCode1: "react-ts",
+    guidelineTsOnlyCode2: "react-ts-tw",
+    guidelineTsOnlyMiddle: " and ",
+    guidelineTsOnlySuffix: " configs.",
+    intro: ". This guide covers how to set up the project, understand the codebase, and submit changes.",
+    introPrefix: "Thank you for your interest in contributing to ",
+    keyFilesBuildConfig: " \u2014 Build configuration. Bundles to ESM format targeting Node 20.",
+    keyFilesBuildConfigCode: "esbuild.config.js",
+    keyFilesEntry: " \u2014 Main entry point. Registers all rules and defines the 4 preset configs.",
+    keyFilesEntryCode: "src/index.js",
+    keyFilesRules: " \u2014 17 category files containing all 81 rules.",
+    keyFilesRulesCode: "src/rules/*.js",
+    keyFilesTailwind: " \u2014 Shared utilities for Tailwind-related rules.",
+    keyFilesTailwindCode: "src/utils/tailwind.js",
+    keyFilesTitle: "Key files",
+    linkChangelog: "Changelog",
+    linkGitHubRepo: "GitHub Repository",
+    linkIssueTracker: "Issue Tracker",
+    linkNpmPackage: "npm Package",
+    linksTitle: "Links",
+    metadataTitle: "Contributing",
+    nextStepsGettingStarted: "Getting Started",
+    nextStepsGettingStartedSuffix: " \u2014 Try the plugin in your own project",
+    nextStepsPhilosophy: "Philosophy",
+    nextStepsPhilosophySuffix: " \u2014 Understand the design principles guiding new rules",
+    nextStepsRulesReference: "Rules Reference",
+    nextStepsRulesReferenceSuffix: " \u2014 See existing rules for implementation examples",
+    nextStepsTitle: "Next Steps",
+    pluginName: "eslint-plugin-code-style",
+    projectStructureDescription: "The plugin is organized into 17 category files under ",
+    projectStructureDescriptionCode: "src/rules/",
+    projectStructureDescriptionSuffix: ". Each file exports one or more rule objects:",
+    projectStructureTitle: "Project Structure",
+    rulePatternDescription: "Every rule follows the standard ESLint rule structure. Here is a simplified example:",
+    rulePatternTitle: "Rule Implementation Pattern",
+    tableHeaderRules: "Rules",
+    tableHeaderStack: "Stack",
+    tableHeaderTestProject: "Test Project",
+    testAllProjectsNote: "Test your rule against all 4 projects to ensure it works correctly across stacks.",
+    testBuildStep: "Run ",
+    testBuildStepCode: "npm run build",
+    testBuildStepSuffix: " from the project root.",
+    testDescription: "The project uses 4 test projects that reference the built plugin via ",
+    testDescriptionCode: "\"file:../..\"",
+    testDescriptionSuffix: ". Each project covers a different stack:",
+    testNavigateStep: "Navigate to the appropriate test project and run ESLint:",
+    testStackJsReact: "JavaScript + React",
+    testStackJsReactTailwind: "JavaScript + React + Tailwind",
+    testStackTsReact: "TypeScript + React",
+    testStackTsReactTailwind: "TypeScript + React + Tailwind",
+    testTitle: "Testing",
+    testToTestDescription: "To test your changes:",
+    title: "Contributing",
+    titleTestProjectReact: "_tests_/v9/react/",
+    titleTestProjectReactTs: "_tests_/v9/react-ts/",
+    titleTestProjectReactTsTw: "_tests_/v9/react-ts-tw/",
+    titleTestProjectReactTw: "_tests_/v9/react-tw/",
+};
+
+// Rules page strings
+export const rulesIndexStringsData = {
+    badgeConfigurable: "configurable",
+    badgeFixable: "fixable",
+    badgeOptions: "options",
+    badgeReportOnly: "report only",
+    badgeTs: "TS",
+    intro: " organized across 17 categories. Each rule includes a description, examples, and configuration options where applicable.",
+    introPrefix: "Browse all ",
+    introSuffix: " rules",
+    legendConfigurable: "Has customizable options",
+    legendFixable: "Auto-fixable with",
+    legendFixableCode: "eslint --fix",
+    legendTsOnly: "TypeScript only",
+    metadataDescription: "Browse all 81 ESLint rules organized across 17 categories with examples and configuration options.",
+    metadataTitle: "Rules Reference",
+    statAutoFixable: "Auto-fixable",
+    statConfigurable: "Configurable",
+    statReportOnly: "Report-only",
+    statTotal: "Total",
+    statTsOnly: "TS-only",
+    title: "Rules Reference",
+};
+
+// Rule config code snippet fragments
+export const ruleConfigFragmentStringsData = {
+    configErrorSuffix: "\": \"error\"",
+    configOptionsSuffix: "\": [\"error\", { ",
+    optionsSuffix: " }]",
+    rulePrefix: "\"code-style/",
+};
+
+// Category page strings
+export const rulesCategoryStringsData = {
+    badgeAutoFixable: "auto-isFixable",
+    badgeConfigurable: "isConfigurable",
+    badgeRules: " rules",
+    badgeTypeScriptOnly: " TypeScript-only",
+    breadcrumbRules: "Rules",
+    exampleCorrect: "Correct",
+    exampleIncorrect: "Incorrect",
+    metadataNotFound: "Not Found",
+    metadataRulesSuffix: " Rules",
+    onThisPageTitle: "On This Page",
+    optionsTitle: "Options",
+    rationalePrefix: "Why:",
+    reportOnlyBadge: "report only",
+    rulesSuffix: " Rules",
+    tableHeaderDefault: "Default",
+    tableHeaderDescription: "Description",
+    tableHeaderOption: "Option",
+    tableHeaderType: "Type",
+    typeScriptOnlyBadge: "TypeScript only",
+};
+
+// Code snippet strings (used in CodeBlock code props)
+export const codeSnippetStringsData = {
+    eslintFixCommand: "npx eslint . --fix",
+    installNpm: "npm install -D eslint-plugin-code-style",
+    installPnpm: "pnpm add -D eslint-plugin-code-style",
+    installYarn: "yarn add -D eslint-plugin-code-style",
+    npmRunBuild: "npm run build",
+};
+
+// Layout strings (root layout)
+export const layoutStringsData = { themeInitScript: "(function(){try{var t=localStorage.getItem(\"theme\");var d=t===\"dark\"||(t!==\"light\"&&matchMedia(\"(prefers-color-scheme:dark)\").matches);if(d)document.documentElement.classList.add(\"dark\")}catch(e){}})()" };
+
+// Component strings (shared across components)
+export const componentStringsData = {
+    brandName: "eslint-plugin-code-style",
+    copiedLabel: "Copied",
+    copyLabel: "Copy to clipboard",
+    intersectionObserverRootMargin: "-80px 0px -70% 0px",
+    navLinkDocs: "Docs",
+    navLinkGitHub: "GitHub",
+    navLinkRules: "Rules",
+    onThisPageTitle: "On this page",
+    prefersColorSchemeDark: "(prefers-color-scheme: dark)",
+    toggleMenuLabel: "Toggle menu",
+    toggleNavigationLabel: "Toggle navigation",
+    toggleThemeLabel: "Toggle theme",
+    useThemeError: "useTheme must be used within a ThemeProvider",
+    version: pluginConfigData.versionDisplay,
+};
+
+// Metadata strings (root layout)
+export const metadataStringsData = {
+    defaultDescription: "81 custom ESLint rules for enforcing consistent code formatting in React/JSX projects. 71 auto-fixable, 20 configurable. Built for ESLint v9+ flat config.",
+    defaultTitle: "eslint-plugin-code-style",
+    ogDescription: "81 custom ESLint rules for React/JSX projects",
+    ogSiteName: "eslint-plugin-code-style",
+    ogTitle: "eslint-plugin-code-style",
+    titleTemplate: "%s \u2014 eslint-plugin-code-style",
+};

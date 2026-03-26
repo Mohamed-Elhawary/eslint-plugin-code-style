@@ -27,7 +27,7 @@
 
 ## 🎯 Why This Plugin?
 
-This plugin provides **81 custom rules** (71 auto-fixable, 20 configurable) for code formatting. Built for **ESLint v9 flat configs**.
+This plugin provides **81 custom rules** (71 auto-fixable, 20 configurable) for code formatting. Built for **ESLint v9+ flat configs** (v9 and v10 supported).
 
 > **Note:** ESLint [deprecated 79 formatting rules](https://eslint.org/blog/2023/10/deprecating-formatting-rules/) in v8.53.0. Our recommended configs use `@stylistic/eslint-plugin` as the replacement for these deprecated rules.
 
@@ -44,6 +44,7 @@ When combined with ESLint's native rules and other popular plugins, this package
 
 <br />
 
+[Documentation](https://eslint-plugin-code-style.vercel.app) •
 [Installation](#-installation) •
 [Quick Start](#-quick-start) •
 [Recommended Configs](#-recommended-configurations) •
@@ -67,20 +68,36 @@ We provide **ready-to-use ESLint flat configuration files** that combine `eslint
 
 ### 📋 Available Configurations
 
-| Configuration | Description | Status |
-|---------------|-------------|--------|
-| **React** | React.js projects (JavaScript, JSX) | [View Config](./recommended-configs/react/) |
-| **React + TS + Tailwind** | React + TypeScript + Tailwind CSS | [View Config](./recommended-configs/react-ts-tw/) |
-| **React + TypeScript** | React + TypeScript projects | [View Config](./recommended-configs/react-ts/) |
-| **React + Tailwind** | React + Tailwind CSS projects | [View Config](./recommended-configs/react-tw/) |
+Configs are organized by ESLint version:
+
+#### ESLint v9 (`recommended-configs/v9/`)
+
+| Configuration | Description | Link |
+|---------------|-------------|------|
+| **React** | React.js projects (JavaScript, JSX) | [View Config](./recommended-configs/v9/react/) |
+| **React + TypeScript** | React + TypeScript projects | [View Config](./recommended-configs/v9/react-ts/) |
+| **React + Tailwind** | React + Tailwind CSS projects | [View Config](./recommended-configs/v9/react-tw/) |
+| **React + TS + Tailwind** | React + TypeScript + Tailwind CSS | [View Config](./recommended-configs/v9/react-ts-tw/) |
+
+#### ESLint v10 (`recommended-configs/v10/`)
+
+| Configuration | Description | Link |
+|---------------|-------------|------|
+| **React** | React.js projects (JavaScript, JSX) | [View Config](./recommended-configs/v10/react/) |
+| **React + TypeScript** | React + TypeScript projects | [View Config](./recommended-configs/v10/react-ts/) |
+| **React + Tailwind** | React + Tailwind CSS projects | [View Config](./recommended-configs/v10/react-tw/) |
+| **React + TS + Tailwind** | React + TypeScript + Tailwind CSS | [View Config](./recommended-configs/v10/react-ts-tw/) |
+
+> **ESLint v10 note:** The v10 configs replace `eslint-plugin-react` and `eslint-plugin-react-hooks` with `@eslint-react/eslint-plugin`, and remove `eslint-plugin-jsx-a11y` (no v10-compatible version available).
 
 ### ⚡ Quick Start with Recommended Config
 
 1. Navigate to the [recommended-configs](./recommended-configs/) folder
-2. Choose the configuration for your project type
-3. Follow the installation instructions in the README
-4. Copy the `eslint.config.js` to your project root
-5. Run `eslint src/ --fix`
+2. Choose `v9/` or `v10/` based on your ESLint version
+3. Choose the configuration for your project type
+4. Follow the installation instructions in the README
+5. Copy the `eslint.config.js` to your project root
+6. Run `eslint src/ --fix`
 
 > **Note:** Each configuration includes a detailed README with installation commands, plugin explanations, and rule documentation.
 
@@ -110,8 +127,8 @@ Built specifically for React projects with comprehensive JSX formatting rules.
 <tr>
 <td width="50%">
 
-### ✅ ESLint v9+ Ready
-Designed for ESLint's new flat config system. Modern and future-proof.
+### ✅ ESLint v9 & v10 Ready
+Designed for ESLint's flat config system. Supports both ESLint v9 and v10 with dedicated recommended configurations.
 
 </td>
 <td width="50%">
@@ -271,7 +288,9 @@ rules: {
 
 ## 📖 Rules Categories
 
-> **81 rules total** — 71 with auto-fix 🔧, 20 configurable ⚙️, 10 report-only. See detailed examples in the [Rules Reference](./docs/rules/).
+> **81 rules total** — 71 with auto-fix 🔧, 20 configurable ⚙️, 10 report-only
+>
+> 📖 **Full documentation with examples:** [eslint-plugin-code-style.vercel.app](https://eslint-plugin-code-style.vercel.app/docs/rules) • [Local docs](./docs/rules/)
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
 
@@ -382,7 +401,7 @@ rules: {
 
 ## 📖 Rules Reference
 
-For detailed documentation with examples, configuration options, and best practices for each rule, see the **[Rules Reference Documentation](./docs/rules/)**.
+For detailed documentation with examples, configuration options, and best practices for each rule, see the **[Rules Reference Documentation](https://eslint-plugin-code-style.vercel.app/docs/rules)** or the [local docs](./docs/rules/).
 
 | Category | Rules | Highlights |
 |----------|:-----:|------------|
@@ -447,6 +466,12 @@ rules: {
 
 <br />
 
+## 📖 Documentation
+
+Full documentation is available at **[eslint-plugin-code-style.vercel.app](https://eslint-plugin-code-style.vercel.app)** — including installation guides, configuration examples, and detailed rule references with good/bad code examples.
+
+<br />
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -454,7 +479,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Build the project (`npm run build`)
-4. Test your changes in all 4 test projects (`cd _tests_/react-ts-tw && npm run lint`)
+4. Test your changes in all 4 test projects (`cd _tests_/v9/react-ts-tw && npm run lint`)
 5. Commit your changes (`git commit -m 'Add some amazing feature'`)
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request

@@ -774,6 +774,13 @@ const importSourceSpacing = {
 const moduleIndexExports = {
     create(context) {
         const filename = context.filename || context.getFilename();
+        const normalizedFilename = filename.replace(/\\/g, "/");
+
+        // Skip Next.js reserved filenames — these are NOT module index files
+        const nextjsReservedFiles = ["page", "layout", "loading", "error", "not-found", "template", "default", "route", "middleware", "global-error", "instrumentation"];
+        const fileBaseName = normalizedFilename.split("/").pop().replace(/\.(jsx?|tsx?)$/, "");
+        if (nextjsReservedFiles.includes(fileBaseName)) return {};
+
         const srcPath = nodePath.resolve(filename, "../../..").replace(/\\/g, "/");
 
         // Get options or use defaults

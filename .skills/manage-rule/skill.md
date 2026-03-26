@@ -35,8 +35,8 @@ Complete workflow for adding, editing, or removing a rule from the plugin.
 5. **Config files** (alphabetically sorted)
    - `recommended-configs/react-ts-tw/eslint.config.js`
    - `recommended-configs/react/eslint.config.js` (skip if TypeScript-only)
-   - `_tests_/react-ts-tw/eslint.config.js`
-   - `_tests_/react/eslint.config.js` (skip if TypeScript-only)
+   - `_tests_/v9/react-ts-tw/eslint.config.js`
+   - `_tests_/v9/react/eslint.config.js` (skip if TypeScript-only)
 
 6. **Config READMEs**
    - `recommended-configs/react-ts-tw/README.md`
@@ -139,7 +139,7 @@ Complete workflow for adding, editing, or removing a rule from the plugin.
 ## Testing
 
 ```bash
-cd _tests_/react-ts-tw  # or _tests_/react for JS rules
+cd _tests_/v9/react-ts-tw  # or _tests_/v9/react for JS rules
 
 # Create temp test file with valid and invalid code
 # then run:

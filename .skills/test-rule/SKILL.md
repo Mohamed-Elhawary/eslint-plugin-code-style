@@ -15,8 +15,8 @@ Test a rule to verify valid code passes and invalid code triggers errors with co
    - Note the error message and auto-fix behavior
 
 2. **Choose test app**
-   - `_tests_/react/` for JavaScript rules
-   - `_tests_/react-ts-tw/` for TypeScript rules
+   - `_tests_/v9/react/` for JavaScript rules
+   - `_tests_/v9/react-ts-tw/` for TypeScript rules
 
 3. **Create test cases** in the test app's source files
    - Add code that should PASS (valid, no violations)

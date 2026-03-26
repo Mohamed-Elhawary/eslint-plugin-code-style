@@ -310,6 +310,8 @@ const functionNamingConvention = {
             "assign", "allocate", "distribute", "collect", "gather", "aggregate", "accumulate",
             "populate", "fill", "empty", "drain", "flush", "purge", "prune", "clean", "sanitize",
             "compose", "decompose", "assemble", "disassemble", "construct", "deconstruct",
+            "notify", "broadcast", "emit", "dispatch", "relay", "forward", "propagate",
+            "join", "combine", "concatenate", "unite", "attach", "detach", "bind", "unbind",
         ];
 
         const startsWithVerbHandler = (name) => verbPrefixes.some((verb) => name.startsWith(verb));
@@ -405,6 +407,10 @@ const functionNamingConvention = {
 
             // Skip React components (PascalCase + returns JSX)
             if (isReactComponentHandler(node, name)) return;
+
+            // Skip Next.js reserved function/export names
+            const nextjsReservedNames = ["generateMetadata", "generateStaticParams", "generateViewport", "generateSitemaps", "generateImageMetadata", "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
+            if (nextjsReservedNames.includes(name)) return;
 
             // Check PascalCase functions that are NOT React components
             if (/^[A-Z]/.test(name)) {
@@ -579,6 +585,10 @@ const functionNamingConvention = {
             ];
 
             if (lifecycleMethods.includes(name)) return;
+
+            // Skip Next.js reserved function/export names
+            const nextjsReservedExports = ["generateMetadata", "generateStaticParams", "generateViewport", "generateSitemaps", "generateImageMetadata", "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
+            if (nextjsReservedExports.includes(name)) return;
 
             const hasVerbPrefix = startsWithVerbHandler(name);
             const hasHandlerSuffix = endsWithHandler(name);

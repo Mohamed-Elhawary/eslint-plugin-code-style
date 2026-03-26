@@ -1,0 +1,239 @@
+@import "tailwindcss";
+
+@theme {
+    --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "Fira Code", monospace;
+
+    --color-brand-50: oklch(0.97 0.02 270);
+    --color-brand-100: oklch(0.94 0.04 270);
+    --color-brand-200: oklch(0.88 0.08 270);
+    --color-brand-300: oklch(0.79 0.13 270);
+    --color-brand-400: oklch(0.7 0.17 270);
+    --color-brand-500: oklch(0.59 0.22 270);
+    --color-brand-600: oklch(0.52 0.24 270);
+    --color-brand-700: oklch(0.45 0.22 270);
+    --color-brand-800: oklch(0.38 0.18 270);
+    --color-brand-900: oklch(0.32 0.14 270);
+}
+
+@layer base {
+    :root {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f8fafc;
+        --bg-tertiary: #f1f5f9;
+        --bg-code: #0f172a;
+        --bg-code-inline: #f1f5f9;
+        --bg-card: #ffffff;
+        --bg-card-hover: #f8fafc;
+        --bg-nav: rgba(255, 255, 255, 0.8);
+        --bg-sidebar: #ffffff;
+        --bg-badge: #f1f5f9;
+
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --text-tertiary: #64748b;
+        --text-code: #e2e8f0;
+        --text-code-inline: #6d28d9;
+        --text-link: #6d28d9;
+        --text-link-hover: #5b21b6;
+        --text-badge: #475569;
+
+        --border-primary: #e2e8f0;
+        --border-secondary: #f1f5f9;
+        --border-active: #6d28d9;
+
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+    }
+
+    .dark {
+        --bg-primary: #0b0f1a;
+        --bg-secondary: #111827;
+        --bg-tertiary: #1e293b;
+        --bg-code: #0d1117;
+        --bg-code-inline: #1e293b;
+        --bg-card: #111827;
+        --bg-card-hover: #1e293b;
+        --bg-nav: rgba(11, 15, 26, 0.8);
+        --bg-sidebar: #0b0f1a;
+        --bg-badge: #1e293b;
+
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --text-tertiary: #64748b;
+        --text-code: #e2e8f0;
+        --text-code-inline: #a78bfa;
+        --text-link: #a78bfa;
+        --text-link-hover: #c4b5fd;
+        --text-badge: #94a3b8;
+
+        --border-primary: #1e293b;
+        --border-secondary: #1e293b;
+        --border-active: #a78bfa;
+
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+    }
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: var(--font-sans);
+    }
+
+    ::selection {
+        background-color: oklch(0.7 0.17 270 / 0.2);
+    }
+
+    .dark ::selection {
+        background-color: oklch(0.7 0.17 270 / 0.3);
+    }
+
+    button, [role="button"] {
+        cursor: pointer;
+    }
+
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-primary) transparent;
+    }
+}
+
+@layer components {
+    .prose-docs h1 {
+        font-size: 2rem;
+        line-height: 2.5rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        margin-bottom: 0.5rem;
+    }
+
+    .prose-docs h2 {
+        font-size: 1.5rem;
+        line-height: 2rem;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        margin-top: 2.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-primary);
+    }
+
+    .prose-docs h3 {
+        font-size: 1.25rem;
+        line-height: 1.75rem;
+        font-weight: 600;
+        margin-top: 2rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .prose-docs p {
+        color: var(--text-secondary);
+        line-height: 1.75;
+        margin-bottom: 1rem;
+    }
+
+    .prose-docs a {
+        color: var(--text-link);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.15s;
+    }
+
+    .prose-docs a:hover {
+        color: var(--text-link-hover);
+    }
+
+    .prose-docs ul {
+        list-style: disc;
+        padding-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .prose-docs li {
+        color: var(--text-secondary);
+        line-height: 1.75;
+        margin-bottom: 0.25rem;
+    }
+
+    .prose-docs code:not(pre code) {
+        background-color: var(--bg-code-inline);
+        color: var(--text-code-inline);
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.25rem;
+        font-size: 0.875em;
+        font-family: var(--font-mono);
+        font-weight: 500;
+    }
+
+    .prose-docs table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+    }
+
+    .prose-docs th {
+        text-align: left;
+        padding: 0.625rem 1rem;
+        font-weight: 600;
+        border-bottom: 2px solid var(--border-primary);
+        color: var(--text-primary);
+    }
+
+    .prose-docs td {
+        padding: 0.625rem 1rem;
+        border-bottom: 1px solid var(--border-secondary);
+        color: var(--text-secondary);
+    }
+
+    .prose-docs strong {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .prose-docs blockquote {
+        border-left: 3px solid var(--border-active);
+        padding-left: 1rem;
+        margin: 1.5rem 0;
+        color: var(--text-secondary);
+        font-style: italic;
+    }
+}
+
+@layer utilities {
+    .gradient-text {
+        background: linear-gradient(135deg, oklch(0.59 0.22 270), oklch(0.7 0.17 270), oklch(0.59 0.22 300));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    .animate-slide-up {
+        animation: slideUp 0.5s ease-out;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

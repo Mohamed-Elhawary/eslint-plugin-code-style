@@ -1,0 +1,340 @@
+import js from "@eslint/js";
+import eslintReact from "@eslint-react/eslint-plugin";
+import stylistic from "@stylistic/eslint-plugin";
+import checkFile from "eslint-plugin-check-file";
+import codeStyle from "eslint-plugin-code-style";
+import importX from "eslint-plugin-import-x";
+import perfectionist from "eslint-plugin-perfectionist";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
+import tailwind from "eslint-plugin-tailwindcss";
+import globals from "globals";
+/*
+* Tailwind CSS v4 only: Resolve __dirname and set the tailwindcss config path in the tailwind.configs map below.
+* For Tailwind CSS v3, remove the .map() and use just: ...tailwind.configs["flat/recommended"],
+* Also for v3, use "eslint-plugin-tailwindcss": "^3.18.2" instead of "^4.0.0-beta.0"
+*/
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+export default [ // eslint-disable-line
+    {
+        ignores: [
+            ".next/**",
+            ".vite/**/*",
+            "build/**",
+            "coverage/**/*",
+            "dist/**",
+            "eslint-rules/**",
+            "node_modules/**",
+            "public/**/*",
+        ],
+    },
+    js.configs.recommended,
+    ...eslintReact.configs["recommended"],
+    ...tailwind.configs["flat/recommended"].map(config => ({
+        ...config,
+        settings: {
+            ...config.settings,
+            tailwindcss: {
+                config: join(
+                    __dirname,
+                    "src", // eslint-disable-line
+                    "index.css", // eslint-disable-line
+                ),
+            },
+        },
+    })),
+    {
+        files: ["**/*.{js,jsx}"],
+        languageOptions: {
+            ecmaVersion: 2020,
+            globals: {
+                ...globals.browser,
+                ...globals.es2020,
+                ...globals.node,
+            },
+            parserOptions: {
+                ecmaFeatures: {
+                    jsx: true,
+                    modules: true,
+                },
+            },
+            sourceType: "module",
+        },
+        plugins: {
+            "@stylistic": stylistic,
+            "check-file": checkFile,
+            "code-style": codeStyle,
+            "import-x": importX,
+            perfectionist,
+            "simple-import-sort": simpleImportSort,
+        },
+        rules: {
+            // Stylistic rules
+            "@stylistic/comma-dangle": ["error", "always-multiline"],
+            "@stylistic/comma-spacing": "error",
+            "@stylistic/dot-location": "error",
+            "@stylistic/function-paren-newline": "off",
+            "@stylistic/indent": ["error", 4],
+            "@stylistic/jsx-quotes": "error",
+            "@stylistic/key-spacing": "error",
+            "@stylistic/linebreak-style": "off",
+            "@stylistic/multiline-comment-style": "error",
+            "@stylistic/no-extra-semi": "error",
+            "@stylistic/no-multi-spaces": "error",
+            "@stylistic/no-multiple-empty-lines": [
+                "error",
+                {
+                    max: 1,
+                    maxBOF: 0,
+                    maxEOF: 0,
+                },
+            ],
+            "@stylistic/nonblock-statement-body-position": "error",
+            "@stylistic/object-curly-spacing": ["error", "always"],
+            "@stylistic/padded-blocks": ["error", "never"],
+            "@stylistic/padding-line-between-statements": [
+                "error",
+                {
+                    blankLine: "always",
+                    next: "return",
+                    prev: "*",
+                },
+                {
+                    blankLine: "always",
+                    next: "*",
+                    prev: ["const", "let", "var"],
+                },
+                {
+                    blankLine: "always",
+                    next: "*",
+                    prev: "expression",
+                },
+                {
+                    blankLine: "always",
+                    next: "expression",
+                    prev: "expression",
+                },
+            ],
+            "@stylistic/quotes": "error",
+            "@stylistic/semi": "error",
+            "@stylistic/semi-spacing": "error",
+            "@stylistic/semi-style": "error",
+            "@stylistic/space-in-parens": "error",
+            "@stylistic/space-infix-ops": "error",
+
+            // Base ESLint rules
+            "array-callback-return": "off",
+            "arrow-body-style": ["error", "as-needed"],
+            camelcase: "off",
+            "capitalized-comments": ["error"],
+
+            // Check file rules
+            "check-file/filename-naming-convention": [
+                "error",
+                { "**/*.{js,jsx}": "KEBAB_CASE" },
+                { ignoreMiddleExtensions: true },
+            ],
+            "check-file/folder-naming-convention": [
+                "error",
+                { "src/**": "KEBAB_CASE" },
+            ],
+
+            // Code style rules
+            "code-style/absolute-imports-only": "error",
+            "code-style/array-callback-destructure": "error",
+            "code-style/array-items-per-line": "error",
+            "code-style/array-objects-on-new-lines": "error",
+            "code-style/arrow-function-block-body": "error",
+            "code-style/arrow-function-simple-jsx": "error",
+            "code-style/arrow-function-simplify": "error",
+            "code-style/assignment-value-same-line": "error",
+            "code-style/block-statement-newlines": "error",
+            "code-style/class-method-definition-format": "error",
+            "code-style/class-naming-convention": "error",
+            "code-style/classname-dynamic-at-end": "error",
+            "code-style/classname-multiline": "error",
+            "code-style/classname-no-extra-spaces": "error",
+            "code-style/classname-order": "error",
+            "code-style/comment-format": "error",
+            "code-style/component-props-destructure": "error",
+            "code-style/curried-arrow-same-line": "error",
+            "code-style/empty-line-after-block": "error",
+            "code-style/export-format": "error",
+            "code-style/folder-based-naming-convention": "error",
+            "code-style/folder-structure-consistency": "error",
+            "code-style/function-arguments-format": "error",
+            "code-style/function-call-spacing": "error",
+            "code-style/function-declaration-style": "error",
+            "code-style/function-naming-convention": "error",
+            "code-style/function-object-destructure": "error",
+            "code-style/function-params-per-line": "error",
+            "code-style/hook-callback-format": "error",
+            "code-style/hook-deps-per-line": "error",
+            "code-style/hook-file-naming-convention": "error",
+            "code-style/hook-function-naming-convention": "error",
+            "code-style/if-else-spacing": "error",
+            "code-style/if-statement-format": "error",
+            "code-style/import-format": "error",
+            "code-style/import-source-spacing": "error",
+            "code-style/index-export-style": "error",
+            "code-style/index-exports-only": "error",
+            "code-style/inline-export-declaration": "error",
+            "code-style/jsx-children-on-new-line": "error",
+            "code-style/jsx-closing-bracket-spacing": "error",
+            "code-style/jsx-element-child-new-line": "error",
+            "code-style/jsx-logical-expression-simplify": "error",
+            "code-style/jsx-parentheses-position": "error",
+            "code-style/jsx-prop-naming-convention": "error",
+            "code-style/jsx-simple-element-one-line": "error",
+            "code-style/jsx-string-value-trim": "error",
+            "code-style/jsx-ternary-format": "error",
+            "code-style/logical-expression-multiline": "error",
+            "code-style/member-expression-bracket-spacing": "error",
+            "code-style/module-index-exports": "error",
+            "code-style/multiline-if-conditions": "error",
+            "code-style/nested-call-closing-brackets": "error",
+            "code-style/no-empty-lines-in-function-calls": "error",
+            "code-style/no-empty-lines-in-function-params": "error",
+            "code-style/no-empty-lines-in-jsx": "error",
+            "code-style/no-empty-lines-in-objects": "error",
+            "code-style/no-empty-lines-in-switch-cases": "error",
+            "code-style/no-hardcoded-strings": "error",
+            "code-style/no-redundant-folder-suffix": "error",
+            "code-style/object-property-per-line": "error",
+            "code-style/object-property-value-brace": "error",
+            "code-style/object-property-value-format": "error",
+            "code-style/opening-brackets-same-line": "error",
+            "code-style/react-code-order": "error",
+            "code-style/simple-call-single-line": "error",
+            "code-style/single-argument-on-one-line": "error",
+            "code-style/string-property-spacing": "error",
+            "code-style/svg-icon-naming-convention": "error",
+            "code-style/ternary-condition-multiline": "error",
+            "code-style/use-state-naming-convention": "error",
+            "code-style/variable-naming-convention": "error",
+
+            // General rules
+            complexity: "off",
+            "consistent-return": "off",
+            curly: ["error", "multi-or-nest"],
+            "default-case": "off",
+            "default-param-last": 0,
+            "dot-notation": ["error", { allowKeywords: false }],
+            eqeqeq: "error",
+            "func-style": ["error", "expression"],
+
+            // Import rules
+            "import-x/no-cycle": 0,
+            "import-x/no-default-export": "error",
+            "import-x/no-named-as-default": 0,
+            "import-x/no-named-as-default-member": 0,
+            "import-x/no-unresolved": 0,
+            "import-x/prefer-default-export": 0,
+
+            // Complexity rules
+            "max-depth": ["error", 4],
+            "max-len": "off",
+            "max-lines": "off",
+            "max-lines-per-function": "off",
+            "max-nested-callbacks": ["error", 4],
+            "max-params": "off",
+
+            // Error prevention rules
+            "no-alert": "error",
+            "no-await-in-loop": "error",
+            "no-cond-assign": "error",
+            "no-else-return": "error",
+            "no-eq-null": "error",
+            "no-fallthrough": "error",
+            "no-inline-comments": "error",
+            "no-irregular-whitespace": "error",
+            "no-lone-blocks": "error",
+            "no-lonely-if": "error",
+            "no-nested-ternary": "off",
+            "no-plusplus": "off",
+            "no-redeclare": "error",
+            "no-return-assign": "off",
+            "no-self-compare": "error",
+            "no-unexpected-multiline": "error",
+            "no-unused-vars": "error",
+            "no-use-before-define": "error",
+            "no-useless-escape": "off",
+            "no-var": "error",
+
+            // Perfectionist rules
+            "perfectionist/sort-array-includes": [
+                "error",
+                {
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
+            "perfectionist/sort-maps": [
+                "error",
+                {
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
+            "perfectionist/sort-objects": [
+                "error",
+                {
+                    ignoreCase: false,
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
+            "perfectionist/sort-sets": [
+                "error",
+                {
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
+            "perfectionist/sort-switch-case": [
+                "error",
+                {
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
+            "perfectionist/sort-variable-declarations": [
+                "error",
+                {
+                    order: "asc",
+                    type: "natural",
+                },
+            ],
+
+            radix: 0,
+
+            // Import sort rules
+            "simple-import-sort/exports": "error",
+            "simple-import-sort/imports": "error",
+
+            "sort-keys": "off",
+
+            // Tailwind rules
+            "tailwindcss/classnames-order": "error",
+            "tailwindcss/enforces-negative-arbitrary-values": "error",
+            "tailwindcss/enforces-shorthand": "error",
+            "tailwindcss/no-custom-classname": "error",
+            "tailwindcss/no-unnecessary-arbitrary-value": "error",
+
+            "valid-typeof": "error",
+            "vars-on-top": "error",
+        },
+        settings: {
+            "import-x/extensions": [".js", ".jsx"],
+            "import-x/resolver": {
+                node: {
+                    extensions: [".js", ".jsx"],
+                    paths: ["src"],
+                },
+            },
+        },
+    },
+];

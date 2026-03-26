@@ -1258,6 +1258,16 @@ const folderBasedNamingConvention = {
         const filename = context.filename || context.getFilename();
         const normalizedFilename = filename.replace(/\\/g, "/");
 
+        // Skip files inside Next.js app/ directory with special folder patterns ([slug], (group), @parallel, _private)
+        const pathSegments = normalizedFilename.split("/");
+        const appIndex = pathSegments.indexOf("app");
+        if (appIndex !== -1) {
+            const appRelativeSegments = pathSegments.slice(appIndex + 1);
+            const hasNextjsSpecialFolder = appRelativeSegments.some((segment) =>
+                segment.startsWith("[") || segment.startsWith("(") || segment.startsWith("@") || segment.startsWith("_"));
+            if (hasNextjsSpecialFolder) return {};
+        }
+
         // Chain order options
         const options = context.options[0] || {};
         const defaultChainOrder = options.chainOrder || "child-parent";
@@ -1805,6 +1815,9 @@ const folderStructureConsistency = {
     create(context) {
         const filename = context.filename || context.getFilename();
         const normalizedFilename = filename.replace(/\\/g, "/");
+
+        // Skip files inside Next.js app/ directory — it has its own structure conventions
+        if (normalizedFilename.includes("/app/")) return {};
 
         const options = context.options[0] || {};
         const defaultModuleFolders = [

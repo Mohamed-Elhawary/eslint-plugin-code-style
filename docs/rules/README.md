@@ -1,5 +1,7 @@
 # Rules Reference
 
+> 📖 **Online documentation with examples:** [eslint-plugin-code-style.vercel.app/docs/rules](https://eslint-plugin-code-style.vercel.app/docs/rules)
+
 > **81 rules total** — 71 with auto-fix 🔧, 20 configurable ⚙️, 10 report-only
 >
 > **Legend:** 🔧 Auto-fixable with `eslint --fix` • ⚙️ Customizable options
