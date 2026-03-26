@@ -1,88 +1,261 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" fill="none">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0b0f1a"/>
-      <stop offset="30%" stop-color="#1a1040"/>
-      <stop offset="70%" stop-color="#1a1040"/>
-      <stop offset="100%" stop-color="#0b0f1a"/>
+      <stop offset="0%" stop-color="#070b14"/>
+      <stop offset="50%" stop-color="#120e2a"/>
+      <stop offset="100%" stop-color="#070b14"/>
     </linearGradient>
     <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#7c3aed"/>
       <stop offset="100%" stop-color="#a78bfa"/>
     </linearGradient>
-    <linearGradient id="glow" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+    <linearGradient id="green" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#4ade80"/>
     </linearGradient>
+    <linearGradient id="red" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#f87171"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="50%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="20%" cy="70%" r="30%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 
   <!-- Background -->
   <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" fill="url(#glow1)"/>
+  <rect width="1280" height="640" fill="url(#glow2)"/>
 
-  <!-- Subtle glow -->
-  <ellipse cx="640" cy="200" rx="500" ry="250" fill="url(#glow)"/>
+  <!-- Grid dots pattern (subtle) -->
+  <g opacity="0.04" fill="white">
+    <circle cx="80" cy="80" r="1.5"/><circle cx="160" cy="80" r="1.5"/><circle cx="240" cy="80" r="1.5"/><circle cx="320" cy="80" r="1.5"/><circle cx="400" cy="80" r="1.5"/><circle cx="480" cy="80" r="1.5"/><circle cx="560" cy="80" r="1.5"/><circle cx="640" cy="80" r="1.5"/><circle cx="720" cy="80" r="1.5"/><circle cx="800" cy="80" r="1.5"/><circle cx="880" cy="80" r="1.5"/><circle cx="960" cy="80" r="1.5"/><circle cx="1040" cy="80" r="1.5"/><circle cx="1120" cy="80" r="1.5"/><circle cx="1200" cy="80" r="1.5"/>
+    <circle cx="80" cy="160" r="1.5"/><circle cx="160" cy="160" r="1.5"/><circle cx="240" cy="160" r="1.5"/><circle cx="320" cy="160" r="1.5"/><circle cx="400" cy="160" r="1.5"/><circle cx="480" cy="160" r="1.5"/><circle cx="560" cy="160" r="1.5"/><circle cx="640" cy="160" r="1.5"/><circle cx="720" cy="160" r="1.5"/><circle cx="800" cy="160" r="1.5"/><circle cx="880" cy="160" r="1.5"/><circle cx="960" cy="160" r="1.5"/><circle cx="1040" cy="160" r="1.5"/><circle cx="1120" cy="160" r="1.5"/><circle cx="1200" cy="160" r="1.5"/>
+    <circle cx="80" cy="560" r="1.5"/><circle cx="160" cy="560" r="1.5"/><circle cx="240" cy="560" r="1.5"/><circle cx="320" cy="560" r="1.5"/><circle cx="400" cy="560" r="1.5"/><circle cx="480" cy="560" r="1.5"/><circle cx="560" cy="560" r="1.5"/><circle cx="640" cy="560" r="1.5"/><circle cx="720" cy="560" r="1.5"/><circle cx="800" cy="560" r="1.5"/><circle cx="880" cy="560" r="1.5"/><circle cx="960" cy="560" r="1.5"/><circle cx="1040" cy="560" r="1.5"/><circle cx="1120" cy="560" r="1.5"/><circle cx="1200" cy="560" r="1.5"/>
+  </g>
 
   <!-- Top accent line -->
-  <rect x="0" y="0" width="1280" height="3" fill="url(#accent)" opacity="0.5"/>
+  <rect y="0" width="1280" height="2" fill="url(#accent)" opacity="0.6"/>
 
-  <!-- Logo -->
-  <rect x="565" y="80" width="64" height="64" rx="14" fill="url(#accent)"/>
-  <text x="597" y="122" text-anchor="middle" font-family="'Courier New', monospace" font-size="32" font-weight="700" fill="white">CS</text>
+  <!-- ============ HEADER SECTION ============ -->
+
+  <!-- Logo badge -->
+  <rect x="528" y="36" width="56" height="56" rx="13" fill="url(#accent)"/>
+  <text x="556" y="73" text-anchor="middle" font-family="'Courier New', monospace" font-size="28" font-weight="700" fill="white">CS</text>
 
   <!-- Plugin name -->
-  <text x="640" y="200" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="44" font-weight="800" fill="white" letter-spacing="-1">eslint-plugin-code-style</text>
+  <text x="600" y="67" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="700" fill="white" letter-spacing="-0.5">eslint-plugin-code-style</text>
 
   <!-- Tagline -->
-  <text x="640" y="250" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="22" fill="#94a3b8">Consistent code formatting for React, TypeScript &amp; Tailwind CSS</text>
+  <text x="640" y="118" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="17" fill="#7c8ca3">Consistent code formatting for React, TypeScript &amp; Tailwind CSS projects</text>
 
-  <!-- Big number -->
-  <text x="640" y="330" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="72" font-weight="800" fill="url(#accent)">81</text>
-  <text x="640" y="360" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="600" fill="#94a3b8" letter-spacing="3">CUSTOM ESLINT RULES</text>
+  <!-- ============ BEFORE / AFTER CODE PANELS ============ -->
 
-  <!-- Stat badges row -->
-  <!-- Auto-fixable -->
-  <rect x="148" y="400" width="170" height="44" rx="10" fill="#7c3aed" opacity="0.12" stroke="#7c3aed" stroke-opacity="0.3" stroke-width="1"/>
-  <text x="192" y="428" font-family="system-ui, sans-serif" font-size="22" font-weight="700" fill="#a78bfa">71</text>
-  <text x="218" y="428" font-family="system-ui, sans-serif" font-size="15" fill="#94a3b8">Auto-fixable</text>
+  <!-- Before panel (messy code) -->
+  <g transform="translate(60, 150)">
+    <!-- Panel background -->
+    <rect width="545" height="260" rx="12" fill="#0d1117" stroke="#1e293b" stroke-width="1"/>
+    <!-- Title bar -->
+    <rect width="545" height="34" rx="12" fill="#161b22"/>
+    <rect y="24" width="545" height="10" fill="#161b22"/>
+    <!-- Traffic lights -->
+    <circle cx="18" cy="17" r="5" fill="#f87171" opacity="0.8"/>
+    <circle cx="36" cy="17" r="5" fill="#fbbf24" opacity="0.8"/>
+    <circle cx="54" cy="17" r="5" fill="#4ade80" opacity="0.8"/>
+    <!-- Label -->
+    <text x="272" y="22" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">before.tsx</text>
+    <!-- Red X badge -->
+    <rect x="450" y="6" width="80" height="22" rx="6" fill="#ef4444" opacity="0.15"/>
+    <text x="490" y="21" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#f87171">12 errors</text>
 
-  <!-- Configurable -->
-  <rect x="348" y="400" width="170" height="44" rx="10" fill="#7c3aed" opacity="0.12" stroke="#7c3aed" stroke-opacity="0.3" stroke-width="1"/>
-  <text x="392" y="428" font-family="system-ui, sans-serif" font-size="22" font-weight="700" fill="#a78bfa">20</text>
-  <text x="418" y="428" font-family="system-ui, sans-serif" font-size="15" fill="#94a3b8">Configurable</text>
+    <!-- Code lines (messy) -->
+    <text x="20" y="58" font-family="'Courier New', monospace" font-size="12" fill="#64748b">1</text>
+    <text x="44" y="58" font-family="'Courier New', monospace" font-size="12" fill="#c084fc">import</text>
+    <text x="96" y="58" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">{useState,useEffect,useCallback,</text>
 
-  <!-- Zero Deps -->
-  <rect x="548" y="400" width="184" height="44" rx="10" fill="#7c3aed" opacity="0.12" stroke="#7c3aed" stroke-opacity="0.3" stroke-width="1"/>
-  <text x="640" y="428" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#a78bfa">Zero Dependencies</text>
+    <text x="20" y="78" font-family="'Courier New', monospace" font-size="12" fill="#64748b">2</text>
+    <text x="44" y="78" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">useMemo,useRef}</text>
+    <text x="194" y="78" font-family="'Courier New', monospace" font-size="12" fill="#c084fc">from</text>
+    <text x="232" y="78" font-family="'Courier New', monospace" font-size="12" fill="#a3e635">"react"</text>
 
-  <!-- ESLint v9 & v10 -->
-  <rect x="762" y="400" width="170" height="44" rx="10" fill="#7c3aed" opacity="0.12" stroke="#7c3aed" stroke-opacity="0.3" stroke-width="1"/>
-  <text x="847" y="428" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#a78bfa">ESLint v9 &amp; v10</text>
+    <text x="20" y="104" font-family="'Courier New', monospace" font-size="12" fill="#64748b">3</text>
+    <text x="44" y="104" font-family="'Courier New', monospace" font-size="12" fill="#c084fc">function</text>
+    <text x="112" y="104" font-family="'Courier New', monospace" font-size="12" fill="#60a5fa">UserDashboard</text>
+    <text x="232" y="104" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">(props) {</text>
 
-  <!-- Next.js -->
-  <rect x="962" y="400" width="170" height="44" rx="10" fill="#7c3aed" opacity="0.12" stroke="#7c3aed" stroke-opacity="0.3" stroke-width="1"/>
-  <text x="1047" y="428" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#a78bfa">Next.js Ready</text>
+    <text x="20" y="124" font-family="'Courier New', monospace" font-size="12" fill="#64748b">4</text>
+    <text x="60" y="124" font-family="'Courier New', monospace" font-size="12" fill="#c084fc">const</text>
+    <text x="104" y="124" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">[loading, setLoading] =</text>
+    <text x="310" y="124" font-family="'Courier New', monospace" font-size="12" fill="#60a5fa">useState</text>
+    <text x="382" y="124" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">(false)</text>
 
-  <!-- Three column highlights -->
-  <!-- Column 1: React & JSX -->
-  <text x="260" y="505" text-anchor="middle" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="white">React &amp; JSX</text>
-  <text x="260" y="528" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">14 JSX rules, component props,</text>
-  <text x="260" y="546" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">hooks, and code ordering</text>
+    <text x="20" y="144" font-family="'Courier New', monospace" font-size="12" fill="#64748b">5</text>
+    <text x="60" y="144" font-family="'Courier New', monospace" font-size="12" fill="#60a5fa">useEffect</text>
+    <text x="130" y="144" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">(() =&gt; { fetchData() }, [userId])</text>
 
-  <!-- Column 2: TypeScript -->
-  <text x="640" y="505" text-anchor="middle" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="white">TypeScript</text>
-  <text x="640" y="528" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">9 TS-only rules for enums,</text>
-  <text x="640" y="546" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">interfaces, types, and props</text>
+    <text x="20" y="164" font-family="'Courier New', monospace" font-size="12" fill="#64748b">6</text>
+    <text x="60" y="164" font-family="'Courier New', monospace" font-size="12" fill="#c084fc">const</text>
+    <text x="104" y="164" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">handleClick = () =&gt; {</text>
 
-  <!-- Column 3: Tailwind CSS -->
-  <text x="1020" y="505" text-anchor="middle" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="white">Tailwind CSS</text>
-  <text x="1020" y="528" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">className ordering, multiline,</text>
-  <text x="1020" y="546" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">dynamic-at-end, no extra spaces</text>
+    <text x="20" y="184" font-family="'Courier New', monospace" font-size="12" fill="#64748b">7</text>
+    <text x="80" y="184" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">setLoading(true)</text>
+
+    <text x="20" y="204" font-family="'Courier New', monospace" font-size="12" fill="#64748b">8</text>
+    <text x="60" y="204" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">}</text>
+
+    <text x="20" y="224" font-family="'Courier New', monospace" font-size="12" fill="#64748b">9</text>
+    <text x="60" y="224" font-family="'Courier New', monospace" font-size="12" fill="#c084fc">return</text>
+    <text x="108" y="224" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">&lt;div className="flex  items-center"&gt;</text>
+
+    <text x="20" y="244" font-family="'Courier New', monospace" font-size="12" fill="#64748b">10</text>
+    <text x="44" y="244" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">}</text>
+
+    <!-- Error underlines -->
+    <rect x="44" y="61" width="340" height="2" rx="1" fill="#ef4444" opacity="0.5"/>
+    <rect x="44" y="107" width="140" height="2" rx="1" fill="#ef4444" opacity="0.5"/>
+    <rect x="104" y="127" width="100" height="2" rx="1" fill="#ef4444" opacity="0.5"/>
+    <rect x="60" y="147" width="310" height="2" rx="1" fill="#ef4444" opacity="0.5"/>
+    <rect x="108" y="227" width="290" height="2" rx="1" fill="#ef4444" opacity="0.5"/>
+  </g>
+
+  <!-- Arrow -->
+  <g transform="translate(620, 260)">
+    <rect x="0" y="0" width="44" height="44" rx="22" fill="url(#accent)"/>
+    <text x="22" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="22" fill="white">&#x279C;</text>
+  </g>
+
+  <!-- After panel (clean code) -->
+  <g transform="translate(678, 150)">
+    <!-- Panel background -->
+    <rect width="545" height="260" rx="12" fill="#0d1117" stroke="#1e293b" stroke-width="1"/>
+    <!-- Title bar -->
+    <rect width="545" height="34" rx="12" fill="#161b22"/>
+    <rect y="24" width="545" height="10" fill="#161b22"/>
+    <!-- Traffic lights -->
+    <circle cx="18" cy="17" r="5" fill="#f87171" opacity="0.8"/>
+    <circle cx="36" cy="17" r="5" fill="#fbbf24" opacity="0.8"/>
+    <circle cx="54" cy="17" r="5" fill="#4ade80" opacity="0.8"/>
+    <!-- Label -->
+    <text x="272" y="22" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">after.tsx — eslint --fix</text>
+    <!-- Green check badge -->
+    <rect x="442" y="6" width="88" height="22" rx="6" fill="#22c55e" opacity="0.15"/>
+    <text x="486" y="21" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#4ade80">&#10003; 0 errors</text>
+
+    <!-- Code lines (clean) -->
+    <text x="20" y="58" font-family="'Courier New', monospace" font-size="12" fill="#64748b">1</text>
+    <text x="44" y="58" font-family="'Courier New', monospace" font-size="12" fill="#c084fc">import</text>
+    <text x="96" y="58" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">{</text>
+
+    <text x="20" y="78" font-family="'Courier New', monospace" font-size="12" fill="#64748b">2</text>
+    <text x="60" y="78" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">useCallback,</text>
+
+    <text x="20" y="98" font-family="'Courier New', monospace" font-size="12" fill="#64748b">3</text>
+    <text x="60" y="98" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">useEffect,</text>
+
+    <text x="20" y="118" font-family="'Courier New', monospace" font-size="12" fill="#64748b">4</text>
+    <text x="60" y="118" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">useState,</text>
+
+    <text x="20" y="138" font-family="'Courier New', monospace" font-size="12" fill="#64748b">5</text>
+    <text x="44" y="138" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">}</text>
+    <text x="56" y="138" font-family="'Courier New', monospace" font-size="12" fill="#c084fc">from</text>
+    <text x="92" y="138" font-family="'Courier New', monospace" font-size="12" fill="#a3e635">"react"</text>
+    <text x="148" y="138" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">;</text>
+
+    <text x="20" y="164" font-family="'Courier New', monospace" font-size="12" fill="#64748b">6</text>
+    <text x="44" y="164" font-family="'Courier New', monospace" font-size="12" fill="#c084fc">const</text>
+    <text x="88" y="164" font-family="'Courier New', monospace" font-size="12" fill="#60a5fa">UserDashboard</text>
+    <text x="208" y="164" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">= ({ userId }) =&gt; {</text>
+
+    <text x="20" y="184" font-family="'Courier New', monospace" font-size="12" fill="#64748b">7</text>
+    <text x="60" y="184" font-family="'Courier New', monospace" font-size="12" fill="#c084fc">const</text>
+    <text x="104" y="184" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">[isLoading, setIsLoading] =</text>
+    <text x="340" y="184" font-family="'Courier New', monospace" font-size="12" fill="#60a5fa">useState</text>
+    <text x="412" y="184" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">(</text>
+    <text x="420" y="184" font-family="'Courier New', monospace" font-size="12" fill="#f97316">false</text>
+    <text x="462" y="184" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">);</text>
+
+    <text x="20" y="210" font-family="'Courier New', monospace" font-size="12" fill="#64748b">8</text>
+    <text x="60" y="210" font-family="'Courier New', monospace" font-size="12" fill="#c084fc">const</text>
+    <text x="104" y="210" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">clickHandler = () =&gt;</text>
+    <text x="306" y="210" font-family="'Courier New', monospace" font-size="12" fill="#60a5fa">setIsLoading</text>
+    <text x="402" y="210" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">(</text>
+    <text x="410" y="210" font-family="'Courier New', monospace" font-size="12" fill="#f97316">true</text>
+    <text x="444" y="210" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">);</text>
+
+    <text x="20" y="236" font-family="'Courier New', monospace" font-size="12" fill="#64748b">9</text>
+    <text x="60" y="236" font-family="'Courier New', monospace" font-size="12" fill="#60a5fa">useEffect</text>
+    <text x="130" y="236" font-family="'Courier New', monospace" font-size="12" fill="#e2e8f0">(() =&gt; { ... }, [userId]);</text>
+  </g>
+
+  <!-- ============ BOTTOM STATS BAR ============ -->
+
+  <!-- Stats background -->
+  <rect x="0" y="432" width="1280" height="72" fill="#0a0e18" opacity="0.6"/>
+  <rect x="0" y="432" width="1280" height="1" fill="#1e293b"/>
+
+  <!-- Stat 1: Rules -->
+  <text x="160" y="464" text-anchor="middle" font-family="system-ui, sans-serif" font-size="28" font-weight="800" fill="url(#accent)">81</text>
+  <text x="160" y="488" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="500" fill="#64748b" letter-spacing="1.5">RULES</text>
+
+  <!-- Divider -->
+  <rect x="288" y="445" width="1" height="46" fill="#1e293b"/>
+
+  <!-- Stat 2: Auto-fixable -->
+  <text x="416" y="464" text-anchor="middle" font-family="system-ui, sans-serif" font-size="28" font-weight="800" fill="#4ade80">71</text>
+  <text x="416" y="488" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="500" fill="#64748b" letter-spacing="1.5">AUTO-FIXABLE</text>
+
+  <!-- Divider -->
+  <rect x="544" y="445" width="1" height="46" fill="#1e293b"/>
+
+  <!-- Stat 3: Categories -->
+  <text x="672" y="464" text-anchor="middle" font-family="system-ui, sans-serif" font-size="28" font-weight="800" fill="#60a5fa">17</text>
+  <text x="672" y="488" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="500" fill="#64748b" letter-spacing="1.5">CATEGORIES</text>
+
+  <!-- Divider -->
+  <rect x="800" y="445" width="1" height="46" fill="#1e293b"/>
+
+  <!-- Stat 4: Zero deps -->
+  <text x="928" y="464" text-anchor="middle" font-family="system-ui, sans-serif" font-size="28" font-weight="800" fill="#fbbf24">0</text>
+  <text x="928" y="488" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="500" fill="#64748b" letter-spacing="1.5">DEPENDENCIES</text>
+
+  <!-- Divider -->
+  <rect x="1056" y="445" width="1" height="46" fill="#1e293b"/>
+
+  <!-- Stat 5: ESLint -->
+  <text x="1168" y="464" text-anchor="middle" font-family="system-ui, sans-serif" font-size="20" font-weight="800" fill="#a78bfa">v9 &amp; v10</text>
+  <text x="1168" y="488" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="500" fill="#64748b" letter-spacing="1.5">ESLINT</text>
+
+  <!-- ============ BOTTOM TECH BADGES ============ -->
+
+  <!-- Tech stack pills -->
+  <rect x="310" y="528" width="76" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="348" y="547" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#61dafb">React</text>
+
+  <rect x="400" y="528" width="100" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="450" y="547" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#3178c6">TypeScript</text>
+
+  <rect x="514" y="528" width="104" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="566" y="547" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#06b6d4">Tailwind CSS</text>
+
+  <rect x="632" y="528" width="80" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="672" y="547" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="white">Next.js</text>
+
+  <rect x="726" y="528" width="68" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="760" y="547" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#4b32c3">ESLint</text>
+
+  <rect x="808" y="528" width="64" height="28" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="840" y="547" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#a78bfa">JSX</text>
 
   <!-- Install command -->
-  <rect x="370" y="580" width="540" height="36" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <text x="395" y="604" font-family="'Courier New', monospace" font-size="13" fill="#64748b">$</text>
-  <text x="415" y="604" font-family="'Courier New', monospace" font-size="13" fill="#e2e8f0">npm install eslint-plugin-code-style --save-dev</text>
+  <rect x="340" y="578" width="600" height="34" rx="8" fill="#0d1117" stroke="#1e293b" stroke-width="1"/>
+  <text x="360" y="600" font-family="'Courier New', monospace" font-size="13" fill="#4ade80">$</text>
+  <text x="380" y="600" font-family="'Courier New', monospace" font-size="13" fill="#cbd5e1">npm install eslint-plugin-code-style --save-dev</text>
 
   <!-- Bottom accent line -->
-  <rect x="0" y="637" width="1280" height="3" fill="url(#accent)" opacity="0.5"/>
+  <rect y="638" width="1280" height="2" fill="url(#accent)" opacity="0.6"/>
 </svg>
