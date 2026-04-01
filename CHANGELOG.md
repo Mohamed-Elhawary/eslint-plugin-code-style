@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.4] - 2026-04-01
+
+### Fixed
+
+- **`jsx-element-child-new-line`** - Remove duplicate error reporting with `jsx-children-on-new-line` on JSX expression containers like `{children || <Outlet />}`
+- **`simple-call-single-line`** - Prevent JSX corruption when arrow function body contains JSX inside logical/binary expressions (e.g., `tabValue && (<TabPanel>...</TabPanel>)`)
+- **`simple-call-single-line`** - Resolve circular conflict with `array-callback-destructure` by skipping callbacks with destructured params having 2+ properties
+
+---
+
 ## [3.0.3] - 2026-03-26
 
 ### Added
@@ -2352,6 +2362,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[3.0.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.3...v3.0.4
 [3.0.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.2...v3.0.3
 [3.0.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.0...v3.0.1
