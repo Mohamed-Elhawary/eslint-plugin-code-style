@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.5] - 2026-04-01
+
+### Added
+
+- **Changelog page** - New `/docs/changelog` page on the documentation website rendering the full version history with release badges and formatted entries
+
+### Fixed
+
+- **Website** - Restore 3 garbled text blocks in `strings.ts` (homepage subtitle, philosophy page descriptions) that were alphabetically sorted instead of forming proper sentences
+- **`array-callback-destructure`** - Fix broken `goodExample` in website (missing `{` for object destructuring syntax)
+- **`ternary-condition-multiline`** - Correct default value for `maxOperands` option from 2 to 3 in website documentation
+- **`function-object-destructure`** - Improve description to include dot-notation detection behavior
+- **`arrow-function-block-body`** - Align description with source code
+
+### Documentation
+
+- Unify example labels to plain text (`// Good`, `// Bad`) across all 17 rule documentation files
+- Unify navigation footer arrows to `<-` across all rule documentation files
+- Link changelog in footer and contributing page to internal `/docs/changelog` instead of GitHub
+
+---
+
 ## [3.0.4] - 2026-04-01
 
 ### Fixed
@@ -2362,6 +2384,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[3.0.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.4...v3.0.5
 [3.0.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.3...v3.0.4
 [3.0.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.2...v3.0.3
 [3.0.2]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.1...v3.0.2
