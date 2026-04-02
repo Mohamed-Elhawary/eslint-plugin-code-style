@@ -10,11 +10,28 @@ import type { VersionEntryInterface } from "@/interfaces";
 
 export const metadata: Metadata = { title: changelogStringsData.metadataTitle };
 
-const parseChangelogHandler = (): VersionEntryInterface[] => {
-    const changelogPath = nodePath.resolve(
+const resolveChangelogPathHandler = (): string => {
+    // Try relative path from cwd (local dev: docs/website/ → ../../CHANGELOG.md)
+    const fromCwd = nodePath.resolve(
         process.cwd(),
         changelogStringsData.changelogRelativePath,
     );
+
+    if (fs.existsSync(fromCwd)) return fromCwd;
+
+    // Vercel: full repo cloned at /vercel/path0/, website root at /vercel/path1/
+    const vercelPath = nodePath.resolve(
+        changelogStringsData.vercelRepoRoot,
+        changelogStringsData.changelogFilename,
+    );
+
+    if (fs.existsSync(vercelPath)) return vercelPath;
+
+    return fromCwd;
+};
+
+const parseChangelogHandler = (): VersionEntryInterface[] => {
+    const changelogPath = resolveChangelogPathHandler();
 
     const content = fs.readFileSync(
         changelogPath,

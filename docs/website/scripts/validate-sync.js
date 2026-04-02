@@ -31,6 +31,12 @@ const pass = (msg) => {
     console.log(`  \u2713 ${msg}`);
 };
 
+// Skip on Vercel — validation is for local/CI, not deployment builds
+if (process.env.VERCEL) {
+    console.log("\n\u2713 Skipping sync validation on Vercel deployment.\n");
+    process.exit(0);
+}
+
 console.log("\nValidating website sync with plugin source...\n");
 
 // 1. Version sync: package.json vs config.ts

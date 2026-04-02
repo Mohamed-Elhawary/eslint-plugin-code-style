@@ -396,6 +396,7 @@ export const rulesCategoryStringsData = {
 // Changelog strings
 export const changelogStringsData = {
     bullet: "\u2022",
+    changelogFilename: "CHANGELOG.md",
     changelogRelativePath: "../../CHANGELOG.md",
     codeHtml: "<code class=\"changelog-code\">$1</code>",
     currentVersionLabel: `Current version: ${pluginConfigData.versionDisplay}.`,
@@ -419,6 +420,7 @@ export const changelogStringsData = {
     strongCodeHtml: "<strong><code class=\"changelog-code\">$1</code></strong>",
     strongHtml: "<strong>$1</strong>",
     title: "Changelog",
+    vercelRepoRoot: "/vercel/path0",
     versionPrefix: "v",
     versionRangePrefix: "**Version Range:**",
     viewGitHubReleases: "View GitHub Releases",
