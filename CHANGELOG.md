@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.6] - 2026-04-02
+
+### Fixed
+
+- **Website** - Fix Vercel deployment failure by skipping sync validation on Vercel and adding fallback path resolution for CHANGELOG.md
+
+---
+
 ## [3.0.5] - 2026-04-01
 
 ### Added
@@ -2384,6 +2392,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[3.0.6]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.5...v3.0.6
 [3.0.5]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.4...v3.0.5
 [3.0.4]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.3...v3.0.4
 [3.0.3]: https://github.com/Mohamed-Elhawary/eslint-plugin-code-style/compare/v3.0.2...v3.0.3

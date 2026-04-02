@@ -9,7 +9,7 @@ export const pluginConfigData = {
     githubUrl: "https://github.com/Mohamed-Elhawary/eslint-plugin-code-style",
     name: "eslint-plugin-code-style",
     npmUrl: "https://www.npmjs.com/package/eslint-plugin-code-style",
-    version: "3.0.5",
-    versionDisplay: "v3.0.5",
+    version: "3.0.6",
+    versionDisplay: "v3.0.6",
     websiteUrl: "https://www.eslint-plugin-code-style.org",
 };
